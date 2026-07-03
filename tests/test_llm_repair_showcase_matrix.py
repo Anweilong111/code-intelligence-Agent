@@ -158,8 +158,14 @@ def test_llm_repair_evaluation_matrix_reports_p6_metrics():
                 token_count=200 + index,
             )
         )
-    for index in range(12):
-        runs.append(_llm_blocker_run(name=f"blocker_{index}"))
+    blocker_kinds = (
+        ["llm_failed"] * 3
+        + ["environment"] * 3
+        + ["no_test_oracle"] * 3
+        + ["safety_gate"] * 3
+    )
+    for index, blocker_kind in enumerate(blocker_kinds):
+        runs.append(_llm_blocker_run(name=f"blocker_{index}", kind=blocker_kind))
     suite = {
         "suite_name": "p6_llm_repair_suite",
         "runs": runs,
@@ -184,6 +190,16 @@ def test_llm_repair_evaluation_matrix_reports_p6_metrics():
         "accept_success": 8,
         "reject_failure": 3,
     }
+    assert metrics["blocker_category_counts"] == {
+        "environment_blocker": 3,
+        "llm_failed_blocker": 3,
+        "no_test_oracle_blocker": 3,
+        "safety_gate_blocker": 3,
+    }
+    assert metrics["llm_failed_blocker_count"] == 3
+    assert metrics["environment_blocker_count"] == 3
+    assert metrics["no_test_oracle_blocker_count"] == 3
+    assert metrics["safety_gate_blocker_count"] == 3
     assert metrics["patch_success_at"] == {
         "1": 0.375,
         "3": 1.0,
@@ -230,6 +246,13 @@ def test_llm_repair_evaluation_matrix_flags_missing_reflection_evidence():
             "llm_direct_evidence_complete": 0,
             "llm_reflection_evidence_complete": 1,
             "llm_blocker_evidence_complete": 0,
+            "llm_patch_judge_ready": 0,
+            "llm_patch_judge_accept_success": 0,
+            "llm_patch_judge_reject_failure": 0,
+            "llm_failed_blocker": 0,
+            "environment_blocker": 0,
+            "no_test_oracle_blocker": 0,
+            "safety_gate_blocker": 0,
         },
     )
     metrics = evaluation["metrics_report"]
@@ -274,6 +297,10 @@ def test_llm_repair_evaluation_matrix_flags_missing_judge_outcome_evidence():
             "llm_patch_judge_ready": 1,
             "llm_patch_judge_accept_success": 1,
             "llm_patch_judge_reject_failure": 0,
+            "llm_failed_blocker": 0,
+            "environment_blocker": 0,
+            "no_test_oracle_blocker": 0,
+            "safety_gate_blocker": 0,
         },
     )
     metrics = evaluation["metrics_report"]
@@ -283,6 +310,43 @@ def test_llm_repair_evaluation_matrix_flags_missing_judge_outcome_evidence():
     assert metrics["patch_judge_accept_success_count"] == 0
     assert checks["llm_patch_judge_ready"]["passed"] is True
     assert checks["llm_patch_judge_accept_success"]["passed"] is False
+    assert evaluation["status"] == "incomplete"
+
+
+def test_llm_repair_evaluation_matrix_flags_missing_blocker_categories():
+    suite = {
+        "suite_name": "weak_blocker_suite",
+        "runs": [_llm_blocker_run(name="only_llm_blocker", kind="llm_failed")],
+    }
+
+    evaluation = build_llm_repair_evaluation_matrix(
+        [suite],
+        targets={
+            "case_count": 1,
+            "llm_direct_success": 0,
+            "llm_reflection_success": 0,
+            "llm_blocker": 1,
+            "llm_direct_evidence_complete": 0,
+            "llm_reflection_evidence_complete": 0,
+            "llm_blocker_evidence_complete": 1,
+            "llm_patch_judge_ready": 0,
+            "llm_patch_judge_accept_success": 0,
+            "llm_patch_judge_reject_failure": 0,
+            "llm_failed_blocker": 1,
+            "environment_blocker": 1,
+            "no_test_oracle_blocker": 1,
+            "safety_gate_blocker": 1,
+        },
+    )
+    metrics = evaluation["metrics_report"]
+    checks = {item["name"]: item for item in metrics["target_checks"]}
+
+    assert evaluation["matrix"][0]["blocker_category"] == "llm_failed_blocker"
+    assert metrics["blocker_category_counts"] == {"llm_failed_blocker": 1}
+    assert checks["llm_failed_blocker"]["passed"] is True
+    assert checks["environment_blocker"]["passed"] is False
+    assert checks["no_test_oracle_blocker"]["passed"] is False
+    assert checks["safety_gate_blocker"]["passed"] is False
     assert evaluation["status"] == "incomplete"
 
 
@@ -486,24 +550,58 @@ def _llm_success_run(
     }
 
 
-def _llm_blocker_run(*, name: str) -> dict:
+def _llm_blocker_run(*, name: str, kind: str = "llm_failed") -> dict:
+    blocker_metrics = {
+        "llm_failed": {
+            "status": "llm_config_blocked",
+            "blocker": "llm_config_missing_api_key",
+            "repository_llm_patch_generation_status": "blocked",
+            "repository_patch_generator_llm_candidate_count": 0,
+            "agent_answers_next_action": "Configure the LLM key and rerun.",
+        },
+        "environment": {
+            "status": "environment_blocked",
+            "blocker": "environment:test_tool_missing",
+            "repository_llm_patch_generation_status": "pass",
+            "repository_patch_generator_llm_candidate_count": 1,
+            "repository_test_setup_doctor_blocker": "environment:test_tool_missing",
+            "repository_test_environment_status": "blocked",
+            "agent_answers_next_action": "Install test dependencies and rerun.",
+        },
+        "no_test_oracle": {
+            "status": "no_test_oracle_blocked",
+            "blocker": "test_command:no_recommended_test_command",
+            "repository_llm_patch_generation_status": "pass",
+            "repository_patch_generator_llm_candidate_count": 1,
+            "repository_test_patch_validation_reason": "validation_args_missing",
+            "agent_answers_next_action": "Add a failing pytest oracle and rerun.",
+        },
+        "safety_gate": {
+            "status": "safety_gate_blocked",
+            "blocker": "safety_gate_blocked",
+            "repository_llm_patch_generation_status": "pass",
+            "repository_patch_generator_llm_candidate_count": 1,
+            "repository_test_patch_validation_status": "skipped",
+            "repository_test_patch_validation_reason": (
+                "all_candidates_blocked_by_safety_gate"
+            ),
+            "repository_test_patch_validation_safety_blocked_candidate_count": 1,
+            "agent_answers_next_action": "Generate a smaller scoped patch.",
+        },
+    }[kind]
     return {
         "name": name,
         "repo": f"example/{name}",
         "output_dir": f"out/{name}",
         "report_path": f"out/{name}/llm_config_preflight.json",
-        "status": "llm_config_blocked",
+        "status": blocker_metrics["status"],
         "passed": False,
         "metrics": {
-            "status": "llm_config_blocked",
-            "blocker": "llm_config_missing_api_key",
             "repository_patch_generation_mode": "llm",
-            "repository_llm_patch_generation_status": "blocked",
             "repository_llm_patch_provider": "deepseek",
             "repository_llm_patch_model": "deepseek-v4-pro",
             "repository_llm_patch_api_key_present": False,
-            "repository_patch_generator_llm_candidate_count": 0,
             "repository_test_patch_validation_success_count": 0,
-            "agent_answers_next_action": "Configure the LLM key and rerun.",
+            **blocker_metrics,
         },
     }

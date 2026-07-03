@@ -24,6 +24,10 @@ P6_EVALUATION_TARGETS = {
     "llm_patch_judge_ready": 1,
     "llm_patch_judge_accept_success": 1,
     "llm_patch_judge_reject_failure": 1,
+    "llm_failed_blocker": 1,
+    "environment_blocker": 1,
+    "no_test_oracle_blocker": 1,
+    "safety_gate_blocker": 1,
 }
 
 
@@ -115,6 +119,11 @@ def build_llm_repair_metrics_report(
         **_dict(targets),
     }
     class_counts = Counter(str(row.get("class") or "unknown") for row in rows)
+    blocker_category_counts = Counter(
+        str(row.get("blocker_category") or "unknown")
+        for row in rows
+        if str(row.get("class") or "") == "llm_blocker"
+    )
     evidence_complete_counts = Counter(
         str(row.get("class") or "unknown")
         for row in rows
@@ -124,6 +133,12 @@ def build_llm_repair_metrics_report(
     direct_success_count = class_counts["llm_direct_success"]
     reflection_success_count = class_counts["llm_reflection_success"]
     blocker_count = class_counts["llm_blocker"]
+    llm_failed_blocker_count = blocker_category_counts["llm_failed_blocker"]
+    environment_blocker_count = blocker_category_counts["environment_blocker"]
+    no_test_oracle_blocker_count = blocker_category_counts[
+        "no_test_oracle_blocker"
+    ]
+    safety_gate_blocker_count = blocker_category_counts["safety_gate_blocker"]
     direct_evidence_complete_count = evidence_complete_counts[
         "llm_direct_success"
     ]
@@ -214,6 +229,10 @@ def build_llm_repair_metrics_report(
         patch_judge_llm_ready_case_count=patch_judge_llm_ready_case_count,
         patch_judge_accept_success_count=patch_judge_accept_success_count,
         patch_judge_reject_failure_count=patch_judge_reject_failure_count,
+        llm_failed_blocker_count=llm_failed_blocker_count,
+        environment_blocker_count=environment_blocker_count,
+        no_test_oracle_blocker_count=no_test_oracle_blocker_count,
+        safety_gate_blocker_count=safety_gate_blocker_count,
     )
     loop_complete_count = sum(
         1 for row in rows if _agent_loop_trace_complete(_dict(row.get("agent_loop_evidence")))
@@ -239,6 +258,11 @@ def build_llm_repair_metrics_report(
         "llm_direct_success_count": direct_success_count,
         "llm_reflection_success_count": reflection_success_count,
         "llm_blocker_count": blocker_count,
+        "blocker_category_counts": dict(sorted(blocker_category_counts.items())),
+        "llm_failed_blocker_count": llm_failed_blocker_count,
+        "environment_blocker_count": environment_blocker_count,
+        "no_test_oracle_blocker_count": no_test_oracle_blocker_count,
+        "safety_gate_blocker_count": safety_gate_blocker_count,
         "llm_direct_evidence_complete_count": direct_evidence_complete_count,
         "llm_reflection_evidence_complete_count": reflection_evidence_complete_count,
         "llm_blocker_evidence_complete_count": blocker_evidence_complete_count,
@@ -332,9 +356,9 @@ def render_llm_repair_showcase_matrix_markdown(payload: dict[str, Any]) -> str:
                 "| Case | Suite | Repo | Class | Status | Patch Mode | LLM Patch | "
                 "Provider | Model | LLM Candidates | Validation Successes | "
                 "Reflection Successes | Repair Action | Reflection Action | "
-                "Evidence | Missing Evidence | Blocker | Report |"
+                "Evidence | Missing Evidence | Blocker Category | Blocker | Report |"
             ),
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for row in _list(payload.get("matrix")):
@@ -359,6 +383,7 @@ def render_llm_repair_showcase_matrix_markdown(payload: dict[str, Any]) -> str:
                     _markdown_cell(item.get("reflection_action_id")),
                     _markdown_cell(item.get("evidence_status")),
                     _markdown_cell(_format_list(_list(item.get("evidence_missing")))),
+                    _markdown_cell(item.get("blocker_category")),
                     _markdown_cell(item.get("blocker")),
                     _markdown_cell(item.get("report_path")),
                 ]
@@ -366,7 +391,7 @@ def render_llm_repair_showcase_matrix_markdown(payload: dict[str, Any]) -> str:
             + " |"
         )
     if not _list(payload.get("matrix")):
-        lines.append("| none | none | none | none | none | none | none | none | none | 0 | 0 | 0 | none | none | none | none | none | none |")
+        lines.append("| none | none | none | none | none | none | none | none | none | 0 | 0 | 0 | none | none | none | none | none | none | none |")
     lines.extend(["", "## Agent Loop Evidence", ""])
     for row in _list(payload.get("matrix")):
         item = _dict(row)
@@ -431,9 +456,9 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
             "",
             (
                 "| Case | Repo | Class | LLM Candidates | First Success Rank | "
-                "Sandbox Successes | Evidence | Judge Agreement | Judge Outcome | Agent Loop | Artifacts |"
+                "Sandbox Successes | Evidence | Blocker Category | Judge Agreement | Judge Outcome | Agent Loop | Artifacts |"
             ),
-            "| --- | --- | --- | ---: | --- | ---: | --- | --- | --- | ---: | --- |",
+            "| --- | --- | --- | ---: | --- | ---: | --- | --- | --- | --- | ---: | --- |",
         ]
     )
     for row in _list(payload.get("matrix")):
@@ -449,6 +474,7 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
                     _markdown_cell(item.get("first_success_rank") or "none"),
                     str(_int(item.get("patch_validation_success_count", 0))),
                     _markdown_cell(item.get("evidence_status")),
+                    _markdown_cell(item.get("blocker_category")),
                     _format_counts(_dict(item.get("patch_judge_agreement_counts"))),
                     _format_counts(_dict(item.get("patch_judge_outcome_counts"))),
                     str(_agent_loop_trace_complete(_dict(item.get("agent_loop_evidence")))).lower(),
@@ -458,7 +484,7 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
             + " |"
         )
     if not _list(payload.get("matrix")):
-        lines.append("| none | none | none | 0 | none | 0 | none | none | none | false | none |")
+        lines.append("| none | none | none | 0 | none | 0 | none | none | none | none | false | none |")
     return "\n".join(lines) + "\n"
 
 
@@ -473,6 +499,7 @@ def render_llm_repair_metrics_report_markdown(payload: dict[str, Any]) -> str:
         f"- Direct Successes: {_int(payload.get('llm_direct_success_count', 0))}",
         f"- Reflection Successes: {_int(payload.get('llm_reflection_success_count', 0))}",
         f"- Blocker Cases: {_int(payload.get('llm_blocker_count', 0))}",
+        f"- Blocker Categories: {_format_counts(_dict(payload.get('blocker_category_counts')))}",
         f"- Direct Evidence Complete: {_int(payload.get('llm_direct_evidence_complete_count', 0))}",
         f"- Reflection Evidence Complete: {_int(payload.get('llm_reflection_evidence_complete_count', 0))}",
         f"- Blocker Evidence Complete: {_int(payload.get('llm_blocker_evidence_complete_count', 0))}",
@@ -685,6 +712,12 @@ def _showcase_row(
         repair_action_id=repair_action_id,
         reflection_action_id=reflection_action_id,
     )
+    blocker_category = _blocker_category(
+        metrics,
+        row_class=row_class,
+        blocker=blocker,
+        validation_success_count=validation_success_count,
+    )
     patch_judge_outcome_counts = _normalized_judge_outcome_counts(
         _dict(metrics.get("repository_test_patch_judge_outcome_counts"))
     )
@@ -803,6 +836,7 @@ def _showcase_row(
         ),
         "successful_reflection_count": successful_reflection_count,
         "blocker": blocker,
+        "blocker_category": blocker_category,
         "next_action": str(
             metrics.get("agent_answers_next_action")
             or metrics.get("analysis_next_action")
@@ -894,6 +928,96 @@ def _class_reason(
         f"(llm_candidates={llm_candidate_count}, "
         f"validation_successes={validation_success_count})."
     )
+
+
+def _blocker_category(
+    metrics: dict[str, Any],
+    *,
+    row_class: str,
+    blocker: str,
+    validation_success_count: int,
+) -> str:
+    if row_class != "llm_blocker":
+        return "none"
+    text = " ".join(
+        str(value or "")
+        for value in [
+            blocker,
+            metrics.get("status"),
+            metrics.get("blocker"),
+            metrics.get("agent_answers_blocker"),
+            metrics.get("repository_llm_patch_generation_status"),
+            metrics.get("repository_llm_patch_generation_reason"),
+            metrics.get("repository_llm_patch_blocker"),
+            metrics.get("repository_llm_reflection_blocker"),
+            metrics.get("repository_test_setup_doctor_blocker"),
+            metrics.get("repository_test_environment_status"),
+            metrics.get("repository_test_environment_reason"),
+            metrics.get("repository_test_environment_blocker"),
+            metrics.get("repository_test_patch_validation_status"),
+            metrics.get("repository_test_patch_validation_reason"),
+            metrics.get("analysis_next_action"),
+            metrics.get("agent_answers_next_action"),
+            metrics.get("next_action"),
+        ]
+    ).lower()
+    safety_blocked = _int(
+        metrics.get("repository_test_patch_validation_safety_blocked_candidate_count")
+        or metrics.get("repository_patch_safety_gate_blocked_count")
+        or 0
+    )
+    if safety_blocked > 0 and validation_success_count <= 0:
+        return "safety_gate_blocker"
+    if any(token in text for token in ("safety_gate", "safety gate", "scope_not_limited")):
+        return "safety_gate_blocker"
+    no_oracle_tokens = (
+        "no_test_oracle",
+        "no test oracle",
+        "no_tests",
+        "no tests",
+        "no_test_command",
+        "no recommended test command",
+        "validation_args_missing",
+        "no_failing_test",
+        "no failing test",
+        "missing failing test",
+        "nodeid_missing",
+        "no nodeid",
+        "dynamic_evidence:not_usable",
+        "dynamic evidence not usable",
+        "oracle_missing",
+    )
+    if any(token in text for token in no_oracle_tokens):
+        return "no_test_oracle_blocker"
+    environment_tokens = (
+        "environment",
+        "dependency",
+        "missing_dependency",
+        "module_not_found",
+        "modulenotfounderror",
+        "importerror",
+        "test_tool_missing",
+        "setup_install_failure",
+        "pytest_plugin",
+        "collection error",
+        "collection_failure",
+        "tox",
+        "nox",
+        "timeout",
+    )
+    if any(token in text for token in environment_tokens):
+        return "environment_blocker"
+    llm_status = str(
+        metrics.get("repository_llm_patch_generation_status") or ""
+    ).lower()
+    if (
+        llm_status in {"blocked", "unavailable", "failed"}
+        or "llm" in text
+        or "api_key" in text
+        or "missing_api_key" in text
+    ):
+        return "llm_failed_blocker"
+    return "generic_blocker"
 
 
 def _case_evidence_audit(
@@ -1162,6 +1286,10 @@ def _evaluation_target_checks(
     patch_judge_llm_ready_case_count: int,
     patch_judge_accept_success_count: int,
     patch_judge_reject_failure_count: int,
+    llm_failed_blocker_count: int,
+    environment_blocker_count: int,
+    no_test_oracle_blocker_count: int,
+    safety_gate_blocker_count: int,
 ) -> list[dict[str, Any]]:
     values = {
         "case_count": case_count,
@@ -1174,6 +1302,10 @@ def _evaluation_target_checks(
         "llm_patch_judge_ready": patch_judge_llm_ready_case_count,
         "llm_patch_judge_accept_success": patch_judge_accept_success_count,
         "llm_patch_judge_reject_failure": patch_judge_reject_failure_count,
+        "llm_failed_blocker": llm_failed_blocker_count,
+        "environment_blocker": environment_blocker_count,
+        "no_test_oracle_blocker": no_test_oracle_blocker_count,
+        "safety_gate_blocker": safety_gate_blocker_count,
     }
     checks: list[dict[str, Any]] = []
     for name in (
@@ -1187,6 +1319,10 @@ def _evaluation_target_checks(
         "llm_patch_judge_ready",
         "llm_patch_judge_accept_success",
         "llm_patch_judge_reject_failure",
+        "llm_failed_blocker",
+        "environment_blocker",
+        "no_test_oracle_blocker",
+        "safety_gate_blocker",
     ):
         actual = _int(values.get(name, 0))
         expected = _int(targets.get(name, 0))
