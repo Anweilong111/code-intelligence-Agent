@@ -27,6 +27,7 @@ from code_intelligence_agent.evaluation.llm_config_audit import (
     render_llm_config_audit_markdown,
 )
 from code_intelligence_agent.evaluation.github_onboarding_matrix import (
+    backfill_github_onboarding_artifacts,
     build_github_onboarding_matrix,
     write_github_onboarding_matrix_artifacts,
 )
@@ -4474,6 +4475,7 @@ def _attach_github_onboarding_matrix(
         for run in report.runs
         if str(run.report_path or "").strip()
     ]
+    backfill = backfill_github_onboarding_artifacts(report_paths)
     matrix = build_github_onboarding_matrix(
         report_paths,
         required_case_count=required_case_count,
@@ -4513,6 +4515,13 @@ def _attach_github_onboarding_matrix(
             ),
             "github_onboarding_matrix_complete_artifact_group_count": (
                 complete_artifact_group_count
+            ),
+            "github_onboarding_backfill_status": str(backfill.get("status") or ""),
+            "github_onboarding_backfill_report_count": _int(
+                backfill.get("report_count", 0)
+            ),
+            "github_onboarding_backfill_status_counts": _dict(
+                backfill.get("status_counts")
             ),
             "github_onboarding_matrix_json": str(
                 paths.get("github_onboarding_matrix_json") or ""

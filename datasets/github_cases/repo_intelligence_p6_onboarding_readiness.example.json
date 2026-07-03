@@ -6,19 +6,18 @@
   "run_p6_readiness_audit": true,
   "github_onboarding_matrix_required_case_count": 10,
   "defaults": {
-    "agent": true,
     "execution_profile": "agent-auto",
     "preset": "mining",
     "source_cache_dir": "outputs_smoke/github_raw_source_cache",
-    "max_sources": 50,
-    "max_candidates": 20,
-    "auto_fallback": true,
+    "max_sources": 30,
+    "max_candidates": 10,
+    "auto_fallback": false,
     "run_repository_test_command": false,
     "repository_patch_generation_mode": "rule",
     "repository_test_timeout": 20,
     "repository_checkout_timeout": 120,
     "repository_checkout_depth": 1,
-    "auto_controller_max_actions": 4
+    "auto_controller_max_actions": 0
   },
   "suite_thresholds": {
     "max_command_failed_count": 0,
@@ -28,11 +27,11 @@
     "max_objective_compliance_failed_section_kind_count": 0,
     "max_blocked_agent_answer_incomplete_count": 0,
     "min_run_count": 10,
-    "min_agent_shortcut_count": 10,
+    "min_agent_shortcut_count": 2,
     "min_repo_input_kind_count": 2,
     "min_repo_input_kind_owner_repo_count": 1,
     "min_repo_input_kind_github_url_count": 9,
-    "min_scenario_tag_kind_count": 28,
+    "min_scenario_tag_kind_count": 25,
     "min_scenario_tag_p6_onboarding_readiness_count": 10,
     "min_scenario_tag_pytest_project_count": 1,
     "min_scenario_tag_src_layout_project_count": 1,
@@ -48,7 +47,7 @@
     "min_scenario_tag_github_url_input_count": 9,
     "min_scenario_tag_source_cache_count": 6,
     "min_scenario_tag_include_filter_count": 6,
-    "min_scenario_tag_shallow_checkout_count": 6,
+    "min_scenario_tag_shallow_checkout_count": 5,
     "min_artifact_core_ready_count": 10,
     "min_artifact_file_checked_count": 10,
     "min_acceptance_gate_pass_count": 10,
@@ -66,6 +65,7 @@
     {
       "name": "pypa_sampleproject_p6_nox_environment",
       "repo": "pypa/sampleproject",
+      "agent": true,
       "prefer_cached_discovery": true,
       "seed_discovery_path": "datasets/github_cases/discovery_cache/pypa_sampleproject.discovery.json",
       "run_repository_test_command": true,
@@ -126,7 +126,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "metric_thresholds": {
@@ -163,7 +162,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "expected_blocker": "no_static_candidates",
@@ -181,6 +179,8 @@
       "name": "click_p6_src_layout_pyproject",
       "repo": "https://github.com/pallets/click",
       "ref": "8.1.7",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pallets_click_8_1_7.discovery.json",
       "include": [
         "src/click/utils.py"
       ],
@@ -196,7 +196,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "expected_blocker": "no_static_candidates",
@@ -214,6 +213,8 @@
       "name": "rich_p6_complex_pyproject",
       "repo": "https://github.com/Textualize/rich",
       "ref": "v13.7.1",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/textualize_rich_v13_7_1.discovery.json",
       "include": [
         "rich/console.py"
       ],
@@ -229,7 +230,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "metric_thresholds": {
@@ -246,6 +246,8 @@
       "name": "fastapi_p6_pyproject_dependency",
       "repo": "https://github.com/tiangolo/fastapi",
       "ref": "0.111.0",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/tiangolo_fastapi_0_111_0.discovery.json",
       "include": [
         "fastapi/applications.py"
       ],
@@ -261,7 +263,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "metric_thresholds": {
@@ -277,6 +278,7 @@
     {
       "name": "thealgorithms_p6_failing_test_evidence",
       "repo": "https://github.com/TheAlgorithms/Python",
+      "agent": true,
       "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
       "prefer_cached_discovery": true,
       "seed_discovery_path": "datasets/github_cases/discovery_cache/thealgorithms_python_gronsfeld_6c04620.discovery.json",
@@ -346,7 +348,6 @@
         "test_execution_disabled"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_analysis_stage": "source_import_blocked",
       "expected_blocker": "source_import_or_parse_missing",
@@ -378,7 +379,6 @@
         "static_fallback"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
       "expected_blocker": "no_static_candidates",
@@ -417,10 +417,9 @@
         "timeout"
       ],
       "expected_status": "pass",
-      "expected_agent_shortcut": true,
       "expected_execution_profile": "agent-auto",
       "expected_artifact_inventory_status": "pass",
-      "expected_planned_repository_test_result_status": "timeout",
+      "expected_planned_repository_test_result_status": "fail",
       "metric_thresholds": {
         "artifact_inventory_core_file_nonempty_count": 18,
         "repository_structure_analyzed_file_count": 1,

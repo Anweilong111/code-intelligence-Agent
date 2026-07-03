@@ -1,0 +1,1355 @@
+{
+  "sha": "874ca2bc1c30d93a4ac6e36a15ed685eafe89097",
+  "url": "https://api.github.com/repos/pallets/click/git/trees/874ca2bc1c30d93a4ac6e36a15ed685eafe89097",
+  "tree": [
+    {
+      "path": ".editorconfig",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e32c8029d1860bf40125d8458db3bd1c4d3f4058",
+      "size": 217,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e32c8029d1860bf40125d8458db3bd1c4d3f4058"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "24e321f0cc136bbe1bc71ea882593d229d6ee803",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/24e321f0cc136bbe1bc71ea882593d229d6ee803"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "c722806d8d4d448e39d6919e3015d06016869c4a",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/c722806d8d4d448e39d6919e3015d06016869c4a"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug-report.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09535a68570b08d9a5dfef2d5a5397d9a299bf62",
+      "size": 607,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/09535a68570b08d9a5dfef2d5a5397d9a299bf62"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8d8c9b74784fc9a318d11678db7c555207f88e3d",
+      "size": 496,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/8d8c9b74784fc9a318d11678db7c555207f88e3d"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature-request.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3dce4a42e9516af7a2f734470b5d361c7100e1a5",
+      "size": 413,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3dce4a42e9516af7a2f734470b5d361c7100e1a5"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "90f94bc32b917f4902e37ebf40553590c3b3a521",
+      "size": 167,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/90f94bc32b917f4902e37ebf40553590c3b3a521"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29fd35f8557158826f728f846f4c631a18469400",
+      "size": 971,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/29fd35f8557158826f728f846f4c631a18469400"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d843ad9648d92aa6ddd7710937f834cbf1ea8cc4",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/d843ad9648d92aa6ddd7710937f834cbf1ea8cc4"
+    },
+    {
+      "path": ".github/workflows/lock.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c790fae5cb82c522b0c9142e5c41e0971634ab46",
+      "size": 616,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/c790fae5cb82c522b0c9142e5c41e0971634ab46"
+    },
+    {
+      "path": ".github/workflows/publish.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c8db0e0a2a3964d667989e65fbf8d175e2de2c1",
+      "size": 2596,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3c8db0e0a2a3964d667989e65fbf8d175e2de2c1"
+    },
+    {
+      "path": ".github/workflows/tests.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a839517dfa084e8a21670750335e526ebfc1f66",
+      "size": 1900,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/0a839517dfa084e8a21670750335e526ebfc1f66"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1a1723d470beff99526e17e18b9987ee3ef9a82",
+      "size": 157,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/c1a1723d470beff99526e17e18b9987ee3ef9a82"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "573a7553b8ad9500fa8468f01bf0cd762a70b680",
+      "size": 824,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/573a7553b8ad9500fa8468f01bf0cd762a70b680"
+    },
+    {
+      "path": ".readthedocs.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "346900b20057ec00e57daea6fe05344254f1c168",
+      "size": 209,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/346900b20057ec00e57daea6fe05344254f1c168"
+    },
+    {
+      "path": "CHANGES.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f7a46554d72e5cef11cf88527a7ace9109b7b2f",
+      "size": 46827,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/4f7a46554d72e5cef11cf88527a7ace9109b7b2f"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f4ba197dec599c24887a90b70d54ee41fb7cf79d",
+      "size": 3358,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f4ba197dec599c24887a90b70d54ee41fb7cf79d"
+    },
+    {
+      "path": "CONTRIBUTING.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1ad3bdcbf150c794d219c72d73674cddb901b6d9",
+      "size": 6600,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/1ad3bdcbf150c794d219c72d73674cddb901b6d9"
+    },
+    {
+      "path": "LICENSE.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d12a849186982399c537c5b9a8fd77bf2edd5eab",
+      "size": 1475,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/d12a849186982399c537c5b9a8fd77bf2edd5eab"
+    },
+    {
+      "path": "MANIFEST.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e5b231d397182c14435d8dfeeb4b40569a7ebf7b",
+      "size": 181,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e5b231d397182c14435d8dfeeb4b40569a7ebf7b"
+    },
+    {
+      "path": "README.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76f26978a6d3a5e445950d26bfb4a9ff0af33433",
+      "size": 1977,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/76f26978a6d3a5e445950d26bfb4a9ff0af33433"
+    },
+    {
+      "path": "artwork",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a19fd3e281a9f482ba303cd902cf943d14d754f9",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/a19fd3e281a9f482ba303cd902cf943d14d754f9"
+    },
+    {
+      "path": "artwork/logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0e1b58839125a7a7b61dc32b8024a9864623b4f",
+      "size": 8705,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e0e1b58839125a7a7b61dc32b8024a9864623b4f"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "43307a2d9c03ebab24451e41269ca4630f376c81",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/43307a2d9c03ebab24451e41269ca4630f376c81"
+    },
+    {
+      "path": "docs/Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e3c9b90d49761eeced6304dc96a28920152051e",
+      "size": 603,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6e3c9b90d49761eeced6304dc96a28920152051e"
+    },
+    {
+      "path": "docs/_static",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "476ada28d12a921d6ddc483be9435ac26b2b0624",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/476ada28d12a921d6ddc483be9435ac26b2b0624"
+    },
+    {
+      "path": "docs/_static/click-icon.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b883cfaa17f0ac31dd52effb9aaf6fe58feede06",
+      "size": 625,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b883cfaa17f0ac31dd52effb9aaf6fe58feede06"
+    },
+    {
+      "path": "docs/_static/click-logo-sidebar.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4c2bc07a8dfbb1ff2ac81b1b3447249539713a3c",
+      "size": 4246,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/4c2bc07a8dfbb1ff2ac81b1b3447249539713a3c"
+    },
+    {
+      "path": "docs/_static/click-logo.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8874506885e8a101d24789ce7033634d895eb77",
+      "size": 26081,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a8874506885e8a101d24789ce7033634d895eb77"
+    },
+    {
+      "path": "docs/advanced.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "56495617d1bd94e862435ab2bc31f54d96ff83d1",
+      "size": 17515,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/56495617d1bd94e862435ab2bc31f54d96ff83d1"
+    },
+    {
+      "path": "docs/api.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09efd033cbcdce184d3c7ecfec9a097e9f44f7bf",
+      "size": 2828,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/09efd033cbcdce184d3c7ecfec9a097e9f44f7bf"
+    },
+    {
+      "path": "docs/arguments.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "60b53c558a63783f71079590e6bd9bce9c8228ee",
+      "size": 8398,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/60b53c558a63783f71079590e6bd9bce9c8228ee"
+    },
+    {
+      "path": "docs/changes.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "955deaf27bc821a6367e818f36c016892fed3d33",
+      "size": 45,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/955deaf27bc821a6367e818f36c016892fed3d33"
+    },
+    {
+      "path": "docs/commands.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b70992e51fb15b5430f612bf63ba88be1f16a7f6",
+      "size": 18928,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b70992e51fb15b5430f612bf63ba88be1f16a7f6"
+    },
+    {
+      "path": "docs/complex.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f24b0fe842adbc23bd4c15702779ad31ec4b45b3",
+      "size": 13528,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f24b0fe842adbc23bd4c15702779ad31ec4b45b3"
+    },
+    {
+      "path": "docs/conf.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db71e395df74503547e0d1ee0c816377e46b7076",
+      "size": 1870,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/db71e395df74503547e0d1ee0c816377e46b7076"
+    },
+    {
+      "path": "docs/contrib.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "287862ce0f58635fe412dfc3b2c00dab21aae713",
+      "size": 820,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/287862ce0f58635fe412dfc3b2c00dab21aae713"
+    },
+    {
+      "path": "docs/documentation.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "349acfb835faa7f55828962eda24275e5cd6e006",
+      "size": 6555,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/349acfb835faa7f55828962eda24275e5cd6e006"
+    },
+    {
+      "path": "docs/exceptions.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "06ede94bce3f42135bfcdf220144a1342506ada3",
+      "size": 2924,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/06ede94bce3f42135bfcdf220144a1342506ada3"
+    },
+    {
+      "path": "docs/index.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad965a36bf7c63cac0e4776995013448c1fceed4",
+      "size": 2271,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ad965a36bf7c63cac0e4776995013448c1fceed4"
+    },
+    {
+      "path": "docs/license.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a53a98cf3d4b093c6696becd3df4e1c6c0660fc9",
+      "size": 71,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a53a98cf3d4b093c6696becd3df4e1c6c0660fc9"
+    },
+    {
+      "path": "docs/make.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "147946324c884168fd847cc1e83837a60808d748",
+      "size": 773,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/147946324c884168fd847cc1e83837a60808d748"
+    },
+    {
+      "path": "docs/options.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c23badba4e62837d0b6a3890180320dff4cac34",
+      "size": 26719,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/5c23badba4e62837d0b6a3890180320dff4cac34"
+    },
+    {
+      "path": "docs/parameters.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b3604e7509eb36b5b77e9687cf402d3d2d921b92",
+      "size": 4875,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b3604e7509eb36b5b77e9687cf402d3d2d921b92"
+    },
+    {
+      "path": "docs/prompts.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "93ad52d4b8c4f12bf92ab7bf5591af28ef492825",
+      "size": 1651,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/93ad52d4b8c4f12bf92ab7bf5591af28ef492825"
+    },
+    {
+      "path": "docs/quickstart.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7cd26ca0620ec9792e94f94688a920b7fb16b6e2",
+      "size": 8595,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7cd26ca0620ec9792e94f94688a920b7fb16b6e2"
+    },
+    {
+      "path": "docs/setuptools.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c60c7d3e7327a77eadfa352678ba3fa8b8f05a2",
+      "size": 4399,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7c60c7d3e7327a77eadfa352678ba3fa8b8f05a2"
+    },
+    {
+      "path": "docs/shell-completion.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9ea20294c9db6dd94a2a6438a6b99259cc10da93",
+      "size": 9506,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/9ea20294c9db6dd94a2a6438a6b99259cc10da93"
+    },
+    {
+      "path": "docs/testing.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "baacefc012c80e0aab78639945ccdab94c8f3f51",
+      "size": 4379,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/baacefc012c80e0aab78639945ccdab94c8f3f51"
+    },
+    {
+      "path": "docs/unicode-support.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "680e73995070526cee381e59f826f6da344b29b1",
+      "size": 4421,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/680e73995070526cee381e59f826f6da344b29b1"
+    },
+    {
+      "path": "docs/upgrading.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6fa5545fab123b624e994340706b5693624ab64",
+      "size": 4705,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/c6fa5545fab123b624e994340706b5693624ab64"
+    },
+    {
+      "path": "docs/utils.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "995c171de6031f6ccd424602a412ac2261922fd2",
+      "size": 12792,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/995c171de6031f6ccd424602a412ac2261922fd2"
+    },
+    {
+      "path": "docs/why.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29f3d6c143a17005309052a98d139c61685dfa4b",
+      "size": 7164,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/29f3d6c143a17005309052a98d139c61685dfa4b"
+    },
+    {
+      "path": "docs/wincmd.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5727f2ff8b425c900a433bf37e496cde001a46b3",
+      "size": 3159,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/5727f2ff8b425c900a433bf37e496cde001a46b3"
+    },
+    {
+      "path": "examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ecca249010103ccad08135289360a0174c96f716",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/ecca249010103ccad08135289360a0174c96f716"
+    },
+    {
+      "path": "examples/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "566153fc9cb296fc7b07e3729569c8d4a7a8766d",
+      "size": 429,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/566153fc9cb296fc7b07e3729569c8d4a7a8766d"
+    },
+    {
+      "path": "examples/aliases",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "10e4d930491396f863baeea79aa77e141854a33a",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/10e4d930491396f863baeea79aa77e141854a33a"
+    },
+    {
+      "path": "examples/aliases/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5a4a0665663b93c02d5ce2e739f413b6b151a973",
+      "size": 445,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/5a4a0665663b93c02d5ce2e739f413b6b151a973"
+    },
+    {
+      "path": "examples/aliases/aliases.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f1d54cd6b28d5daefe24e86891cc4cf81a3f893",
+      "size": 20,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/4f1d54cd6b28d5daefe24e86891cc4cf81a3f893"
+    },
+    {
+      "path": "examples/aliases/aliases.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "af3caa60bfffb0e208e79eece6bdf3c05ba70655",
+      "size": 4061,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/af3caa60bfffb0e208e79eece6bdf3c05ba70655"
+    },
+    {
+      "path": "examples/aliases/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3d04e7005fa3df29df789389251dda1b82f6e48",
+      "size": 267,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a3d04e7005fa3df29df789389251dda1b82f6e48"
+    },
+    {
+      "path": "examples/colors",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0ee3c3c5a48fc38f8278a952e5c41274ac05fbdb",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/0ee3c3c5a48fc38f8278a952e5c41274ac05fbdb"
+    },
+    {
+      "path": "examples/colors/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7aec8efb5b69d65bcf6bdbb276fa4b14e014edae",
+      "size": 158,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7aec8efb5b69d65bcf6bdbb276fa4b14e014edae"
+    },
+    {
+      "path": "examples/colors/colors.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1d94417039d870174e3a11774f9f037dae18e66a",
+      "size": 926,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/1d94417039d870174e3a11774f9f037dae18e66a"
+    },
+    {
+      "path": "examples/colors/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3e1a59492615436151aa96d7845ef38749587b0d",
+      "size": 263,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3e1a59492615436151aa96d7845ef38749587b0d"
+    },
+    {
+      "path": "examples/completion",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "16523ad19c34370ddd61313991e96cc3e71589c0",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/16523ad19c34370ddd61313991e96cc3e71589c0"
+    },
+    {
+      "path": "examples/completion/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "372b1d4cacd0f6ad649f282b7eb98137c0f77d18",
+      "size": 472,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/372b1d4cacd0f6ad649f282b7eb98137c0f77d18"
+    },
+    {
+      "path": "examples/completion/completion.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c45a1fc46b8d6f493ac6a4518453e7b61abdf35",
+      "size": 1388,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6c45a1fc46b8d6f493ac6a4518453e7b61abdf35"
+    },
+    {
+      "path": "examples/completion/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a78d14087292254112a8894a4d84ae0a0e1d5664",
+      "size": 279,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a78d14087292254112a8894a4d84ae0a0e1d5664"
+    },
+    {
+      "path": "examples/complex",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "43150e72fea2f983f4460286bb3057a55bb1a7b7",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/43150e72fea2f983f4460286bb3057a55bb1a7b7"
+    },
+    {
+      "path": "examples/complex/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7eaac903720753c843f037440f0eb2fc3486497a",
+      "size": 452,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7eaac903720753c843f037440f0eb2fc3486497a"
+    },
+    {
+      "path": "examples/complex/complex",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d981a7c591ec0c41988a3738fc75616d672fc382",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/d981a7c591ec0c41988a3738fc75616d672fc382"
+    },
+    {
+      "path": "examples/complex/complex/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "examples/complex/complex/cli.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d00dba5087372d7f207400653086eec63a7b838",
+      "size": 1615,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/5d00dba5087372d7f207400653086eec63a7b838"
+    },
+    {
+      "path": "examples/complex/complex/commands",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6f489665c5ce64d38d93a05a907775b9917e567c",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/6f489665c5ce64d38d93a05a907775b9917e567c"
+    },
+    {
+      "path": "examples/complex/complex/commands/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "examples/complex/complex/commands/cmd_init.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8802458a9151a8f27ebc480477f60854c91015da",
+      "size": 385,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/8802458a9151a8f27ebc480477f60854c91015da"
+    },
+    {
+      "path": "examples/complex/complex/commands/cmd_status.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "92275bb49778f0a7c7c4ca5abe062fd59e2ecac2",
+      "size": 286,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/92275bb49778f0a7c7c4ca5abe062fd59e2ecac2"
+    },
+    {
+      "path": "examples/complex/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "afe97289f4a7d1637967be7ae807efbb95655a2c",
+      "size": 289,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/afe97289f4a7d1637967be7ae807efbb95655a2c"
+    },
+    {
+      "path": "examples/imagepipe",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2e336be4fe81366fa996b963e503b28b2735923b",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/2e336be4fe81366fa996b963e503b28b2735923b"
+    },
+    {
+      "path": "examples/imagepipe/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "63280895b10d305bd38ba66f437bd687abd4728c",
+      "size": 12,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/63280895b10d305bd38ba66f437bd687abd4728c"
+    },
+    {
+      "path": "examples/imagepipe/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91ec0cd26ffa1ec6079e2103b5facf45b92cda68",
+      "size": 310,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/91ec0cd26ffa1ec6079e2103b5facf45b92cda68"
+    },
+    {
+      "path": "examples/imagepipe/example01.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2d9397755be888e0377fe923c03068606b69cf6",
+      "size": 51677,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f2d9397755be888e0377fe923c03068606b69cf6"
+    },
+    {
+      "path": "examples/imagepipe/example02.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b1f802ed85825e5202f85c8fdee2c56183b21647",
+      "size": 39106,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b1f802ed85825e5202f85c8fdee2c56183b21647"
+    },
+    {
+      "path": "examples/imagepipe/imagepipe.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2d2f03fd90ace6b70dfcb6f9f3f7df7ce2e6bd1",
+      "size": 8257,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e2d2f03fd90ace6b70dfcb6f9f3f7df7ce2e6bd1"
+    },
+    {
+      "path": "examples/imagepipe/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c42b5ff60547e27fad687cb2551aeac991d0b0a8",
+      "size": 285,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/c42b5ff60547e27fad687cb2551aeac991d0b0a8"
+    },
+    {
+      "path": "examples/inout",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a6172f5034554ef0587cadfab028d73ede892572",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/a6172f5034554ef0587cadfab028d73ede892572"
+    },
+    {
+      "path": "examples/inout/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6309bc873e0f72ae94e6a9002b27c313525c06f0",
+      "size": 236,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6309bc873e0f72ae94e6a9002b27c313525c06f0"
+    },
+    {
+      "path": "examples/inout/inout.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "854c84efaa2aad512bfd2fa6510c933dbd17fee6",
+      "size": 722,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/854c84efaa2aad512bfd2fa6510c933dbd17fee6"
+    },
+    {
+      "path": "examples/inout/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ff673e3b93337862414d946168b3255a72a47514",
+      "size": 259,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ff673e3b93337862414d946168b3255a72a47514"
+    },
+    {
+      "path": "examples/naval",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "9fa0fe6d21770a8f22434ff6b228ac7edd882650",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/9fa0fe6d21770a8f22434ff6b228ac7edd882650"
+    },
+    {
+      "path": "examples/naval/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa289a28e702cc6245b01d3ca687529041527739",
+      "size": 354,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/aa289a28e702cc6245b01d3ca687529041527739"
+    },
+    {
+      "path": "examples/naval/naval.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7310e6d939f9f57c8ac8dc3c7492d0d4faa521ca",
+      "size": 1697,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7310e6d939f9f57c8ac8dc3c7492d0d4faa521ca"
+    },
+    {
+      "path": "examples/naval/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37b39f5d249ca4fa71a619e9f30619e39a3d4e82",
+      "size": 259,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/37b39f5d249ca4fa71a619e9f30619e39a3d4e82"
+    },
+    {
+      "path": "examples/repo",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "359ea44d6364d227f19a6bf6cb67fc1e0ef5e09f",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/359ea44d6364d227f19a6bf6cb67fc1e0ef5e09f"
+    },
+    {
+      "path": "examples/repo/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52d1fa7d0be96447f5ee4074625eac1d3efee6b3",
+      "size": 153,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/52d1fa7d0be96447f5ee4074625eac1d3efee6b3"
+    },
+    {
+      "path": "examples/repo/repo.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b773f3ae7ba950e9b5925bc3adb380f4eb1de7d1",
+      "size": 4717,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b773f3ae7ba950e9b5925bc3adb380f4eb1de7d1"
+    },
+    {
+      "path": "examples/repo/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3028020d8257ed4a94b8581714d6f19a5b6f9bea",
+      "size": 255,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3028020d8257ed4a94b8581714d6f19a5b6f9bea"
+    },
+    {
+      "path": "examples/termui",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "35153cd7f357550ed19b6b87db4f72e2683782ce",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/35153cd7f357550ed19b6b87db4f72e2683782ce"
+    },
+    {
+      "path": "examples/termui/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2c9d9dd045e9aad50efcdd8f0999fadc5812dbbf",
+      "size": 143,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/2c9d9dd045e9aad50efcdd8f0999fadc5812dbbf"
+    },
+    {
+      "path": "examples/termui/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1ac109fef96defa5c4a5fcef664fb98bdfe323b",
+      "size": 263,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/c1ac109fef96defa5c4a5fcef664fb98bdfe323b"
+    },
+    {
+      "path": "examples/termui/termui.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e72e65e5fec7ca4534515ace07535097b09d6a20",
+      "size": 4150,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e72e65e5fec7ca4534515ace07535097b09d6a20"
+    },
+    {
+      "path": "examples/validation",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3cac92da3a13e624bab697ae8ada62d0779617c3",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/3cac92da3a13e624bab697ae8ada62d0779617c3"
+    },
+    {
+      "path": "examples/validation/README",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a69e3f4276e6566a72320b0a85da6111ab30bd4e",
+      "size": 241,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a69e3f4276e6566a72320b0a85da6111ab30bd4e"
+    },
+    {
+      "path": "examples/validation/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b7698f61bfa11a101e233aca6e574be7eab1daeb",
+      "size": 279,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b7698f61bfa11a101e233aca6e574be7eab1daeb"
+    },
+    {
+      "path": "examples/validation/validation.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3f78df0e7f6d0c119aa37ad4e48409145bdde4ed",
+      "size": 1407,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3f78df0e7f6d0c119aa37ad4e48409145bdde4ed"
+    },
+    {
+      "path": "requirements",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "96e36df862a87d3d502d3761b895b1ff73daf24e",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/96e36df862a87d3d502d3761b895b1ff73daf24e"
+    },
+    {
+      "path": "requirements/build.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "378eac25d311703f3f2cd456d8036da525cd0366",
+      "size": 6,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/378eac25d311703f3f2cd456d8036da525cd0366"
+    },
+    {
+      "path": "requirements/build.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "196545d0e0052553238b6c1cdc489563b7c1ca4b",
+      "size": 265,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/196545d0e0052553238b6c1cdc489563b7c1ca4b"
+    },
+    {
+      "path": "requirements/dev.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "99f5942f8359e27aa895621e40e1bfbe5ca11676",
+      "size": 69,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/99f5942f8359e27aa895621e40e1bfbe5ca11676"
+    },
+    {
+      "path": "requirements/dev.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1a4ecc7b57452831655fa1d4f1a5d08324ecbb83",
+      "size": 1143,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/1a4ecc7b57452831655fa1d4f1a5d08324ecbb83"
+    },
+    {
+      "path": "requirements/docs.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ee050af0e04a01c5906abd816205005e610f133",
+      "size": 81,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3ee050af0e04a01c5906abd816205005e610f133"
+    },
+    {
+      "path": "requirements/docs.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26922dd7f65a99646c82cc9ff7f1d781457e3dd0",
+      "size": 1410,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/26922dd7f65a99646c82cc9ff7f1d781457e3dd0"
+    },
+    {
+      "path": "requirements/tests.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e079f8a6038dd2dc8512967540f96ee0de172067",
+      "size": 7,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e079f8a6038dd2dc8512967540f96ee0de172067"
+    },
+    {
+      "path": "requirements/tests.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a6808865865c3f44824c2c3a3f4a8ae1aeb463d",
+      "size": 292,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6a6808865865c3f44824c2c3a3f4a8ae1aeb463d"
+    },
+    {
+      "path": "requirements/typing.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a20f06c42458f19973fc6bc28cbb87293580c0f9",
+      "size": 13,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/a20f06c42458f19973fc6bc28cbb87293580c0f9"
+    },
+    {
+      "path": "requirements/typing.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f04fde5dd1faf527ca1376a656d6a446a8d4f20d",
+      "size": 448,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f04fde5dd1faf527ca1376a656d6a446a8d4f20d"
+    },
+    {
+      "path": "setup.cfg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d5fcdcf0113a057c4ace31f9aa8e95cd2b37bcee",
+      "size": 2525,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/d5fcdcf0113a057c4ace31f9aa8e95cd2b37bcee"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a74d4144abfd4ecfe747bd1ea0780c4979fd07f",
+      "size": 191,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/0a74d4144abfd4ecfe747bd1ea0780c4979fd07f"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "710d0285a6bfb31b58ad58bc908894bfd9082dda",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/710d0285a6bfb31b58ad58bc908894bfd9082dda"
+    },
+    {
+      "path": "src/click",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "867722ee51b9915c66c655cd64df0c0641489698",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/867722ee51b9915c66c655cd64df0c0641489698"
+    },
+    {
+      "path": "src/click/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a1dab048917edc420af440c73bd1d689de6b3fa",
+      "size": 3138,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/9a1dab048917edc420af440c73bd1d689de6b3fa"
+    },
+    {
+      "path": "src/click/_compat.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23f8866598b4b4eb836b9d9b210ebd395fd0c557",
+      "size": 18744,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/23f8866598b4b4eb836b9d9b210ebd395fd0c557"
+    },
+    {
+      "path": "src/click/_termui_impl.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f744657753caa6cdef1dcc41a4f0b5e3e9503ab8",
+      "size": 24069,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f744657753caa6cdef1dcc41a4f0b5e3e9503ab8"
+    },
+    {
+      "path": "src/click/_textwrap.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b47dcbd4264e86715adfae1c5124c288b67a983e",
+      "size": 1353,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/b47dcbd4264e86715adfae1c5124c288b67a983e"
+    },
+    {
+      "path": "src/click/_winconsole.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b20df315b23ecd1e3d0ec32c11c0b5ced577efe",
+      "size": 7860,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6b20df315b23ecd1e3d0ec32c11c0b5ced577efe"
+    },
+    {
+      "path": "src/click/core.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cc65e896bf2d754d74b54a84ac501b80127f83ca",
+      "size": 114086,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/cc65e896bf2d754d74b54a84ac501b80127f83ca"
+    },
+    {
+      "path": "src/click/decorators.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d9bba9502ca353bca5136f43c92436ff584f06e1",
+      "size": 18719,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/d9bba9502ca353bca5136f43c92436ff584f06e1"
+    },
+    {
+      "path": "src/click/exceptions.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe68a3613f74e5e82da4e3eedc7d9451977838dd",
+      "size": 9273,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/fe68a3613f74e5e82da4e3eedc7d9451977838dd"
+    },
+    {
+      "path": "src/click/formatting.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ddd2a2f825f206164eb9efb0a5c41528365beb85",
+      "size": 9706,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ddd2a2f825f206164eb9efb0a5c41528365beb85"
+    },
+    {
+      "path": "src/click/globals.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "480058f10dd6a8205d1bff0b94de7ae347a7629a",
+      "size": 1961,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/480058f10dd6a8205d1bff0b94de7ae347a7629a"
+    },
+    {
+      "path": "src/click/parser.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fa7adfac842bfa5689fd1a41ae4017be1ebff6f",
+      "size": 19067,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/5fa7adfac842bfa5689fd1a41ae4017be1ebff6f"
+    },
+    {
+      "path": "src/click/py.typed",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "src/click/shell_completion.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc9e00b9b0c6f4903b674f03343e887bd490b081",
+      "size": 18460,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/dc9e00b9b0c6f4903b674f03343e887bd490b081"
+    },
+    {
+      "path": "src/click/termui.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db7a4b286174fdf26f3251631a2066eda2fa5bea",
+      "size": 28324,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/db7a4b286174fdf26f3251631a2066eda2fa5bea"
+    },
+    {
+      "path": "src/click/testing.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0df0d2a657fe19523957b85964b9956e5c78a30",
+      "size": 16084,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/e0df0d2a657fe19523957b85964b9956e5c78a30"
+    },
+    {
+      "path": "src/click/types.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b1d1797f2e115e9bc976bcaf7d8e1884a91e91c",
+      "size": 36391,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/2b1d1797f2e115e9bc976bcaf7d8e1884a91e91c"
+    },
+    {
+      "path": "src/click/utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d536434f0bd00cd6fd910c506f5b85a8e485b964",
+      "size": 20298,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/d536434f0bd00cd6fd910c506f5b85a8e485b964"
+    },
+    {
+      "path": "tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ec59360a056477af6e645c761ad11298d898233b",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/ec59360a056477af6e645c761ad11298d898233b"
+    },
+    {
+      "path": "tests/conftest.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9440804feb3b22cb4a28f1f9eaa7f6e1fb0ce049",
+      "size": 131,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/9440804feb3b22cb4a28f1f9eaa7f6e1fb0ce049"
+    },
+    {
+      "path": "tests/test_arguments.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7f6629fbae38ad31e6f3b45b3433bc3dc49cc7ae",
+      "size": 11120,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7f6629fbae38ad31e6f3b45b3433bc3dc49cc7ae"
+    },
+    {
+      "path": "tests/test_basic.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d68b96299b9b3219f33f2bcb1cafaaacc6a24dc9",
+      "size": 15452,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/d68b96299b9b3219f33f2bcb1cafaaacc6a24dc9"
+    },
+    {
+      "path": "tests/test_chain.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b2eae305f1266f948ad5f2f3e6671189f6b6ca3",
+      "size": 5800,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6b2eae305f1266f948ad5f2f3e6671189f6b6ca3"
+    },
+    {
+      "path": "tests/test_command_decorators.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cfdab3c31f944e8532899bda170e325b2b708504",
+      "size": 1533,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/cfdab3c31f944e8532899bda170e325b2b708504"
+    },
+    {
+      "path": "tests/test_commands.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ed9d96f3c5178d1f43bcadd8db89d3f3a3fd3f8b",
+      "size": 11076,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ed9d96f3c5178d1f43bcadd8db89d3f3a3fd3f8b"
+    },
+    {
+      "path": "tests/test_compat.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e2e424cb2a18694aed3f71126d2dec2b9618f66",
+      "size": 307,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/0e2e424cb2a18694aed3f71126d2dec2b9618f66"
+    },
+    {
+      "path": "tests/test_context.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df8b497e0b8e97cf3b9a5cab59fda5f5995704a8",
+      "size": 8680,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/df8b497e0b8e97cf3b9a5cab59fda5f5995704a8"
+    },
+    {
+      "path": "tests/test_custom_classes.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "314842bdace76c0c0a17ff34553a3d66bcfa3856",
+      "size": 3022,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/314842bdace76c0c0a17ff34553a3d66bcfa3856"
+    },
+    {
+      "path": "tests/test_defaults.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8ef5ea2922d36fbef406a5daad8073ddddb24c03",
+      "size": 1824,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/8ef5ea2922d36fbef406a5daad8073ddddb24c03"
+    },
+    {
+      "path": "tests/test_formatting.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe7e7bad1f7e0b2e414f76a2f7486ae37d7098b5",
+      "size": 9413,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/fe7e7bad1f7e0b2e414f76a2f7486ae37d7098b5"
+    },
+    {
+      "path": "tests/test_imports.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec32fcafd9ff6767ca54ff3539cf57fbb8e2ce56",
+      "size": 1374,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ec32fcafd9ff6767ca54ff3539cf57fbb8e2ce56"
+    },
+    {
+      "path": "tests/test_info_dict.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "79d39ee513011d689f3bfc9f2bec3d0c8c1f5dd8",
+      "size": 7932,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/79d39ee513011d689f3bfc9f2bec3d0c8c1f5dd8"
+    },
+    {
+      "path": "tests/test_normalization.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "32df098e9bb08f9bbc36b77abe62f06a032db1b6",
+      "size": 956,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/32df098e9bb08f9bbc36b77abe62f06a032db1b6"
+    },
+    {
+      "path": "tests/test_options.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91249b234f33718c985f4a75c582fb1988b4ad3e",
+      "size": 28531,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/91249b234f33718c985f4a75c582fb1988b4ad3e"
+    },
+    {
+      "path": "tests/test_parser.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f694916964828080bedc39024163451b2e9d292d",
+      "size": 902,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/f694916964828080bedc39024163451b2e9d292d"
+    },
+    {
+      "path": "tests/test_shell_completion.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3e7a2bd7fd1da8094046a131f07f53ed5939d6a0",
+      "size": 14101,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/3e7a2bd7fd1da8094046a131f07f53ed5939d6a0"
+    },
+    {
+      "path": "tests/test_termui.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7cfa939949f9d4ba1fe1f685acccf9f2182ff9f0",
+      "size": 13891,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/7cfa939949f9d4ba1fe1f685acccf9f2182ff9f0"
+    },
+    {
+      "path": "tests/test_testing.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f294b3a133f81a02ffa3c6e092be5066bed2a12",
+      "size": 10762,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/9f294b3a133f81a02ffa3c6e092be5066bed2a12"
+    },
+    {
+      "path": "tests/test_types.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a2508882a4f3b88774194de61c0cec632e4cd16",
+      "size": 7204,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/0a2508882a4f3b88774194de61c0cec632e4cd16"
+    },
+    {
+      "path": "tests/test_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12709a1d8b75f6fe8c0270daf3fba7b710505807",
+      "size": 16173,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/12709a1d8b75f6fe8c0270daf3fba7b710505807"
+    },
+    {
+      "path": "tests/typing",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a6d120106fb112584b0c2a51fc537d493e8f4007",
+      "url": "https://api.github.com/repos/pallets/click/git/trees/a6d120106fb112584b0c2a51fc537d493e8f4007"
+    },
+    {
+      "path": "tests/typing/typing_aliased_group.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ccc706bc53fab561e45f2cdd4730418a88388539",
+      "size": 1190,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/ccc706bc53fab561e45f2cdd4730418a88388539"
+    },
+    {
+      "path": "tests/typing/typing_confirmation_option.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09ecaa96daa834599e1750ca9b148eb2c8cd45c6",
+      "size": 325,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/09ecaa96daa834599e1750ca9b148eb2c8cd45c6"
+    },
+    {
+      "path": "tests/typing/typing_group_kw_options.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "579132facc51c0d0a9c64597204b83149ff34132",
+      "size": 156,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/579132facc51c0d0a9c64597204b83149ff34132"
+    },
+    {
+      "path": "tests/typing/typing_help_option.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6b822c13147a05f06ccef8b3c0a1c7df2a34cda0",
+      "size": 262,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6b822c13147a05f06ccef8b3c0a1c7df2a34cda0"
+    },
+    {
+      "path": "tests/typing/typing_options.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a6611928ef04d42404921567fa8d396a563b3da",
+      "size": 389,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/6a6611928ef04d42404921567fa8d396a563b3da"
+    },
+    {
+      "path": "tests/typing/typing_password_option.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8537e6ff59ec53e94c8adaf5402f46fb646a41c8",
+      "size": 255,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/8537e6ff59ec53e94c8adaf5402f46fb646a41c8"
+    },
+    {
+      "path": "tests/typing/typing_simple_example.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a94b8cb7872309780ea8db02484ce5d27b4cf3b",
+      "size": 507,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/0a94b8cb7872309780ea8db02484ce5d27b4cf3b"
+    },
+    {
+      "path": "tests/typing/typing_version_option.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd473a001bd96b72996e3a331ad02eff5a0506b9",
+      "size": 286,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/fd473a001bd96b72996e3a331ad02eff5a0506b9"
+    },
+    {
+      "path": "tox.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df53602287a45afa39bada0ab67cd5899cbb911d",
+      "size": 614,
+      "url": "https://api.github.com/repos/pallets/click/git/blobs/df53602287a45afa39bada0ab67cd5899cbb911d"
+    }
+  ],
+  "truncated": false,
+  "owner": "pallets",
+  "repo": "click",
+  "ref": "8.1.7",
+  "discovery": {
+    "mode": "tree",
+    "owner": "pallets",
+    "repo": "click",
+    "ref": "8.1.7",
+    "requested_ref": "8.1.7",
+    "ref_source": "explicit",
+    "recursive": true
+  }
+}

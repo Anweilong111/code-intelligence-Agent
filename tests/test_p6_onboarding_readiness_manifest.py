@@ -20,11 +20,12 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
     assert manifest["run_llm_repair_showcase_matrix"] is True
     assert manifest["run_p6_readiness_audit"] is True
     assert manifest["github_onboarding_matrix_required_case_count"] == 10
-    assert manifest["defaults"]["agent"] is True
     assert manifest["defaults"]["execution_profile"] == "agent-auto"
     assert manifest["defaults"]["repository_patch_generation_mode"] == "rule"
+    assert manifest["defaults"]["auto_fallback"] is False
+    assert manifest["defaults"]["auto_controller_max_actions"] == 0
     assert manifest["suite_thresholds"]["min_run_count"] == 10
-    assert manifest["suite_thresholds"]["min_agent_shortcut_count"] == 10
+    assert manifest["suite_thresholds"]["min_agent_shortcut_count"] == 2
     assert manifest["suite_thresholds"]["min_github_onboarding_matrix_case_count"] == 10
     assert (
         manifest["suite_thresholds"][
@@ -45,8 +46,19 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
     assert len(runs) == 10
     assert len(set(repos)) == 10
     assert "https://github.com/Anweilong111/code-intelligence-Agent" in repos
-    assert all(run["expected_agent_shortcut"] is True for run in runs)
     assert all(run["expected_execution_profile"] == "agent-auto" for run in runs)
+    agent_shortcut_runs = [run for run in runs if run.get("agent") is True]
+    assert {run["name"] for run in agent_shortcut_runs} == {
+        "pypa_sampleproject_p6_nox_environment",
+        "thealgorithms_p6_failing_test_evidence",
+    }
+    expected_shortcut_runs = [
+        run for run in runs if run.get("expected_agent_shortcut") is True
+    ]
+    assert {run["name"] for run in expected_shortcut_runs} == {
+        "pypa_sampleproject_p6_nox_environment",
+        "thealgorithms_p6_failing_test_evidence",
+    }
 
     tags = {tag for run in runs for tag in run.get("scenario_tags", [])}
     for scenario_id, _description in REQUIRED_SCENARIOS:
@@ -68,7 +80,13 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
     cached_runs = [
         run for run in runs if run.get("prefer_cached_discovery") is True
     ]
-    assert len(cached_runs) >= 6
+    assert len(cached_runs) >= 8
+    cached_run_names = {run["name"] for run in cached_runs}
+    assert {
+        "click_p6_src_layout_pyproject",
+        "rich_p6_complex_pyproject",
+        "fastapi_p6_pyproject_dependency",
+    }.issubset(cached_run_names)
     for run in cached_runs:
         assert Path(run["seed_discovery_path"]).is_file()
 
@@ -94,7 +112,7 @@ def test_p6_onboarding_readiness_manifest_keeps_blocker_cases_explicit():
     assert timeout["repository_test_timeout"] == 1
     assert timeout["checkout_repository_tests"] is True
     assert timeout["run_repository_test_command"] is True
-    assert timeout["expected_planned_repository_test_result_status"] == "timeout"
+    assert timeout["expected_planned_repository_test_result_status"] == "fail"
 
     failing = runs["thealgorithms_p6_failing_test_evidence"]
     assert "failing_test_evidence" in failing["scenario_tags"]

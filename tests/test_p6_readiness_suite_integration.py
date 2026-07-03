@@ -52,6 +52,8 @@ def test_suite_writes_onboarding_repair_and_p6_readiness_artifacts(tmp_path):
     assert summary["github_onboarding_matrix_json"] == str(onboarding_path)
     assert summary["llm_repair_evaluation_matrix_json"] == str(repair_path)
     assert summary["p6_readiness_audit_json"] == str(readiness_path)
+    assert summary["github_onboarding_backfill_status"] == "pass"
+    assert summary["github_onboarding_backfill_report_count"] == 1
     assert summary["github_onboarding_matrix_status"] == "incomplete"
     assert summary["llm_repair_evaluation_matrix_status"] == "incomplete"
     assert summary["p6_readiness_audit_status"] == "incomplete"

@@ -1,0 +1,4344 @@
+{
+  "sha": "7f580bdcf07a3b269a0e786b6a3aa9c804f393cf",
+  "url": "https://api.github.com/repos/Textualize/rich/git/trees/7f580bdcf07a3b269a0e786b6a3aa9c804f393cf",
+  "tree": [
+    {
+      "path": ".coveragerc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2afac8dc6092e8ffbbe95f32d180bb5c69a37cad",
+      "size": 204,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2afac8dc6092e8ffbbe95f32d180bb5c69a37cad"
+    },
+    {
+      "path": ".faq",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6df16bbcff6eb2b8309bc2983009a9eafa3da405",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/6df16bbcff6eb2b8309bc2983009a9eafa3da405"
+    },
+    {
+      "path": ".faq/FAQ.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4bccdc84809c90c72b2842bdb32a80a51166c45a",
+      "size": 327,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4bccdc84809c90c72b2842bdb32a80a51166c45a"
+    },
+    {
+      "path": ".faq/suggest.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0a92339988c258db69cd8d1a79fda12671d2e1d0",
+      "size": 740,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0a92339988c258db69cd8d1a79fda12671d2e1d0"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f58452af36fc9b2b279eef84f8210e4b8c6f48a2",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/f58452af36fc9b2b279eef84f8210e4b8c6f48a2"
+    },
+    {
+      "path": ".github/FUNDING.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2fff9cdc013e49f3bb03802cae620c2122802152",
+      "size": 47,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2fff9cdc013e49f3bb03802cae620c2122802152"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "877a7c9671ad617e536554eceebf6ebd32f3d512",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/877a7c9671ad617e536554eceebf6ebd32f3d512"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "346a3813a1a096a9e0b4fbc81c5b176d86f7fb09",
+      "size": 1177,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/346a3813a1a096a9e0b4fbc81c5b176d86f7fb09"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c270511d303f1240a27dd2133ca1d48829a3622",
+      "size": 574,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9c270511d303f1240a27dd2133ca1d48829a3622"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "256c6938b5d622e411b63dbfcafe92b6f3411e14",
+      "size": 598,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/256c6938b5d622e411b63dbfcafe92b6f3411e14"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "74eb72641e1b0554abbecddaeb9ade758ca01096",
+      "size": 508,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/74eb72641e1b0554abbecddaeb9ade758ca01096"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "767d55bce5c772464d0f699526805fd35d6c7b80",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/767d55bce5c772464d0f699526805fd35d6c7b80"
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2a973c4c27ea744ebfbe64f2ee547c0399ba118b",
+      "size": 2511,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2a973c4c27ea744ebfbe64f2ee547c0399ba118b"
+    },
+    {
+      "path": ".github/workflows/codespell.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3bc9717441ea408bfbcd9c17d77ccee316c7165",
+      "size": 333,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a3bc9717441ea408bfbcd9c17d77ccee316c7165"
+    },
+    {
+      "path": ".github/workflows/comment.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a582e9f53bb1f2c9e58a81dd6579412c99711b39",
+      "size": 531,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a582e9f53bb1f2c9e58a81dd6579412c99711b39"
+    },
+    {
+      "path": ".github/workflows/newissue.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b6080399f6185e718b149bc388a5ea1d13ae7e7",
+      "size": 800,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2b6080399f6185e718b149bc388a5ea1d13ae7e7"
+    },
+    {
+      "path": ".github/workflows/pythonpackage.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "21aafe2726f69c9ff28bf5d1d02c8ee6a3d7515b",
+      "size": 1541,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/21aafe2726f69c9ff28bf5d1d02c8ee6a3d7515b"
+    },
+    {
+      "path": ".github/workflows/readmechanged.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7511dcd4be4a1352aaf5da212e81a6c285471655",
+      "size": 902,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7511dcd4be4a1352aaf5da212e81a6c285471655"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d0a1d3a87500b90d35dbe0cbc9723c16ffce0f5",
+      "size": 1375,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4d0a1d3a87500b90d35dbe0cbc9723c16ffce0f5"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a113c3522d22b825736000666db95fe40399fb92",
+      "size": 1258,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a113c3522d22b825736000666db95fe40399fb92"
+    },
+    {
+      "path": ".readthedocs.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "05c863a93dd968675df9b4df6b1e047ae315660d",
+      "size": 432,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/05c863a93dd968675df9b4df6b1e047ae315660d"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12512dc3f3da9b9e3db615ad54cae28a20ae7781",
+      "size": 66509,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/12512dc3f3da9b9e3db615ad54cae28a20ae7781"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5d048990dae70b936a1f78f557ddcc8b0c702f4a",
+      "size": 3350,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5d048990dae70b936a1f78f557ddcc8b0c702f4a"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eb27eb0f414dec0a3d16e1cc18d4d87b9d078da1",
+      "size": 5840,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/eb27eb0f414dec0a3d16e1cc18d4d87b9d078da1"
+    },
+    {
+      "path": "CONTRIBUTORS.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "22b1be0db2a24c279aa752100918f16da8442753",
+      "size": 3603,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/22b1be0db2a24c279aa752100918f16da8442753"
+    },
+    {
+      "path": "FAQ.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "01935f67888fe206da902e89b57604a5212e52ec",
+      "size": 3462,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/01935f67888fe206da902e89b57604a5212e52ec"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4415505566f261c802b671426be529a31f914137",
+      "size": 1056,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4415505566f261c802b671426be529a31f914137"
+    },
+    {
+      "path": "Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "58ed2dbfc548e2eaee6e2f9d6ce256ed4cb2e6be",
+      "size": 307,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/58ed2dbfc548e2eaee6e2f9d6ce256ed4cb2e6be"
+    },
+    {
+      "path": "README.cn.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c926c67e4c5b33bd15e056d3f88ace59f97c388b",
+      "size": 17198,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c926c67e4c5b33bd15e056d3f88ace59f97c388b"
+    },
+    {
+      "path": "README.de-ch.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "59024d31fc3b0d8a4074fdf1e0b0e40f968513db",
+      "size": 18800,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/59024d31fc3b0d8a4074fdf1e0b0e40f968513db"
+    },
+    {
+      "path": "README.de.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "334851b8c2078981aac653d52b6aea7f7dd01419",
+      "size": 20223,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/334851b8c2078981aac653d52b6aea7f7dd01419"
+    },
+    {
+      "path": "README.es.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d90b98a2c40520466c9f67b51ccbcd7f29194396",
+      "size": 19598,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d90b98a2c40520466c9f67b51ccbcd7f29194396"
+    },
+    {
+      "path": "README.fa.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b93e467ac7d77cd1395caea653b50481e006e98b",
+      "size": 23033,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b93e467ac7d77cd1395caea653b50481e006e98b"
+    },
+    {
+      "path": "README.fr.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52db2893e3de74e38fa54c398b44b6cdec82b4a7",
+      "size": 20302,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/52db2893e3de74e38fa54c398b44b6cdec82b4a7"
+    },
+    {
+      "path": "README.hi.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "96c22af30b26981dbd5ef940105e6f5b8b5a2374",
+      "size": 31426,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/96c22af30b26981dbd5ef940105e6f5b8b5a2374"
+    },
+    {
+      "path": "README.id.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df8bae089ba12207cfb52c7a5619fe280e0067a0",
+      "size": 20378,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/df8bae089ba12207cfb52c7a5619fe280e0067a0"
+    },
+    {
+      "path": "README.it.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1b86223fae75c6b5df1d299fe73ab7a0a9468caa",
+      "size": 19103,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1b86223fae75c6b5df1d299fe73ab7a0a9468caa"
+    },
+    {
+      "path": "README.ja.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2aa9f8f6113354d10b22c514e40d69681543e49",
+      "size": 20633,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e2aa9f8f6113354d10b22c514e40d69681543e49"
+    },
+    {
+      "path": "README.kr.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "73f7e8b3106017281afbbe1dda120df3c663c684",
+      "size": 20778,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/73f7e8b3106017281afbbe1dda120df3c663c684"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f76def1bb4680ddcca20a9694800947ec8a4e49d",
+      "size": 17257,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f76def1bb4680ddcca20a9694800947ec8a4e49d"
+    },
+    {
+      "path": "README.pl.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e001f37e96238458659ce1c1e298326b891a288e",
+      "size": 16726,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e001f37e96238458659ce1c1e298326b891a288e"
+    },
+    {
+      "path": "README.pt-br.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88a94fe6b742273067132640b789b65bc421f360",
+      "size": 19737,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/88a94fe6b742273067132640b789b65bc421f360"
+    },
+    {
+      "path": "README.ru.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "14cb6709dee7eada4f39d9495cd3f914c98cb55c",
+      "size": 24846,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/14cb6709dee7eada4f39d9495cd3f914c98cb55c"
+    },
+    {
+      "path": "README.sv.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "17c5e795cb222605c6c046cc3cc8e93b8db75a2a",
+      "size": 19292,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/17c5e795cb222605c6c046cc3cc8e93b8db75a2a"
+    },
+    {
+      "path": "README.tr.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "35d1f626cfaf53793fb7aaf33183388b466bc7bd",
+      "size": 17677,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/35d1f626cfaf53793fb7aaf33183388b466bc7bd"
+    },
+    {
+      "path": "README.zh-tw.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1bf5780261e9d04c0914a76372b17bc60dcb3703",
+      "size": 18050,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1bf5780261e9d04c0914a76372b17bc60dcb3703"
+    },
+    {
+      "path": "SECURITY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5f0bd51bf24f4eb000f2a0398dcaf4c01e79fa4d",
+      "size": 193,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5f0bd51bf24f4eb000f2a0398dcaf4c01e79fa4d"
+    },
+    {
+      "path": "assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d122585af932e66d4b884aed4ae4e148d061791d",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/d122585af932e66d4b884aed4ae4e148d061791d"
+    },
+    {
+      "path": "assets/logo.ai",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "778b71bb6000e727420824ea82b7ec1b11e0786b",
+      "size": 1221383,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/778b71bb6000e727420824ea82b7ec1b11e0786b"
+    },
+    {
+      "path": "assets/logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4be1c5bc2997b58ace3465a0b2fdcbfb98a70d2",
+      "size": 1142544,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c4be1c5bc2997b58ace3465a0b2fdcbfb98a70d2"
+    },
+    {
+      "path": "assets/logo.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "985e43326bd829ef52d3f660bf6031e75e184537",
+      "size": 165,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/985e43326bd829ef52d3f660bf6031e75e184537"
+    },
+    {
+      "path": "asv.conf.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a37a683f0ffd90bd5d2db13b984d5bba507e202e",
+      "size": 860,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a37a683f0ffd90bd5d2db13b984d5bba507e202e"
+    },
+    {
+      "path": "asvhashfile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fdecd4d9d0196b54b12da44fcf576eefc3ba931",
+      "size": 182,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8fdecd4d9d0196b54b12da44fcf576eefc3ba931"
+    },
+    {
+      "path": "benchmarks",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2ce0a5941b506b26d91031f3b3c90d9791700d46",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/2ce0a5941b506b26d91031f3b3c90d9791700d46"
+    },
+    {
+      "path": "benchmarks/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fda8852bc3af8e62859d2386c74e5c0efc743878",
+      "size": 1839,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fda8852bc3af8e62859d2386c74e5c0efc743878"
+    },
+    {
+      "path": "benchmarks/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "benchmarks/benchmarks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "032eecf791d3b1a32718b96bfff9736ab085a7d7",
+      "size": 6604,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/032eecf791d3b1a32718b96bfff9736ab085a7d7"
+    },
+    {
+      "path": "benchmarks/results",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "81e4f462d6e06562de5d3f55d8eab3d7b3d8d4d3",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/81e4f462d6e06562de5d3f55d8eab3d7b3d8d4d3"
+    },
+    {
+      "path": "benchmarks/results/benchmarks.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3eda72de24e701f9d1521db7776724fc4aa10872",
+      "size": 27639,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3eda72de24e701f9d1521db7776724fc4aa10872"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "8a664a90689334a420a8c3a5e4e02329d048f636",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/8a664a90689334a420a8c3a5e4e02329d048f636"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/008854c4-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd61ec28d28c4106d34b5406e072169a175f9b89",
+      "size": 7557,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bd61ec28d28c4106d34b5406e072169a175f9b89"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/03392a1b-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1d374bbaf1b7bffdad1a66b94526ab0eefdc8b6c",
+      "size": 7855,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1d374bbaf1b7bffdad1a66b94526ab0eefdc8b6c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/038e22eb-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3bee50c34760081b42a681c7cf675168e5caa31e",
+      "size": 7147,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3bee50c34760081b42a681c7cf675168e5caa31e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/03a52134-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "851cf58d0d5671684bfa0db74c4958a8f3694fc6",
+      "size": 7140,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/851cf58d0d5671684bfa0db74c4958a8f3694fc6"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/06922006-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe7984ec3b9b1820319312d40cd89435990521e3",
+      "size": 7309,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fe7984ec3b9b1820319312d40cd89435990521e3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/06aa1271-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3688957fd8cace9c8ad912b47abe34248a0fbc0",
+      "size": 7864,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a3688957fd8cace9c8ad912b47abe34248a0fbc0"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/07d51ffc-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "687e93f6fe99b474dfc2b548c2a38be7da276e22",
+      "size": 7557,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/687e93f6fe99b474dfc2b548c2a38be7da276e22"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0a3fcb9c-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bb9257009f47fe4ee1136cd028833312e2d93adf",
+      "size": 8113,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bb9257009f47fe4ee1136cd028833312e2d93adf"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0ac4e308-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "168b69ca92818c023c399777c52f80bc21c4ba47",
+      "size": 7870,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/168b69ca92818c023c399777c52f80bc21c4ba47"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0d2aeb75-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0b981db2883f73925a1f1d9d84d42546f7ba82c9",
+      "size": 7859,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0b981db2883f73925a1f1d9d84d42546f7ba82c9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0d69004c-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02bb1b262a4b10b64f6d5105df774714c9699aaf",
+      "size": 7853,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/02bb1b262a4b10b64f6d5105df774714c9699aaf"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0db0cbd0-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cee1c89ea61d01ed629e434c2d27306ced82592",
+      "size": 7306,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6cee1c89ea61d01ed629e434c2d27306ced82592"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0e8df8cd-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a69012c05e712729ec59689f2934016fcec98c1",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9a69012c05e712729ec59689f2934016fcec98c1"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/0fd6bc56-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f53fa7b9f3606c7af80c6f3899dc0e38ab8c5167",
+      "size": 8109,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f53fa7b9f3606c7af80c6f3899dc0e38ab8c5167"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/11c00224-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "96c9ee633ce969e1edaff511c5b6e52339310736",
+      "size": 7140,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/96c9ee633ce969e1edaff511c5b6e52339310736"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/11c305e1-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "59edef96241c9b3f3449292fd1e1e34b99e661b6",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/59edef96241c9b3f3449292fd1e1e34b99e661b6"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/1442dd77-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0cf41d2e7b23a780a0171f1926bfecf9e3adb54b",
+      "size": 7565,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0cf41d2e7b23a780a0171f1926bfecf9e3adb54b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/15623c5a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d442178aa5c82b0a21bd6a71094cc3cdad080762",
+      "size": 7557,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d442178aa5c82b0a21bd6a71094cc3cdad080762"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/177958c5-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2352c8e5b2d50aa156509ef38b4001b104484a05",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2352c8e5b2d50aa156509ef38b4001b104484a05"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/189a2a3f-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b54528d64e88bed012334c9e6da7f460c2875021",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b54528d64e88bed012334c9e6da7f460c2875021"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/19e26c94-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3186ff7f356eb113901f9c06d4d37a1d55d1048",
+      "size": 7854,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a3186ff7f356eb113901f9c06d4d37a1d55d1048"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/1cdcd1ae-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "39f54bf94ffea1b1c45b3502784bbb5033e83936",
+      "size": 7398,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/39f54bf94ffea1b1c45b3502784bbb5033e83936"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/1daa1771-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1ea26cf26fa77e35789ac924a382cc69a114e18a",
+      "size": 7866,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1ea26cf26fa77e35789ac924a382cc69a114e18a"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/1f3f7f1e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52ad68e547d8458d0a6aa1345a580bd21cf35ab9",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/52ad68e547d8458d0a6aa1345a580bd21cf35ab9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/1ffbd443-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e71ade3748de2c249d0d1b2a3dbed2b43857adb4",
+      "size": 7313,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e71ade3748de2c249d0d1b2a3dbed2b43857adb4"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/20024635-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02281c384524660961feb68b1a4eda85f20a9ad4",
+      "size": 7562,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/02281c384524660961feb68b1a4eda85f20a9ad4"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/21432b4c-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d77abe991ccfa78c2667d2e1b948bd261d407c3",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4d77abe991ccfa78c2667d2e1b948bd261d407c3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2356d7c0-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a3ad963126b833e992221615f14f9b87803d5ab",
+      "size": 7141,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9a3ad963126b833e992221615f14f9b87803d5ab"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/23aa7177-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c11d51d9b935ecf2e16d37e829ee4448970eed66",
+      "size": 7560,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c11d51d9b935ecf2e16d37e829ee4448970eed66"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/24743154-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f29a22272efff45df38ca9b1fa88f2b3599966c3",
+      "size": 7567,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f29a22272efff45df38ca9b1fa88f2b3599966c3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/25a1bf06-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b893f3f9c7cfff03b3bda235d655d88ca9635b7",
+      "size": 7400,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3b893f3f9c7cfff03b3bda235d655d88ca9635b7"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/26fe4667-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bec1d91e88b180d257e522161241958cb16f7dd1",
+      "size": 7864,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bec1d91e88b180d257e522161241958cb16f7dd1"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/27ab1732-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "216c4dc77839feb793fcbcd78e5675c1d5ffab07",
+      "size": 7865,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/216c4dc77839feb793fcbcd78e5675c1d5ffab07"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2aea8526-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "65e84e4b5e263bd82a0367a852b3e8b2c5e4365a",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/65e84e4b5e263bd82a0367a852b3e8b2c5e4365a"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2ba277ac-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "79e8bd3c80843ab789dfd43ec01d58221b1b3bb9",
+      "size": 7563,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/79e8bd3c80843ab789dfd43ec01d58221b1b3bb9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2c93dce9-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e0877595437fc9af6f8f9704073e41baad989881",
+      "size": 8111,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e0877595437fc9af6f8f9704073e41baad989881"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2d3152a2-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "50550153fecda6b972d8c0ab94c7a5e1984692a7",
+      "size": 8113,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/50550153fecda6b972d8c0ab94c7a5e1984692a7"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2d3ec69f-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91050666951ebaabc17efc5a92a847bd5c7ee5ae",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/91050666951ebaabc17efc5a92a847bd5c7ee5ae"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2ea7e586-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec2345bdb4308ff2f150a8dd797eddbf2fc55191",
+      "size": 7881,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ec2345bdb4308ff2f150a8dd797eddbf2fc55191"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/2ea7e586-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0977c78410c8cd1b091264dee89fa9642f0b6d81",
+      "size": 7567,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0977c78410c8cd1b091264dee89fa9642f0b6d81"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/30498f59-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7fb3dd98301c8d0c4433bf3b8f999ac37a6e1569",
+      "size": 7861,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7fb3dd98301c8d0c4433bf3b8f999ac37a6e1569"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3473658d-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0c9ca940131f658c34e9aec9e12faaefd3f3090d",
+      "size": 7564,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0c9ca940131f658c34e9aec9e12faaefd3f3090d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/36efcb5a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9953421d93e622eb0a32e3ee6d75596cad123f74",
+      "size": 7554,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9953421d93e622eb0a32e3ee6d75596cad123f74"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3827b4ae-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b50b62320eb9de979ba7a13044ad0d9d151e53c",
+      "size": 7568,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8b50b62320eb9de979ba7a13044ad0d9d151e53c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3be88c08-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f1379d853fedaa66399eb976d4e065a500dbaa29",
+      "size": 7865,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f1379d853fedaa66399eb976d4e065a500dbaa29"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3db6396a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4dfbab503f07cd3b8973ffbd3faa932cbdf2252",
+      "size": 7548,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d4dfbab503f07cd3b8973ffbd3faa932cbdf2252"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3f7d3e4e-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "781fc7d1c9e5c84d39eb342887d7383d7144fab3",
+      "size": 8108,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/781fc7d1c9e5c84d39eb342887d7383d7144fab3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/3f7d3e4e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8918ef43fad5e5d7a3da6fe00fcccd33ccfc1123",
+      "size": 7798,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8918ef43fad5e5d7a3da6fe00fcccd33ccfc1123"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4020d5a9-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a4b0848ce6a41ec3722e9c6e89adab5123416ed",
+      "size": 7144,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6a4b0848ce6a41ec3722e9c6e89adab5123416ed"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/41279bca-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6c94da2cec638edaf0f74ce12e3354a289fb0b5",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c6c94da2cec638edaf0f74ce12e3354a289fb0b5"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/416033ff-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8a322d1e962b49e3f20e7c58e39277c979f60b3",
+      "size": 7864,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c8a322d1e962b49e3f20e7c58e39277c979f60b3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/43a26c0a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac0b93918e90ecc032e1e4b595193782f9896b1e",
+      "size": 7555,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ac0b93918e90ecc032e1e4b595193782f9896b1e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/43d4c4e5-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "acc5adc07d36d20694b9ae0b50f5daef94b6a0b0",
+      "size": 7877,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/acc5adc07d36d20694b9ae0b50f5daef94b6a0b0"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/43d4c4e5-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a999d426be4978dd2a566d777d660d2842e3758c",
+      "size": 7563,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a999d426be4978dd2a566d777d660d2842e3758c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/44f54dd8-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "da2840c1daac8dfbff3059e3f2f64a096cb55646",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/da2840c1daac8dfbff3059e3f2f64a096cb55646"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/464e4e33-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8b3df82c34effb8d7440369126fa1cc39ec11b6",
+      "size": 7866,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a8b3df82c34effb8d7440369126fa1cc39ec11b6"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/489fafc6-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e7b55fc3bb61ad6c741cac1265180ab6fb8bf1da",
+      "size": 8109,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e7b55fc3bb61ad6c741cac1265180ab6fb8bf1da"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/48da2791-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "abb554ec1724e4294e23c05559b9d26d789c053f",
+      "size": 7570,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/abb554ec1724e4294e23c05559b9d26d789c053f"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4b123ddf-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9b46005bd53d0629615ce979e6b17eb265501cc9",
+      "size": 5240,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9b46005bd53d0629615ce979e6b17eb265501cc9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4b3b6531-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1bf2b599c0be7d437128a6daaf34cef83da6f35",
+      "size": 7847,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c1bf2b599c0be7d437128a6daaf34cef83da6f35"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4bf3f19c-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4a9b4731d613053f41d9cfe31c558d3ba6626694",
+      "size": 7562,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4a9b4731d613053f41d9cfe31c558d3ba6626694"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4d6a6d88-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8eb517cd44500c469d0b1fa9eaea41b76ed202f3",
+      "size": 7307,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8eb517cd44500c469d0b1fa9eaea41b76ed202f3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4dc1d4cb-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6d024a8e99148092f27512be6e65cc73f5d487bc",
+      "size": 7860,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6d024a8e99148092f27512be6e65cc73f5d487bc"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/4f8908a6-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e8abb599e8583a8950a444f07ce00ea19e302bb5",
+      "size": 7865,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e8abb599e8583a8950a444f07ce00ea19e302bb5"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/52d159aa-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "75834ee56c65edc541b6e851a622212686bbbf68",
+      "size": 7872,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/75834ee56c65edc541b6e851a622212686bbbf68"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/52d159aa-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b78dc3ab4ea3fbcef12e736cba29f21537290b91",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b78dc3ab4ea3fbcef12e736cba29f21537290b91"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/53cda574-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4e876e0d7e2e88529598c185890ea9ebb0c7cfef",
+      "size": 7832,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4e876e0d7e2e88529598c185890ea9ebb0c7cfef"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/53d9eeaf-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5dd5da0f6105e0d08101be2ca1b982523585a7e",
+      "size": 7561,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c5dd5da0f6105e0d08101be2ca1b982523585a7e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/550d3911-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b5c6a76a45c8dfffcfae3826ec8918113fdb5b6",
+      "size": 7570,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3b5c6a76a45c8dfffcfae3826ec8918113fdb5b6"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/55e11902-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ebf974d786f3124a4dcfc20441c6dca66366ece0",
+      "size": 7549,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ebf974d786f3124a4dcfc20441c6dca66366ece0"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/573125e9-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "775e514fec27ca268fdc28cd19c1b735bef37170",
+      "size": 7553,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/775e514fec27ca268fdc28cd19c1b735bef37170"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/579a29c8-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3644b13b27b6908ff213790e3a51d4a107f7f09",
+      "size": 7307,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a3644b13b27b6908ff213790e3a51d4a107f7f09"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/588f0331-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e5cea02a874ea0647b8d8e37048a9cda3a2316c",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9e5cea02a874ea0647b8d8e37048a9cda3a2316c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/58bfa48f-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbb10373ae36db79dbfe3846aeca01c2cdcf031d",
+      "size": 8112,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fbb10373ae36db79dbfe3846aeca01c2cdcf031d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5f021978-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d5c5b5b14d872edd7018b07c29e5e8a8217a9cd3",
+      "size": 8105,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d5c5b5b14d872edd7018b07c29e5e8a8217a9cd3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5f021978-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b37afa3c8bb7b779ef4c5a2c52027a3819f5b2b4",
+      "size": 7805,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b37afa3c8bb7b779ef4c5a2c52027a3819f5b2b4"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5f03e3ba-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "72b74f3e4eb3cadb5f655d966ea0ac612ae06160",
+      "size": 7380,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/72b74f3e4eb3cadb5f655d966ea0ac612ae06160"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5f55063b-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f5d1c5a69526b3857685dede7d9e46b477394faa",
+      "size": 7138,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f5d1c5a69526b3857685dede7d9e46b477394faa"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5f82274a-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7e421af85410ef4f28809822c7fe41b5d6627cba",
+      "size": 7865,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7e421af85410ef4f28809822c7fe41b5d6627cba"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/5fafb92f-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc0f3211803f50dcb78f50bdb907ffd1ffda5e70",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/dc0f3211803f50dcb78f50bdb907ffd1ffda5e70"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/60dadaf2-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a492bb689e389b59ef7a6fad03315b8bf5630bb2",
+      "size": 7869,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a492bb689e389b59ef7a6fad03315b8bf5630bb2"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/64471afc-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2eddd1a782a9b119bb064058709d6fbd922a443",
+      "size": 7848,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f2eddd1a782a9b119bb064058709d6fbd922a443"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/646d933d-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83c9a0e2381f89e95d991176434e0052ba47f536",
+      "size": 7849,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/83c9a0e2381f89e95d991176434e0052ba47f536"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/64755d41-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "987b04a5f622169f8f9555d428ebd82b7ca725b0",
+      "size": 7561,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/987b04a5f622169f8f9555d428ebd82b7ca725b0"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/656b7a18-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "410c1de83f36d30e44f54497c2ddb35a1d4311f2",
+      "size": 8110,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/410c1de83f36d30e44f54497c2ddb35a1d4311f2"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/666d0cf2-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac8a7e6b606ca33f082e37b61220d5c4ce1f6259",
+      "size": 7561,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ac8a7e6b606ca33f082e37b61220d5c4ce1f6259"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/690507d4-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3204737923f74246e5935dfcd35b9a7ba58cded9",
+      "size": 7556,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3204737923f74246e5935dfcd35b9a7ba58cded9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/6d7ba589-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "641feb632193da9c4f7bf3e77a6953da2d289a87",
+      "size": 5243,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/641feb632193da9c4f7bf3e77a6953da2d289a87"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/71135d19-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a7b0fa45f0e7ae71546d193ccf66381e9d45be0b",
+      "size": 7857,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a7b0fa45f0e7ae71546d193ccf66381e9d45be0b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7441bf27-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3483b5608767ed10dac711e29f66994b5a6c4470",
+      "size": 7558,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3483b5608767ed10dac711e29f66994b5a6c4470"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/76620730-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2f702e9ee4a09d16bfe473fd569112f4c153d98f",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2f702e9ee4a09d16bfe473fd569112f4c153d98f"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/79ea1c1d-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8f10a9b6b85fc736a17991d8c0f661d9daef58fb",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8f10a9b6b85fc736a17991d8c0f661d9daef58fb"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7bad81d5-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83cdae221569920ce530f747ae471270a9c6b954",
+      "size": 7861,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/83cdae221569920ce530f747ae471270a9c6b954"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7d00fa83-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2d96625aeecb2c68718fcd3adfe54547d0115c97",
+      "size": 7399,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2d96625aeecb2c68718fcd3adfe54547d0115c97"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7d02d29b-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ff3a712b42535ef63c1bc550656a1e715f96aea",
+      "size": 7558,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3ff3a712b42535ef63c1bc550656a1e715f96aea"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7e4a2db4-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "adae4f767f3ddc7886fc061f0974dc4a0cda382b",
+      "size": 7390,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/adae4f767f3ddc7886fc061f0974dc4a0cda382b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7edd619f-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ea42e464cdde265948dac045ba983821e3a1325",
+      "size": 7866,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7ea42e464cdde265948dac045ba983821e3a1325"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/7ef7ffee-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3fad19fc4d72bdbd5f63a8f0d2888d1475d9256e",
+      "size": 7563,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3fad19fc4d72bdbd5f63a8f0d2888d1475d9256e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/83756d62-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ecb3bd0d29be879d7e73087a26be4e70f065b79b",
+      "size": 7866,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ecb3bd0d29be879d7e73087a26be4e70f065b79b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/837b6d7e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "58d918a829b7b5bf537dc7a64e3a5c5d192a014d",
+      "size": 7136,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/58d918a829b7b5bf537dc7a64e3a5c5d192a014d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/877c53d9-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "298b9ffb24218a1a9b28ae6f0ebaf5ea0b7799ba",
+      "size": 7853,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/298b9ffb24218a1a9b28ae6f0ebaf5ea0b7799ba"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/88b07b3e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4e730690a1ba345eafbcd58faa3904549aa9ef94",
+      "size": 7552,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4e730690a1ba345eafbcd58faa3904549aa9ef94"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8a7f5d82-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c29e8276be5524fa7596181193b90f2b817f78fb",
+      "size": 7874,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c29e8276be5524fa7596181193b90f2b817f78fb"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8a7f5d82-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "86e519b5bf84b114571b64f98eddc4f60f75399f",
+      "size": 7559,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/86e519b5bf84b114571b64f98eddc4f60f75399f"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8b185610-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "420214fe0ef115dc383be871c1c7b8ea08b4ee22",
+      "size": 7139,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/420214fe0ef115dc383be871c1c7b8ea08b4ee22"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8b47f338-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f586b616176e44442a1f0e4535bb79e78f232579",
+      "size": 7564,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f586b616176e44442a1f0e4535bb79e78f232579"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8c3e6be4-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "afd4c480d8251cec7cb894e9cc8ab42533cb4cab",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/afd4c480d8251cec7cb894e9cc8ab42533cb4cab"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/8e649fea-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "477774fdd02d5ec4080a851de6cd46aa1db95deb",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/477774fdd02d5ec4080a851de6cd46aa1db95deb"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/911d305f-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "964846052e57b5452f6942bbf4a64260cd44982b",
+      "size": 5240,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/964846052e57b5452f6942bbf4a64260cd44982b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/932e26b6-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a383d783895d8702405ac20961715bb91af257fb",
+      "size": 7147,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a383d783895d8702405ac20961715bb91af257fb"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/949e1f72-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f21df2e97fa69bef91908af15ae576e4e9eeffb2",
+      "size": 7551,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f21df2e97fa69bef91908af15ae576e4e9eeffb2"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/95d8bf98-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c9cb5bc562f7560b55de8bced0d26b8558703a3f",
+      "size": 5239,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c9cb5bc562f7560b55de8bced0d26b8558703a3f"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/96ea5fed-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d7a93d49cfb6238e8109f6fae21c3ab6e49c6f41",
+      "size": 7394,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d7a93d49cfb6238e8109f6fae21c3ab6e49c6f41"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/972dedff-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c968a81f038107356a49b25a1ec672fb1d63e36",
+      "size": 8097,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6c968a81f038107356a49b25a1ec672fb1d63e36"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/972dedff-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ce18b94a9fb7581de965698b266730690e58edae",
+      "size": 7800,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ce18b94a9fb7581de965698b266730690e58edae"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/99831099-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe9ca7d5108b80017b1b90fd884e5d2c91aed03d",
+      "size": 7561,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fe9ca7d5108b80017b1b90fd884e5d2c91aed03d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/9a4fbf83-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "568bd0a564bc26c9e1f65de41f3eae0d34e70920",
+      "size": 7303,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/568bd0a564bc26c9e1f65de41f3eae0d34e70920"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/9abc0292-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a68ea29c556c4f8ba0870aa93bdbbbe99b3dc6e4",
+      "size": 7308,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a68ea29c556c4f8ba0870aa93bdbbbe99b3dc6e4"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/9bfb6190-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4c3827fc567023c281e3cf89b8d1a6c4a5479649",
+      "size": 8117,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4c3827fc567023c281e3cf89b8d1a6c4a5479649"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/9f2a426e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b50271a0367522d5dd3bb2c9e4eacb38adf8057b",
+      "size": 7392,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b50271a0367522d5dd3bb2c9e4eacb38adf8057b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a27a3ee2-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cbcf721add79902375cbe687581fb5259ab83ee",
+      "size": 7392,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6cbcf721add79902375cbe687581fb5259ab83ee"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a2f6688e-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bbb196ebb786b467f11670fcc429f1b50127db0a",
+      "size": 7868,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bbb196ebb786b467f11670fcc429f1b50127db0a"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a6d1d784-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "774c3c94f3c89bdfb2f93491e0be96a1649900ed",
+      "size": 7553,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/774c3c94f3c89bdfb2f93491e0be96a1649900ed"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a6ea9890-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ce6c5a6b184c70f229986faa944b75408586ab7",
+      "size": 7849,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6ce6c5a6b184c70f229986faa944b75408586ab7"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a81230bc-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e081757d3e15b900cf74742ad5dc9ea09f1faaf3",
+      "size": 7875,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e081757d3e15b900cf74742ad5dc9ea09f1faaf3"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a81230bc-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7be9e6e7b3270e7ce038ec570c3ca578bc23a76a",
+      "size": 7564,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7be9e6e7b3270e7ce038ec570c3ca578bc23a76a"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/a8d2bb20-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e650f91888f67ecb63eb679c026018afc6270687",
+      "size": 7860,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e650f91888f67ecb63eb679c026018afc6270687"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/aa4546ac-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b654452fd88f01376bab01f0df16f663729b4bfc",
+      "size": 7853,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b654452fd88f01376bab01f0df16f663729b4bfc"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/aa7926c1-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37bb92550e77887049449d8813444f02f855d602",
+      "size": 8110,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/37bb92550e77887049449d8813444f02f855d602"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/aaea99f7-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f14bca4dbb117c42ca91981556ad27824fb8a857",
+      "size": 7558,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f14bca4dbb117c42ca91981556ad27824fb8a857"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ac1a33da-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a34ddbf04510f885a827c7b4085c0f478b70b9d",
+      "size": 7563,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6a34ddbf04510f885a827c7b4085c0f478b70b9d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/aca0b60b-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2149629b03073339cd8d63042d350ffe977204ad",
+      "size": 7560,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2149629b03073339cd8d63042d350ffe977204ad"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ad6e3dea-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1c80e0ae817affc16755816e2a4557c50b73518",
+      "size": 7565,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e1c80e0ae817affc16755816e2a4557c50b73518"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ae5865eb-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "76f98f5cc2ea1f15aaf86bdc65f7ba52d0daafab",
+      "size": 7859,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/76f98f5cc2ea1f15aaf86bdc65f7ba52d0daafab"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/b15bc18c-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "16cf04ae68070f6a0e37ed8bb923e0eb1965095c",
+      "size": 7851,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/16cf04ae68070f6a0e37ed8bb923e0eb1965095c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/b391635e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5f1e9c9b6beccc3a50fc5ef2703b24a28dd3971a",
+      "size": 7397,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5f1e9c9b6beccc3a50fc5ef2703b24a28dd3971a"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/b9e0014a-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "171b9b10689acdcb6d923f90ab228ca564f0e968",
+      "size": 7841,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/171b9b10689acdcb6d923f90ab228ca564f0e968"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/b9e0014a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78bc2d38e8189cc48c0300dcc78b28d23072dfd2",
+      "size": 7524,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/78bc2d38e8189cc48c0300dcc78b28d23072dfd2"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ba5d0c2c-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1199db221114bc0b4ab49bad23dde66198b0058",
+      "size": 7557,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d1199db221114bc0b4ab49bad23dde66198b0058"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/bd34e0a1-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "afb4448f933854a4e6a2597ae4a138616a90f18c",
+      "size": 7880,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/afb4448f933854a4e6a2597ae4a138616a90f18c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/bd34e0a1-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbab786307f8097d7cfb787925dde43171b5b427",
+      "size": 7557,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/dbab786307f8097d7cfb787925dde43171b5b427"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/bf728dbc-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "31e3ca0799fa8f66d3d1708da5110613ffa4d609",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/31e3ca0799fa8f66d3d1708da5110613ffa4d609"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c24ab497-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a5a457a19d0b2abecaa1be112ebdf5ed361603c7",
+      "size": 5236,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a5a457a19d0b2abecaa1be112ebdf5ed361603c7"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c3d0e358-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ef39ee1abaebe5e2b60111ec3fb93119b86bf10e",
+      "size": 7873,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ef39ee1abaebe5e2b60111ec3fb93119b86bf10e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c3d0e358-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aea7a94f5dcf9cea423e40a06e88f79587321cea",
+      "size": 7567,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/aea7a94f5dcf9cea423e40a06e88f79587321cea"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c3ee3b05-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "68aca2e42679c587831f47b5dab967301578a0a1",
+      "size": 7394,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/68aca2e42679c587831f47b5dab967301578a0a1"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c57e1f50-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7f9815742c3a9a7a9affdf9506fe2d3e98a27fe",
+      "size": 7560,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c7f9815742c3a9a7a9affdf9506fe2d3e98a27fe"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/c9afafdd-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "52701b62c68503b342345505acd36613b0155b82",
+      "size": 7548,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/52701b62c68503b342345505acd36613b0155b82"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/cefafdc1-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ea6a85917c4613ae0c69331ca7827a4cffd9824b",
+      "size": 7310,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ea6a85917c4613ae0c69331ca7827a4cffd9824b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/cf606f0a-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9153416c3b2664fe94e52032a11a8605d690239d",
+      "size": 7566,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9153416c3b2664fe94e52032a11a8605d690239d"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/d06540a2-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88787248e031c545c082af288d5d325c37fec63e",
+      "size": 7854,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/88787248e031c545c082af288d5d325c37fec63e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/d1ea01d0-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ee142a659767c746b002e6478fa9df771a09aad5",
+      "size": 7144,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ee142a659767c746b002e6478fa9df771a09aad5"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/d6e6a762-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "10e6dc1245e9ee6248855fc17f6196dea5072f94",
+      "size": 7562,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/10e6dc1245e9ee6248855fc17f6196dea5072f94"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/d9d59c6e-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12ec72a4122d56341e9ee42d17cad649e5da573f",
+      "size": 7710,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/12ec72a4122d56341e9ee42d17cad649e5da573f"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/d9d59c6e-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a50d0517c948a496c69933082accc59bc2ce163",
+      "size": 7400,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9a50d0517c948a496c69933082accc59bc2ce163"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/dc3f0623-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9d0fe1b7ccb8ece1c6645ec1a8a55d0bb36f715",
+      "size": 7873,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a9d0fe1b7ccb8ece1c6645ec1a8a55d0bb36f715"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e0a1fd30-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e9ceb16440361acc2b564c2580784d96a7f18cda",
+      "size": 7145,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e9ceb16440361acc2b564c2580784d96a7f18cda"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e21ac11a-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "74f6b5f044f9905343c8da92e81c3090cf6bcc2c",
+      "size": 7860,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/74f6b5f044f9905343c8da92e81c3090cf6bcc2c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e338ab14-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a492154f8a020fbded6206b6a3aefa69f854a4dc",
+      "size": 7308,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a492154f8a020fbded6206b6a3aefa69f854a4dc"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e34eadb3-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "882eccb15cee06533a284f14b53665b280dda71c",
+      "size": 7561,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/882eccb15cee06533a284f14b53665b280dda71c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e5246436-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8cb280495591e3160309ff40e96216c4f0d1a75e",
+      "size": 7572,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8cb280495591e3160309ff40e96216c4f0d1a75e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e7849495-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a569bcb376e74d29f28df397e1191cecb2fa3597",
+      "size": 7311,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a569bcb376e74d29f28df397e1191cecb2fa3597"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e78acae6-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b0fb32e5b07570d14992adcc2a17f25428db0c14",
+      "size": 7854,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b0fb32e5b07570d14992adcc2a17f25428db0c14"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e7de32a0-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37ad19b830c96be652a0300ab2139ad099fbfa14",
+      "size": 7858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/37ad19b830c96be652a0300ab2139ad099fbfa14"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/e9e72000-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec804be10bfd3d68ffb65ed57f970291fddfe6a9",
+      "size": 7310,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ec804be10bfd3d68ffb65ed57f970291fddfe6a9"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ea049ffc-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95acb4fce7152073b0f2b23888b47bf9709770ce",
+      "size": 7565,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/95acb4fce7152073b0f2b23888b47bf9709770ce"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ea2ed337-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6bc0b29086f4c10c8ee615f65c52f3b11b22b574",
+      "size": 7554,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6bc0b29086f4c10c8ee615f65c52f3b11b22b574"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/eab3fe8e-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2ff4f5592079b303de2a02a0adce9e444777f7d1",
+      "size": 7862,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2ff4f5592079b303de2a02a0adce9e444777f7d1"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ecf3d7f1-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d595b1fcbfeaee330fc4802c99423b275361a0e6",
+      "size": 7558,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d595b1fcbfeaee330fc4802c99423b275361a0e6"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/edcb6f9e-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f290d7e74d6939d411f3e650a38c50af55e4bb2b",
+      "size": 8116,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f290d7e74d6939d411f3e650a38c50af55e4bb2b"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/ef80460f-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9c858e5154598a8534eda10f5d9eb17f2d859964",
+      "size": 5242,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9c858e5154598a8534eda10f5d9eb17f2d859964"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/f2845e12-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f01f6c5d56d57d70767665e73d191ec4bf9a5ea2",
+      "size": 7855,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f01f6c5d56d57d70767665e73d191ec4bf9a5ea2"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/f2af8c9d-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b347b64ee5a41506693e16d7015ac6bf9b059e0c",
+      "size": 7137,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b347b64ee5a41506693e16d7015ac6bf9b059e0c"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/f5ed5bde-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "66421a1515c8ccc6b123b9837cd0274ab6d269c8",
+      "size": 7864,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/66421a1515c8ccc6b123b9837cd0274ab6d269c8"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/f82a4ccf-virtualenv-py3.10-setuptools59.2.0.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a19074c208066e87fedae14c4f85a80c171b7614",
+      "size": 7863,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a19074c208066e87fedae14c4f85a80c171b7614"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/f84d5dee-virtualenv-py3.10.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a764ff25f9a3f152a2438cb5a4a36570836ee4e",
+      "size": 7303,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9a764ff25f9a3f152a2438cb5a4a36570836ee4e"
+    },
+    {
+      "path": "benchmarks/results/darrenburns-2022-mbp/machine.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "554aef2244cbf8bafaa172dbef856165485bca5b",
+      "size": 181,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/554aef2244cbf8bafaa172dbef856165485bca5b"
+    },
+    {
+      "path": "benchmarks/snippets.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df161d89d86360d394ea4c580494b55dacde03af",
+      "size": 11239,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/df161d89d86360d394ea4c580494b55dacde03af"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6ed95d4cd16178fd1cb6c42ecd85db87bdd76f84",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/6ed95d4cd16178fd1cb6c42ecd85db87bdd76f84"
+    },
+    {
+      "path": "docs/Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d0c3cbf1020d5c292abdedf27627c6abe25e2293",
+      "size": 638,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d0c3cbf1020d5c292abdedf27627c6abe25e2293"
+    },
+    {
+      "path": "docs/images",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "65f289faebdb227d1b81a1dc267558a9a94a9db7",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/65f289faebdb227d1b81a1dc267558a9a94a9db7"
+    },
+    {
+      "path": "docs/images/box.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "24e82bbbf49e375567bb38f199a3e450afc0bff4",
+      "size": 78903,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/24e82bbbf49e375567bb38f199a3e450afc0bff4"
+    },
+    {
+      "path": "docs/images/svg_export.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "152187ba1ada55048f07ae8b6592bf0717f0c907",
+      "size": 161279,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/152187ba1ada55048f07ae8b6592bf0717f0c907"
+    },
+    {
+      "path": "docs/make.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6247f7e231716482115f34084ac61030743e0715",
+      "size": 799,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6247f7e231716482115f34084ac61030743e0715"
+    },
+    {
+      "path": "docs/requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4e029845b4635c5c1bc4ec52be98336b8d724651",
+      "size": 81,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4e029845b4635c5c1bc4ec52be98336b8d724651"
+    },
+    {
+      "path": "docs/source",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "748c34d780360a6914e2350aa230eb7141eb7092",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/748c34d780360a6914e2350aa230eb7141eb7092"
+    },
+    {
+      "path": "docs/source/appendix.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ae7fa68b48e22113199e4d73b84ebb6bdaf1a31",
+      "size": 96,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3ae7fa68b48e22113199e4d73b84ebb6bdaf1a31"
+    },
+    {
+      "path": "docs/source/appendix",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "3897aa34b4841f419eacb7e180025a0b7bf75906",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/3897aa34b4841f419eacb7e180025a0b7bf75906"
+    },
+    {
+      "path": "docs/source/appendix/box.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f8b9111797483d83ba8ccc96c45b21c096a882f3",
+      "size": 705,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f8b9111797483d83ba8ccc96c45b21c096a882f3"
+    },
+    {
+      "path": "docs/source/appendix/colors.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fa65f4fd9d1c59cbc29adde31502e359af24a595",
+      "size": 59038,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fa65f4fd9d1c59cbc29adde31502e359af24a595"
+    },
+    {
+      "path": "docs/source/columns.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "41a9bc6006fec0b03ec786ea20debae70421961f",
+      "size": 810,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/41a9bc6006fec0b03ec786ea20debae70421961f"
+    },
+    {
+      "path": "docs/source/conf.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1078d61e61112af0b3363790aa1e64add2b85e9",
+      "size": 2438,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d1078d61e61112af0b3363790aa1e64add2b85e9"
+    },
+    {
+      "path": "docs/source/console.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c0aeb329e43ff15c4e2dc1b5cf7ea6a8e76775a",
+      "size": 21685,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5c0aeb329e43ff15c4e2dc1b5cf7ea6a8e76775a"
+    },
+    {
+      "path": "docs/source/group.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "22a30aa5c8cad778ec81e1529a5bb2d824953b64",
+      "size": 1364,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/22a30aa5c8cad778ec81e1529a5bb2d824953b64"
+    },
+    {
+      "path": "docs/source/highlighting.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "642afc9eada68156845a55c14c41ff08b2615827",
+      "size": 3354,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/642afc9eada68156845a55c14c41ff08b2615827"
+    },
+    {
+      "path": "docs/source/index.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bad2459e214ac55e34ae305478cddbbe260ba076",
+      "size": 790,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bad2459e214ac55e34ae305478cddbbe260ba076"
+    },
+    {
+      "path": "docs/source/introduction.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "907b831c6ee54792c4b879cc1811a64bbb8ef8e9",
+      "size": 5444,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/907b831c6ee54792c4b879cc1811a64bbb8ef8e9"
+    },
+    {
+      "path": "docs/source/layout.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "396a3074acf27ec4a32910c0a7a09284ed39d3a9",
+      "size": 12382,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/396a3074acf27ec4a32910c0a7a09284ed39d3a9"
+    },
+    {
+      "path": "docs/source/live.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "51dd115d18d912ccc1473b59d61fe30ce1a3e4f6",
+      "size": 6306,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/51dd115d18d912ccc1473b59d61fe30ce1a3e4f6"
+    },
+    {
+      "path": "docs/source/logging.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67a999922b2c70ef29bbd13b9d899a97eead1ed4",
+      "size": 2652,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/67a999922b2c70ef29bbd13b9d899a97eead1ed4"
+    },
+    {
+      "path": "docs/source/markdown.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "927c8597c79fffbb24a1ce257f7d1604a056a2e8",
+      "size": 928,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/927c8597c79fffbb24a1ce257f7d1604a056a2e8"
+    },
+    {
+      "path": "docs/source/markup.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e5eefc7a19f5aff9fbd5ae7e0d6142cd497e45d3",
+      "size": 4748,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e5eefc7a19f5aff9fbd5ae7e0d6142cd497e45d3"
+    },
+    {
+      "path": "docs/source/padding.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64505d4224345cb76bdcc749b6df8e4a4a11f757",
+      "size": 1652,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/64505d4224345cb76bdcc749b6df8e4a4a11f757"
+    },
+    {
+      "path": "docs/source/panel.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64651ce17649c7c551ca7910ad458aeedaff4ead",
+      "size": 1152,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/64651ce17649c7c551ca7910ad458aeedaff4ead"
+    },
+    {
+      "path": "docs/source/pretty.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29c0110a8e78e2fd82906c8c092d8b2e2da74eae",
+      "size": 9688,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/29c0110a8e78e2fd82906c8c092d8b2e2da74eae"
+    },
+    {
+      "path": "docs/source/progress.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "272687d93833ef62bf8b30eaf88db8d896d9dcbc",
+      "size": 13555,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/272687d93833ef62bf8b30eaf88db8d896d9dcbc"
+    },
+    {
+      "path": "docs/source/prompt.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "088aa8e743ca72dff2d48ba91824721a91536068",
+      "size": 1659,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/088aa8e743ca72dff2d48ba91824721a91536068"
+    },
+    {
+      "path": "docs/source/protocol.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd8c03a4ab8f82f30b2a71009458b14c87ed4cca",
+      "size": 3904,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/cd8c03a4ab8f82f30b2a71009458b14c87ed4cca"
+    },
+    {
+      "path": "docs/source/reference.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29e6d05fcfa967d81842e9b4e533f338952164ed",
+      "size": 893,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/29e6d05fcfa967d81842e9b4e533f338952164ed"
+    },
+    {
+      "path": "docs/source/reference",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "d920da7a928519fdefa01e51781e7c7b65af5320",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/d920da7a928519fdefa01e51781e7c7b65af5320"
+    },
+    {
+      "path": "docs/source/reference/abc.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4e37587b319d1553b666e1142a9e355ba16ea81",
+      "size": 60,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c4e37587b319d1553b666e1142a9e355ba16ea81"
+    },
+    {
+      "path": "docs/source/reference/align.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54b052551369519329717a6fbae28c2d613d6a9e",
+      "size": 66,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/54b052551369519329717a6fbae28c2d613d6a9e"
+    },
+    {
+      "path": "docs/source/reference/bar.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a247d793cff5e082e4bef8ec17e2486f9c777f8",
+      "size": 60,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6a247d793cff5e082e4bef8ec17e2486f9c777f8"
+    },
+    {
+      "path": "docs/source/reference/color.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "87b0e18ea86200f895b9654a03b3e29722ce8f1e",
+      "size": 66,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/87b0e18ea86200f895b9654a03b3e29722ce8f1e"
+    },
+    {
+      "path": "docs/source/reference/columns.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "14bcd02481f899753747e03855abf1e33ec1fa09",
+      "size": 72,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/14bcd02481f899753747e03855abf1e33ec1fa09"
+    },
+    {
+      "path": "docs/source/reference/console.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "26ec6fffecb21e2c81b7cea3064480aa9d694b0d",
+      "size": 70,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/26ec6fffecb21e2c81b7cea3064480aa9d694b0d"
+    },
+    {
+      "path": "docs/source/reference/emoji.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "59ca4da6e95d00bb649986fa13cbb877a54506f7",
+      "size": 71,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/59ca4da6e95d00bb649986fa13cbb877a54506f7"
+    },
+    {
+      "path": "docs/source/reference/highlighter.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7f5a11ffe698cbe2d94d1e7b3fa790cc11701479",
+      "size": 114,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7f5a11ffe698cbe2d94d1e7b3fa790cc11701479"
+    },
+    {
+      "path": "docs/source/reference/init.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3ac3fda23ea092fc5819ec9a003e2203a5ee108e",
+      "size": 52,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3ac3fda23ea092fc5819ec9a003e2203a5ee108e"
+    },
+    {
+      "path": "docs/source/reference/json.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "97bad0f8608da9e02add3fd4963b040bf4798a9a",
+      "size": 63,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/97bad0f8608da9e02add3fd4963b040bf4798a9a"
+    },
+    {
+      "path": "docs/source/reference/layout.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f0b1e5aedc9223f7764276ee1148036fb1055acf",
+      "size": 69,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f0b1e5aedc9223f7764276ee1148036fb1055acf"
+    },
+    {
+      "path": "docs/source/reference/live.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "516ed8f24e6364dbe612f5956eb07d14f40a6e35",
+      "size": 60,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/516ed8f24e6364dbe612f5956eb07d14f40a6e35"
+    },
+    {
+      "path": "docs/source/reference/logging.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a7caafcde4929edc4531b7ed3bc680d37488147e",
+      "size": 97,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a7caafcde4929edc4531b7ed3bc680d37488147e"
+    },
+    {
+      "path": "docs/source/reference/markdown.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b98f558cd6993c9aac92d934a04f43cf7cdb6218",
+      "size": 75,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b98f558cd6993c9aac92d934a04f43cf7cdb6218"
+    },
+    {
+      "path": "docs/source/reference/markup.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ff786f2b0ca198022987761e844cf6c380149122",
+      "size": 67,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ff786f2b0ca198022987761e844cf6c380149122"
+    },
+    {
+      "path": "docs/source/reference/measure.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c048eb17a972ed9c36b94476b2d6b3b7b6b7ba2f",
+      "size": 70,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c048eb17a972ed9c36b94476b2d6b3b7b6b7ba2f"
+    },
+    {
+      "path": "docs/source/reference/padding.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e047ca9e38d3341cefb9fa2bb4f82caa4973065b",
+      "size": 70,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e047ca9e38d3341cefb9fa2bb4f82caa4973065b"
+    },
+    {
+      "path": "docs/source/reference/panel.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "998f2903f1493ba42cd42a3a194fe1f6e0b0faff",
+      "size": 71,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/998f2903f1493ba42cd42a3a194fe1f6e0b0faff"
+    },
+    {
+      "path": "docs/source/reference/pretty.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4290dbd73bc30d9476afa60a0b1dc704c97a0ced",
+      "size": 69,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4290dbd73bc30d9476afa60a0b1dc704c97a0ced"
+    },
+    {
+      "path": "docs/source/reference/progress.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "69551b25d68259585d312094e46cfc25b9126559",
+      "size": 73,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/69551b25d68259585d312094e46cfc25b9126559"
+    },
+    {
+      "path": "docs/source/reference/progress_bar.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e5a201f4a3406bba430965910bd836da6b3a26b",
+      "size": 87,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6e5a201f4a3406bba430965910bd836da6b3a26b"
+    },
+    {
+      "path": "docs/source/reference/prompt.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d5adef4eec17ee652a5df20a4e5640ba276f5673",
+      "size": 67,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d5adef4eec17ee652a5df20a4e5640ba276f5673"
+    },
+    {
+      "path": "docs/source/reference/protocol.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4febcee86ba3a659a6a4871795949ad48203183b",
+      "size": 73,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4febcee86ba3a659a6a4871795949ad48203183b"
+    },
+    {
+      "path": "docs/source/reference/rule.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f06eb3a19d32e3521e1dc003b2dc34ea37fa6ad0",
+      "size": 61,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f06eb3a19d32e3521e1dc003b2dc34ea37fa6ad0"
+    },
+    {
+      "path": "docs/source/reference/segment.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fce383cca44809dfe459945164e1e9543a65263b",
+      "size": 70,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fce383cca44809dfe459945164e1e9543a65263b"
+    },
+    {
+      "path": "docs/source/reference/spinner.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "53315dc7372278a8634378c1593713c853803ff0",
+      "size": 70,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/53315dc7372278a8634378c1593713c853803ff0"
+    },
+    {
+      "path": "docs/source/reference/status.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac4704ec508e78380644fb62253142f27a516e4e",
+      "size": 68,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ac4704ec508e78380644fb62253142f27a516e4e"
+    },
+    {
+      "path": "docs/source/reference/style.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3d431ac5e9e3bc3bd0ebcaf750f8997990444c3f",
+      "size": 96,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3d431ac5e9e3bc3bd0ebcaf750f8997990444c3f"
+    },
+    {
+      "path": "docs/source/reference/styled.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67207262ca7684fc9cfcca436faff4f40d5eb9f4",
+      "size": 69,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/67207262ca7684fc9cfcca436faff4f40d5eb9f4"
+    },
+    {
+      "path": "docs/source/reference/syntax.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8e491806fc392a1b137361280cec9f5bcb7066c",
+      "size": 74,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c8e491806fc392a1b137361280cec9f5bcb7066c"
+    },
+    {
+      "path": "docs/source/reference/table.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "40562b07fc2f2ad7a364d27b3aaed650c1b250cc",
+      "size": 64,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/40562b07fc2f2ad7a364d27b3aaed650c1b250cc"
+    },
+    {
+      "path": "docs/source/reference/text.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0b929e44bf33440a47fb355a7a18efa56f489837",
+      "size": 77,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0b929e44bf33440a47fb355a7a18efa56f489837"
+    },
+    {
+      "path": "docs/source/reference/theme.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "14fb919ff5120db8314ec12c3354b269913f9512",
+      "size": 71,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/14fb919ff5120db8314ec12c3354b269913f9512"
+    },
+    {
+      "path": "docs/source/reference/traceback.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cdd09fba7f7c1698f210f3cd9e2bd21385c5e1bd",
+      "size": 96,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/cdd09fba7f7c1698f210f3cd9e2bd21385c5e1bd"
+    },
+    {
+      "path": "docs/source/reference/tree.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "402404165a6c5c4e89c4757a1af1c7ce89064af8",
+      "size": 62,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/402404165a6c5c4e89c4757a1af1c7ce89064af8"
+    },
+    {
+      "path": "docs/source/style.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "21dd6defa31a6b5261021ac957b6b7481b05079a",
+      "size": 7315,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/21dd6defa31a6b5261021ac957b6b7481b05079a"
+    },
+    {
+      "path": "docs/source/syntax.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7f6c8c83af1d82284d3a34e300678947b08c0f1b",
+      "size": 1945,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7f6c8c83af1d82284d3a34e300678947b08c0f1b"
+    },
+    {
+      "path": "docs/source/tables.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f573dbc62a65d970a07dc27785f2da5351499ea2",
+      "size": 9336,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f573dbc62a65d970a07dc27785f2da5351499ea2"
+    },
+    {
+      "path": "docs/source/text.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5a1add82bde41dc36f8f95dacf6ebadbe958d57",
+      "size": 2880,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c5a1add82bde41dc36f8f95dacf6ebadbe958d57"
+    },
+    {
+      "path": "docs/source/traceback.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6c2893222d406a15ea19dd9cb4a8c5f5cd5fd392",
+      "size": 3507,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6c2893222d406a15ea19dd9cb4a8c5f5cd5fd392"
+    },
+    {
+      "path": "docs/source/tree.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "334c31d9c8175588bd89d9b2f8094f38d058aeb9",
+      "size": 1996,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/334c31d9c8175588bd89d9b2f8094f38d058aeb9"
+    },
+    {
+      "path": "examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "cf23bf6564a9287ebb9b4c37ee454411ad08084a",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/cf23bf6564a9287ebb9b4c37ee454411ad08084a"
+    },
+    {
+      "path": "examples/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1ebe369f10da461370a097a715b64520ae73204",
+      "size": 264,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e1ebe369f10da461370a097a715b64520ae73204"
+    },
+    {
+      "path": "examples/attrs.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f87e955067fec495da2df519e811deab18fd57b2",
+      "size": 1034,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f87e955067fec495da2df519e811deab18fd57b2"
+    },
+    {
+      "path": "examples/bars.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4ce7635abd31da36f5c6818622d3278cfb2ed91a",
+      "size": 417,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4ce7635abd31da36f5c6818622d3278cfb2ed91a"
+    },
+    {
+      "path": "examples/columns.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "96962b08fc03a7226ab0beb5efe893056669ad4a",
+      "size": 748,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/96962b08fc03a7226ab0beb5efe893056669ad4a"
+    },
+    {
+      "path": "examples/cp_progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b5cc4c81814a17b3b895ae344e3d39e1fc011ade",
+      "size": 571,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b5cc4c81814a17b3b895ae344e3d39e1fc011ade"
+    },
+    {
+      "path": "examples/downloader.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8a0be500140fda3f1d97dacff4b44f03713a7549",
+      "size": 2260,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8a0be500140fda3f1d97dacff4b44f03713a7549"
+    },
+    {
+      "path": "examples/dynamic_progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1165b4f6090c4782231d24ee9b505811e8b6cc80",
+      "size": 4021,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1165b4f6090c4782231d24ee9b505811e8b6cc80"
+    },
+    {
+      "path": "examples/exception.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "39dbdf424464d9e2030444aa20b13fe05881476a",
+      "size": 919,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/39dbdf424464d9e2030444aa20b13fe05881476a"
+    },
+    {
+      "path": "examples/export.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dada493d80bbe0a6e38df2c787ca364ed1d2d281",
+      "size": 1693,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/dada493d80bbe0a6e38df2c787ca364ed1d2d281"
+    },
+    {
+      "path": "examples/file_progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd18d753707ab3a5fedfc793db5a99dc9330c134",
+      "size": 423,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fd18d753707ab3a5fedfc793db5a99dc9330c134"
+    },
+    {
+      "path": "examples/fullscreen.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1de8a8ac75bd53c56006de6a2adfd3ee62985a3d",
+      "size": 5492,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1de8a8ac75bd53c56006de6a2adfd3ee62985a3d"
+    },
+    {
+      "path": "examples/group.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "598e4c39bfe56f57b1a74435dc9b809183530ab6",
+      "size": 206,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/598e4c39bfe56f57b1a74435dc9b809183530ab6"
+    },
+    {
+      "path": "examples/group2.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "54c1bf7738b1e95fb7f3a954e1fbd63eada5c36f",
+      "size": 224,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/54c1bf7738b1e95fb7f3a954e1fbd63eada5c36f"
+    },
+    {
+      "path": "examples/highlighter.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a667d0d693147aac743c064e7ce2dbbbc1d67b0d",
+      "size": 525,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a667d0d693147aac743c064e7ce2dbbbc1d67b0d"
+    },
+    {
+      "path": "examples/jobs.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6286b565f8d104776767933680b53b421e3823fd",
+      "size": 957,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6286b565f8d104776767933680b53b421e3823fd"
+    },
+    {
+      "path": "examples/justify.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "670988206de985adfc46daef2e924b48073161cd",
+      "size": 349,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/670988206de985adfc46daef2e924b48073161cd"
+    },
+    {
+      "path": "examples/justify2.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b9882ad4c0c742672a2655e26053d6d6be8a9a6",
+      "size": 426,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3b9882ad4c0c742672a2655e26053d6d6be8a9a6"
+    },
+    {
+      "path": "examples/layout.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e94dac008de32f079c619aa37ee5712462a0b83",
+      "size": 1115,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1e94dac008de32f079c619aa37ee5712462a0b83"
+    },
+    {
+      "path": "examples/link.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9773c330149be4beda4f402ba295e9f813a6e7f8",
+      "size": 192,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9773c330149be4beda4f402ba295e9f813a6e7f8"
+    },
+    {
+      "path": "examples/listdir.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bffc50afbc28ec2c9d3368648cda9a84a6ad2967",
+      "size": 1011,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bffc50afbc28ec2c9d3368648cda9a84a6ad2967"
+    },
+    {
+      "path": "examples/live_progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ae1056733cedf1ed40507c3245fd11579ebc585",
+      "size": 1369,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7ae1056733cedf1ed40507c3245fd11579ebc585"
+    },
+    {
+      "path": "examples/log.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fe54e8590fcccfd8269a6a530537c8d1b8dc73a",
+      "size": 1943,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5fe54e8590fcccfd8269a6a530537c8d1b8dc73a"
+    },
+    {
+      "path": "examples/overflow.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5adaa3dbed09a02d7207e1e1b6c3b93af3cd7904",
+      "size": 370,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5adaa3dbed09a02d7207e1e1b6c3b93af3cd7904"
+    },
+    {
+      "path": "examples/padding.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b01d2743868459efc7c1a095621e0dce3fc360a2",
+      "size": 132,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b01d2743868459efc7c1a095621e0dce3fc360a2"
+    },
+    {
+      "path": "examples/print_calendar.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d9586aaa8abe64963fb411dbc6900ca568eeaf99",
+      "size": 1915,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d9586aaa8abe64963fb411dbc6900ca568eeaf99"
+    },
+    {
+      "path": "examples/rainbow.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2121a786381f8bda36db578f26b6164dc3fff6b8",
+      "size": 441,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2121a786381f8bda36db578f26b6164dc3fff6b8"
+    },
+    {
+      "path": "examples/recursive_error.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "12b06e6eb582e4738f465ca644c81bb1701f94f8",
+      "size": 324,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/12b06e6eb582e4738f465ca644c81bb1701f94f8"
+    },
+    {
+      "path": "examples/repr.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1a3de460921a53462f10c36f243e715843a79a57",
+      "size": 589,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1a3de460921a53462f10c36f243e715843a79a57"
+    },
+    {
+      "path": "examples/save_table_svg.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e22aee22b05f88099840021030ec090daa95fc8c",
+      "size": 846,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e22aee22b05f88099840021030ec090daa95fc8c"
+    },
+    {
+      "path": "examples/screen.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eb429b194888970f14510c847e164f3c56ebfada",
+      "size": 357,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/eb429b194888970f14510c847e164f3c56ebfada"
+    },
+    {
+      "path": "examples/spinners.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9daf847cfb4246d3416387986b4bbf23f7a51c2d",
+      "size": 533,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9daf847cfb4246d3416387986b4bbf23f7a51c2d"
+    },
+    {
+      "path": "examples/status.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88d1679edbd2a581e23312540e72d2ccffa4a174",
+      "size": 307,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/88d1679edbd2a581e23312540e72d2ccffa4a174"
+    },
+    {
+      "path": "examples/suppress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d0bfaf4ec2806d1092ff28900cfdc4e051e638d6",
+      "size": 489,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d0bfaf4ec2806d1092ff28900cfdc4e051e638d6"
+    },
+    {
+      "path": "examples/table.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ffa7ee9a6c92d16c9cc87e6204f62192c217fc2",
+      "size": 693,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6ffa7ee9a6c92d16c9cc87e6204f62192c217fc2"
+    },
+    {
+      "path": "examples/table_movie.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "811eb51b70388418c495670af96f06ccb757f5c3",
+      "size": 4572,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/811eb51b70388418c495670af96f06ccb757f5c3"
+    },
+    {
+      "path": "examples/top_lite_simulator.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "147cbb0f963c444486227ac9d6828ee8d9591ad6",
+      "size": 2158,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/147cbb0f963c444486227ac9d6828ee8d9591ad6"
+    },
+    {
+      "path": "examples/tree.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "99277192b318158908bb19995580e3c020eb6d7f",
+      "size": 1755,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/99277192b318158908bb19995580e3c020eb6d7f"
+    },
+    {
+      "path": "faq.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4d258481772f9ef6fe24c4818af964bfa1bab1c",
+      "size": 298,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d4d258481772f9ef6fe24c4818af964bfa1bab1c"
+    },
+    {
+      "path": "imgs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "4dbbd25da0255808b8f33f8d1cbc1af98e92275c",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/4dbbd25da0255808b8f33f8d1cbc1af98e92275c"
+    },
+    {
+      "path": "imgs/columns.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "328bbd964db106c2f839d90de8828b8d4304a2fe",
+      "size": 434212,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/328bbd964db106c2f839d90de8828b8d4304a2fe"
+    },
+    {
+      "path": "imgs/downloader.gif",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dad59f25881e036142ef11a580d76b47e248577a",
+      "size": 2636646,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/dad59f25881e036142ef11a580d76b47e248577a"
+    },
+    {
+      "path": "imgs/features.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5ba75f5dbb398435a4cdba8e65594d44ba3a1fc5",
+      "size": 735993,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5ba75f5dbb398435a4cdba8e65594d44ba3a1fc5"
+    },
+    {
+      "path": "imgs/hello_world.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "80ad36e6356730d4a06ca8964a65fbdcefab831b",
+      "size": 148714,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/80ad36e6356730d4a06ca8964a65fbdcefab831b"
+    },
+    {
+      "path": "imgs/inspect.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "62e4f8b906c1595252c2d254939acaa7ef9f5e3a",
+      "size": 420943,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/62e4f8b906c1595252c2d254939acaa7ef9f5e3a"
+    },
+    {
+      "path": "imgs/log.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b29bd6988b415ee3f3c7286b237259caeb4434e0",
+      "size": 247486,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b29bd6988b415ee3f3c7286b237259caeb4434e0"
+    },
+    {
+      "path": "imgs/logging.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "08c6eba328a805fadf7e74db17dff4023c5ca7c4",
+      "size": 149411,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/08c6eba328a805fadf7e74db17dff4023c5ca7c4"
+    },
+    {
+      "path": "imgs/logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4842c4a8efa36da2a4b61f6f8bc5db8b994299dc",
+      "size": 44894,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4842c4a8efa36da2a4b61f6f8bc5db8b994299dc"
+    },
+    {
+      "path": "imgs/markdown.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "442ea0679f284a24dedcf951a1ec3bea7362468f",
+      "size": 331841,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/442ea0679f284a24dedcf951a1ec3bea7362468f"
+    },
+    {
+      "path": "imgs/print.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c4c086095dcb1bc4e416259f42961ef6e56394e",
+      "size": 382648,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3c4c086095dcb1bc4e416259f42961ef6e56394e"
+    },
+    {
+      "path": "imgs/progress.gif",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4ccfa2f4b0737e84d64f21f9de5fce7479f2842",
+      "size": 2373713,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b4ccfa2f4b0737e84d64f21f9de5fce7479f2842"
+    },
+    {
+      "path": "imgs/progress.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3f7440234ee7dde945aef0e8a42e8441f33fedc7",
+      "size": 261693,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3f7440234ee7dde945aef0e8a42e8441f33fedc7"
+    },
+    {
+      "path": "imgs/repl.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "da065b99061fa538aab816d53061988721829ac7",
+      "size": 432438,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/da065b99061fa538aab816d53061988721829ac7"
+    },
+    {
+      "path": "imgs/spinners.gif",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7d3445e1045e13c178dcd9f2370031a49ab49dab",
+      "size": 1491413,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7d3445e1045e13c178dcd9f2370031a49ab49dab"
+    },
+    {
+      "path": "imgs/status.gif",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c930fc76ef7748c1780aae1e0f11ea6e29f9a184",
+      "size": 590010,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c930fc76ef7748c1780aae1e0f11ea6e29f9a184"
+    },
+    {
+      "path": "imgs/syntax.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b90b50df9f6cff323e0ed84f4eb6836297e64bc3",
+      "size": 198477,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b90b50df9f6cff323e0ed84f4eb6836297e64bc3"
+    },
+    {
+      "path": "imgs/table.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "649279b06ecbf98bfb22e2a7d9792edc7984a076",
+      "size": 164565,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/649279b06ecbf98bfb22e2a7d9792edc7984a076"
+    },
+    {
+      "path": "imgs/table2.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b0d250f7a0a5950699266c327b795a43da03717",
+      "size": 171822,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2b0d250f7a0a5950699266c327b795a43da03717"
+    },
+    {
+      "path": "imgs/table_movie.gif",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3a0ffbf3e516269e088f6bf6771342b5f6a25bfd",
+      "size": 906975,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3a0ffbf3e516269e088f6bf6771342b5f6a25bfd"
+    },
+    {
+      "path": "imgs/traceback.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "07a4a50076fa22d03c693529af35a3ffd625be1e",
+      "size": 509944,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/07a4a50076fa22d03c693529af35a3ffd625be1e"
+    },
+    {
+      "path": "imgs/tree.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "04a30a53e20ca30fffc0b060df138e6d842b148d",
+      "size": 366542,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/04a30a53e20ca30fffc0b060df138e6d842b148d"
+    },
+    {
+      "path": "imgs/where_there_is_a_will.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "70005f85e5b2e9414307aa2cb11300238b93efc4",
+      "size": 167088,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/70005f85e5b2e9414307aa2cb11300238b93efc4"
+    },
+    {
+      "path": "make.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6247f7e231716482115f34084ac61030743e0715",
+      "size": 799,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6247f7e231716482115f34084ac61030743e0715"
+    },
+    {
+      "path": "poetry.lock",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "49e943db97268bd24e1b370961b1d42210f45e5b",
+      "size": 57783,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/49e943db97268bd24e1b370961b1d42210f45e5b"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e9a3b74e565af48ce3a944b331d407da9119d33",
+      "size": 1819,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0e9a3b74e565af48ce3a944b331d407da9119d33"
+    },
+    {
+      "path": "questions",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2bc07a6ad53be86acb93c16c82d9b7e79e806206",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/2bc07a6ad53be86acb93c16c82d9b7e79e806206"
+    },
+    {
+      "path": "questions/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e733072f6d9c47188b37a074e58121c567ff92e7",
+      "size": 125,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e733072f6d9c47188b37a074e58121c567ff92e7"
+    },
+    {
+      "path": "questions/emoji_broken.question.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "44a51921bdc5794878457657f2629109de35420e",
+      "size": 783,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/44a51921bdc5794878457657f2629109de35420e"
+    },
+    {
+      "path": "questions/highlighting_unexpected.question.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f0c2ad6b2bc1123203ef5231e0601c3885d2f8f6",
+      "size": 492,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f0c2ad6b2bc1123203ef5231e0601c3885d2f8f6"
+    },
+    {
+      "path": "questions/log_renderables.question.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "902f32c74cba17f8458db7205c264121191d8b06",
+      "size": 1015,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/902f32c74cba17f8458db7205c264121191d8b06"
+    },
+    {
+      "path": "questions/logging_color.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4ca7f58d8e66cc5296579a0476c2b3ea10553baa",
+      "size": 431,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4ca7f58d8e66cc5296579a0476c2b3ea10553baa"
+    },
+    {
+      "path": "questions/rich_spinner.question.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "77174635452e23a54d1d68170c967dee116bfe79",
+      "size": 267,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/77174635452e23a54d1d68170c967dee116bfe79"
+    },
+    {
+      "path": "questions/square_brackets.question.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "55c80005a8e028325d34a24a5f1b2de65570ab49",
+      "size": 435,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/55c80005a8e028325d34a24a5f1b2de65570ab49"
+    },
+    {
+      "path": "rich",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2641cbe166a44bfeb4b9d674b68d9a7dbdaae438",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/2641cbe166a44bfeb4b9d674b68d9a7dbdaae438"
+    },
+    {
+      "path": "rich/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b631d54495e838fd7d989fd1dd06d2e5e3e321f3",
+      "size": 6066,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b631d54495e838fd7d989fd1dd06d2e5e3e321f3"
+    },
+    {
+      "path": "rich/__main__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b55130ff18ba55b49026789863a9edab0ea87dc",
+      "size": 8333,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8b55130ff18ba55b49026789863a9edab0ea87dc"
+    },
+    {
+      "path": "rich/_cell_widths.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "608ae3a75d16ef5af4a6afcc1958b03239f2067e",
+      "size": 10209,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/608ae3a75d16ef5af4a6afcc1958b03239f2067e"
+    },
+    {
+      "path": "rich/_emoji_codes.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f2877bb2bd520253502b1c05bb811bb0d7ef64c",
+      "size": 140235,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1f2877bb2bd520253502b1c05bb811bb0d7ef64c"
+    },
+    {
+      "path": "rich/_emoji_replace.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bb2cafa18011e7115773055338291c366f173d6f",
+      "size": 1064,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bb2cafa18011e7115773055338291c366f173d6f"
+    },
+    {
+      "path": "rich/_export_format.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e7527e52f6613328630fc6305f957d9ea58027d8",
+      "size": 2128,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e7527e52f6613328630fc6305f957d9ea58027d8"
+    },
+    {
+      "path": "rich/_extension.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "38658864eb1e9b9839e953e070af11c8bc0d1836",
+      "size": 241,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/38658864eb1e9b9839e953e070af11c8bc0d1836"
+    },
+    {
+      "path": "rich/_fileno.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b17ee6511742d7a8d5950bf0ee57ced4d5fd45c2",
+      "size": 799,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b17ee6511742d7a8d5950bf0ee57ced4d5fd45c2"
+    },
+    {
+      "path": "rich/_inspect.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30446ceb3f0235721e435f5fbd53f2e306f078cd",
+      "size": 9695,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/30446ceb3f0235721e435f5fbd53f2e306f078cd"
+    },
+    {
+      "path": "rich/_log_render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e8810100b323450c63507e16629a09bb2e9dc97f",
+      "size": 3213,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e8810100b323450c63507e16629a09bb2e9dc97f"
+    },
+    {
+      "path": "rich/_loop.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "01c6cafbe53f1fcb12f7b382b2b35e2fd2c69933",
+      "size": 1236,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/01c6cafbe53f1fcb12f7b382b2b35e2fd2c69933"
+    },
+    {
+      "path": "rich/_null_file.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b659673ef3c1d5431e6699898ae4d073b4be764b",
+      "size": 1387,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b659673ef3c1d5431e6699898ae4d073b4be764b"
+    },
+    {
+      "path": "rich/_palettes.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c748d33e45bfcdc690ceee490cbb50b516cd2b3",
+      "size": 7063,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3c748d33e45bfcdc690ceee490cbb50b516cd2b3"
+    },
+    {
+      "path": "rich/_pick.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4f6d8b2d79406012c5f8bae9c289ed5bf4d179cc",
+      "size": 423,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4f6d8b2d79406012c5f8bae9c289ed5bf4d179cc"
+    },
+    {
+      "path": "rich/_ratio.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e12397af6fc6102a1866986f28017fb4129522b9",
+      "size": 5459,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e12397af6fc6102a1866986f28017fb4129522b9"
+    },
+    {
+      "path": "rich/_spinners.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d0bb1fe751677f0ee83fc6bb876ed72443fdcde7",
+      "size": 19919,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d0bb1fe751677f0ee83fc6bb876ed72443fdcde7"
+    },
+    {
+      "path": "rich/_stack.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "194564e761ddae165b39ef6598877e2e3820af0a",
+      "size": 351,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/194564e761ddae165b39ef6598877e2e3820af0a"
+    },
+    {
+      "path": "rich/_timer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2ca6be03c43054caaa3660998273ebf704345dd",
+      "size": 417,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a2ca6be03c43054caaa3660998273ebf704345dd"
+    },
+    {
+      "path": "rich/_win32_console.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e969d816433a7b08be73a8678da98881c9f48486",
+      "size": 22784,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e969d816433a7b08be73a8678da98881c9f48486"
+    },
+    {
+      "path": "rich/_windows.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e17c5c0fdcaeec4b2b0c007733970ae4ffa9c641",
+      "size": 1901,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e17c5c0fdcaeec4b2b0c007733970ae4ffa9c641"
+    },
+    {
+      "path": "rich/_windows_renderer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0fc2ba852a92a45ef510d27ca6ce5e5348bec8a1",
+      "size": 2759,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0fc2ba852a92a45ef510d27ca6ce5e5348bec8a1"
+    },
+    {
+      "path": "rich/_wrap.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e94ff6f43adfb6a6900a3a2147781e91220b189",
+      "size": 3404,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2e94ff6f43adfb6a6900a3a2147781e91220b189"
+    },
+    {
+      "path": "rich/abc.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "42db7c00202962561f5dfdb295b2cab54d4868c7",
+      "size": 878,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/42db7c00202962561f5dfdb295b2cab54d4868c7"
+    },
+    {
+      "path": "rich/align.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e230a66b4bc18aeb21f5430e202afe2df34e2aa1",
+      "size": 10320,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e230a66b4bc18aeb21f5430e202afe2df34e2aa1"
+    },
+    {
+      "path": "rich/ansi.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "66365e6536080bd9372d2a7a58b8ffa3447fec34",
+      "size": 6906,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/66365e6536080bd9372d2a7a58b8ffa3447fec34"
+    },
+    {
+      "path": "rich/bar.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "022284b57881d8b133aced5b5a843e6447bb4e0b",
+      "size": 3263,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/022284b57881d8b133aced5b5a843e6447bb4e0b"
+    },
+    {
+      "path": "rich/box.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa4ada32ed6a9f7813d7eb16f475cee4a1b8caa7",
+      "size": 10783,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/aa4ada32ed6a9f7813d7eb16f475cee4a1b8caa7"
+    },
+    {
+      "path": "rich/cells.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f85f928f75e31c64fdb630b9a11c7e0c2035b6ce",
+      "size": 4780,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f85f928f75e31c64fdb630b9a11c7e0c2035b6ce"
+    },
+    {
+      "path": "rich/color.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4270a278d5950ee3e4e90740a051e2f4ca50b91c",
+      "size": 18223,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4270a278d5950ee3e4e90740a051e2f4ca50b91c"
+    },
+    {
+      "path": "rich/color_triplet.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02cab328251af9bfa809981aaa44933c407e2cd7",
+      "size": 1054,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/02cab328251af9bfa809981aaa44933c407e2cd7"
+    },
+    {
+      "path": "rich/columns.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "669a3a7074f9a9e1af29cb4bc78b05851df67959",
+      "size": 7131,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/669a3a7074f9a9e1af29cb4bc78b05851df67959"
+    },
+    {
+      "path": "rich/console.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1232cd5ce7c6b3db62fc3b1fe92b0e86cc7f6ae9",
+      "size": 99101,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1232cd5ce7c6b3db62fc3b1fe92b0e86cc7f6ae9"
+    },
+    {
+      "path": "rich/constrain.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "65fdf56342e8b5b8e181914881025231684e1871",
+      "size": 1288,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/65fdf56342e8b5b8e181914881025231684e1871"
+    },
+    {
+      "path": "rich/containers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "901ff8ba6ea0836481a015ed5c627889cc416c03",
+      "size": 5502,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/901ff8ba6ea0836481a015ed5c627889cc416c03"
+    },
+    {
+      "path": "rich/control.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8a912553a94660e55d94c958a4483d3ba2884d4",
+      "size": 6606,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a8a912553a94660e55d94c958a4483d3ba2884d4"
+    },
+    {
+      "path": "rich/default_styles.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ad72fff5869b4754e15d62a9e0dee1224d3f997e",
+      "size": 8046,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ad72fff5869b4754e15d62a9e0dee1224d3f997e"
+    },
+    {
+      "path": "rich/diagnose.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91e55bd8aff27a83a8e1ad9e13e6258e3d7bd1f1",
+      "size": 924,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/91e55bd8aff27a83a8e1ad9e13e6258e3d7bd1f1"
+    },
+    {
+      "path": "rich/emoji.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d5a1062a965c0ee75d20ad08d0179a90fca1646d",
+      "size": 2465,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d5a1062a965c0ee75d20ad08d0179a90fca1646d"
+    },
+    {
+      "path": "rich/errors.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0bcbe53ef59373c608e62ea285536f8b22b47ecb",
+      "size": 642,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/0bcbe53ef59373c608e62ea285536f8b22b47ecb"
+    },
+    {
+      "path": "rich/file_proxy.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4b0b0da6c2a62b2b1468c35ddd69f1bbb9b91aa8",
+      "size": 1683,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4b0b0da6c2a62b2b1468c35ddd69f1bbb9b91aa8"
+    },
+    {
+      "path": "rich/filesize.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "99f118e20103174993b865cfb43ac6b6e00296a4",
+      "size": 2508,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/99f118e20103174993b865cfb43ac6b6e00296a4"
+    },
+    {
+      "path": "rich/highlighter.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "27714b25b40b1e786305d6b1b6b19c1114063774",
+      "size": 9585,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/27714b25b40b1e786305d6b1b6b19c1114063774"
+    },
+    {
+      "path": "rich/json.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f048902df16d2bc1914b2297eb058e809bb4da8a",
+      "size": 5019,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f048902df16d2bc1914b2297eb058e809bb4da8a"
+    },
+    {
+      "path": "rich/jupyter.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "24135a9f7d0b3c6622a0cb03974e94f1e42ffc11",
+      "size": 3228,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/24135a9f7d0b3c6622a0cb03974e94f1e42ffc11"
+    },
+    {
+      "path": "rich/layout.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7fa2852ea14b4b22c5a9cbc3acdfddc5c55c4200",
+      "size": 13944,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7fa2852ea14b4b22c5a9cbc3acdfddc5c55c4200"
+    },
+    {
+      "path": "rich/live.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f0529a781cf8c247eadb994fd251c0d00433dcac",
+      "size": 14271,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f0529a781cf8c247eadb994fd251c0d00433dcac"
+    },
+    {
+      "path": "rich/live_render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4284cccc4b13d5b4a4d62e1838e0eae4a9b80471",
+      "size": 3654,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4284cccc4b13d5b4a4d62e1838e0eae4a9b80471"
+    },
+    {
+      "path": "rich/logging.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "96859934e9a3e9b5b4b43329a9323edbf6042cf8",
+      "size": 11891,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/96859934e9a3e9b5b4b43329a9323edbf6042cf8"
+    },
+    {
+      "path": "rich/markdown.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9b5ceacd488c3a2a3bc27284c2959616b8f532b1",
+      "size": 26167,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9b5ceacd488c3a2a3bc27284c2959616b8f532b1"
+    },
+    {
+      "path": "rich/markup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bd9c05a712a8077098507d6870ddc0b0bf3028b0",
+      "size": 8427,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bd9c05a712a8077098507d6870ddc0b0bf3028b0"
+    },
+    {
+      "path": "rich/measure.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a508ffa80bd715b47c190ed9d747dbc388fa5b19",
+      "size": 5305,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a508ffa80bd715b47c190ed9d747dbc388fa5b19"
+    },
+    {
+      "path": "rich/padding.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1d1f4a553c8114eb516a865f33170058197d856f",
+      "size": 4958,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1d1f4a553c8114eb516a865f33170058197d856f"
+    },
+    {
+      "path": "rich/pager.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3f7aa62af1ee2690e1e17ee41f3c368953625b8",
+      "size": 828,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a3f7aa62af1ee2690e1e17ee41f3c368953625b8"
+    },
+    {
+      "path": "rich/palette.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f29587945cb2214ab6d92856dac6d11c320a8ca1",
+      "size": 3288,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f29587945cb2214ab6d92856dac6d11c320a8ca1"
+    },
+    {
+      "path": "rich/panel.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95f4c84cf0b21d1bb518a40b22f39716a189f2fa",
+      "size": 10705,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/95f4c84cf0b21d1bb518a40b22f39716a189f2fa"
+    },
+    {
+      "path": "rich/pretty.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c48cfd9fad2a8db0ef237c1c530d0d45522fb5a",
+      "size": 35812,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5c48cfd9fad2a8db0ef237c1c530d0d45522fb5a"
+    },
+    {
+      "path": "rich/progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8810aeac4c09ca01bb210a2a841edfb8061fee49",
+      "size": 59703,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8810aeac4c09ca01bb210a2a841edfb8061fee49"
+    },
+    {
+      "path": "rich/progress_bar.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a2bf326144b570efc2d9b961e666cf69d862b131",
+      "size": 8164,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a2bf326144b570efc2d9b961e666cf69d862b131"
+    },
+    {
+      "path": "rich/prompt.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "972082b72023338411c3162bc5264250cf10c907",
+      "size": 11292,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/972082b72023338411c3162bc5264250cf10c907"
+    },
+    {
+      "path": "rich/protocol.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c6923dd7d870ec02decdb66b55889df9041574d2",
+      "size": 1367,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c6923dd7d870ec02decdb66b55889df9041574d2"
+    },
+    {
+      "path": "rich/py.typed",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "rich/region.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "75b3631c3879294549f1f27418859aefb63925a7",
+      "size": 166,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/75b3631c3879294549f1f27418859aefb63925a7"
+    },
+    {
+      "path": "rich/repr.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95331006eede0f7b4fa3a5e0ed8a95dc96cbec18",
+      "size": 4419,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/95331006eede0f7b4fa3a5e0ed8a95dc96cbec18"
+    },
+    {
+      "path": "rich/rule.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb3d43271dc1c20cc79bd628df0544e92040e401",
+      "size": 4590,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fb3d43271dc1c20cc79bd628df0544e92040e401"
+    },
+    {
+      "path": "rich/scope.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "36c06241f4618d4a8b74dfb1581f17514c693dc1",
+      "size": 2831,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/36c06241f4618d4a8b74dfb1581f17514c693dc1"
+    },
+    {
+      "path": "rich/screen.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4f7fd19de7ffc7e3c18702389e093402a633c5b",
+      "size": 1579,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b4f7fd19de7ffc7e3c18702389e093402a633c5b"
+    },
+    {
+      "path": "rich/segment.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "603d5097faabf53647ff3d161e113f5a3f6dacb5",
+      "size": 24210,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/603d5097faabf53647ff3d161e113f5a3f6dacb5"
+    },
+    {
+      "path": "rich/spinner.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "91ea630e10f893bf5d6b17fcd9a1fedcecee6f02",
+      "size": 4339,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/91ea630e10f893bf5d6b17fcd9a1fedcecee6f02"
+    },
+    {
+      "path": "rich/status.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "65744838e3fcd7365ce6f268fe511d75d55e6a07",
+      "size": 4424,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/65744838e3fcd7365ce6f268fe511d75d55e6a07"
+    },
+    {
+      "path": "rich/style.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "313c889496d90cef94d5537c122e5c5e898e3bb4",
+      "size": 27073,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/313c889496d90cef94d5537c122e5c5e898e3bb4"
+    },
+    {
+      "path": "rich/styled.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "27243beb76bb22c2851b97227249e70068ec4420",
+      "size": 1234,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/27243beb76bb22c2851b97227249e70068ec4420"
+    },
+    {
+      "path": "rich/syntax.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "618e0459f5499c25216ceed0c4c3f1ece6640433",
+      "size": 35367,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/618e0459f5499c25216ceed0c4c3f1ece6640433"
+    },
+    {
+      "path": "rich/table.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5fc5ace0b98d13d40a6ac81c60a7c023a0ec4a33",
+      "size": 39644,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5fc5ace0b98d13d40a6ac81c60a7c023a0ec4a33"
+    },
+    {
+      "path": "rich/terminal_theme.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "565e9d960f8604c487e063ad9ed3f6f63027f3b4",
+      "size": 3370,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/565e9d960f8604c487e063ad9ed3f6f63027f3b4"
+    },
+    {
+      "path": "rich/text.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7b32967f72703b9e22727f772930e914b18c37b9",
+      "size": 47300,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7b32967f72703b9e22727f772930e914b18c37b9"
+    },
+    {
+      "path": "rich/theme.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "471dfb2f9271c073f0713ca98f8db2f89c975071",
+      "size": 3777,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/471dfb2f9271c073f0713ca98f8db2f89c975071"
+    },
+    {
+      "path": "rich/themes.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf6db104a2c4fd4f3dc699e85f2b262c3d31e9a0",
+      "size": 102,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bf6db104a2c4fd4f3dc699e85f2b262c3d31e9a0"
+    },
+    {
+      "path": "rich/traceback.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "821c7501ad46eeb6c8fb863f0644fbc7f7a1e2cc",
+      "size": 29529,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/821c7501ad46eeb6c8fb863f0644fbc7f7a1e2cc"
+    },
+    {
+      "path": "rich/tree.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8c5e71819714acdfc0821e659543442f8ea6679e",
+      "size": 9107,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8c5e71819714acdfc0821e659543442f8ea6679e"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "43a929cc7b202064ad312e88b9168f3e275deb38",
+      "size": 196,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/43a929cc7b202064ad312e88b9168f3e275deb38"
+    },
+    {
+      "path": "tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ec487802cc28c1d9f18d085b1fe3d64dce42870c",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/ec487802cc28c1d9f18d085b1fe3d64dce42870c"
+    },
+    {
+      "path": "tests/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "tests/_card_render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "501c952334334366bc10bf6d3cf9d79a100b45fb",
+      "size": 28678,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/501c952334334366bc10bf6d3cf9d79a100b45fb"
+    },
+    {
+      "path": "tests/_exception_render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "15fad3dac387a0425705c8e36d11437ca5c6a3b5",
+      "size": 13757,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/15fad3dac387a0425705c8e36d11437ca5c6a3b5"
+    },
+    {
+      "path": "tests/pytest.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5496d4681c7aff523f1a0fc5e89048e16611cbce",
+      "size": 29,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5496d4681c7aff523f1a0fc5e89048e16611cbce"
+    },
+    {
+      "path": "tests/render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2e5f82a7c32acf863c9c97a5a11d20dddcd738e",
+      "size": 629,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d2e5f82a7c32acf863c9c97a5a11d20dddcd738e"
+    },
+    {
+      "path": "tests/test_align.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9abf3e2d2cc0e22e53bb0f4f9125852d8acd96e0",
+      "size": 4839,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9abf3e2d2cc0e22e53bb0f4f9125852d8acd96e0"
+    },
+    {
+      "path": "tests/test_ansi.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae87cde17809486d6efa3040bad109760703b0aa",
+      "size": 2853,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ae87cde17809486d6efa3040bad109760703b0aa"
+    },
+    {
+      "path": "tests/test_bar.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "021a8aaac154af1ba27f1ba991d1048433d4482b",
+      "size": 6171,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/021a8aaac154af1ba27f1ba991d1048433d4482b"
+    },
+    {
+      "path": "tests/test_block_bar.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "665987634da817c6e59ad8bdc601b7ba01333437",
+      "size": 1659,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/665987634da817c6e59ad8bdc601b7ba01333437"
+    },
+    {
+      "path": "tests/test_box.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "21ba4fd0fe02ae720c8cbcf4a78fabb68a67324d",
+      "size": 1404,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/21ba4fd0fe02ae720c8cbcf4a78fabb68a67324d"
+    },
+    {
+      "path": "tests/test_card.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d578ec89e0148b554590b5c32004bbc6ac0be23a",
+      "size": 1011,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d578ec89e0148b554590b5c32004bbc6ac0be23a"
+    },
+    {
+      "path": "tests/test_cells.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fe451fa577b32f13b0547147a9662966243c8f84",
+      "size": 2122,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/fe451fa577b32f13b0547147a9662966243c8f84"
+    },
+    {
+      "path": "tests/test_color.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "010d7974611bce301a7c39d686ac226559b82cdd",
+      "size": 6204,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/010d7974611bce301a7c39d686ac226559b82cdd"
+    },
+    {
+      "path": "tests/test_color_triplet.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4a592c867ac1c97dfbb5f5c040a1086bbb0cc03e",
+      "size": 469,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4a592c867ac1c97dfbb5f5c040a1086bbb0cc03e"
+    },
+    {
+      "path": "tests/test_columns.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1b167f4acb60ad4a5e8c5819cc0650011abe81c7",
+      "size": 6939,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1b167f4acb60ad4a5e8c5819cc0650011abe81c7"
+    },
+    {
+      "path": "tests/test_columns_align.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "456510a89d32965c1d9f2bd5bf8a40ec94cadc2b",
+      "size": 3616,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/456510a89d32965c1d9f2bd5bf8a40ec94cadc2b"
+    },
+    {
+      "path": "tests/test_console.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "36d15df00e9de129177570fe8049bbb823762d47",
+      "size": 35110,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/36d15df00e9de129177570fe8049bbb823762d47"
+    },
+    {
+      "path": "tests/test_constrain.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "433d62f4ac23c37db5559dcc580a800ded48d148",
+      "size": 363,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/433d62f4ac23c37db5559dcc580a800ded48d148"
+    },
+    {
+      "path": "tests/test_containers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be2c83cda8f90fd0f0b7107d1ab0da7744958016",
+      "size": 1684,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/be2c83cda8f90fd0f0b7107d1ab0da7744958016"
+    },
+    {
+      "path": "tests/test_control.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2704e980882aff2435726d51c71ce5f3233180b",
+      "size": 1858,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/d2704e980882aff2435726d51c71ce5f3233180b"
+    },
+    {
+      "path": "tests/test_emoji.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be612bb6ffba34aeab98e4364f9e27384f217af1",
+      "size": 949,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/be612bb6ffba34aeab98e4364f9e27384f217af1"
+    },
+    {
+      "path": "tests/test_file_proxy.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2ec4d789e30324fe02bf33f635051a0f62f5a3bf",
+      "size": 917,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2ec4d789e30324fe02bf33f635051a0f62f5a3bf"
+    },
+    {
+      "path": "tests/test_filesize.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b8f9163ae6cfd6e36f5c81fdfd75fce0cfd56f9d",
+      "size": 835,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b8f9163ae6cfd6e36f5c81fdfd75fce0cfd56f9d"
+    },
+    {
+      "path": "tests/test_getfileno.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7f664ddb3b3cb92b68302c8b85b574d67c20f6f7",
+      "size": 457,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7f664ddb3b3cb92b68302c8b85b574d67c20f6f7"
+    },
+    {
+      "path": "tests/test_highlighter.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30851cf79cd7f6ebde5b8b8acfff20d5ce0c29a1",
+      "size": 13338,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/30851cf79cd7f6ebde5b8b8acfff20d5ce0c29a1"
+    },
+    {
+      "path": "tests/test_inspect.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a9d5539366fae7e1dcdbcfa87e81c4b1cbe8c18f",
+      "size": 21180,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a9d5539366fae7e1dcdbcfa87e81c4b1cbe8c18f"
+    },
+    {
+      "path": "tests/test_json.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7571b0a393b1f4d9976afacda24d67b107c7b72b",
+      "size": 258,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7571b0a393b1f4d9976afacda24d67b107c7b72b"
+    },
+    {
+      "path": "tests/test_jupyter.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c327e62206d6dae64dcb10d02409236c5c0484a",
+      "size": 1047,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7c327e62206d6dae64dcb10d02409236c5c0484a"
+    },
+    {
+      "path": "tests/test_layout.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "46f496b0c74598d3be55231c3559027775911506",
+      "size": 4055,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/46f496b0c74598d3be55231c3559027775911506"
+    },
+    {
+      "path": "tests/test_live.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f037e4b8b45d47f33bda10661cf868c78ca93bad",
+      "size": 14293,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f037e4b8b45d47f33bda10661cf868c78ca93bad"
+    },
+    {
+      "path": "tests/test_live_render.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e8ae11087adac3c6d7a4bffaf926961983e9e436",
+      "size": 1424,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e8ae11087adac3c6d7a4bffaf926961983e9e436"
+    },
+    {
+      "path": "tests/test_log.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37fdda4621ff4e6b10d2afbd79bb00c84d3abb53",
+      "size": 3172,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/37fdda4621ff4e6b10d2afbd79bb00c84d3abb53"
+    },
+    {
+      "path": "tests/test_logging.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ce3ac25af933f23ff920a80e9ca55fa36fed4378",
+      "size": 4276,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/ce3ac25af933f23ff920a80e9ca55fa36fed4378"
+    },
+    {
+      "path": "tests/test_markdown.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "710436eb236f262afb2dc672e6dde5f0a5bab2c3",
+      "size": 14362,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/710436eb236f262afb2dc672e6dde5f0a5bab2c3"
+    },
+    {
+      "path": "tests/test_markdown_no_hyperlinks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4c5ff66fd696bae4fa71b253ffd3cbd769c1d089",
+      "size": 6875,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/4c5ff66fd696bae4fa71b253ffd3cbd769c1d089"
+    },
+    {
+      "path": "tests/test_markup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "13835faca06abdda533a4acb2691ddbe5f55c0b4",
+      "size": 6370,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/13835faca06abdda533a4acb2691ddbe5f55c0b4"
+    },
+    {
+      "path": "tests/test_measure.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6155922da120790d7be4d8dcf69e6643bc9677ef",
+      "size": 1065,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6155922da120790d7be4d8dcf69e6643bc9677ef"
+    },
+    {
+      "path": "tests/test_null_file.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "001c89bd386d90ba241ab84bc3573108bd33857d",
+      "size": 713,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/001c89bd386d90ba241ab84bc3573108bd33857d"
+    },
+    {
+      "path": "tests/test_padding.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7ab0d741e65306e1f4a6be91ea0f37a110d1f1da",
+      "size": 1688,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/7ab0d741e65306e1f4a6be91ea0f37a110d1f1da"
+    },
+    {
+      "path": "tests/test_palette.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8ddd7cc9077d33f07d294ce4303b24cef7476dec",
+      "size": 206,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/8ddd7cc9077d33f07d294ce4303b24cef7476dec"
+    },
+    {
+      "path": "tests/test_panel.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5ae3babee60db4373a92ca1a47a0258c85ab89d0",
+      "size": 5372,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/5ae3babee60db4373a92ca1a47a0258c85ab89d0"
+    },
+    {
+      "path": "tests/test_pick.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b77328056e0b18dbde4284ded8048b5c21cd9807",
+      "size": 484,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b77328056e0b18dbde4284ded8048b5c21cd9807"
+    },
+    {
+      "path": "tests/test_pretty.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e505ed4d6d168d7979fdbdb7e90e8c58fddb8bf5",
+      "size": 18077,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e505ed4d6d168d7979fdbdb7e90e8c58fddb8bf5"
+    },
+    {
+      "path": "tests/test_progress.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "72497a0ca68ee221801eab0c59f482682519fbc1",
+      "size": 25344,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/72497a0ca68ee221801eab0c59f482682519fbc1"
+    },
+    {
+      "path": "tests/test_prompt.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a41cc3964e6e7d71c149cc4a8a29d71c952c652",
+      "size": 2736,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/9a41cc3964e6e7d71c149cc4a8a29d71c952c652"
+    },
+    {
+      "path": "tests/test_protocol.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6337ef5df603e455ddcebbb8d3ee1985b6ca56d1",
+      "size": 1885,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/6337ef5df603e455ddcebbb8d3ee1985b6ca56d1"
+    },
+    {
+      "path": "tests/test_ratio.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "047ad767d79de9789d5ccae119b79cb85b5d398c",
+      "size": 1721,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/047ad767d79de9789d5ccae119b79cb85b5d398c"
+    },
+    {
+      "path": "tests/test_repr.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3d3e74c8b904166d62d52f500bdae9947e1395fc",
+      "size": 3793,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3d3e74c8b904166d62d52f500bdae9947e1395fc"
+    },
+    {
+      "path": "tests/test_rich_print.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a92b8000228fbb86370abd4f9117f7cc9f6f0d12",
+      "size": 1905,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a92b8000228fbb86370abd4f9117f7cc9f6f0d12"
+    },
+    {
+      "path": "tests/test_rule.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "398c75585bec112cb4b4c201a5e8cc6ff1ae4aca",
+      "size": 3852,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/398c75585bec112cb4b4c201a5e8cc6ff1ae4aca"
+    },
+    {
+      "path": "tests/test_rule_in_table.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc911391ab9651db886b813af492e989a6f9f3df",
+      "size": 2290,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bc911391ab9651db886b813af492e989a6f9f3df"
+    },
+    {
+      "path": "tests/test_screen.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c571e037e00237d77ef11201bc43acc81018f451",
+      "size": 480,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c571e037e00237d77ef11201bc43acc81018f451"
+    },
+    {
+      "path": "tests/test_segment.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3db60b9089afe9db454fd987a0893004f390a6cc",
+      "size": 11203,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3db60b9089afe9db454fd987a0893004f390a6cc"
+    },
+    {
+      "path": "tests/test_spinner.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "efeeb717378abe27aef7196a07d53aba061a6a1b",
+      "size": 1714,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/efeeb717378abe27aef7196a07d53aba061a6a1b"
+    },
+    {
+      "path": "tests/test_stack.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e961ddd8b25a5bafc0c5c69053a04d05e6053744",
+      "size": 206,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e961ddd8b25a5bafc0c5c69053a04d05e6053744"
+    },
+    {
+      "path": "tests/test_status.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c2aec50480576258b0f4cff92f3485af4d400c9c",
+      "size": 1018,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c2aec50480576258b0f4cff92f3485af4d400c9c"
+    },
+    {
+      "path": "tests/test_style.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b5c01729ed6ad7ee607ea84a196a7dac453ba92d",
+      "size": 7124,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/b5c01729ed6ad7ee607ea84a196a7dac453ba92d"
+    },
+    {
+      "path": "tests/test_styled.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "827c9a96d20aa9595cda4cd0e7f16b44914d8082",
+      "size": 471,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/827c9a96d20aa9595cda4cd0e7f16b44914d8082"
+    },
+    {
+      "path": "tests/test_syntax.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f3f0f41fe269ff2e601071c7965a9e244d243c46",
+      "size": 42246,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f3f0f41fe269ff2e601071c7965a9e244d243c46"
+    },
+    {
+      "path": "tests/test_table.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2eea189790094fd0c6394154ecf3533292ebf6ed",
+      "size": 23436,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2eea189790094fd0c6394154ecf3533292ebf6ed"
+    },
+    {
+      "path": "tests/test_text.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "18c91cffa65ab9c0338915bb870bcb8151844186",
+      "size": 25998,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/18c91cffa65ab9c0338915bb870bcb8151844186"
+    },
+    {
+      "path": "tests/test_theme.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "228cb189dfcc1426a848fa3a57dc20358411b5ec",
+      "size": 1455,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/228cb189dfcc1426a848fa3a57dc20358411b5ec"
+    },
+    {
+      "path": "tests/test_tools.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2e6fef7f5a1bf5552dc63f7d5078b19a847419da",
+      "size": 1429,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/2e6fef7f5a1bf5552dc63f7d5078b19a847419da"
+    },
+    {
+      "path": "tests/test_traceback.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cf24b0cc32218da5aa36fe45babcf14f8d1d677b",
+      "size": 11555,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/cf24b0cc32218da5aa36fe45babcf14f8d1d677b"
+    },
+    {
+      "path": "tests/test_tree.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "370e1f47fd00b07baa57ba2da3f060c04b79139d",
+      "size": 4662,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/370e1f47fd00b07baa57ba2da3f060c04b79139d"
+    },
+    {
+      "path": "tests/test_win32_console.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a550cb32c6054cd3137d95b3a3e6605fe7026045",
+      "size": 15088,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/a550cb32c6054cd3137d95b3a3e6605fe7026045"
+    },
+    {
+      "path": "tests/test_windows_renderer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bc24ae95ec2c15f4b14d9ecc05579bd1fa51441b",
+      "size": 4057,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/bc24ae95ec2c15f4b14d9ecc05579bd1fa51441b"
+    },
+    {
+      "path": "tools",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "035dcf3d2e6d05aa0b95d49acf92221c0a861f3c",
+      "url": "https://api.github.com/repos/Textualize/rich/git/trees/035dcf3d2e6d05aa0b95d49acf92221c0a861f3c"
+    },
+    {
+      "path": "tools/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "125693fb32e31b39737de2a5125a0206b10d0d25",
+      "size": 148,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/125693fb32e31b39737de2a5125a0206b10d0d25"
+    },
+    {
+      "path": "tools/cats.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f4ca7bcb1f81670115b6102a8743af124ef5da8b",
+      "size": 120071,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/f4ca7bcb1f81670115b6102a8743af124ef5da8b"
+    },
+    {
+      "path": "tools/make_emoji.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3a5f2d7979fe4681c02b5b490c5aa43fde31f25f",
+      "size": 288,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/3a5f2d7979fe4681c02b5b490c5aa43fde31f25f"
+    },
+    {
+      "path": "tools/make_terminal_widths.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e556834640306ea66580cf5f79264facf6223c7",
+      "size": 2463,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/1e556834640306ea66580cf5f79264facf6223c7"
+    },
+    {
+      "path": "tools/movies.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "984c66b56800495d06c61914664cdee3b662836d",
+      "size": 2160,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/984c66b56800495d06c61914664cdee3b662836d"
+    },
+    {
+      "path": "tools/profile_divide.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "73c20294c2ae30654e0a858d6951c3aec23f48db",
+      "size": 740,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/73c20294c2ae30654e0a858d6951c3aec23f48db"
+    },
+    {
+      "path": "tools/profile_pretty.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c1a08b82d1658eed9e7150a3c02aa58c7ff23204",
+      "size": 488,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/c1a08b82d1658eed9e7150a3c02aa58c7ff23204"
+    },
+    {
+      "path": "tools/stress_test_pretty.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "334f9cf54487f02f4ef179804ff71a1f8cf3b8ab",
+      "size": 565,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/334f9cf54487f02f4ef179804ff71a1f8cf3b8ab"
+    },
+    {
+      "path": "tox.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e09b0845ccc835fbaf4c2cdcf10a00e683fd80b3",
+      "size": 1034,
+      "url": "https://api.github.com/repos/Textualize/rich/git/blobs/e09b0845ccc835fbaf4c2cdcf10a00e683fd80b3"
+    }
+  ],
+  "truncated": false,
+  "owner": "Textualize",
+  "repo": "rich",
+  "ref": "v13.7.1",
+  "discovery": {
+    "mode": "tree",
+    "owner": "Textualize",
+    "repo": "rich",
+    "ref": "v13.7.1",
+    "requested_ref": "v13.7.1",
+    "ref_source": "explicit",
+    "recursive": true
+  }
+}
