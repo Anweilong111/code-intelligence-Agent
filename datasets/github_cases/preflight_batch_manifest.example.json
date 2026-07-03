@@ -1,0 +1,40 @@
+{
+  "suite_name": "github_onboarding_preflight_example",
+  "description": "Example manifest for preflighting multiple GitHub onboarding targets before generating a smoke-runner manifest.",
+  "defaults": {
+    "sample_sources": 20,
+    "max_candidates": 10,
+    "preset": "smoke"
+  },
+  "thresholds": {
+    "min_generated_candidates": 1,
+    "require_quality_gate": true,
+    "require_benchmark_run": true,
+    "min_benchmark_cases": 1,
+    "min_top1": 0.5,
+    "min_map": 0.5,
+    "min_patch_success_rate": 0.5
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_discovery_preflight",
+      "mode": "from-discovery",
+      "discovery": "source_discovery.example.json",
+      "include": [
+        "maths/average_mean.py",
+        "sorts/bubble_sort.py",
+        "maths/average_median.py"
+      ]
+    },
+    {
+      "name": "thealgorithms_repo_preflight",
+      "mode": "repo",
+      "repo": "TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "sample_sources": 5
+    }
+  ]
+}

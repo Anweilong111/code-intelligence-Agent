@@ -1,0 +1,30 @@
+{
+  "suite_name": "github_single_repo_pipeline_example",
+  "description": "Example manifest for running the full GitHub onboarding pipeline on one pinned repository target.",
+  "defaults": {
+    "mode": "repo",
+    "preset": "smoke",
+    "sample_sources": 5,
+    "max_candidates": 5,
+    "fallback": {
+      "enabled": true,
+      "max_sources": 50,
+      "max_candidates": 20
+    },
+    "no_repository_test_command": true
+  },
+  "promotion_gate": {
+    "min_smoke_benchmark_cases": 1,
+    "allow_warning_stages": true
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_average_mean_pipeline",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "maths/average_mean.py"
+      ]
+    }
+  ]
+}

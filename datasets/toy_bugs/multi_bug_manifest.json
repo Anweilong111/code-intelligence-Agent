@@ -1,0 +1,21 @@
+{
+  "cases": [
+    {
+      "name": "buggy_sample_multi_function",
+      "repo_path": "multi_bug_repo",
+      "buggy_functions": ["shift_left", "has_items"],
+      "expected_rule_ids": [
+        "possible_index_overrun",
+        "always_true_len_check"
+      ],
+      "failing_tests": ["test_shift_left", "test_has_items_empty"],
+      "passed_tests": ["test_has_items_non_empty"],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "multi bug",
+        "purpose": "exercise MAP with multiple buggy functions"
+      }
+    }
+  ]
+}

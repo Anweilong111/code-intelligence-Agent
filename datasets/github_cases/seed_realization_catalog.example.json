@@ -1,0 +1,72 @@
+{
+  "candidates": [
+    {
+      "id": "thealgorithms_average_mean_zero_guard",
+      "failure_types": [
+        "syntax_error",
+        "test_failure",
+        "runtime_error"
+      ],
+      "benchmark_focuses": [
+        "judge false-positive hardening",
+        "near-miss semantic repair",
+        "execution-evidence calibration"
+      ],
+      "patterns": [
+        "capped_by_execution_evidence",
+        "failure_type=syntax_error",
+        "failure_type=test_failure"
+      ],
+      "template_case": {
+        "name": "thealgorithms_average_mean_missing_zero_guard_from_seed",
+        "repo_path": "thealgorithms_average_mean_missing_zero_guard_from_seed",
+        "sources": [
+          {
+            "owner": "TheAlgorithms",
+            "repo": "Python",
+            "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+            "source_path": "maths/average_mean.py",
+            "target_path": "average_mean.py",
+            "sha256": "4631a33faeeff0531b61a9ea900be47920b06b760f5a082abadaa002d8f45440"
+          }
+        ],
+        "mutations": [
+          {
+            "target_path": "average_mean.py",
+            "find": "    if not nums:\n        raise ValueError(\"List is empty\")\n    return sum(nums) / len(nums)",
+            "replace": "    n = len(nums)\n    return sum(nums) / n",
+            "count": 1,
+            "description": "Remove mean's empty-list guard and route the len-derived value into the denominator."
+          }
+        ],
+        "files": [
+          {
+            "target_path": "test_average_mean_zero_guard.py",
+            "content": "from average_mean import mean\n\n\ndef test_average_mean_empty_input_raises_value_error():\n    try:\n        mean([])\n    except ValueError:\n        return\n    except Exception as exc:\n        raise AssertionError(f'expected ValueError, got {type(exc).__name__}') from exc\n    raise AssertionError('empty input should raise ValueError')\n"
+          }
+        ],
+        "benchmark": {
+          "buggy_functions": [
+            "mean"
+          ],
+          "expected_rule_ids": [
+            "missing_len_zero_guard"
+          ],
+          "failing_tests": [
+            "test_average_mean_empty_input_raises_value_error"
+          ],
+          "passed_tests": [],
+          "test_args": [],
+          "metadata": {
+            "source": "github_raw_seed_realization",
+            "upstream": "TheAlgorithms/Python",
+            "upstream_ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+            "upstream_path": "maths/average_mean.py",
+            "license": "MIT",
+            "bug_type": "zero division error"
+          }
+        }
+      }
+    }
+  ]
+}

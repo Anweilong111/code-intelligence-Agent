@@ -1,0 +1,68 @@
+{
+  "suite_name": "repo_intelligence_agent_cli_default_output_smoke",
+  "description": "Dedicated one-command smoke suite for the arbitrary-repo intelligence Agent default-output CLI path. It invokes github_repo_intelligence through the CLI parser without an output_dir positional argument by setting use_cli_default_output_dir=true. Run with: python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite datasets/github_cases/repo_intelligence_agent_cli_default_output_smoke.example.json outputs_smoke/repo_intelligence_agent_cli_default_output_current --require-success",
+  "defaults": {
+    "agent": true,
+    "preset": "mining",
+    "max_sources": 50,
+    "max_candidates": 20,
+    "auto_fallback": true,
+    "run_repository_test_command": true,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 4,
+    "use_cli_default_output_dir": true
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 1,
+    "min_artifact_core_ready_count": 1,
+    "min_artifact_file_checked_count": 1,
+    "min_agent_shortcut_count": 1,
+    "min_output_dir_defaulted_count": 1,
+    "min_agent_default_output_dir_count": 1,
+    "min_agent_controller_loop_complete_count": 1,
+    "min_agent_decision_timeline_complete_count": 1,
+    "min_agent_answer_coverage_complete_count": 1,
+    "min_objective_compliance_pass_count": 1,
+    "max_objective_compliance_failed_section_kind_count": 0,
+    "min_static_analysis_ready_count": 1,
+    "min_repository_test_dynamic_evidence_level_kind_count": 1,
+    "min_repository_test_execution_result_count": 1,
+    "min_repository_test_counted_run_count": 1,
+    "min_repository_test_count": 1,
+    "min_repository_test_passed_count": 1,
+    "min_repository_test_count_source_kind_count": 1,
+    "min_agent_auto_complete_loop_count": 1,
+    "min_agent_auto_action_loop_complete_run_count": 1,
+    "min_agent_auto_action_loop_complete_count": 2,
+    "max_agent_auto_action_loop_incomplete_count": 0
+  },
+  "runs": [
+    {
+      "name": "pypa_sampleproject_repo_only_agent_cli",
+      "repo": "pypa/sampleproject",
+      "expected_status": "pass",
+      "expected_agent_shortcut": true,
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_llm_patch_generation_status": "disabled",
+      "expected_planned_repository_test_result_status": "pass",
+      "metric_thresholds": {
+        "output_dir_defaulted": 1,
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "agent_decision_timeline_complete": 1,
+        "agent_decision_timeline_step_count": 1,
+        "agent_auto_loop_progress_count": 1,
+        "agent_auto_action_loop_complete_count": 2,
+        "planned_repository_test_result_test_count": 1,
+        "planned_repository_test_result_passed": 1,
+        "objective_compliance_passed": 1
+      }
+    }
+  ]
+}

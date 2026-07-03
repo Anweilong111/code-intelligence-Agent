@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-p no:cacheprovider"
+markers = [
+    "slow: subprocess-heavy integration tests that are useful for final validation but expensive during tight development loops",
+    "overlay: repository failure-overlay tests that synthesize pytest evidence from static findings",
+]

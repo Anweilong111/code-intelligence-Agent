@@ -1,0 +1,36 @@
+{
+  "sources": [
+    {
+      "owner": "TheAlgorithms",
+      "repo": "Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "source_path": "maths/average_mean.py",
+      "target_path": "average_mean.py",
+      "sha256": "4631a33faeeff0531b61a9ea900be47920b06b760f5a082abadaa002d8f45440"
+    },
+    {
+      "owner": "TheAlgorithms",
+      "repo": "Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "source_path": "sorts/bubble_sort.py",
+      "target_path": "bubble_sort.py",
+      "sha256": "23c8405a49847ad343e676216eba8ddb0a9294ec4bc689676f067f0862a73e2a"
+    },
+    {
+      "owner": "TheAlgorithms",
+      "repo": "Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "source_path": "maths/average_median.py",
+      "target_path": "average_median.py",
+      "sha256": "6bc320ffb2e69fc027b558da6f052be814d90bf0c8f46ffd9ba3a2dc3e596b13"
+    },
+    {
+      "owner": "python",
+      "repo": "cpython",
+      "ref": "v3.12.0",
+      "source_path": "Lib/statistics.py",
+      "target_path": "statistics.py",
+      "sha256": "b9ef01a757de37e9fbf13d32beeb9530c8271582cabec4998226dcb7e0613cd0"
+    }
+  ]
+}

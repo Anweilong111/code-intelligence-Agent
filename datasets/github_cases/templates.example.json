@@ -1,0 +1,36 @@
+{
+  "cases": [
+    {
+      "name": "github_raw_template_case",
+      "repo_path": "github_raw_template_case",
+      "sources": [
+        {
+          "owner": "python",
+          "repo": "cpython",
+          "ref": "v3.12.0",
+          "source_path": "Lib/statistics.py",
+          "target_path": "statistics.py"
+        }
+      ],
+      "mutations": [],
+      "files": [
+        {
+          "target_path": "test_statistics_smoke.py",
+          "content": "import statistics\n\n\ndef test_statistics_imports():\n    assert hasattr(statistics, 'mean')\n"
+        }
+      ],
+      "benchmark": {
+        "buggy_functions": [],
+        "expected_rule_ids": [],
+        "failing_tests": [],
+        "passed_tests": ["test_statistics_imports"],
+        "test_args": [],
+        "metadata": {
+          "source": "github_raw_template",
+          "license": "PSF-2.0",
+          "note": "Template for materializing a GitHub raw source into a benchmark repo."
+        }
+      }
+    }
+  ]
+}

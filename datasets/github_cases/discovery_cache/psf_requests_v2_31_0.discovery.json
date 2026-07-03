@@ -1,0 +1,917 @@
+{
+  "sha": "147c8511ddbfa5e8f71bbf5c18ede0c4ceb3bba4",
+  "url": "https://api.github.com/repos/psf/requests/git/trees/147c8511ddbfa5e8f71bbf5c18ede0c4ceb3bba4",
+  "tree": [
+    {
+      "path": ".coveragerc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b5008b2b2f770e2b846bfa3852e4b5ff0b27e88a",
+      "size": 33,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/b5008b2b2f770e2b846bfa3852e4b5ff0b27e88a"
+    },
+    {
+      "path": ".git-blame-ignore-revs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "db51a967bfe68d079f4379a23968023372b6e7f6",
+      "size": 234,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/db51a967bfe68d079f4379a23968023372b6e7f6"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "be61bad944de54a6bda9f093b693db961b7a6fa1",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/be61bad944de54a6bda9f093b693db961b7a6fa1"
+    },
+    {
+      "path": ".github/CODE_OF_CONDUCT.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ff7f10665a52188f3483981c57b5827058b29c4b",
+      "size": 346,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/ff7f10665a52188f3483981c57b5827058b29c4b"
+    },
+    {
+      "path": ".github/CONTRIBUTING.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3470dfee835a73525fdc118574ed18d3385c432b",
+      "size": 2885,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/3470dfee835a73525fdc118574ed18d3385c432b"
+    },
+    {
+      "path": ".github/FUNDING.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "603c7ff9c3151fc55c050522c94b224d4bc2ea53",
+      "size": 52,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/603c7ff9c3151fc55c050522c94b224d4bc2ea53"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "060d9262a5e763c78a707222600a02f4c3b5fd66",
+      "size": 394,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/060d9262a5e763c78a707222600a02f4c3b5fd66"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "38886eeea1688af28100db6450e9102a2f250a02",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/38886eeea1688af28100db6450e9102a2f250a02"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/Bug_report.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb87bd6b67572c2d25d1fb94e17fe483dbc0da9b",
+      "size": 548,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/cb87bd6b67572c2d25d1fb94e17fe483dbc0da9b"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/Custom.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "19291c15006c4cd8735315a54343d03fca5f9955",
+      "size": 190,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/19291c15006c4cd8735315a54343d03fca5f9955"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/Feature_request.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dcf6a445fbcfa14f32008421886a6c0d96e6c46b",
+      "size": 136,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/dcf6a445fbcfa14f32008421886a6c0d96e6c46b"
+    },
+    {
+      "path": ".github/SECURITY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9021d429d8615902efbf2cd206823f25df6c8d6a",
+      "size": 4209,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/9021d429d8615902efbf2cd206823f25df6c8d6a"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "37ebd37089ac636c0360c83cad7d112f27ed6f69",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/37ebd37089ac636c0360c83cad7d112f27ed6f69"
+    },
+    {
+      "path": ".github/workflows/codeql-analysis.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e7dba233b2c94411cd2b3576f4285355e9c7fd3",
+      "size": 2446,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/1e7dba233b2c94411cd2b3576f4285355e9c7fd3"
+    },
+    {
+      "path": ".github/workflows/lint.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df275c51b65adf86803962f62de1088b1102950c",
+      "size": 350,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/df275c51b65adf86803962f62de1088b1102950c"
+    },
+    {
+      "path": ".github/workflows/lock-issues.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f8429c3fdcaa301360fc7c8423a745a152a43b8e",
+      "size": 342,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/f8429c3fdcaa301360fc7c8423a745a152a43b8e"
+    },
+    {
+      "path": ".github/workflows/run-tests.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4159508e41719640481a9950da29717ba4eb695",
+      "size": 878,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c4159508e41719640481a9950da29717ba4eb695"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de61154e3eb2b9b54dada59d9b820db6bfef8055",
+      "size": 321,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/de61154e3eb2b9b54dada59d9b820db6bfef8055"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5b915dc3831fe02ec0ad98d73f9dde2c98d3305f",
+      "size": 593,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/5b915dc3831fe02ec0ad98d73f9dde2c98d3305f"
+    },
+    {
+      "path": "AUTHORS.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4e554d478a265790afa303200f9882b1aec0cda",
+      "size": 7967,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c4e554d478a265790afa303200f9882b1aec0cda"
+    },
+    {
+      "path": "HISTORY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bbe6dd425b02d758fb0addc175391f7f09de0f4e",
+      "size": 57284,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/bbe6dd425b02d758fb0addc175391f7f09de0f4e"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67db8588217f266eb561f75fae738656325deac9",
+      "size": 10142,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/67db8588217f266eb561f75fae738656325deac9"
+    },
+    {
+      "path": "MANIFEST.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "633be369e2178e5f61d5e58e507bc905ae789f0f",
+      "size": 105,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/633be369e2178e5f61d5e58e507bc905ae789f0f"
+    },
+    {
+      "path": "Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f74dc42ddf502f4ecc88ef89f4d54c9f1f20cc0d",
+      "size": 796,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/f74dc42ddf502f4ecc88ef89f4d54c9f1f20cc0d"
+    },
+    {
+      "path": "NOTICE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1ff62db688277b77c83c1766dac7f165364d3528",
+      "size": 38,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/1ff62db688277b77c83c1766dac7f165364d3528"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c90ef08a5e92e87b41ea5dac88020d6d0aa6de3e",
+      "size": 2922,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c90ef08a5e92e87b41ea5dac88020d6d0aa6de3e"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "868197033268b3e7dbdbb63161368b6071a16a1f",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/868197033268b3e7dbdbb63161368b6071a16a1f"
+    },
+    {
+      "path": "docs/.nojekyll",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+      "size": 1,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/8b137891791fe96927ad78e64b0aad7bded08bdc"
+    },
+    {
+      "path": "docs/Makefile",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "08a2acf6dcaaf4fbdc0422fe7cca72a30a1e2a0a",
+      "size": 7664,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/08a2acf6dcaaf4fbdc0422fe7cca72a30a1e2a0a"
+    },
+    {
+      "path": "docs/_static",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f9aa5f5e821074d5008bd1997ba6315072844db8",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/f9aa5f5e821074d5008bd1997ba6315072844db8"
+    },
+    {
+      "path": "docs/_static/custom.css",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "465e8a9a60ee532b287f1c052ca0dda7ec737d54",
+      "size": 2990,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/465e8a9a60ee532b287f1c052ca0dda7ec737d54"
+    },
+    {
+      "path": "docs/_static/requests-sidebar.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2b8a6975c904f4c9b0f4b733b0c47dedd5b2cc1",
+      "size": 306086,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/d2b8a6975c904f4c9b0f4b733b0c47dedd5b2cc1"
+    },
+    {
+      "path": "docs/_templates",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "a6e25a10200e8ccc92d76418ec2fe5217445d1cf",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/a6e25a10200e8ccc92d76418ec2fe5217445d1cf"
+    },
+    {
+      "path": "docs/_templates/hacks.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eca5dffcb54a21b9b930d14b5f423a718b9c979e",
+      "size": 2083,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/eca5dffcb54a21b9b930d14b5f423a718b9c979e"
+    },
+    {
+      "path": "docs/_templates/sidebarintro.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b595b54d4a314bf015b2b5cc199ce6cab85feb7",
+      "size": 1423,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/2b595b54d4a314bf015b2b5cc199ce6cab85feb7"
+    },
+    {
+      "path": "docs/_templates/sidebarlogo.html",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a3454b7c498af6f7eac6e93c4a04174c524d9fb1",
+      "size": 1301,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/a3454b7c498af6f7eac6e93c4a04174c524d9fb1"
+    },
+    {
+      "path": "docs/_themes",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2504b45699ab70d3d8ea4c0975f2dc036588f2cb",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/2504b45699ab70d3d8ea4c0975f2dc036588f2cb"
+    },
+    {
+      "path": "docs/_themes/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "66b6e4c2f3b55b25afd9716f9d3c5afb47b15d4e",
+      "size": 22,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/66b6e4c2f3b55b25afd9716f9d3c5afb47b15d4e"
+    },
+    {
+      "path": "docs/_themes/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3d1e04a257aa9a7a51fbd87e3dc7cbef01f5b97b",
+      "size": 1861,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/3d1e04a257aa9a7a51fbd87e3dc7cbef01f5b97b"
+    },
+    {
+      "path": "docs/_themes/flask_theme_support.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "33f47449c11d241e36c83d7f95d819bbe56e2c8f",
+      "size": 4875,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/33f47449c11d241e36c83d7f95d819bbe56e2c8f"
+    },
+    {
+      "path": "docs/api.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "34959dd6f1f60a9682a85a5b683d45d9a7d1a76f",
+      "size": 7330,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/34959dd6f1f60a9682a85a5b683d45d9a7d1a76f"
+    },
+    {
+      "path": "docs/community",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "15f71426b500c2659def7a127dc89dbbe6bd14ca",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/15f71426b500c2659def7a127dc89dbbe6bd14ca"
+    },
+    {
+      "path": "docs/community/faq.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d900be2b52ade8ea23e89eadc2d05da7dcc8348",
+      "size": 3695,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/9d900be2b52ade8ea23e89eadc2d05da7dcc8348"
+    },
+    {
+      "path": "docs/community/out-there.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c33ab3c95be951d6f05a708475420d8f371c8bf1",
+      "size": 1163,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c33ab3c95be951d6f05a708475420d8f371c8bf1"
+    },
+    {
+      "path": "docs/community/recommended.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "517f4b189520bfc9160ef1aba6435b949a62a532",
+      "size": 2174,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/517f4b189520bfc9160ef1aba6435b949a62a532"
+    },
+    {
+      "path": "docs/community/release-process.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4aa98f755e4c598ae7f2b819f536e65b25455af6",
+      "size": 2066,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/4aa98f755e4c598ae7f2b819f536e65b25455af6"
+    },
+    {
+      "path": "docs/community/support.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ee905f543dfd20f1f487b7dbf9f87641e18d1f81",
+      "size": 846,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/ee905f543dfd20f1f487b7dbf9f87641e18d1f81"
+    },
+    {
+      "path": "docs/community/updates.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c787c45bcf1bf1baa148dc2e6508c686bd08e47f",
+      "size": 322,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c787c45bcf1bf1baa148dc2e6508c686bd08e47f"
+    },
+    {
+      "path": "docs/community/vulnerabilities.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6a9c7d94d37f61a962cf255d0d985fa30a5dcadb",
+      "size": 4750,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/6a9c7d94d37f61a962cf255d0d985fa30a5dcadb"
+    },
+    {
+      "path": "docs/conf.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "edbd72ba8236299f7bde93dff4edf4abdab7aba0",
+      "size": 12251,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/edbd72ba8236299f7bde93dff4edf4abdab7aba0"
+    },
+    {
+      "path": "docs/dev",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "59f538a7ffddaeeb1d2ed4944aedf1475dcfcb5a",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/59f538a7ffddaeeb1d2ed4944aedf1475dcfcb5a"
+    },
+    {
+      "path": "docs/dev/authors.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e9799a91421af6ca0639a8e85a55a9834fdeb0de",
+      "size": 48,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/e9799a91421af6ca0639a8e85a55a9834fdeb0de"
+    },
+    {
+      "path": "docs/dev/contributing.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "961f7c3abadd6f39009cc6d70d51ac77d0410a12",
+      "size": 6460,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/961f7c3abadd6f39009cc6d70d51ac77d0410a12"
+    },
+    {
+      "path": "docs/index.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "306b60f3ea8789047fa4a8dafae9e6e603fdf8a0",
+      "size": 3446,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/306b60f3ea8789047fa4a8dafae9e6e603fdf8a0"
+    },
+    {
+      "path": "docs/make.bat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9eaf9b88930578b9da103662becd0d1a9a1c6c53",
+      "size": 7253,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/9eaf9b88930578b9da103662becd0d1a9a1c6c53"
+    },
+    {
+      "path": "docs/requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8c2488252b465f540aa169128cd959818057ef92",
+      "size": 87,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/8c2488252b465f540aa169128cd959818057ef92"
+    },
+    {
+      "path": "docs/user",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "96e4a5d9de465fa3cfb55c8d298a59bd20a5d72e",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/96e4a5d9de465fa3cfb55c8d298a59bd20a5d72e"
+    },
+    {
+      "path": "docs/user/advanced.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c664a83d304935def2bda71fed616601a6377ce1",
+      "size": 40073,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c664a83d304935def2bda71fed616601a6377ce1"
+    },
+    {
+      "path": "docs/user/authentication.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0737bd319a2a53dea3c99a663df701221ed68efe",
+      "size": 5400,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/0737bd319a2a53dea3c99a663df701221ed68efe"
+    },
+    {
+      "path": "docs/user/install.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7fa9a606d22ca46a101d5b976f5bad2905137f98",
+      "size": 1038,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/7fa9a606d22ca46a101d5b976f5bad2905137f98"
+    },
+    {
+      "path": "docs/user/quickstart.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "464e4f5fa595dd45614f21a5c2deddcbbd3d15c3",
+      "size": 19215,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/464e4f5fa595dd45614f21a5c2deddcbbd3d15c3"
+    },
+    {
+      "path": "ext",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "39b04299670e5b43bfbe489756eeaba58418e655",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/39b04299670e5b43bfbe489756eeaba58418e655"
+    },
+    {
+      "path": "ext/LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c38aa5c3f55a389eb2c015eb40cd67f2c15d633c",
+      "size": 51,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c38aa5c3f55a389eb2c015eb40cd67f2c15d633c"
+    },
+    {
+      "path": "ext/flower-of-life.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f92cc3b17bbcf77090195253310a900c650174dd",
+      "size": 14896,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/f92cc3b17bbcf77090195253310a900c650174dd"
+    },
+    {
+      "path": "ext/kr-compressed.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "53210649cc70879045fb1a005aaa8913e267b661",
+      "size": 5954,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/53210649cc70879045fb1a005aaa8913e267b661"
+    },
+    {
+      "path": "ext/kr.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b18d76bfe0310aa112724d7378113c39df8e705d",
+      "size": 9459,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/b18d76bfe0310aa112724d7378113c39df8e705d"
+    },
+    {
+      "path": "ext/psf-compressed.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3bc0d5c130dbd3efad60aea25b406df5e312a5b8",
+      "size": 11986,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/3bc0d5c130dbd3efad60aea25b406df5e312a5b8"
+    },
+    {
+      "path": "ext/psf.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c5815e260a00e55a5928f3de9692a9afb0a00bce",
+      "size": 14561,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c5815e260a00e55a5928f3de9692a9afb0a00bce"
+    },
+    {
+      "path": "ext/requests-logo-compressed.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb4bc642419dafc4c23610733534d2552984c76c",
+      "size": 192073,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/cb4bc642419dafc4c23610733534d2552984c76c"
+    },
+    {
+      "path": "ext/requests-logo.ai",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7da8cb7380af9a19fb905a263ca247676ccbbd06",
+      "size": 2189478,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/7da8cb7380af9a19fb905a263ca247676ccbbd06"
+    },
+    {
+      "path": "ext/requests-logo.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cb4bc642419dafc4c23610733534d2552984c76c",
+      "size": 192073,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/cb4bc642419dafc4c23610733534d2552984c76c"
+    },
+    {
+      "path": "ext/requests-logo.svg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "80406e7c06fc0d7c961fdd2bc1c6f8d7f69c1a54",
+      "size": 883794,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/80406e7c06fc0d7c961fdd2bc1c6f8d7f69c1a54"
+    },
+    {
+      "path": "ext/ss-compressed.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "149016d3b1d3d783f166384e51cb8cb96f66d5c7",
+      "size": 372015,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/149016d3b1d3d783f166384e51cb8cb96f66d5c7"
+    },
+    {
+      "path": "ext/ss.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "149016d3b1d3d783f166384e51cb8cb96f66d5c7",
+      "size": 372015,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/149016d3b1d3d783f166384e51cb8cb96f66d5c7"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d3ab7bd9bb27d486df5e39eec667691c9ebe64d8",
+      "size": 257,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/d3ab7bd9bb27d486df5e39eec667691c9ebe64d8"
+    },
+    {
+      "path": "requests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "59f207e82e0daafb562aa277f96c981572912184",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/59f207e82e0daafb562aa277f96c981572912184"
+    },
+    {
+      "path": "requests/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "300a16c5741d9ccb751185407694fe49e8da6bc5",
+      "size": 4963,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/300a16c5741d9ccb751185407694fe49e8da6bc5"
+    },
+    {
+      "path": "requests/__version__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5063c3f8ee7980493efcc30c24f7e7582714aa81",
+      "size": 435,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/5063c3f8ee7980493efcc30c24f7e7582714aa81"
+    },
+    {
+      "path": "requests/_internal_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f2cf635e2937ee9b123a1498c5c5f723a6e20084",
+      "size": 1495,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/f2cf635e2937ee9b123a1498c5c5f723a6e20084"
+    },
+    {
+      "path": "requests/adapters.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "78e3bb6ecf920b429c4ecab62434b1e630c01707",
+      "size": 19553,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/78e3bb6ecf920b429c4ecab62434b1e630c01707"
+    },
+    {
+      "path": "requests/api.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cd0b3eeac3ebca7fe4a627ba5a96c1bbaf827d4f",
+      "size": 6449,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/cd0b3eeac3ebca7fe4a627ba5a96c1bbaf827d4f"
+    },
+    {
+      "path": "requests/auth.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9733686ddb36b826ead4f4666d42311397fa6fec",
+      "size": 10187,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/9733686ddb36b826ead4f4666d42311397fa6fec"
+    },
+    {
+      "path": "requests/certs.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "be422c3e91e43bacf60ff3302688df0b28742333",
+      "size": 429,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/be422c3e91e43bacf60ff3302688df0b28742333"
+    },
+    {
+      "path": "requests/compat.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6776163c94f3d6f61b00d329d4061d6b02afeeb9",
+      "size": 1451,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/6776163c94f3d6f61b00d329d4061d6b02afeeb9"
+    },
+    {
+      "path": "requests/cookies.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf54ab237e410603061b8cec8fd195912d3cfb08",
+      "size": 18560,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/bf54ab237e410603061b8cec8fd195912d3cfb08"
+    },
+    {
+      "path": "requests/exceptions.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e1cedf883d3eadcbfda91967d36b7c59b8367e76",
+      "size": 3811,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/e1cedf883d3eadcbfda91967d36b7c59b8367e76"
+    },
+    {
+      "path": "requests/help.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8fbcd6560a8fe2c8a07e3bd1441a81e0db9cb689",
+      "size": 3875,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/8fbcd6560a8fe2c8a07e3bd1441a81e0db9cb689"
+    },
+    {
+      "path": "requests/hooks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d181ba2ec2e55d274897315887b78fbdca757da8",
+      "size": 733,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/d181ba2ec2e55d274897315887b78fbdca757da8"
+    },
+    {
+      "path": "requests/models.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "617a4134e556774953a56d10a2f8f211b15a605f",
+      "size": 35223,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/617a4134e556774953a56d10a2f8f211b15a605f"
+    },
+    {
+      "path": "requests/packages.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "77c45c9e90cdf2bcd60eea3cac9c8cf56cca2c08",
+      "size": 957,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/77c45c9e90cdf2bcd60eea3cac9c8cf56cca2c08"
+    },
+    {
+      "path": "requests/sessions.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dbcf2a7b0ee2898b72714b756e4b27fbbad4beab",
+      "size": 30373,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/dbcf2a7b0ee2898b72714b756e4b27fbbad4beab"
+    },
+    {
+      "path": "requests/status_codes.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4bd072be9769748a852740d037d5c63021472c9d",
+      "size": 4235,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/4bd072be9769748a852740d037d5c63021472c9d"
+    },
+    {
+      "path": "requests/structures.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "188e13e4829591facb23ae0e2eda84b9807cb818",
+      "size": 2912,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/188e13e4829591facb23ae0e2eda84b9807cb818"
+    },
+    {
+      "path": "requests/utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a367417f8eb5926d0778eb50dc68ba68f977a31f",
+      "size": 33448,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/a367417f8eb5926d0778eb50dc68ba68f977a31f"
+    },
+    {
+      "path": "requirements-dev.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d62637378e5f50c1f4d3f866408044ebadfa53fb",
+      "size": 250,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/d62637378e5f50c1f4d3f866408044ebadfa53fb"
+    },
+    {
+      "path": "setup.cfg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bf21c81cc069ab3b27362186476022058b01489f",
+      "size": 345,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/bf21c81cc069ab3b27362186476022058b01489f"
+    },
+    {
+      "path": "setup.py",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "012354574d60cb4304b6077fd4b9a19919d3255d",
+      "size": 3944,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/012354574d60cb4304b6077fd4b9a19919d3255d"
+    },
+    {
+      "path": "tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "439eafbe048fe3cfe778d1c61a2060d14e5a7d94",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/439eafbe048fe3cfe778d1c61a2060d14e5a7d94"
+    },
+    {
+      "path": "tests/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8561a080180f510b235bde44e0361835586af15",
+      "size": 469,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c8561a080180f510b235bde44e0361835586af15"
+    },
+    {
+      "path": "tests/compat.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7618aa157bafb93329426b92f13d9c982f33b18b",
+      "size": 480,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/7618aa157bafb93329426b92f13d9c982f33b18b"
+    },
+    {
+      "path": "tests/conftest.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "530a4c2a5f9917d62ffed2e2eecfdb8164655740",
+      "size": 1581,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/530a4c2a5f9917d62ffed2e2eecfdb8164655740"
+    },
+    {
+      "path": "tests/test_help.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fb4e967c5372d45b429528bd5897cbb60db77f6c",
+      "size": 808,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/fb4e967c5372d45b429528bd5897cbb60db77f6c"
+    },
+    {
+      "path": "tests/test_hooks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7445525ec857ee0474e0f340911c3cdcbc49555c",
+      "size": 424,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/7445525ec857ee0474e0f340911c3cdcbc49555c"
+    },
+    {
+      "path": "tests/test_lowlevel.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "859d07e8a594b2a80acae666949971f6ead90299",
+      "size": 15343,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/859d07e8a594b2a80acae666949971f6ead90299"
+    },
+    {
+      "path": "tests/test_packages.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b55cb68c452742325c2efcca6a345f3de27c249e",
+      "size": 229,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/b55cb68c452742325c2efcca6a345f3de27c249e"
+    },
+    {
+      "path": "tests/test_requests.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b420c44d73cde0c2ab7e7aa0e5182b345436f718",
+      "size": 98058,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/b420c44d73cde0c2ab7e7aa0e5182b345436f718"
+    },
+    {
+      "path": "tests/test_structures.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2fd5baaf27237ce0b63dc3df9955e6c7d08d863",
+      "size": 2279,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/e2fd5baaf27237ce0b63dc3df9955e6c7d08d863"
+    },
+    {
+      "path": "tests/test_testserver.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c73a3f1f59cc5cb487e444cc20d3fc65191e0802",
+      "size": 5553,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/c73a3f1f59cc5cb487e444cc20d3fc65191e0802"
+    },
+    {
+      "path": "tests/test_utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "112bbd1eafb35c5c02beecc200f57b59c1792300",
+      "size": 28254,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/112bbd1eafb35c5c02beecc200f57b59c1792300"
+    },
+    {
+      "path": "tests/testserver",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "583a5e2d5775711bd420d398df15e44c170e603d",
+      "url": "https://api.github.com/repos/psf/requests/git/trees/583a5e2d5775711bd420d398df15e44c170e603d"
+    },
+    {
+      "path": "tests/testserver/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "tests/testserver/server.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5936abdf8b75ca730a0c4c62da63d0338174d17f",
+      "size": 3832,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/5936abdf8b75ca730a0c4c62da63d0338174d17f"
+    },
+    {
+      "path": "tests/utils.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cb75bfb6ad8a6c5519accd8a7e7c80d01809afa",
+      "size": 366,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/6cb75bfb6ad8a6c5519accd8a7e7c80d01809afa"
+    },
+    {
+      "path": "tox.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "546c7371b12482d34462cf50d974adfa40957802",
+      "size": 272,
+      "url": "https://api.github.com/repos/psf/requests/git/blobs/546c7371b12482d34462cf50d974adfa40957802"
+    }
+  ],
+  "truncated": false,
+  "owner": "psf",
+  "repo": "requests",
+  "ref": "v2.31.0",
+  "discovery": {
+    "mode": "tree",
+    "owner": "psf",
+    "repo": "requests",
+    "ref": "v2.31.0",
+    "requested_ref": "v2.31.0",
+    "ref_source": "explicit",
+    "recursive": true
+  }
+}

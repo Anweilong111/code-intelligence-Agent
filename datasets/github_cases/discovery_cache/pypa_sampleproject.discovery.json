@@ -1,0 +1,150 @@
+{
+  "sha": "621e4974ca25ce531773def586ba3ed8e736b3fc",
+  "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/621e4974ca25ce531773def586ba3ed8e736b3fc",
+  "tree": [
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "afb4c437f979c1eded01096eeb78f98f22202db4",
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/afb4c437f979c1eded01096eeb78f98f22202db4"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "098a9f979460bfbe5c2317ee7937b7f2b0f3d211",
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/098a9f979460bfbe5c2317ee7937b7f2b0f3d211"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5bde2fcd3182b2dc804f1c15bf7c8abf2ea9836c",
+      "size": 780,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/5bde2fcd3182b2dc804f1c15bf7c8abf2ea9836c"
+    },
+    {
+      "path": ".github/workflows/test.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "64d0c4ffa5627c4c8ce4fbdda7bf971790760fed",
+      "size": 761,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/64d0c4ffa5627c4c8ce4fbdda7bf971790760fed"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ddc2bd1192b160b38fb18b68805512014ef738f3",
+      "size": 138,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/ddc2bd1192b160b38fb18b68805512014ef738f3"
+    },
+    {
+      "path": "LICENSE.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c74aceda037b84c08858a7d653a956e65355fa6a",
+      "size": 1081,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/c74aceda037b84c08858a7d653a956e65355fa6a"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d6c10ebb3006b55da0222d37658dba0788a34b76",
+      "size": 1804,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/d6c10ebb3006b55da0222d37658dba0788a34b76"
+    },
+    {
+      "path": "noxfile.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d2ec8f7070d4f6d70b6551683e101422faf086ca",
+      "size": 1463,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/d2ec8f7070d4f6d70b6551683e101422faf086ca"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d97bdabb1f6e04b59bf75e1c513ee26eaa00b7f2",
+      "size": 6684,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/d97bdabb1f6e04b59bf75e1c513ee26eaa00b7f2"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "484e462e792a119dc0c93df3caa3daf1a628675e",
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/484e462e792a119dc0c93df3caa3daf1a628675e"
+    },
+    {
+      "path": "src/sample",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "249087d7c0fc84d0149eea173f90dee41276cbd8",
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/249087d7c0fc84d0149eea173f90dee41276cbd8"
+    },
+    {
+      "path": "src/sample/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c8f10649946fda329ad70975b0c82629bfcb5859",
+      "size": 111,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/c8f10649946fda329ad70975b0c82629bfcb5859"
+    },
+    {
+      "path": "src/sample/package_data.dat",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7c0646bfd53c1f0ed45ffd81563f30017717ca58",
+      "size": 9,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/7c0646bfd53c1f0ed45ffd81563f30017717ca58"
+    },
+    {
+      "path": "src/sample/simple.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c929f885b60a11bfc703f7b358bb2b1dc7d10253",
+      "size": 43,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/c929f885b60a11bfc703f7b358bb2b1dc7d10253"
+    },
+    {
+      "path": "tests",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "bc04b738e59f5fb4af774d96ab99c8d77273761a",
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/trees/bc04b738e59f5fb4af774d96ab99c8d77273761a"
+    },
+    {
+      "path": "tests/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4eef093a5f541b72cba0f895f6872d9f52be98e8",
+      "size": 99,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/4eef093a5f541b72cba0f895f6872d9f52be98e8"
+    },
+    {
+      "path": "tests/test_simple.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b7a0ee3a65de8d46c15df764b83505d2f9b6ff4e",
+      "size": 417,
+      "url": "https://api.github.com/repos/pypa/sampleproject/git/blobs/b7a0ee3a65de8d46c15df764b83505d2f9b6ff4e"
+    }
+  ],
+  "truncated": false,
+  "owner": "pypa",
+  "repo": "sampleproject",
+  "ref": "main",
+  "discovery": {
+    "mode": "tree",
+    "owner": "pypa",
+    "repo": "sampleproject",
+    "ref": "main",
+    "requested_ref": null,
+    "ref_source": "default_branch",
+    "recursive": true
+  }
+}

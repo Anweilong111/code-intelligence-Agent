@@ -1,0 +1,63 @@
+{
+  "suite_name": "repo_intelligence_agent_auto_smoke",
+  "description": "Example one-command smoke suite for running the arbitrary-repo intelligence Agent through the --agent shortcut. Run with: python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite datasets/github_cases/repo_intelligence_agent_auto_smoke.example.json outputs_smoke/repo_intelligence_agent_auto --require-success",
+  "defaults": {
+    "agent": true,
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 50,
+    "max_candidates": 20,
+    "auto_fallback": true,
+    "run_repository_test_command": true,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 4
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_artifact_core_ready_count": 1,
+    "min_artifact_file_checked_count": 1,
+    "min_agent_controller_loop_complete_count": 1,
+    "min_agent_decision_timeline_complete_count": 1,
+    "min_agent_answer_coverage_complete_count": 1,
+    "min_agent_shortcut_count": 1,
+    "min_objective_compliance_pass_count": 1,
+    "max_objective_compliance_failed_section_kind_count": 0,
+    "min_static_analysis_ready_count": 1,
+    "min_repository_test_dynamic_evidence_level_kind_count": 1,
+    "min_repository_test_execution_result_count": 1,
+    "min_repository_test_counted_run_count": 1,
+    "min_repository_test_count": 1,
+    "min_repository_test_passed_count": 1,
+    "min_repository_test_count_source_kind_count": 1,
+    "min_agent_auto_complete_loop_count": 1,
+    "min_agent_auto_action_loop_complete_run_count": 1,
+    "min_agent_auto_action_loop_complete_count": 2,
+    "max_agent_auto_action_loop_incomplete_count": 0
+  },
+  "runs": [
+    {
+      "name": "pypa_sampleproject_agent_auto",
+      "repo": "https://github.com/pypa/sampleproject",
+      "expected_status": "pass",
+      "expected_agent_shortcut": true,
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_llm_patch_generation_status": "disabled",
+      "expected_planned_repository_test_result_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "agent_decision_timeline_complete": 1,
+        "agent_decision_timeline_step_count": 1,
+        "agent_auto_loop_progress_count": 1,
+        "agent_auto_action_loop_complete_count": 2,
+        "planned_repository_test_result_test_count": 1,
+        "planned_repository_test_result_passed": 1
+      }
+    }
+  ]
+}

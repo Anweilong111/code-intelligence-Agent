@@ -1,0 +1,245 @@
+{
+  "suite_name": "repo_intelligence_agent_matrix",
+  "description": "Multi-repository Agent matrix for validating arbitrary public Python GitHub repository intelligence across input forms, repository layouts, test runners, blockers, and repair readiness. Run with: python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite datasets/github_cases/repo_intelligence_agent_matrix.example.json outputs_smoke/repo_intelligence_agent_matrix --require-success",
+  "defaults": {
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 40,
+    "max_candidates": 15,
+    "auto_fallback": true,
+    "run_repository_test_command": true,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 2
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "max_scenario_coverage_blocked_count": 0,
+    "min_run_count": 6,
+    "min_repo_input_kind_count": 2,
+    "min_repo_input_kind_owner_repo_count": 1,
+    "min_repo_input_kind_github_url_count": 1,
+    "min_scenario_tag_kind_count": 17,
+    "min_scenario_tag_owner_repo_input_count": 1,
+    "min_scenario_tag_github_url_input_count": 1,
+    "min_scenario_tag_default_branch_discovery_count": 1,
+    "min_scenario_tag_pinned_ref_count": 3,
+    "min_scenario_tag_include_filter_count": 4,
+    "min_scenario_tag_source_cache_count": 1,
+    "min_scenario_tag_shallow_checkout_count": 2,
+    "min_scenario_tag_agent_auto_count": 1,
+    "min_scenario_tag_static_fallback_count": 1,
+    "min_scenario_tag_src_layout_count": 1,
+    "min_scenario_tag_pytest_project_count": 1,
+    "min_scenario_tag_nox_project_count": 1,
+    "min_scenario_tag_unittest_fallback_count": 1,
+    "min_scenario_tag_dependency_sensitive_count": 1,
+    "min_scenario_tag_no_python_blocker_count": 1,
+    "min_scenario_tag_repair_candidate_repository_count": 1,
+    "min_scenario_tag_test_execution_disabled_count": 1,
+    "min_artifact_core_ready_count": 6,
+    "min_agent_controller_loop_complete_count": 6,
+    "min_agent_answer_coverage_complete_count": 6,
+    "min_agent_answer_question_answered_kind_count": 7,
+    "max_agent_answer_question_missing_kind_count": 0,
+    "min_agent_answer_question_answered_repository_structure_count": 6,
+    "min_agent_answer_question_answered_suspicious_functions_count": 6,
+    "min_agent_answer_question_answered_suspicious_reason_count": 6,
+    "min_agent_answer_question_answered_testability_count": 6,
+    "min_agent_answer_question_answered_repairability_count": 6,
+    "min_agent_answer_question_answered_blocker_count": 6,
+    "min_agent_answer_question_answered_next_action_count": 6,
+    "min_blocked_agent_answer_complete_count": 6,
+    "max_blocked_agent_answer_incomplete_count": 0,
+    "min_objective_compliance_pass_count": 6,
+    "max_objective_compliance_failed_section_kind_count": 0,
+    "min_repository_structure_modeled_count": 4,
+    "min_repository_structure_src_layout_detected_count": 1,
+    "min_repo_graph_ready_count": 4,
+    "min_program_graph_available_count": 4,
+    "min_source_import_blocked_count": 1,
+    "min_repository_test_execution_result_count": 1,
+    "min_repository_test_counted_run_count": 1,
+    "min_repository_test_count": 1,
+    "min_repository_test_count_source_kind_count": 1,
+    "min_repository_test_recommended_install_command_count": 2
+  },
+  "runs": [
+    {
+      "name": "pypa_sampleproject_owner_repo_agent_auto",
+      "repo": "pypa/sampleproject",
+      "execution_profile": "agent-auto",
+      "scenario_tags": [
+        "owner_repo_input",
+        "default_branch_discovery",
+        "source_cache",
+        "agent_auto",
+        "nox_project",
+        "unittest_fallback",
+        "shallow_checkout"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_llm_patch_generation_status": "disabled",
+      "expected_planned_repository_test_result_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "agent_controller_loop_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "planned_repository_test_result_test_count": 1,
+        "planned_repository_test_result_passed": 1
+      }
+    },
+    {
+      "name": "pluggy_tracing_src_layout_checkout",
+      "repo": "https://github.com/pytest-dev/pluggy",
+      "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+      "execution_profile": "checkout",
+      "include": [
+        "src/pluggy/__init__.py",
+        "src/pluggy/_tracing.py"
+      ],
+      "scenario_tags": [
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "src_layout",
+        "pytest_project",
+        "shallow_checkout"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 2,
+        "repository_structure_package_root_count": 1,
+        "repository_structure_src_layout_package_count": 1,
+        "repository_structure_recommended_target_prefix_present": 1,
+        "repo_graph_program_graph_available": 1,
+        "fault_localization_ranking_count": 1
+      }
+    },
+    {
+      "name": "requests_models_dependency_sensitive",
+      "repo": "https://github.com/psf/requests",
+      "ref": "v2.31.0",
+      "execution_profile": "checkout",
+      "run_repository_test_command": false,
+      "include": [
+        "requests/models.py"
+      ],
+      "target_prefix": "requests",
+      "scenario_tags": [
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "dependency_sensitive",
+        "shallow_checkout",
+        "static_fallback",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_analysis_stage": "phase1_repo_understanding",
+      "expected_blocker": "no_static_candidates",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1
+      }
+    },
+    {
+      "name": "thealgorithms_gronsfeld_repair_candidate_checkout",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "execution_profile": "checkout",
+      "run_repository_test_command": false,
+      "include": [
+        "ciphers/gronsfeld_cipher.py"
+      ],
+      "scenario_tags": [
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "repair_candidate_repository",
+        "shallow_checkout",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_analysis_stage": "phase1_repo_understanding",
+      "expected_blocker": "no_static_candidates",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1
+      }
+    },
+    {
+      "name": "click_utils_pinned_checkout",
+      "repo": "https://github.com/pallets/click",
+      "ref": "8.1.7",
+      "execution_profile": "checkout",
+      "run_repository_test_command": false,
+      "include": [
+        "src/click/utils.py"
+      ],
+      "scenario_tags": [
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "shallow_checkout",
+        "src_layout",
+        "pytest_project",
+        "static_fallback",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_analysis_stage": "phase1_repo_understanding",
+      "expected_blocker": "no_static_candidates",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1
+      }
+    },
+    {
+      "name": "octocat_hello_world_no_python",
+      "repo": "https://github.com/octocat/Hello-World",
+      "ref": "master",
+      "execution_profile": "checkout",
+      "run_repository_test_command": false,
+      "auto_fallback": false,
+      "scenario_tags": [
+        "github_url_input",
+        "pinned_ref",
+        "shallow_checkout",
+        "no_python_blocker",
+        "static_fallback",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "checkout",
+      "expected_analysis_stage": "source_import_blocked",
+      "expected_blocker": "source_import_or_parse_missing",
+      "expected_controller_action": "adjust_source_filters",
+      "expected_artifact_inventory_status": "pass",
+      "expected_agent_answer_testability_status": "not_available",
+      "expected_agent_answer_repairability_status": "not_ready",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18
+      }
+    }
+  ]
+}

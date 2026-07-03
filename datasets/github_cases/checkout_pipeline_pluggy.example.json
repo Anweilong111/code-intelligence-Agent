@@ -1,0 +1,32 @@
+{
+  "suite_name": "github_checkout_pipeline_pluggy_example",
+  "description": "Checkout-enabled pipeline example that validates real pytest execution on pytest-dev/pluggy.",
+  "defaults": {
+    "mode": "repo",
+    "preset": "smoke",
+    "sample_sources": 20,
+    "max_candidates": 5,
+    "checkout_repository_tests": true,
+    "repository_test_timeout": 20,
+    "repository_test_failure_overlay_candidate_limit": 8,
+    "fallback": {
+      "enabled": true,
+      "max_sources": 50,
+      "max_candidates": 20
+    }
+  },
+  "promotion_gate": {
+    "min_smoke_benchmark_cases": 1,
+    "allow_warning_stages": true
+  },
+  "runs": [
+    {
+      "name": "pluggy_checkout_pipeline",
+      "repo": "https://github.com/pytest-dev/pluggy",
+      "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+      "include": [
+        "src/pluggy/_tracing.py"
+      ]
+    }
+  ]
+}

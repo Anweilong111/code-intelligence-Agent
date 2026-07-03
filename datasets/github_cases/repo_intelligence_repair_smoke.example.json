@@ -1,0 +1,68 @@
+{
+  "suite_name": "repo_intelligence_repair_smoke",
+  "description": "Example one-command patch-validation smoke suite for a public Python GitHub repository. It uses checkout-backed repository tests plus failure overlay to reach patch candidate generation and sandbox validation. The current pinned repo validates a target-failure repair while reporting that the broad regression command has an unchanged pre-existing baseline failure.",
+  "defaults": {
+    "execution_profile": "phase3-fast",
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 50,
+    "max_candidates": 20,
+    "auto_fallback": true,
+    "repository_test_timeout": 3,
+    "repository_checkout_depth": 1,
+    "repository_test_failure_overlay_candidate_limit": 5,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_reflection_mode": "rule",
+    "repository_test_reflection_rounds": 1,
+    "repository_test_reflection_width": 1
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "max_existing_report_reuse_count": 0,
+    "max_cached_report_fallback_count": 0,
+    "max_scenario_coverage_blocked_count": 0,
+    "min_artifact_core_ready_count": 1,
+    "min_artifact_required_ready_count": 1,
+    "min_artifact_file_checked_count": 1,
+    "min_acceptance_gate_pass_count": 1,
+    "min_agent_goal_readiness_pass_count": 1,
+    "min_agent_controller_loop_complete_count": 1,
+    "min_agent_decision_timeline_complete_count": 1,
+    "min_agent_answer_coverage_complete_count": 1,
+    "min_repository_test_repair_ready_count": 1,
+    "min_repository_test_failure_overlay_ready_count": 1,
+    "min_repository_test_patch_candidates_ready_count": 1,
+    "min_repository_test_patch_validation_ready_count": 1,
+    "min_repository_test_patch_validation_success_count": 1
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_gronsfeld_repair",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "ciphers/gronsfeld_cipher.py"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_llm_patch_generation_status": "disabled",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_repair_validation_scope": "narrow_and_unchanged_regression_baseline",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "artifact_inventory_required_file_nonempty_count": 34,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_patch_generator_rule_count": 1,
+        "acceptance_gate_repair_decision_audit_passed": 1,
+        "agent_goal_repair_decision_audit_passed": 1
+      }
+    }
+  ]
+}

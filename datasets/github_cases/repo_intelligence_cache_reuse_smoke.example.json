@@ -1,0 +1,97 @@
+{
+  "suite_name": "repo_intelligence_cache_reuse_smoke",
+  "description": "Two-step arbitrary-repo intelligence smoke: the seed run writes discovery.json and source artifacts, then the cached rerun reuses the same discovery before calling the GitHub tree API.",
+  "defaults": {
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 5,
+    "max_candidates": 5,
+    "auto_fallback": false,
+    "run_repository_test_command": true,
+    "checkout_repository_tests": false,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "auto_controller_actions": false
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_discovery_cache_reuse_count": 1,
+    "min_artifact_core_ready_count": 2,
+    "min_artifact_file_checked_count": 2,
+    "min_agent_controller_loop_complete_count": 2,
+    "min_agent_decision_timeline_complete_count": 2,
+    "min_agent_answer_coverage_complete_count": 2,
+    "min_repository_structure_modeled_count": 2,
+    "min_repo_graph_ready_count": 2,
+    "min_program_graph_available_count": 2,
+    "min_phase2_static_graph_fault_localization_count": 2
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_cache_seed",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "output_dir": "outputs_smoke/repo_intelligence_cache_reuse_current/thealgorithms_average_mean",
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "recipes": [
+        "missing_len_zero_guard"
+      ],
+      "expected_status": "pass",
+      "expected_analysis_stage": "phase2_static_graph_fault_localization",
+      "expected_controller_action": "run_repository_tests_with_checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_agent_answer_testability_status": "can_attempt_with_checkout_or_setup",
+      "expected_agent_answer_repairability_status": "needs_dynamic_evidence_or_patch_context",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "artifact_inventory_required_file_nonempty_count": 26,
+        "repository_structure_analyzed_file_count": 1,
+        "repository_structure_function_count": 1,
+        "repo_graph_file_node_count": 1,
+        "repo_graph_function_node_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "fault_localization_rankings_with_static_rule_score_count": 1,
+        "fault_localization_rankings_with_graph_score_count": 1,
+        "fault_localization_rankings_with_final_score_count": 1
+      }
+    },
+    {
+      "name": "thealgorithms_cached_rerun",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "output_dir": "outputs_smoke/repo_intelligence_cache_reuse_current/thealgorithms_average_mean",
+      "prefer_cached_discovery": true,
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "recipes": [
+        "missing_len_zero_guard"
+      ],
+      "expected_status": "pass",
+      "expected_analysis_stage": "phase2_static_graph_fault_localization",
+      "expected_controller_action": "run_repository_tests_with_checkout",
+      "expected_artifact_inventory_status": "pass",
+      "expected_patch_generation_mode": "rule",
+      "expected_agent_answer_testability_status": "can_attempt_with_checkout_or_setup",
+      "expected_agent_answer_repairability_status": "needs_dynamic_evidence_or_patch_context",
+      "metric_thresholds": {
+        "discovery_cache_reuse": 1,
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "artifact_inventory_required_file_nonempty_count": 26,
+        "repository_structure_analyzed_file_count": 1,
+        "repository_structure_function_count": 1,
+        "repo_graph_file_node_count": 1,
+        "repo_graph_function_node_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "fault_localization_rankings_with_static_rule_score_count": 1,
+        "fault_localization_rankings_with_graph_score_count": 1,
+        "fault_localization_rankings_with_final_score_count": 1
+      }
+    }
+  ]
+}

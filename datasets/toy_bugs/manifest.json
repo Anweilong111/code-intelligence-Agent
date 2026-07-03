@@ -1,0 +1,70 @@
+{
+  "cases": [
+    {
+      "name": "buggy_sample_shift_left",
+      "repo_path": "shift_left_repo",
+      "buggy_functions": ["shift_left"],
+      "expected_rule_ids": ["possible_index_overrun"],
+      "failing_tests": ["test_shift_left"],
+      "passed_tests": [],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "boundary error"
+      }
+    },
+    {
+      "name": "buggy_sample_len_check",
+      "repo_path": "len_check_repo",
+      "buggy_functions": ["has_items"],
+      "expected_rule_ids": ["always_true_len_check"],
+      "failing_tests": ["test_has_items_empty"],
+      "passed_tests": ["test_has_items_non_empty"],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "condition error"
+      }
+    },
+    {
+      "name": "buggy_sample_broad_exception",
+      "repo_path": "broad_exception_repo",
+      "buggy_functions": ["call_or_raise"],
+      "expected_rule_ids": ["broad_exception_pass"],
+      "failing_tests": ["test_callback_exception_is_not_swallowed"],
+      "passed_tests": ["test_callback_success_value"],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "exception handling error"
+      }
+    },
+    {
+      "name": "buggy_sample_mutable_default",
+      "repo_path": "mutable_default_repo",
+      "buggy_functions": ["append_item"],
+      "expected_rule_ids": ["mutable_default_arg"],
+      "failing_tests": ["test_append_item_default_bucket_is_not_shared"],
+      "passed_tests": ["test_append_item_explicit_bucket"],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "state leakage"
+      }
+    },
+    {
+      "name": "buggy_sample_cross_file_patch_risk",
+      "repo_path": "cross_file_repo",
+      "buggy_functions": ["shift_left"],
+      "expected_rule_ids": ["possible_index_overrun"],
+      "failing_tests": ["test_normalize_window"],
+      "passed_tests": [],
+      "test_args": [],
+      "metadata": {
+        "source": "local_toy_case",
+        "bug_type": "boundary error",
+        "purpose": "exercise affected_callers and cross_file_callers patch risk"
+      }
+    }
+  ]
+}

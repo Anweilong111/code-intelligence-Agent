@@ -1,0 +1,269 @@
+{
+  "sha": "3adf61e154c3fe3fca428ad6bc3818b27a3b8291",
+  "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/3adf61e154c3fe3fca428ad6bc3818b27a3b8291",
+  "tree": [
+    {
+      "path": ".gitattributes",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b2d461810955a6a601f9f743cf744215da557e27",
+      "size": 214,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/b2d461810955a6a601f9f743cf744215da557e27"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cc343fe0b324ad5d784d0c47bfa3d63f324b08db",
+      "size": 100,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/cc343fe0b324ad5d784d0c47bfa3d63f324b08db"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "329db5e33310fd5d98343e2bca690bfb07317526",
+      "size": 1072,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/329db5e33310fd5d98343e2bca690bfb07317526"
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "67ef634ff4797037e72b2919c2af1fb33dbd4fe5",
+      "size": 13850,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/67ef634ff4797037e72b2919c2af1fb33dbd4fe5"
+    },
+    {
+      "path": "assets",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "848ec1189f932e7929760f92bf38d18aa1757358",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/848ec1189f932e7929760f92bf38d18aa1757358"
+    },
+    {
+      "path": "assets/gpt2_124M_loss.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "df5aac3c159f4b844ba0c1cd6b681c3ad60d0cc7",
+      "size": 110433,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/df5aac3c159f4b844ba0c1cd6b681c3ad60d0cc7"
+    },
+    {
+      "path": "assets/nanogpt.jpg",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa5d47dfc2d97b3907b5367c1ce2b5c2b3c21a36",
+      "size": 118621,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/aa5d47dfc2d97b3907b5367c1ce2b5c2b3c21a36"
+    },
+    {
+      "path": "bench.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "09d574a5b8e6360af60ac17449ba8f01c1abf5e1",
+      "size": 4815,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/09d574a5b8e6360af60ac17449ba8f01c1abf5e1"
+    },
+    {
+      "path": "config",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b0261edc3fe0bc34c5cd458750f013c279f8feab",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/b0261edc3fe0bc34c5cd458750f013c279f8feab"
+    },
+    {
+      "path": "config/eval_gpt2.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "53978cb9e2408c9172d4b482afbd48784c3f8b27",
+      "size": 208,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/53978cb9e2408c9172d4b482afbd48784c3f8b27"
+    },
+    {
+      "path": "config/eval_gpt2_large.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4cbeaeff29e1be57088b0baa446899b750caf224",
+      "size": 215,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/4cbeaeff29e1be57088b0baa446899b750caf224"
+    },
+    {
+      "path": "config/eval_gpt2_medium.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9d0db116d1b5876457b286e98d02c69f12d12899",
+      "size": 216,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/9d0db116d1b5876457b286e98d02c69f12d12899"
+    },
+    {
+      "path": "config/eval_gpt2_xl.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1bae34f9f1d752c4b13d9f8b428a104426818553",
+      "size": 213,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/1bae34f9f1d752c4b13d9f8b428a104426818553"
+    },
+    {
+      "path": "config/finetune_shakespeare.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "148a4c4fa314f489ecd5629653cc710abd2cd795",
+      "size": 645,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/148a4c4fa314f489ecd5629653cc710abd2cd795"
+    },
+    {
+      "path": "config/train_gpt2.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8f192732ac7a15b1696ca2f61bce7985e36efc37",
+      "size": 681,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/8f192732ac7a15b1696ca2f61bce7985e36efc37"
+    },
+    {
+      "path": "config/train_shakespeare_char.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "41c81dfb4ea48523199e774ff1f309d9ab1a1181",
+      "size": 1132,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/41c81dfb4ea48523199e774ff1f309d9ab1a1181"
+    },
+    {
+      "path": "configurator.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8bba9599537cbb34b378399a077b525a87d497f",
+      "size": 1758,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/a8bba9599537cbb34b378399a077b525a87d497f"
+    },
+    {
+      "path": "data",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "87dca67511603762d337acae72536a59e8423bf0",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/87dca67511603762d337acae72536a59e8423bf0"
+    },
+    {
+      "path": "data/openwebtext",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "49fe1f79b3bbdeb73749a1081d089a3d9e652a57",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/49fe1f79b3bbdeb73749a1081d089a3d9e652a57"
+    },
+    {
+      "path": "data/openwebtext/prepare.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2a9b9752b7f4626c29cb02c83d33e591831ab1c8",
+      "size": 3167,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/2a9b9752b7f4626c29cb02c83d33e591831ab1c8"
+    },
+    {
+      "path": "data/openwebtext/readme.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "95eb1bf386564769fb2b97f71fc0d69f448d2f7c",
+      "size": 489,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/95eb1bf386564769fb2b97f71fc0d69f448d2f7c"
+    },
+    {
+      "path": "data/shakespeare",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "05e48871737274043e1ccc368b99bce65e958933",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/05e48871737274043e1ccc368b99bce65e958933"
+    },
+    {
+      "path": "data/shakespeare/prepare.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bda25b139f41f66ef95282337d21d820bc252636",
+      "size": 1132,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/bda25b139f41f66ef95282337d21d820bc252636"
+    },
+    {
+      "path": "data/shakespeare/readme.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1e6c457d8ee51b7d254977631d28848ec5d83993",
+      "size": 161,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/1e6c457d8ee51b7d254977631d28848ec5d83993"
+    },
+    {
+      "path": "data/shakespeare_char",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6bccf6e2c7ecae6a9324443e3cb598c430c89b5a",
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/trees/6bccf6e2c7ecae6a9324443e3cb598c430c89b5a"
+    },
+    {
+      "path": "data/shakespeare_char/prepare.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fd1621d55b2e0fd268ca1a79cf3b056ed23d16b",
+      "size": 2344,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/9fd1621d55b2e0fd268ca1a79cf3b056ed23d16b"
+    },
+    {
+      "path": "data/shakespeare_char/readme.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d597b79cd3f1245292c3fdd89dd6ae5d00c96646",
+      "size": 209,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/d597b79cd3f1245292c3fdd89dd6ae5d00c96646"
+    },
+    {
+      "path": "model.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c698f8b60129d793494de058b0dd4e318c0dcb5e",
+      "size": 16345,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/c698f8b60129d793494de058b0dd4e318c0dcb5e"
+    },
+    {
+      "path": "sample.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d25d6e0861388217c01c2f4284810ee39faa40a2",
+      "size": 3942,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/d25d6e0861388217c01c2f4284810ee39faa40a2"
+    },
+    {
+      "path": "scaling_laws.ipynb",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "946ea831dc721647126b76f20ed2d423a6a86106",
+      "size": 268519,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/946ea831dc721647126b76f20ed2d423a6a86106"
+    },
+    {
+      "path": "train.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de5785051050d64bbda37a4964c2c079f0739b2b",
+      "size": 14857,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/de5785051050d64bbda37a4964c2c079f0739b2b"
+    },
+    {
+      "path": "transformer_sizing.ipynb",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "43262add3ba64c68b3b211a4a8adad6d183cac50",
+      "size": 14579,
+      "url": "https://api.github.com/repos/karpathy/nanoGPT/git/blobs/43262add3ba64c68b3b211a4a8adad6d183cac50"
+    }
+  ],
+  "truncated": false,
+  "owner": "karpathy",
+  "repo": "nanoGPT",
+  "ref": "master",
+  "discovery": {
+    "mode": "tree",
+    "owner": "karpathy",
+    "repo": "nanoGPT",
+    "ref": "master",
+    "requested_ref": null,
+    "ref_source": "default_branch",
+    "recursive": true
+  }
+}

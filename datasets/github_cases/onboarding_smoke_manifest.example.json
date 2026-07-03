@@ -1,0 +1,47 @@
+{
+  "suite_name": "github_onboarding_smoke_example",
+  "description": "Example manifest for running multiple GitHub onboarding smoke jobs and validating their generated benchmark reports.",
+  "defaults": {
+    "preset": "smoke",
+    "recipe": [
+      "missing_len_zero_guard"
+    ],
+    "max_sources": 20,
+    "max_candidates": 10
+  },
+  "thresholds": {
+    "min_generated_candidates": 1,
+    "require_quality_gate": true,
+    "require_benchmark_run": true,
+    "min_benchmark_cases": 1,
+    "min_top1": 0.5,
+    "min_map": 0.5,
+    "min_patch_success_rate": 0.5
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_average_mean_from_discovery",
+      "mode": "from-discovery",
+      "discovery": "source_discovery.example.json",
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "output_dir": "thealgorithms_average_mean"
+    },
+    {
+      "name": "thealgorithms_average_mean_repo",
+      "mode": "repo",
+      "repo": "TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "output_dir": "thealgorithms_average_mean_repo",
+      "fallback": {
+        "enabled": true,
+        "max_sources": 50,
+        "max_candidates": 20
+      }
+    }
+  ]
+}

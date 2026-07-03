@@ -1,0 +1,754 @@
+{
+  "sha": "7fce99cb955846901b22b051909aa4f30dc16128",
+  "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/7fce99cb955846901b22b051909aa4f30dc16128",
+  "tree": [
+    {
+      "path": ".claude",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "395cabbe86a28b2a086d78f3b1bb974ed01d31e6",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/395cabbe86a28b2a086d78f3b1bb974ed01d31e6"
+    },
+    {
+      "path": ".claude/settings.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4d7fbabe209a930d167f6557ae20a779e62de51a",
+      "size": 159,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/4d7fbabe209a930d167f6557ae20a779e62de51a"
+    },
+    {
+      "path": ".coveragerc",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8feb29420102174df00b4e6834f8e4d9bf645a19",
+      "size": 713,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/8feb29420102174df00b4e6834f8e4d9bf645a19"
+    },
+    {
+      "path": ".github",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "96bab0c9a702c60652c92b84f5da840e603726d7",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/96bab0c9a702c60652c92b84f5da840e603726d7"
+    },
+    {
+      "path": ".github/FUNDING.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b4d3edff1f6a6d4ee43d56565cf5983ef519c1ba",
+      "size": 215,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/b4d3edff1f6a6d4ee43d56565cf5983ef519c1ba"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6cc00712d1c7c45d8bf82580e66f448dbac11070",
+      "size": 154,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/6cc00712d1c7c45d8bf82580e66f448dbac11070"
+    },
+    {
+      "path": ".github/workflows",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "ac9a641db91a299971aea3a26f057b46254bdbe8",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/ac9a641db91a299971aea3a26f057b46254bdbe8"
+    },
+    {
+      "path": ".github/workflows/deploy.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aa0338bc601ba09b0cc1b6d16d825d0d928e6138",
+      "size": 1201,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/aa0338bc601ba09b0cc1b6d16d825d0d928e6138"
+    },
+    {
+      "path": ".github/workflows/downstream.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "dc606d371fbfdecbfc3ff9214997a23d8544acc4",
+      "size": 1724,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/dc606d371fbfdecbfc3ff9214997a23d8544acc4"
+    },
+    {
+      "path": ".github/workflows/test.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "68b5133c4aea98c9a7ba75048e2684336d37be20",
+      "size": 4075,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/68b5133c4aea98c9a7ba75048e2684336d37be20"
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "aaf65a83eb4799fed8193115c0be9f1cde104a6b",
+      "size": 942,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/aaf65a83eb4799fed8193115c0be9f1cde104a6b"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7381ad79a86d30aecd2b19fb130e51ec4d43dfe7",
+      "size": 1425,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/7381ad79a86d30aecd2b19fb130e51ec4d43dfe7"
+    },
+    {
+      "path": ".readthedocs.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7dad02e0dac55bb553440cdfcffbd8cfb085dc6",
+      "size": 260,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/c7dad02e0dac55bb553440cdfcffbd8cfb085dc6"
+    },
+    {
+      "path": "AGENTS.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f34ae414fccb2b7d844ed199fa26290498120842",
+      "size": 62,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/f34ae414fccb2b7d844ed199fa26290498120842"
+    },
+    {
+      "path": "CHANGELOG.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "683b399fbdfc41258155775c3c8582d4ba3ef068",
+      "size": 21056,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/683b399fbdfc41258155775c3c8582d4ba3ef068"
+    },
+    {
+      "path": "CLAUDE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b43aae53d247940f8a1e82245c309976a47f09d",
+      "size": 2051,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/2b43aae53d247940f8a1e82245c309976a47f09d"
+    },
+    {
+      "path": "LICENSE",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "85f4dd63d2da8e31d7e84d5180f016fdfe315c2c",
+      "size": 1110,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/85f4dd63d2da8e31d7e84d5180f016fdfe315c2c"
+    },
+    {
+      "path": "MANIFEST.in",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0cf8f3e0887c161855d096d96880c65934f1bfbc",
+      "size": 132,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/0cf8f3e0887c161855d096d96880c65934f1bfbc"
+    },
+    {
+      "path": "README.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "adef0357ced79d55fc9ae8d46fc1e313d61df0ae",
+      "size": 3360,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/adef0357ced79d55fc9ae8d46fc1e313d61df0ae"
+    },
+    {
+      "path": "RELEASING.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a6f58da9b69737542e72245b13f98673ebb9c996",
+      "size": 905,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/a6f58da9b69737542e72245b13f98673ebb9c996"
+    },
+    {
+      "path": "SECURITY.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6d3c7348e89c8b60c59eff5f55a0b00a48b7c426",
+      "size": 105,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/6d3c7348e89c8b60c59eff5f55a0b00a48b7c426"
+    },
+    {
+      "path": "TIDELIFT.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "93af996b296146e4f68927a620e15af3d91127ee",
+      "size": 2412,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/93af996b296146e4f68927a620e15af3d91127ee"
+    },
+    {
+      "path": "changelog",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "de765a8ffa87172688d5fcb78d135f62607947ee",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/de765a8ffa87172688d5fcb78d135f62607947ee"
+    },
+    {
+      "path": "changelog/186.doc.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "31f42ade0f200c80ef62d3577648340a627db996",
+      "size": 85,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/31f42ade0f200c80ef62d3577648340a627db996"
+    },
+    {
+      "path": "changelog/431.bugfix.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c813c2a394d78e55c484717f7fb154e8bea7094",
+      "size": 310,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/5c813c2a394d78e55c484717f7fb154e8bea7094"
+    },
+    {
+      "path": "changelog/522.doc.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cdadfa8dbdda4003897a205ec6995627c72543e6",
+      "size": 90,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/cdadfa8dbdda4003897a205ec6995627c72543e6"
+    },
+    {
+      "path": "changelog/590.trivial.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "276be0df9ff21b6eebb73b8a3f04b5a983920b59",
+      "size": 168,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/276be0df9ff21b6eebb73b8a3f04b5a983920b59"
+    },
+    {
+      "path": "changelog/629.bugfix.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "88c96c1fedfcf42d90ee7b818b5b0992d81f9b94",
+      "size": 92,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/88c96c1fedfcf42d90ee7b818b5b0992d81f9b94"
+    },
+    {
+      "path": "changelog/632.removal.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e6929b40531af77961a53e45dd9f5ac94ea4632",
+      "size": 167,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/0e6929b40531af77961a53e45dd9f5ac94ea4632"
+    },
+    {
+      "path": "changelog/README.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47e21fb33fb340081246a3831f09fa06597096bf",
+      "size": 1662,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/47e21fb33fb340081246a3831f09fa06597096bf"
+    },
+    {
+      "path": "changelog/_template.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "974e5c1b2ded0e34f8d0e53c53deea191c068c2a",
+      "size": 939,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/974e5c1b2ded0e34f8d0e53c53deea191c068c2a"
+    },
+    {
+      "path": "codecov.yml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a0a308588e20127cc7ad0ab58356b6b677391be1",
+      "size": 86,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/a0a308588e20127cc7ad0ab58356b6b677391be1"
+    },
+    {
+      "path": "docs",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0ada780edb3acd005af5a0365e85cb9af6a2688f",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/0ada780edb3acd005af5a0365e85cb9af6a2688f"
+    },
+    {
+      "path": "docs/_static",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "0fbc9e6d42778f5c7ebd17b06b3c52041834c713",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/0fbc9e6d42778f5c7ebd17b06b3c52041834c713"
+    },
+    {
+      "path": "docs/_static/img",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "db73cf544d80e7f09446a1e180536da03392653c",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/db73cf544d80e7f09446a1e180536da03392653c"
+    },
+    {
+      "path": "docs/_static/img/plug.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3339f8a608d25ff7bdc6531b4290935f58ba907a",
+      "size": 9350,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/3339f8a608d25ff7bdc6531b4290935f58ba907a"
+    },
+    {
+      "path": "docs/api_reference.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b14d725d94cb669cd20d55ecfda5811cdaac8306",
+      "size": 1109,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/b14d725d94cb669cd20d55ecfda5811cdaac8306"
+    },
+    {
+      "path": "docs/changelog.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "565b0521d0c2cdbfe493d19765b04d5c119fa7eb",
+      "size": 30,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/565b0521d0c2cdbfe493d19765b04d5c119fa7eb"
+    },
+    {
+      "path": "docs/conf.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fd1eba936c0b4211c5edd3df985935664e94db33",
+      "size": 3855,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/fd1eba936c0b4211c5edd3df985935664e94db33"
+    },
+    {
+      "path": "docs/examples",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f4d4a943ca97028f57bd75141f3f828392edb992",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/f4d4a943ca97028f57bd75141f3f828392edb992"
+    },
+    {
+      "path": "docs/examples/eggsample-spam",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2f4964b113d0da7f1df4d453445bef89b40384be",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/2f4964b113d0da7f1df4d453445bef89b40384be"
+    },
+    {
+      "path": "docs/examples/eggsample-spam/eggsample_spam.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "500d885d55b91663ad489bd5acfbccee8c7129c7",
+      "size": 616,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/500d885d55b91663ad489bd5acfbccee8c7129c7"
+    },
+    {
+      "path": "docs/examples/eggsample-spam/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "557aa5c1f1358dd0075259345b4ef9b58a0f171c",
+      "size": 195,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/557aa5c1f1358dd0075259345b4ef9b58a0f171c"
+    },
+    {
+      "path": "docs/examples/eggsample",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "dfa9890e0043fd8a3daf87a6c3718f08f7ede0c1",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/dfa9890e0043fd8a3daf87a6c3718f08f7ede0c1"
+    },
+    {
+      "path": "docs/examples/eggsample/eggsample",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "55b6e46a83446270400f71a5703ddc216a215645",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/55b6e46a83446270400f71a5703ddc216a215645"
+    },
+    {
+      "path": "docs/examples/eggsample/eggsample/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b2d9d8301facc8583dcd503be8f7f2004b137cac",
+      "size": 140,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/b2d9d8301facc8583dcd503be8f7f2004b137cac"
+    },
+    {
+      "path": "docs/examples/eggsample/eggsample/hookspecs.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4bab42281de961f2813fc5b8fa4b9007073e8c28",
+      "size": 513,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/4bab42281de961f2813fc5b8fa4b9007073e8c28"
+    },
+    {
+      "path": "docs/examples/eggsample/eggsample/host.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d18278792362fe71f3a4aedf7b66140c3508c4db",
+      "size": 1579,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/d18278792362fe71f3a4aedf7b66140c3508c4db"
+    },
+    {
+      "path": "docs/examples/eggsample/eggsample/lib.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "62cea7458ea491cc7b860122e7e390c1fcfe201f",
+      "size": 335,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/62cea7458ea491cc7b860122e7e390c1fcfe201f"
+    },
+    {
+      "path": "docs/examples/eggsample/setup.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "89e88ceca07c13167ad4b344c9f9c55dd172e0f5",
+      "size": 243,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/89e88ceca07c13167ad4b344c9f9c55dd172e0f5"
+    },
+    {
+      "path": "docs/examples/toy-example.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7d361bc4dbea3ba37ead2bbb370570335c7bfc2",
+      "size": 888,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/c7d361bc4dbea3ba37ead2bbb370570335c7bfc2"
+    },
+    {
+      "path": "docs/index.rst",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b56278ed8b063f32cfeebd82de36d648a0adb1b6",
+      "size": 34147,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/b56278ed8b063f32cfeebd82de36d648a0adb1b6"
+    },
+    {
+      "path": "docs/requirements.txt",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7d0b87a35ece581898deb2090b290763353a4ffb",
+      "size": 111,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/7d0b87a35ece581898deb2090b290763353a4ffb"
+    },
+    {
+      "path": "downstream",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "f12bfd768514b0badb740541aee79b2a6b5127e9",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/f12bfd768514b0badb740541aee79b2a6b5127e9"
+    },
+    {
+      "path": "downstream/.gitignore",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "bdd5becb83559746468ad18811ffdb5eb6aa0e6c",
+      "size": 71,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/bdd5becb83559746468ad18811ffdb5eb6aa0e6c"
+    },
+    {
+      "path": "downstream/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30375e5b46533a6af4e5d94d411e9a0c7ec98e71",
+      "size": 1399,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/30375e5b46533a6af4e5d94d411e9a0c7ec98e71"
+    },
+    {
+      "path": "downstream/recipes",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "2520d78fd4cd5bd55e9d926cc1513ecd0fd0118a",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/2520d78fd4cd5bd55e9d926cc1513ecd0fd0118a"
+    },
+    {
+      "path": "downstream/recipes/conda.bash",
+      "mode": "100755",
+      "type": "blob",
+      "sha": "99a731f4893bedb93391f59d36a91d820bb852fa",
+      "size": 632,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/99a731f4893bedb93391f59d36a91d820bb852fa"
+    },
+    {
+      "path": "downstream/recipes/conda.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "326bd15e56f5535ec02c4f480bc96e6a22086f13",
+      "size": 118,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/326bd15e56f5535ec02c4f480bc96e6a22086f13"
+    },
+    {
+      "path": "downstream/recipes/datasette.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30f19261d179b34c604f3dd550aa81a25006263c",
+      "size": 156,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/30f19261d179b34c604f3dd550aa81a25006263c"
+    },
+    {
+      "path": "downstream/recipes/devpi.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8ba2efcf27ae74b18f42b914249878da35dc977a",
+      "size": 487,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/8ba2efcf27ae74b18f42b914249878da35dc977a"
+    },
+    {
+      "path": "downstream/recipes/hatch.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d0c2deb863bfc6cff7fc83e56941e870cc7af414",
+      "size": 292,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/d0c2deb863bfc6cff7fc83e56941e870cc7af414"
+    },
+    {
+      "path": "downstream/recipes/pytest.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "696640247c7366416f2a18dcf88c2ff37b7db82b",
+      "size": 158,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/696640247c7366416f2a18dcf88c2ff37b7db82b"
+    },
+    {
+      "path": "downstream/recipes/python-lsp-server.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "da23579b7c8a624e4a1d24fb546a5af67a6f2c8a",
+      "size": 477,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/da23579b7c8a624e4a1d24fb546a5af67a6f2c8a"
+    },
+    {
+      "path": "downstream/recipes/tox.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a567c32ad03c0511e4012b6785b979053c3c63d0",
+      "size": 487,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/a567c32ad03c0511e4012b6785b979053c3c63d0"
+    },
+    {
+      "path": "downstream/run_downstream.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "da3b3931b013bf2064d8b6fb4538b5a795bea887",
+      "size": 8416,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/da3b3931b013bf2064d8b6fb4538b5a795bea887"
+    },
+    {
+      "path": "pyproject.toml",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3adc4454157719d935a1dacc8c883a9b61338b08",
+      "size": 3410,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/3adc4454157719d935a1dacc8c883a9b61338b08"
+    },
+    {
+      "path": "scripts",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "b9317b130ed8e319960b746ccffbd48737cfbbf9",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/b9317b130ed8e319960b746ccffbd48737cfbbf9"
+    },
+    {
+      "path": "scripts/release.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "84dc46758c58408ee156a0c74636c28192381b6c",
+      "size": 2078,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/84dc46758c58408ee156a0c74636c28192381b6c"
+    },
+    {
+      "path": "scripts/towncrier-draft-to-file.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "63b9434cf5b331107c1b9ce8648984927acf028b",
+      "size": 435,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/63b9434cf5b331107c1b9ce8648984927acf028b"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "6f9c77f636bd43bb08e73ab3a96a28134611a19f",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/6f9c77f636bd43bb08e73ab3a96a28134611a19f"
+    },
+    {
+      "path": "src/pluggy",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "fa98956edd5b30c5760e7bee4595b1ed4b99c4ee",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/fa98956edd5b30c5760e7bee4595b1ed4b99c4ee"
+    },
+    {
+      "path": "src/pluggy/__init__.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3d81d0a3494bac32d34ce6b81458820b1a17d6c6",
+      "size": 988,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/3d81d0a3494bac32d34ce6b81458820b1a17d6c6"
+    },
+    {
+      "path": "src/pluggy/_callers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "450db1a7cb0691a11090b82368652c339221bb68",
+      "size": 5883,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/450db1a7cb0691a11090b82368652c339221bb68"
+    },
+    {
+      "path": "src/pluggy/_hooks.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f079d3b72c4f2757fa8351b21f294504871884ce",
+      "size": 27245,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/f079d3b72c4f2757fa8351b21f294504871884ce"
+    },
+    {
+      "path": "src/pluggy/_manager.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c20105c89d5add6247a443486304b27565b56e62",
+      "size": 20261,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/c20105c89d5add6247a443486304b27565b56e62"
+    },
+    {
+      "path": "src/pluggy/_result.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f8020b510da03e31281b6ba9c28e6657e7fd99bb",
+      "size": 3116,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/f8020b510da03e31281b6ba9c28e6657e7fd99bb"
+    },
+    {
+      "path": "src/pluggy/_tracing.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e90418f5c19e1c08376fece7a0f716d1ccf731e2",
+      "size": 2006,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/e90418f5c19e1c08376fece7a0f716d1ccf731e2"
+    },
+    {
+      "path": "src/pluggy/_warnings.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6356c770c7d1f26ef4f90a4781b1386209f8169c",
+      "size": 828,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/6356c770c7d1f26ef4f90a4781b1386209f8169c"
+    },
+    {
+      "path": "src/pluggy/py.typed",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "size": 0,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "testing",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "be0598823c6103138f577c8531a4d2fafa9fb147",
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/trees/be0598823c6103138f577c8531a4d2fafa9fb147"
+    },
+    {
+      "path": "testing/benchmark.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "81823eddc45d2e8dc57c0f201a8509fd19d25d15",
+      "size": 5049,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/81823eddc45d2e8dc57c0f201a8509fd19d25d15"
+    },
+    {
+      "path": "testing/conftest.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f0682f470115a13a2e3f8dafa519cf36fe1a511",
+      "size": 569,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/1f0682f470115a13a2e3f8dafa519cf36fe1a511"
+    },
+    {
+      "path": "testing/test_details.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "de79d536e7cb262f07ca96b8f17a4292761b71e7",
+      "size": 7109,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/de79d536e7cb262f07ca96b8f17a4292761b71e7"
+    },
+    {
+      "path": "testing/test_helpers.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3c58ecee8961cc8ca3cd1337904cf98cc9478b72",
+      "size": 8011,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/3c58ecee8961cc8ca3cd1337904cf98cc9478b72"
+    },
+    {
+      "path": "testing/test_hookcaller.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0c9f91bd5059e7bb06df5efead6b3350a2ba995f",
+      "size": 12320,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/0c9f91bd5059e7bb06df5efead6b3350a2ba995f"
+    },
+    {
+      "path": "testing/test_invocations.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e24af7505c62ed4fab29f79695be808f41e4b649",
+      "size": 9048,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/e24af7505c62ed4fab29f79695be808f41e4b649"
+    },
+    {
+      "path": "testing/test_multicall.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "93f394c8bab3199aadacd62b2f246354ec97fcf1",
+      "size": 10620,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/93f394c8bab3199aadacd62b2f246354ec97fcf1"
+    },
+    {
+      "path": "testing/test_pluginmanager.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "219b17d55ca189cb353cfd1aead145c32259e4e5",
+      "size": 21903,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/219b17d55ca189cb353cfd1aead145c32259e4e5"
+    },
+    {
+      "path": "testing/test_result.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c4a33920fc2cfac5bb1a3900843a462582e30339",
+      "size": 597,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/c4a33920fc2cfac5bb1a3900843a462582e30339"
+    },
+    {
+      "path": "testing/test_tracer.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c90c78f17f323c443e265eb20870e0efd98a2f8e",
+      "size": 1875,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/c90c78f17f323c443e265eb20870e0efd98a2f8e"
+    },
+    {
+      "path": "testing/test_warnings.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b84cdca6494b7928fb3bc9df1612da9248c171c8",
+      "size": 2306,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/b84cdca6494b7928fb3bc9df1612da9248c171c8"
+    },
+    {
+      "path": "tox.ini",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a09b09cc5f91ebc25e13b2cab0614e8beca1abff",
+      "size": 1422,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/a09b09cc5f91ebc25e13b2cab0614e8beca1abff"
+    },
+    {
+      "path": "uv.lock",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "239b62583af3239f0715789dde1cf87458338bce",
+      "size": 85587,
+      "url": "https://api.github.com/repos/pytest-dev/pluggy/git/blobs/239b62583af3239f0715789dde1cf87458338bce"
+    }
+  ],
+  "truncated": false,
+  "owner": "pytest-dev",
+  "repo": "pluggy",
+  "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+  "discovery": {
+    "mode": "tree",
+    "owner": "pytest-dev",
+    "repo": "pluggy",
+    "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+    "requested_ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+    "ref_source": "explicit",
+    "recursive": true
+  }
+}

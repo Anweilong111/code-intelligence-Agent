@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "owner": "python",
+      "repo": "cpython",
+      "ref": "main",
+      "source_path": "Lib/statistics.py",
+      "target_path": "cpython_statistics/statistics.py"
+    }
+  ]
+}
+

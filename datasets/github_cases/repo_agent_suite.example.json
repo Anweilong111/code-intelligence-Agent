@@ -1,0 +1,67 @@
+{
+  "suite_name": "repo_agent_smoke_suite",
+  "description": "Example multi-repository suite for the one-command GitHub repo agent.",
+  "defaults": {
+    "preset": "smoke",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "dependency_max_depth": 4,
+    "repository_test_failure_overlay_candidate_limit": 5,
+    "auto_fallback": true,
+    "fallback_max_sources": 50,
+    "fallback_max_candidates": 20
+  },
+  "suite_thresholds": {
+    "min_expectation_pass_rate": 1.0,
+    "min_generated_candidates": 4,
+    "min_benchmark_cases": 4,
+    "min_average_top1": 1.0,
+    "min_average_patch_success_rate": 1.0,
+    "min_weighted_patch_success_rate": 1.0,
+    "max_repository_test_blocked_count": 3,
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0
+  },
+  "runs": [
+    {
+      "name": "thealgorithms_average_mean",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "maths/average_mean.py"
+      ],
+      "expected_status": "pass",
+      "thresholds": {
+        "generated_candidates": 3,
+        "benchmark_cases": 3,
+        "top1": 1.0,
+        "patch_success_rate": 1.0
+      }
+    },
+    {
+      "name": "click_package_layout",
+      "repo": "https://github.com/pallets/click",
+      "ref": "8.1.7",
+      "expected_status": "pass",
+      "thresholds": {
+        "generated_candidates": 1,
+        "benchmark_cases": 1,
+        "top1": 1.0,
+        "patch_success_rate": 1.0
+      }
+    },
+    {
+      "name": "octocat_hello_world_no_python",
+      "repo": "https://github.com/octocat/Hello-World",
+      "preset": "mining",
+      "expected_status": "fail",
+      "expected_diagnostic_codes": [
+        "no_imported_sources"
+      ],
+      "thresholds": {
+        "generated_candidates": 0,
+        "benchmark_cases": 0
+      }
+    }
+  ]
+}
