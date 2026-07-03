@@ -4379,6 +4379,181 @@ def test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed(
     ]["passed"] is False
 
 
+def test_intelligence_suite_aggregates_external_llm_repair_source_reports(tmp_path):
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    source_path = tmp_path / "external_suite.json"
+    source_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "external_llm_repair_suite",
+                "runs": [
+                    _external_llm_direct_success_run("direct"),
+                    _external_llm_reflection_success_run("reflection"),
+                    _external_llm_blocker_run("missing_key"),
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "aggregate_repair_sources",
+                "run_llm_repair_showcase_matrix": True,
+                "llm_repair_source_reports": [str(source_path)],
+                "suite_thresholds": {
+                    "max_llm_repair_source_report_missing_count": 0,
+                    "min_llm_repair_source_report_count": 1,
+                    "min_llm_repair_showcase_matrix_direct_success_count": 1,
+                    "min_llm_repair_showcase_matrix_reflection_success_count": 1,
+                    "min_llm_repair_showcase_matrix_blocker_count": 1,
+                },
+                "runs": [],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_github_repo_intelligence_suite(manifest_path, output_dir)
+    matrix = json.loads(
+        (output_dir / "llm_repair_showcase_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    evaluation = json.loads(
+        (output_dir / "llm_repair_evaluation_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    suite_markdown = (output_dir / "github_repo_intelligence_suite.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert report.passed is True
+    assert report.summary["llm_repair_source_report_count"] == 1
+    assert report.summary["llm_repair_source_report_missing_count"] == 0
+    assert report.summary["llm_repair_showcase_matrix_status"] == "pass"
+    assert matrix["class_counts"] == {
+        "llm_blocker": 1,
+        "llm_direct_success": 1,
+        "llm_reflection_success": 1,
+    }
+    assert evaluation["case_count"] == 3
+    assert {
+        row["suite_report_path"] for row in evaluation["matrix"]
+    } == {str(source_path)}
+    assert "LLM Repair Source Reports: 1" in suite_markdown
+    assert "Missing LLM Repair Source Reports: 0" in suite_markdown
+
+
+def test_intelligence_suite_reports_missing_external_llm_repair_source(tmp_path):
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    missing_path = tmp_path / "missing_suite.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "missing_repair_source",
+                "run_llm_repair_showcase_matrix": True,
+                "llm_repair_source_reports": [str(missing_path)],
+                "suite_thresholds": {
+                    "max_llm_repair_source_report_missing_count": 0,
+                },
+                "runs": [],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_github_repo_intelligence_suite(manifest_path, output_dir)
+    checks = {
+        check["name"]: check for check in report.summary["suite_threshold_checks"]
+    }
+    suite_markdown = (output_dir / "github_repo_intelligence_suite.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert report.passed is False
+    assert report.summary["llm_repair_source_report_count"] == 0
+    assert report.summary["llm_repair_source_report_missing_count"] == 1
+    assert report.summary["llm_repair_source_report_missing_paths"] == [
+        str(missing_path)
+    ]
+    assert checks["max_llm_repair_source_report_missing_count"]["passed"] is False
+    assert "Missing LLM Repair Source Reports: 1" in suite_markdown
+
+
+def _external_llm_direct_success_run(name: str) -> dict:
+    return {
+        "name": name,
+        "repo": f"example/{name}",
+        "report_path": f"out/{name}/github_repo_intelligence.json",
+        "status": "pass",
+        "passed": True,
+        "metrics": {
+            "repository_patch_generation_mode": "llm",
+            "repository_llm_patch_generation_status": "pass",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": True,
+            "repository_patch_generator_llm_candidate_count": 2,
+            "repository_test_patch_validation_status": "pass",
+            "repository_test_patch_validation_executed_count": 1,
+            "repository_test_patch_validation_candidate_count": 2,
+            "repository_test_patch_validation_success_count": 1,
+            "repository_test_patch_validation_successful_reflection_count": 0,
+            "repository_test_patch_judge_authority": (
+                "sandbox_pytest_decides_success"
+            ),
+        },
+    }
+
+
+def _external_llm_reflection_success_run(name: str) -> dict:
+    payload = _external_llm_direct_success_run(name)
+    payload["metrics"].update(
+        {
+            "repository_test_patch_validation_executed_count": 2,
+            "repository_test_patch_validation_reflection_mode": "llm",
+            "repository_test_patch_validation_reflection_candidate_count": 2,
+            "repository_test_patch_validation_successful_reflection_count": 1,
+            "repository_test_patch_validation_llm_reflection_attempt_count": 1,
+            "repository_llm_reflection_status": "ready",
+            "repository_llm_reflection_provider": "deepseek",
+            "repository_llm_reflection_model": "deepseek-v4-pro",
+        }
+    )
+    return payload
+
+
+def _external_llm_blocker_run(name: str) -> dict:
+    return {
+        "name": name,
+        "repo": f"example/{name}",
+        "report_path": f"out/{name}/llm_config_preflight.json",
+        "status": "llm_config_blocked",
+        "passed": False,
+        "metrics": {
+            "status": "llm_config_blocked",
+            "blocker": "llm_config_missing_api_key",
+            "repository_patch_generation_mode": "llm",
+            "repository_llm_patch_generation_status": "blocked",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": False,
+            "repository_patch_generator_llm_candidate_count": 0,
+            "repository_test_patch_validation_success_count": 0,
+            "agent_answers_next_action": (
+                "Re-run the LLM repair suite after environment setup."
+            ),
+        },
+    }
+
+
 def test_intelligence_suite_llm_preflight_blocks_placeholder_key_before_runner(
     tmp_path,
     monkeypatch,

@@ -381,7 +381,15 @@ def run_github_repo_intelligence_suite(
         "run_llm_repair_showcase_matrix",
         _bool_option(defaults, "run_llm_repair_showcase_matrix", False),
     ):
-        _attach_llm_repair_showcase_matrix(report, output_root)
+        _attach_llm_repair_showcase_matrix(
+            report,
+            output_root,
+            source_report_paths=_llm_repair_source_report_paths(
+                payload,
+                defaults=defaults,
+                manifest=manifest,
+            ),
+        )
     if _bool_option(
         payload,
         "run_p6_readiness_audit",
@@ -452,6 +460,9 @@ def render_github_repo_intelligence_suite_markdown(
         f"- LLM Repair Showcase Matrix Classes: {_format_counts(_dict(summary.get('llm_repair_showcase_matrix_class_counts')))}",
         f"- LLM Repair Showcase Matrix JSON: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_json') or 'none')}`",
         f"- LLM Repair Showcase Matrix Markdown: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_markdown') or 'none')}`",
+        f"- LLM Repair Source Reports: {_int(summary.get('llm_repair_source_report_count', 0))}",
+        f"- Missing LLM Repair Source Reports: {_int(summary.get('llm_repair_source_report_missing_count', 0))}",
+        f"- Missing LLM Repair Source Report Paths: `{_markdown_cell(_format_list(_list(summary.get('llm_repair_source_report_missing_paths'))))}`",
         f"- LLM Repair Evaluation Matrix Status: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_status') or 'not_run')}`",
         f"- LLM Repair Evaluation Matrix JSON: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_json') or 'none')}`",
         f"- LLM Repair Metrics Report JSON: `{_markdown_cell(summary.get('llm_repair_metrics_report_json') or 'none')}`",
@@ -4536,12 +4547,17 @@ def _attach_github_onboarding_matrix(
 def _attach_llm_repair_showcase_matrix(
     report: GitHubRepoIntelligenceSuiteReport,
     output_dir: Path,
+    *,
+    source_report_paths: list[Path] | None = None,
 ) -> None:
     suite_payload = report.to_dict()
     suite_payload["suite_report_path"] = str(
         output_dir / "github_repo_intelligence_suite.json"
     )
-    matrix = build_llm_repair_showcase_matrix([suite_payload])
+    external_payloads, missing_sources = _load_llm_repair_source_reports(
+        source_report_paths or []
+    )
+    matrix = build_llm_repair_showcase_matrix([suite_payload, *external_payloads])
     paths = write_llm_repair_showcase_matrix_artifacts(matrix, output_dir)
     class_counts = _dict(matrix.get("class_counts"))
     requirement_status = _dict(matrix.get("requirement_status"))
@@ -4630,8 +4646,54 @@ def _attach_llm_repair_showcase_matrix(
             "llm_repair_showcase_matrix_blocker_present": bool(
                 requirement_status.get("llm_blocker", False)
             ),
+            "llm_repair_source_report_count": len(external_payloads),
+            "llm_repair_source_report_missing_count": len(missing_sources),
+            "llm_repair_source_report_paths": [
+                str(path) for path in (source_report_paths or [])
+            ],
+            "llm_repair_source_report_missing_paths": missing_sources,
         }
     )
+
+
+def _llm_repair_source_report_paths(
+    payload: dict[str, Any],
+    *,
+    defaults: dict[str, Any],
+    manifest: Path,
+) -> list[Path]:
+    values: list[str] = []
+    for key in (
+        "llm_repair_source_reports",
+        "llm_repair_source_report_paths",
+        "llm_repair_evaluation_source_reports",
+    ):
+        values.extend(_list_str(defaults.get(key)))
+        values.extend(_list_str(payload.get(key)))
+    paths: list[Path] = []
+    for value in _dedupe_strings(values):
+        path = Path(value)
+        if path.is_absolute() or path.exists():
+            paths.append(path)
+            continue
+        paths.append(manifest.parent / path)
+    return paths
+
+
+def _load_llm_repair_source_reports(
+    source_report_paths: list[Path],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    payloads: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for path in source_report_paths:
+        resolved = path / "github_repo_intelligence_suite.json" if path.is_dir() else path
+        payload = _json_artifact_payload(resolved)
+        if not payload:
+            missing.append(str(resolved))
+            continue
+        payload.setdefault("suite_report_path", str(resolved))
+        payloads.append(payload)
+    return payloads, missing
 
 
 def _attach_p6_readiness_audit(
