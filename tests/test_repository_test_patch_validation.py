@@ -239,6 +239,25 @@ def test_repository_test_patch_validation_refines_failed_candidate(tmp_path):
         conservative["id"]
     )
     assert reflection_trace["reflection_steps"][0]["success"] is True
+    assert reflection_trace["reflection_steps"][0]["reflection_strategy_id"] == (
+        "refine_logic_against_failing_assertion"
+    )
+    assert reflection_trace["reflection_steps"][0]["reflection_evidence_complete"] is True
+    assert reflection_trace["reflection_steps"][0]["reflection_evidence_missing"] == []
+    assert reflection_trace["reflection_steps"][0]["parent_patch_audit"][
+        "diff_fingerprint"
+    ]
+    assert reflection_trace["reflection_steps"][0]["refined_child_patch_audit"][
+        "diff_fingerprint"
+    ]
+    assert reflection_trace["reflection_steps"][0]["refined_child_safety_gate"][
+        "status"
+    ] == "pass"
+    assert reflection_trace["reflection_steps"][0]["refined_child_sandbox_result"][
+        "status"
+    ] == "pass"
+    assert reflection_trace["reflection_evidence_complete_count"] == 1
+    assert reflection_trace["reflection_evidence_incomplete_count"] == 0
     assert reflection_trace["initial_failure_type_counts"] == {"test_failure": 1}
     assert reflection_trace["reflection_failure_type_counts"] == {"success": 1}
     assert reflection_trace["reflection_parent_failure_type_counts"] == {
@@ -260,6 +279,7 @@ def test_repository_test_patch_validation_refines_failed_candidate(tmp_path):
         encoding="utf-8"
     )
     assert "## Reflection Failure Taxonomy" in trace_markdown
+    assert "## Reflection Evidence Audit" in trace_markdown
     assert "Initial Failure Types: test_failure=1" in trace_markdown
     assert "Successful Reflection Parent Failure Types: test_failure=1" in (
         trace_markdown
@@ -307,6 +327,49 @@ def test_repository_test_patch_validation_llm_mode_missing_key_keeps_depth0(
     assert trace["llm_reflection_config_audit"]["model"] == "deepseek-v4-pro"
     assert trace["llm_reflection_config_audit"]["api_key_present"] is False
     assert "LLM Reflection Config: provider=`deepseek`" in trace_markdown
+
+
+def test_repository_test_patch_validation_reflection_safety_gate_blocks_child(
+    tmp_path,
+):
+    _write_validation_repo(tmp_path)
+    patch_candidates, conservative = _conservative_patch_candidates(tmp_path)
+
+    payload = build_repository_test_patch_validation(
+        patch_candidates,
+        repository_root=tmp_path,
+        validation_limit=1,
+        reflection_rounds=1,
+        refiner=_UnsafeReflectionRefiner(),
+        timeout=10,
+    )
+    trace = build_repository_test_reflection_trace(payload)
+    child = payload["results"][1]
+    step = trace["reflection_steps"][0]
+
+    assert payload["status"] == "fail"
+    assert payload["reason"] == "no_candidate_passed_repository_tests"
+    assert payload["reflection_candidate_count"] == 1
+    assert payload["successful_reflection_candidate_count"] == 0
+    assert child["parent_candidate_id"] == conservative["id"]
+    assert child["failure_type"] == "safety_gate_blocked"
+    assert child["command"] == ["safety_gate"]
+    assert child["safety_gate"]["status"] == "blocked"
+    assert "invalid_python_ast" in child["safety_gate"]["reasons"]
+    assert step["parent_candidate_id"] == conservative["id"]
+    assert step["parent_failure_type"] == "test_failure"
+    assert step["reflection_strategy_id"] == (
+        "refine_logic_against_failing_assertion"
+    )
+    assert step["failure_type"] == "safety_gate_blocked"
+    assert step["refined_child_safety_gate"]["status"] == "blocked"
+    assert step["refined_child_sandbox_result"]["status"] == (
+        "blocked_before_pytest"
+    )
+    assert step["patch_apply_status"] == "not_applied_safety_gate_blocked"
+    assert step["reflection_evidence_complete"] is True
+    assert trace["reflection_evidence_complete_count"] == 1
+    assert trace["reflection_evidence_incomplete_count"] == 0
 
 
 def test_repository_test_patch_validation_llm_refiner_repairs_failed_candidate(
@@ -840,6 +903,43 @@ class _RegressionRefiner:
                     "variant": "regression_reflection_preserve_small",
                     "reflection_round_index": round_index,
                     "reflection_width_limit": limit,
+                },
+            )
+        ]
+
+
+class _UnsafeReflectionRefiner:
+    def refine_many(
+        self,
+        *,
+        repo_path,
+        previous_patch,
+        execution_result,
+        round_index,
+        limit,
+    ):
+        del repo_path, execution_result, limit
+        invalid_source = "def shift_left(values):\n    if\n"
+        return [
+            PatchCandidate(
+                id=f"{previous_patch.id}::unsafe_reflection",
+                target_file=previous_patch.target_file,
+                relative_file_path=previous_patch.relative_file_path,
+                target_function_id=previous_patch.target_function_id,
+                target_function_name=previous_patch.target_function_name,
+                rule_id=previous_patch.rule_id,
+                description="Invalid reflection patch for safety gate testing.",
+                old_source=previous_patch.old_source,
+                new_source=invalid_source,
+                diff=render_unified_diff(
+                    previous_patch.old_source,
+                    invalid_source,
+                    previous_patch.relative_file_path,
+                ),
+                metadata={
+                    **previous_patch.metadata,
+                    "variant": "unsafe_reflection_invalid_ast",
+                    "reflection_round_index": round_index,
                 },
             )
         ]

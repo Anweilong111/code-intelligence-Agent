@@ -141,6 +141,17 @@ LLM controller selected action 示例：
 
 注意：当前补强的是多候选生成、prompt 审计和 artifact 记录能力；后续仍需要用真实 DeepSeek/兼容 LLM 在多 case 中跑出“非第一个 LLM candidate 成功”的 sandbox 证据。
 
+### Phase 4：Reflection Strategy 与 Safety Evidence Audit
+
+本轮新增：
+
+- `RepairLoop` 与 `BeamPatchSearch` 的 reflection child candidate 会基于自身 `old_source/new_source` 重新执行 AST/scope/signature safety gate，不再复用 parent candidate 的旧 `safety_gate` metadata。
+- `mutable_default_arg` 等允许签名变更的规则在 reflection safety gate 中继续沿用 `allow_signature_change_for_rules`，避免把合法的规则修复误判为 unsafe。
+- 如果 refined child patch 被 safety gate 阻断，系统返回 `safety_gate_blocked`，命令记录为 `["safety_gate"]`，不会进入真实 pytest，也不会伪装成 sandbox 成功。
+- `reflection_trace.json/md` 现在记录 parent patch fingerprint、parent failure type、parent sandbox result、基于 parent failure type 选择的 reflection strategy、refined child patch fingerprint、safety gate result、sandbox result、`reflection_evidence_complete` 和 `reflection_evidence_missing`。
+
+注意：当前完成的是 reflection 执行与审计链路增强；P6 Phase 4 仍需要继续补真实 LLM reflection case，尤其是 test failure -> reflection success、safety blocked -> reflection/blocker、reflection 后仍失败 -> blocker 这三类真实 case。
+
 ### Phase 6：LLM Repair Evaluation Matrix 基础设施
 
 本轮新增 P6 命名评估 artifact：
@@ -183,6 +194,9 @@ python -m pytest tests/test_agent_controller.py -q
 python -m pytest tests/test_github_onboarding_matrix.py tests/test_github_repo_intelligence.py::test_artifact_inventory_flags_missing_current_stage_required_artifacts tests/test_github_repo_intelligence.py::test_artifact_inventory_requires_failure_overlay_artifacts_when_attempted -q
 python -m pytest tests/test_llm_patch_generator.py tests/test_repository_test_patch_candidates.py -q
 python -m pytest tests/test_llm_repair_showcase_matrix.py tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed -q
+python -m pytest tests/test_repository_test_patch_validation.py tests/test_beam_patch_search.py tests/test_agent_controller.py -q
+python -m pytest tests/test_phase3_patch_and_sandbox.py tests/test_phase4_search_and_evaluation.py -q
+python -m pytest tests -q
 python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill-derived-artifacts --output-dir outputs_smoke/p6_onboarding_matrix_real_existing_backfilled <10 existing report paths>
 ```
 
@@ -192,6 +206,9 @@ python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill
 - Phase 2 matrix / artifact inventory 定向测试：`5 passed`
 - Phase 3 LLM patch generator / candidate artifact 定向测试：`19 passed`
 - Phase 6 LLM repair matrix / suite integration 定向测试：`6 passed`
+- Phase 4 reflection safety / Beam / AgentController 回归测试：`55 passed`
+- Phase 3 / Phase 4 搜索与沙箱回归测试：`66 passed`
+- 完整测试：`1019 passed`
 - 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
 ## 后续未完成项
@@ -201,7 +218,7 @@ P6 仍未完成，后续应继续推进：
 1. Phase 2：重新跑至少 10 个真实 GitHub 仓库，生成可复现的真实 `github_onboarding_matrix.json/md`，而不是只依赖历史输出回填。
 2. Phase 2：确保每个新跑真实仓库都输出 `repository_profile`、`repository_structure`、`repository_test_discovery`、`repository_test_environment`、`repository_test_execution_plan`、`agent_policy_trace`。
 3. Phase 3：用真实 DeepSeek/兼容 LLM 跑出 3-5 个候选的多 case 证据，并展示非第一个候选成功的 sandbox case。
-4. Phase 4：Reflection strategy 深化，覆盖 test failure、safety blocked、reflection 后仍失败 blocker。
+4. Phase 4：reflection safety gate 与 trace evidence audit 已增强；后续仍需补真实 LLM reflection case，覆盖 test failure、safety blocked、reflection 后仍失败 blocker。
 5. Phase 5：LLM judge 校准报告，指标化 judge-sandbox agreement。
 6. Phase 6：扩展到 20 个 repair/evaluation case，并用 `llm_repair_evaluation_matrix.json/md` 与 `llm_repair_metrics_report.json/md` 验证 5 个 direct success、3 个 reflection success、5 个 blocker case。
 7. Phase 7：只有 P6 真实完成后，再更新最终 GitHub 展示、简历和面试材料，且不夸大能力。

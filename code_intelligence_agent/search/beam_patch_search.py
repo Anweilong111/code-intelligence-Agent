@@ -24,6 +24,10 @@ from code_intelligence_agent.search.patch_judge import (
 from code_intelligence_agent.search.refinement_context import annotate_refinement_context
 from code_intelligence_agent.search.scoring import PatchScoreWeights, score_patch
 from code_intelligence_agent.tools.sandbox import Sandbox
+from code_intelligence_agent.tools.patch_validation import (
+    allow_signature_change_for_rules,
+    validate_function_patch,
+)
 
 
 @dataclass(frozen=True)
@@ -208,11 +212,14 @@ class BeamPatchSearch:
     ) -> BeamPatchNode:
         candidate = ensure_patch_risk(candidate, program_graph)
         candidate = annotate_refinement_context(candidate, program_graph)
-        execution_result = self.sandbox.apply_patch_and_test(
-            repo_path,
-            candidate,
-            test_args=test_args,
-        )
+        if _candidate_blocked_by_safety(candidate):
+            execution_result = _safety_blocked_execution_result(candidate)
+        else:
+            execution_result = self.sandbox.apply_patch_and_test(
+                repo_path,
+                candidate,
+                test_args=test_args,
+            )
         candidate = annotate_execution_feedback(candidate, execution_result)
         localization_confidence = localization_scores.get(
             candidate.target_function_id, 0.0
@@ -358,7 +365,7 @@ def _with_child_metadata(
     child_index: int,
     sibling_count: int,
 ) -> PatchCandidate:
-    return replace(
+    child = replace(
         candidate,
         metadata={
             **candidate.metadata,
@@ -366,6 +373,68 @@ def _with_child_metadata(
             "beam_child_index": child_index,
             "beam_sibling_count": sibling_count,
         },
+    )
+    return _with_reflection_safety_gate_metadata(child)
+
+
+def _with_reflection_safety_gate_metadata(candidate: PatchCandidate) -> PatchCandidate:
+    existing_safety = candidate.metadata.get("safety_gate")
+    if (
+        isinstance(existing_safety, dict)
+        and existing_safety.get("source") == "beam_reflection_candidate_safety_gate"
+    ):
+        return candidate
+    static_rule_ids = candidate.metadata.get("static_rule_ids")
+    rule_ids = [candidate.rule_id]
+    if isinstance(static_rule_ids, list):
+        rule_ids.extend(str(item) for item in static_rule_ids)
+    validation = validate_function_patch(
+        candidate.old_source,
+        candidate.new_source,
+        allow_signature_change=allow_signature_change_for_rules(rule_ids),
+    )
+    safety_gate = {
+        **validation.to_dict(),
+        "status": "pass" if validation.valid else "blocked",
+        "minimal_diff": not (
+            "patch_too_large" in validation.reasons
+            or "patch_change_ratio_too_large" in validation.reasons
+        ),
+        "source": "beam_reflection_candidate_safety_gate",
+    }
+    return replace(
+        candidate,
+        metadata={
+            **candidate.metadata,
+            "validation": validation.to_dict(),
+            "safety_gate": safety_gate,
+        },
+    )
+
+
+def _candidate_blocked_by_safety(candidate: PatchCandidate) -> bool:
+    safety = candidate.metadata.get("safety_gate")
+    if not isinstance(safety, dict):
+        return False
+    return str(safety.get("status") or "") == "blocked"
+
+
+def _safety_blocked_execution_result(candidate: PatchCandidate) -> ExecutionResult:
+    safety = candidate.metadata.get("safety_gate")
+    reasons = []
+    if isinstance(safety, dict):
+        reasons = [str(item) for item in safety.get("reasons", []) if str(item)]
+    reason_text = ", ".join(reasons) if reasons else "safety_gate_blocked"
+    return ExecutionResult(
+        success=False,
+        returncode=-1,
+        stdout="",
+        stderr=f"Patch candidate blocked by safety gate: {reason_text}",
+        traceback="",
+        passed=0,
+        failed=0,
+        timeout=False,
+        command=["safety_gate"],
     )
 
 

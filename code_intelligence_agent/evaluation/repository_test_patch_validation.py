@@ -26,9 +26,14 @@ from code_intelligence_agent.search.execution_feedback import (
     annotate_execution_feedback,
     execution_feedback_score,
 )
+from code_intelligence_agent.search.candidate_diversity import stable_source_fingerprint
 from code_intelligence_agent.search.patch_search import PatchSearch
 from code_intelligence_agent.search.patch_judge import PatchJudge, build_patch_judge
 from code_intelligence_agent.tools.sandbox import Sandbox
+from code_intelligence_agent.tools.patch_validation import (
+    allow_signature_change_for_rules,
+    validate_function_patch,
+)
 from code_intelligence_agent.evaluation.repository_test_reflection_trace import (
     build_repository_test_reflection_trace,
     write_repository_test_reflection_trace_artifacts,
@@ -828,11 +833,18 @@ def _run_regression_reflection(
             child_index=child_index,
             sibling_count=len(refined_candidates),
         )
-        execution = sandbox.apply_patch_and_test(
-            repository_root,
+        refined = _with_reflection_safety_gate_metadata(
             refined,
-            test_args=validation_args,
+            source="regression_reflection_candidate_safety_gate",
         )
+        if _candidate_blocked_by_safety(refined):
+            execution = _safety_blocked_execution_result(refined)
+        else:
+            execution = sandbox.apply_patch_and_test(
+                repository_root,
+                refined,
+                test_args=validation_args,
+            )
         refined = annotate_execution_feedback(refined, execution)
         nodes.append(
             BeamPatchNode(
@@ -901,6 +913,42 @@ def _with_regression_reflection_metadata(
             "reflection_child_index": child_index,
             "reflection_sibling_count": sibling_count,
             "search_profile_role": "regression_reflection_refined_candidate",
+        },
+    )
+
+
+def _with_reflection_safety_gate_metadata(
+    candidate: PatchCandidate,
+    *,
+    source: str,
+) -> PatchCandidate:
+    existing_safety = candidate.metadata.get("safety_gate")
+    if isinstance(existing_safety, dict) and existing_safety.get("source") == source:
+        return candidate
+    static_rule_ids = candidate.metadata.get("static_rule_ids")
+    rule_ids = [candidate.rule_id]
+    if isinstance(static_rule_ids, list):
+        rule_ids.extend(str(item) for item in static_rule_ids)
+    validation = validate_function_patch(
+        candidate.old_source,
+        candidate.new_source,
+        allow_signature_change=allow_signature_change_for_rules(rule_ids),
+    )
+    safety_gate = {
+        **validation.to_dict(),
+        "status": "pass" if validation.valid else "blocked",
+        "minimal_diff": not (
+            "patch_too_large" in validation.reasons
+            or "patch_change_ratio_too_large" in validation.reasons
+        ),
+        "source": source,
+    }
+    return replace(
+        candidate,
+        metadata={
+            **candidate.metadata,
+            "validation": validation.to_dict(),
+            "safety_gate": safety_gate,
         },
     )
 
@@ -1157,7 +1205,9 @@ def _validation_result_to_dict(result) -> dict[str, Any]:
         "target_function_name": candidate.target_function_name,
         "relative_file_path": candidate.relative_file_path,
         "rule_id": candidate.rule_id,
+        "generator": str(metadata.get("generator") or _generator_from_rule_id(candidate.rule_id)),
         "variant": str(metadata.get("variant") or ""),
+        "description": str(getattr(candidate, "description", "") or ""),
         "depth": depth,
         "parent_candidate_id": str(parent_id or ""),
         "retained": bool(getattr(result, "retained", True)),
@@ -1179,8 +1229,42 @@ def _validation_result_to_dict(result) -> dict[str, Any]:
         "beam_retention": _dict(metadata.get("beam_retention")),
         "patch_judgment": _dict(metadata.get("patch_judgment")),
         "patch_judge_weight": _float(metadata.get("patch_judge_weight", 0.0)),
+        "validation": _dict(metadata.get("validation")),
+        "diff_preview": _preview(getattr(candidate, "diff", "")),
+        "diff_fingerprint": _fingerprint(getattr(candidate, "diff", "")),
+        "old_source_fingerprint": _fingerprint(
+            getattr(candidate, "old_source", "")
+        ),
+        "new_source_fingerprint": _fingerprint(
+            getattr(candidate, "new_source", "")
+        ),
+        "source_fingerprint": str(
+            metadata.get("source_fingerprint")
+            or _fingerprint(getattr(candidate, "new_source", ""))
+        ),
+        "failed_source_fingerprints": [
+            str(item) for item in _list(metadata.get("failed_source_fingerprints"))
+        ],
+        "llm_candidate_index": _int(metadata.get("llm_candidate_index", 0)),
+        "llm_candidate_count_requested": _int(
+            metadata.get("llm_candidate_count_requested", 0)
+        ),
+        "prompt_context_audit": _dict(metadata.get("prompt_context_audit")),
+        "response_parse": _dict(metadata.get("response_parse")),
+        "llm_metadata": _dict(metadata.get("llm_metadata")),
+        "parent_execution_feedback": _dict(
+            metadata.get("parent_execution_feedback")
+        ),
         "repair_loop_parent_id": str(metadata.get("repair_loop_parent_id") or ""),
         "beam_parent_id": str(metadata.get("beam_parent_id") or ""),
+        "beam_child_index": _int(metadata.get("beam_child_index", 0)),
+        "beam_sibling_count": _int(metadata.get("beam_sibling_count", 0)),
+        "reflection_child_index": _int(
+            metadata.get("reflection_child_index", 0)
+        ),
+        "reflection_sibling_count": _int(
+            metadata.get("reflection_sibling_count", 0)
+        ),
         "regression_reflection": bool(
             metadata.get("regression_reflection", False)
         ),
@@ -1224,6 +1308,23 @@ def _candidate_blocked_by_safety(candidate: PatchCandidate) -> bool:
     return str(safety.get("status") or "") == "blocked"
 
 
+def _safety_blocked_execution_result(candidate: PatchCandidate) -> ExecutionResult:
+    safety = _dict(candidate.metadata.get("safety_gate"))
+    reasons = [str(item) for item in _list(safety.get("reasons")) if str(item)]
+    reason_text = ", ".join(reasons) if reasons else "safety_gate_blocked"
+    return ExecutionResult(
+        success=False,
+        returncode=-1,
+        stdout="",
+        stderr=f"Patch candidate blocked by safety gate: {reason_text}",
+        traceback="",
+        passed=0,
+        failed=0,
+        timeout=False,
+        command=["safety_gate"],
+    )
+
+
 def _safety_blocked_candidate_summary(candidate: PatchCandidate) -> dict[str, Any]:
     safety = _dict(candidate.metadata.get("safety_gate"))
     return {
@@ -1262,6 +1363,20 @@ def _candidate_success_summary(row: dict[str, Any]) -> dict[str, Any]:
         "passed": _int(row.get("passed", 0)),
         "failed": _int(row.get("failed", 0)),
     }
+
+
+def _generator_from_rule_id(rule_id: Any) -> str:
+    text = str(rule_id or "").lower()
+    if "llm" in text:
+        return "llm"
+    if "hybrid" in text:
+        return "hybrid"
+    return "rule"
+
+
+def _fingerprint(value: Any) -> str:
+    text = str(value or "")
+    return stable_source_fingerprint(text) if text else ""
 
 
 def _validation_reason(

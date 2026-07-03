@@ -28,6 +28,8 @@ def build_repository_test_reflection_trace(
             "successful_reflection_parent_failure_type_counts": {},
             "initial_failures": [],
             "reflection_steps": [],
+            "reflection_evidence_complete_count": 0,
+            "reflection_evidence_incomplete_count": 0,
             "final_outcome": _final_outcome(payload),
             "next_actions": _next_actions(payload, [], []),
             "initial_strategy_counts": {},
@@ -69,6 +71,12 @@ def build_repository_test_reflection_trace(
         successful_reflections,
         "parent_failure_type",
     )
+    reflection_evidence_complete_count = sum(
+        1 for row in reflection_steps if bool(row.get("reflection_evidence_complete"))
+    )
+    reflection_evidence_incomplete_count = (
+        len(reflection_steps) - reflection_evidence_complete_count
+    )
     if successful_reflections:
         reason = "reflection_repaired_candidate"
     elif reflection_steps:
@@ -99,6 +107,10 @@ def build_repository_test_reflection_trace(
         ),
         "initial_failures": initial_failures,
         "reflection_steps": reflection_steps,
+        "reflection_evidence_complete_count": reflection_evidence_complete_count,
+        "reflection_evidence_incomplete_count": (
+            reflection_evidence_incomplete_count
+        ),
         "final_outcome": _final_outcome(payload),
         "next_actions": _next_actions(payload, initial_failures, reflection_steps),
     }
@@ -132,11 +144,16 @@ def render_repository_test_reflection_trace_markdown(payload: dict[str, Any]) ->
         f"- Successful Reflection Candidates: {_int(payload.get('successful_reflection_candidate_count', 0))}",
         f"- Regression Reflection Candidates: {_int(payload.get('regression_reflection_candidate_count', 0))}",
         f"- Successful Regression Reflection Candidates: {_int(payload.get('successful_regression_reflection_candidate_count', 0))}",
+        f"- Reflection Evidence Complete: {_int(payload.get('reflection_evidence_complete_count', 0))}",
+        f"- Reflection Evidence Incomplete: {_int(payload.get('reflection_evidence_incomplete_count', 0))}",
         "",
         "## Initial Failures",
         "",
-        "| Candidate | Rule | Variant | Failure Type | Failure Reason | Passed | Failed |",
-        "| --- | --- | --- | --- | --- | ---: | ---: |",
+        (
+            "| Candidate | Rule | Variant | Failure Type | Strategy | Safety Gate | "
+            "Patch Fingerprint | Failure Reason | Passed | Failed |"
+        ),
+        "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |",
     ]
     for item in _list(payload.get("initial_failures")):
         row = _dict(item)
@@ -146,12 +163,15 @@ def render_repository_test_reflection_trace_markdown(payload: dict[str, Any]) ->
             f"`{_markdown_cell(row.get('rule_id'))}` | "
             f"`{_markdown_cell(row.get('variant') or 'none')}` | "
             f"`{_markdown_cell(row.get('failure_type') or 'none')}` | "
+            f"`{_markdown_cell(row.get('reflection_strategy_id') or 'none')}` | "
+            f"`{_markdown_cell(_dict(row.get('safety_gate')).get('status') or 'not_recorded')}` | "
+            f"`{_markdown_cell(_dict(row.get('patch_audit')).get('diff_fingerprint') or 'none')}` | "
             f"{_markdown_cell(row.get('failure_reason') or '')} | "
             f"{_int(row.get('passed', 0))} | "
             f"{_int(row.get('failed', 0))} |"
         )
     if not _list(payload.get("initial_failures")):
-        lines.append("| none | none | none | none | none | 0 | 0 |")
+        lines.append("| none | none | none | none | none | none | none | none | 0 | 0 |")
     lines.extend(
         [
             "",
@@ -159,9 +179,10 @@ def render_repository_test_reflection_trace_markdown(payload: dict[str, Any]) ->
             "",
             (
                 "| Depth | Candidate | Parent | Parent Failure | Rule | Variant | "
-                "Success | Failure Type | Feedback |"
+                "Strategy | Safety Gate | Sandbox | Child Patch | Success | "
+                "Failure Type | Feedback |"
             ),
-            "| ---: | --- | --- | --- | --- | --- | --- | --- | --- |",
+            "| ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for item in _list(payload.get("reflection_steps")):
@@ -174,12 +195,44 @@ def render_repository_test_reflection_trace_markdown(payload: dict[str, Any]) ->
             f"`{_markdown_cell(row.get('parent_failure_type') or 'none')}` | "
             f"`{_markdown_cell(row.get('rule_id'))}` | "
             f"`{_markdown_cell(row.get('variant') or 'none')}` | "
+            f"`{_markdown_cell(row.get('reflection_strategy_id') or 'none')}` | "
+            f"`{_markdown_cell(_dict(row.get('refined_child_safety_gate')).get('status') or 'not_recorded')}` | "
+            f"`{_markdown_cell(_dict(row.get('refined_child_sandbox_result')).get('status') or 'not_run')}` | "
+            f"`{_markdown_cell(_dict(row.get('refined_child_patch_audit')).get('diff_fingerprint') or 'none')}` | "
             f"{str(bool(row.get('success', False))).lower()} | "
             f"`{_markdown_cell(row.get('failure_type') or 'none')}` | "
             f"{_markdown_cell(row.get('feedback_summary') or '')} |"
         )
     if not _list(payload.get("reflection_steps")):
-        lines.append("| 0 | none | none | none | none | none | false | none | none |")
+        lines.append(
+            "| 0 | none | none | none | none | none | none | none | none | none | false | none | none |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Reflection Evidence Audit",
+            "",
+            "| Candidate | Complete | Missing Evidence | Parent Patch | Child Patch | Parent Sandbox | Child Sandbox |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+    )
+    for item in _list(payload.get("reflection_steps")):
+        row = _dict(item)
+        missing = ", ".join(
+            str(value) for value in _list(row.get("reflection_evidence_missing"))
+        )
+        lines.append(
+            "| "
+            f"`{_markdown_cell(row.get('candidate_id'))}` | "
+            f"{str(bool(row.get('reflection_evidence_complete', False))).lower()} | "
+            f"`{_markdown_cell(missing or 'none')}` | "
+            f"`{_markdown_cell(_dict(row.get('parent_patch_audit')).get('diff_fingerprint') or 'none')}` | "
+            f"`{_markdown_cell(_dict(row.get('refined_child_patch_audit')).get('diff_fingerprint') or 'none')}` | "
+            f"`{_markdown_cell(_dict(row.get('parent_sandbox_result')).get('status') or 'not_run')}` | "
+            f"`{_markdown_cell(_dict(row.get('refined_child_sandbox_result')).get('status') or 'not_run')}` |"
+        )
+    if not _list(payload.get("reflection_steps")):
+        lines.append("| none | false | no_reflection_steps | none | none | not_run | not_run |")
     lines.extend(
         [
             "",
@@ -359,16 +412,36 @@ def _reflection_step(
     parent_id = str(row.get("parent_candidate_id") or "")
     parent = _dict(result_by_id.get(parent_id))
     feedback = _dict(row.get("execution_feedback"))
+    parent_failure_type = str(parent.get("failure_type") or "")
+    parent_strategy = _reflection_strategy_for_failure_type(parent_failure_type)
     trace.update(
         {
             "parent_candidate_id": parent_id,
-            "parent_failure_type": str(parent.get("failure_type") or ""),
+            "parent_failure_type": parent_failure_type,
             "parent_failure_reason": str(parent.get("failure_reason") or ""),
+            "reflection_strategy_id": str(parent_strategy.get("id") or ""),
+            "reflection_strategy_action": str(parent_strategy.get("action") or ""),
+            "reflection_strategy_reason": str(parent_strategy.get("reason") or ""),
+            "parent_patch_audit": _patch_audit(parent),
+            "parent_safety_gate": _safety_gate_audit(parent),
+            "parent_sandbox_result": _sandbox_result(parent),
+            "parent_llm_audit": _llm_audit(parent),
+            "parent_failed_patch_fingerprint": (
+                str(parent.get("new_source_fingerprint") or "")
+                or str(parent.get("source_fingerprint") or "")
+            ),
+            "refined_child_patch_audit": _patch_audit(row),
+            "refined_child_safety_gate": _safety_gate_audit(row),
+            "refined_child_sandbox_result": _sandbox_result(row),
+            "refined_child_llm_audit": _llm_audit(row),
             "feedback_summary": _feedback_summary(feedback),
             "refinement_hints": _list(feedback.get("refinement_hints")),
             "recoverability": str(feedback.get("recoverability") or ""),
         }
     )
+    missing = _reflection_evidence_missing(trace)
+    trace["reflection_evidence_missing"] = missing
+    trace["reflection_evidence_complete"] = not missing
     return trace
 
 
@@ -398,10 +471,132 @@ def _trace_row(row: dict[str, Any]) -> dict[str, Any]:
         "reflection_strategy_id": str(strategy.get("id") or ""),
         "reflection_strategy_action": str(strategy.get("action") or ""),
         "reflection_strategy_reason": str(strategy.get("reason") or ""),
+        "generator": str(row.get("generator") or ""),
+        "description": str(row.get("description") or ""),
+        "patch_audit": _patch_audit(row),
+        "validation_audit": _dict(row.get("validation")),
+        "safety_gate": _safety_gate_audit(row),
+        "sandbox_result": _sandbox_result(row),
+        "llm_audit": _llm_audit(row),
+        "patch_apply_status": _patch_apply_status(row),
+        "failed_source_fingerprints": [
+            str(item) for item in _list(row.get("failed_source_fingerprints"))
+        ],
         "stdout_preview": str(row.get("stdout_preview") or ""),
         "stderr_preview": str(row.get("stderr_preview") or ""),
         "traceback_preview": str(row.get("traceback_preview") or ""),
     }
+
+
+def _patch_audit(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "diff_fingerprint": str(row.get("diff_fingerprint") or ""),
+        "diff_preview": str(row.get("diff_preview") or ""),
+        "old_source_fingerprint": str(row.get("old_source_fingerprint") or ""),
+        "new_source_fingerprint": str(row.get("new_source_fingerprint") or ""),
+        "source_fingerprint": str(row.get("source_fingerprint") or ""),
+        "relative_file_path": str(row.get("relative_file_path") or ""),
+        "target_function_id": str(row.get("target_function_id") or ""),
+        "target_function_name": str(row.get("target_function_name") or ""),
+        "has_diff": bool(row.get("diff_fingerprint") or row.get("diff_preview")),
+    }
+
+
+def _safety_gate_audit(row: dict[str, Any]) -> dict[str, Any]:
+    safety = _dict(row.get("safety_gate"))
+    if not safety:
+        return {
+            "status": "not_recorded",
+            "ast_valid": False,
+            "scope_limited": False,
+            "minimal_diff": False,
+            "signature_change_allowed": False,
+            "reasons": [],
+            "source": "",
+        }
+    return {
+        "status": str(safety.get("status") or "unknown"),
+        "ast_valid": bool(safety.get("ast_valid", False)),
+        "scope_limited": bool(safety.get("scope_limited", False)),
+        "minimal_diff": bool(safety.get("minimal_diff", False)),
+        "signature_change_allowed": bool(
+            safety.get("signature_change_allowed", False)
+        ),
+        "reasons": [str(item) for item in _list(safety.get("reasons"))],
+        "source": str(safety.get("source") or ""),
+    }
+
+
+def _sandbox_result(row: dict[str, Any]) -> dict[str, Any]:
+    command = [str(item) for item in _list(row.get("command"))]
+    success = bool(row.get("success", False))
+    if command == ["safety_gate"]:
+        status = "blocked_before_pytest"
+    elif success:
+        status = "pass"
+    elif command:
+        status = "fail"
+    else:
+        status = "not_run"
+    return {
+        "status": status,
+        "success": success,
+        "returncode": _int(row.get("returncode", 0)),
+        "passed": _int(row.get("passed", 0)),
+        "failed": _int(row.get("failed", 0)),
+        "timeout": bool(row.get("timeout", False)),
+        "command": command,
+        "failure_type": str(row.get("failure_type") or ""),
+        "failure_reason": str(row.get("failure_reason") or ""),
+    }
+
+
+def _llm_audit(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "candidate_index": _int(row.get("llm_candidate_index", 0)),
+        "candidate_count_requested": _int(
+            row.get("llm_candidate_count_requested", 0)
+        ),
+        "prompt_context_audit": _dict(row.get("prompt_context_audit")),
+        "response_parse": _dict(row.get("response_parse")),
+        "llm_metadata": _dict(row.get("llm_metadata")),
+        "parent_execution_feedback": _dict(row.get("parent_execution_feedback")),
+    }
+
+
+def _patch_apply_status(row: dict[str, Any]) -> str:
+    if str(row.get("failure_type") or "") == "patch_apply_error":
+        return "patch_apply_failed"
+    if _sandbox_result(row).get("status") == "blocked_before_pytest":
+        return "not_applied_safety_gate_blocked"
+    if _list(row.get("command")):
+        return "patch_applied_or_test_attempted"
+    return "not_run"
+
+
+def _reflection_evidence_missing(trace: dict[str, Any]) -> list[str]:
+    missing: list[str] = []
+    if not str(trace.get("parent_candidate_id") or ""):
+        missing.append("parent_candidate_id")
+    if not str(trace.get("parent_failure_type") or ""):
+        missing.append("parent_failure_type")
+    if not str(trace.get("reflection_strategy_id") or ""):
+        missing.append("reflection_strategy")
+    if not _dict(trace.get("parent_patch_audit")).get("diff_fingerprint"):
+        missing.append("parent_patch_fingerprint")
+    if not _dict(trace.get("refined_child_patch_audit")).get("diff_fingerprint"):
+        missing.append("refined_child_patch_fingerprint")
+    if _dict(trace.get("refined_child_safety_gate")).get("status") in {
+        "",
+        "not_recorded",
+    }:
+        missing.append("refined_child_safety_gate")
+    if _dict(trace.get("refined_child_sandbox_result")).get("status") in {
+        "",
+        "not_run",
+    }:
+        missing.append("refined_child_sandbox_result")
+    return missing
 
 
 def _feedback_summary(feedback: dict[str, Any]) -> str:
@@ -476,6 +671,8 @@ def _skipped(reason: str, message: str) -> dict[str, Any]:
         "successful_reflection_parent_failure_type_counts": {},
         "initial_failures": [],
         "reflection_steps": [],
+        "reflection_evidence_complete_count": 0,
+        "reflection_evidence_incomplete_count": 0,
         "final_outcome": {},
         "next_actions": [],
     }
@@ -519,6 +716,11 @@ def _reflection_strategy_for_failure_type(failure_type: str) -> dict[str, str]:
             "id": "regenerate_minimal_applicable_diff",
             "action": "Regenerate a minimal diff against the current checkout and verify the original source block still matches.",
             "reason": "The patch could not be applied to the checkout, so reflection must realign the diff with current source.",
+        },
+        "safety_gate_blocked": {
+            "id": "regenerate_smaller_scope_limited_patch",
+            "action": "Regenerate a smaller AST-valid patch that stays inside the localized function and preserves the allowed signature.",
+            "reason": "The safety gate blocked the candidate before pytest, so reflection must reduce scope and structural risk.",
         },
         "test_failure": {
             "id": "refine_logic_against_failing_assertion",

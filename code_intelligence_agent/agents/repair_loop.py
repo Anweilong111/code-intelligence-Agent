@@ -14,7 +14,10 @@ from code_intelligence_agent.search.candidate_ranking import (
 from code_intelligence_agent.search.execution_feedback import annotate_execution_feedback
 from code_intelligence_agent.search.refinement_context import annotate_refinement_context
 from code_intelligence_agent.search.scoring import PatchScoreWeights, score_patch
-from code_intelligence_agent.tools.patch_validation import validate_function_patch
+from code_intelligence_agent.tools.patch_validation import (
+    allow_signature_change_for_rules,
+    validate_function_patch,
+)
 from code_intelligence_agent.tools.sandbox import Sandbox
 
 
@@ -284,11 +287,20 @@ def _with_repair_child_metadata(
 
 
 def _with_safety_gate_metadata(candidate: PatchCandidate) -> PatchCandidate:
-    if isinstance(candidate.metadata.get("safety_gate"), dict):
+    existing_safety = candidate.metadata.get("safety_gate")
+    if (
+        isinstance(existing_safety, dict)
+        and existing_safety.get("source") == "repair_loop_reflection_candidate_safety_gate"
+    ):
         return candidate
+    static_rule_ids = candidate.metadata.get("static_rule_ids")
+    rule_ids = [candidate.rule_id]
+    if isinstance(static_rule_ids, list):
+        rule_ids.extend(str(item) for item in static_rule_ids)
     validation = validate_function_patch(
         candidate.old_source,
         candidate.new_source,
+        allow_signature_change=allow_signature_change_for_rules(rule_ids),
     )
     safety_gate = {
         **validation.to_dict(),

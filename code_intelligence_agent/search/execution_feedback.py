@@ -92,7 +92,12 @@ def _base_score(failure_type: str, passed_ratio: float) -> float:
         return 0.55 + 0.25 * passed_ratio
     if failure_type in {"type_error", "attribute_error", "runtime_error"}:
         return 0.35 + 0.15 * passed_ratio
-    if failure_type in {"patch_apply_error", "syntax_error", "import_error"}:
+    if failure_type in {
+        "patch_apply_error",
+        "syntax_error",
+        "import_error",
+        "safety_gate_blocked",
+    }:
         return 0.10
     if failure_type == "timeout":
         return 0.05
@@ -106,7 +111,7 @@ def _failure_stage(failure_type: str) -> str:
         return "success"
     if failure_type in {"patch_apply_error"}:
         return "patch_application"
-    if failure_type in {"syntax_error", "import_error"}:
+    if failure_type in {"syntax_error", "import_error", "safety_gate_blocked"}:
         return "static_validation"
     if failure_type == "timeout":
         return "performance"
@@ -130,7 +135,13 @@ def _recoverability(
         return "high" if passed_ratio or target_hit else "medium"
     if failure_type in {"type_error", "attribute_error", "runtime_error"}:
         return "medium" if target_hit or passed_ratio else "low"
-    if failure_type in {"syntax_error", "import_error", "patch_apply_error", "timeout"}:
+    if failure_type in {
+        "syntax_error",
+        "import_error",
+        "patch_apply_error",
+        "safety_gate_blocked",
+        "timeout",
+    }:
         return "low"
     if failure_type == "execution_error":
         return "low"
@@ -176,6 +187,11 @@ def _refinement_hints(
         return [
             "Keep the original function name and surrounding structure intact.",
             "Return only the corrected function body expected by fixed_source.",
+        ]
+    if failure_type == "safety_gate_blocked":
+        return [
+            "Regenerate a smaller AST-valid patch scoped to the original function.",
+            "Preserve the function signature unless the rule explicitly allows changing it.",
         ]
     if failure_type == "timeout":
         return [

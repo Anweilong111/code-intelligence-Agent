@@ -12,6 +12,8 @@ def classify_execution_result(result: ExecutionResult) -> str:
     normalized = combined.lower()
     if result.timeout:
         return "timeout"
+    if "safety_gate_blocked" in normalized or "blocked by safety gate" in normalized:
+        return "safety_gate_blocked"
     if "patch target does not exist" in normalized:
         return "patch_apply_error"
     if "original source block not found" in normalized:
