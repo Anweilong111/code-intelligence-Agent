@@ -5,6 +5,7 @@ import ast
 import json
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -4114,6 +4115,16 @@ def github_repo_intelligence_summary(
     patch_candidates_payload = _read_json(
         str(report.output_paths.get("repository_test_patch_candidates_json") or "")
     )
+    patch_validation_payload = _read_json(
+        str(report.output_paths.get("repository_test_patch_validation_json") or "")
+    )
+    patch_judge_outcome_counts = (
+        _dict(summary.get("repository_test_patch_judge_outcome_counts"))
+        or _dict(patch_validation_payload.get("patch_judge_outcome_counts"))
+        or _patch_judge_outcome_counts_from_results(
+            [_dict(item) for item in _list(patch_validation_payload.get("results"))]
+        )
+    )
     llm_patch_audit = _repository_llm_patch_generation_audit(
         patch_candidates_payload,
         summary,
@@ -4787,31 +4798,57 @@ def github_repo_intelligence_summary(
             summary.get("repository_test_patch_validation_failure_type_counts")
         ),
         "repository_test_patch_judge_mode": str(
-            summary.get("repository_test_patch_judge_mode") or ""
+            summary.get("repository_test_patch_judge_mode")
+            or patch_validation_payload.get("patch_judge_mode")
+            or ""
         ),
         "repository_test_patch_judge_status": str(
-            summary.get("repository_test_patch_judge_status") or ""
+            summary.get("repository_test_patch_judge_status")
+            or patch_validation_payload.get("patch_judge_status")
+            or ""
         ),
         "repository_test_patch_judge_reason": str(
-            summary.get("repository_test_patch_judge_reason") or ""
+            summary.get("repository_test_patch_judge_reason")
+            or patch_validation_payload.get("patch_judge_reason")
+            or ""
         ),
         "repository_test_patch_judge_enabled": bool(
-            summary.get("repository_test_patch_judge_enabled", False)
+            summary.get("repository_test_patch_judge_enabled")
+            or patch_validation_payload.get("patch_judge_enabled", False)
         ),
         "repository_test_patch_judge_candidate_count": _int(
-            summary.get("repository_test_patch_judge_candidate_count", 0)
+            summary.get("repository_test_patch_judge_candidate_count")
+            or patch_validation_payload.get("patch_judge_candidate_count", 0)
         ),
         "repository_test_patch_judge_verdict_counts": _dict(
             summary.get("repository_test_patch_judge_verdict_counts")
+            or patch_validation_payload.get("patch_judge_verdict_counts")
         ),
         "repository_test_patch_judge_agreement_counts": _dict(
             summary.get("repository_test_patch_judge_agreement_counts")
+            or patch_validation_payload.get("patch_judge_agreement_counts")
+        ),
+        "repository_test_patch_judge_outcome_counts": patch_judge_outcome_counts,
+        "repository_test_patch_judge_accept_success_count": _int(
+            patch_judge_outcome_counts.get("accept_success", 0)
+        ),
+        "repository_test_patch_judge_reject_failure_count": _int(
+            patch_judge_outcome_counts.get("reject_failure", 0)
+        ),
+        "repository_test_patch_judge_accept_failure_count": _int(
+            patch_judge_outcome_counts.get("accept_failure", 0)
+        ),
+        "repository_test_patch_judge_reject_success_count": _int(
+            patch_judge_outcome_counts.get("reject_success", 0)
         ),
         "repository_test_patch_judge_authority": str(
-            summary.get("repository_test_patch_judge_authority") or ""
+            summary.get("repository_test_patch_judge_authority")
+            or patch_validation_payload.get("patch_judge_authority")
+            or ""
         ),
         "repository_test_patch_judge_config_audit": _dict(
             summary.get("repository_test_patch_judge_config_audit")
+            or patch_validation_payload.get("patch_judge_config_audit")
         ),
         "repository_test_reflection_trace_json": str(
             report.output_paths.get("repository_test_reflection_trace_json") or ""
@@ -5526,6 +5563,39 @@ def _first_success_rank(results: list[dict[str, Any]]) -> int | None:
         if bool(row.get("success", False)):
             return index
     return None
+
+
+def _patch_judge_outcome_counts_from_results(
+    results: list[dict[str, Any]],
+) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for row in results:
+        judgment = _dict(row.get("patch_judgment"))
+        if not judgment:
+            continue
+        verdict = str(judgment.get("verdict") or "unknown").strip().lower()
+        success = bool(row.get("success", False))
+        accepted = verdict in {"prefer", "accept", "pass"}
+        rejected = verdict in {"reject", "fail"}
+        if success:
+            counts["judged_sandbox_success"] += 1
+            if accepted:
+                counts["accept_success"] += 1
+                counts["outcome_aligned"] += 1
+            elif rejected:
+                counts["reject_success"] += 1
+                counts["outcome_mismatch"] += 1
+        else:
+            counts["judged_sandbox_failure"] += 1
+            if accepted:
+                counts["accept_failure"] += 1
+                counts["outcome_mismatch"] += 1
+            elif rejected:
+                counts["reject_failure"] += 1
+                counts["outcome_aligned"] += 1
+        if not accepted and not rejected:
+            counts["unknown_verdict"] += 1
+    return dict(sorted(counts.items()))
 
 
 def _phase4_recommended_commands(

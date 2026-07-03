@@ -1567,6 +1567,7 @@ def _suite_summary(
     patch_validation_status_counts: Counter[str] = Counter()
     patch_judge_mode_counts: Counter[str] = Counter()
     patch_judge_status_counts: Counter[str] = Counter()
+    patch_judge_outcome_counts: Counter[str] = Counter()
     patch_validation_failure_type_counts: Counter[str] = Counter()
     reflection_initial_failure_type_counts: Counter[str] = Counter()
     reflection_failure_type_counts: Counter[str] = Counter()
@@ -2302,6 +2303,14 @@ def _suite_summary(
         patch_judge_candidate_total += _int(
             metrics.get("repository_test_patch_judge_candidate_count", 0)
         )
+        patch_judge_outcome_counts.update(
+            {
+                str(key): _int(value)
+                for key, value in _dict(
+                    metrics.get("repository_test_patch_judge_outcome_counts")
+                ).items()
+            }
+        )
         reflection_candidate_total += _int(
             metrics.get("repository_test_patch_validation_reflection_candidate_count", 0)
         )
@@ -2618,6 +2627,21 @@ def _suite_summary(
             sorted(patch_judge_status_counts.items())
         ),
         "repository_test_patch_judge_candidate_count": patch_judge_candidate_total,
+        "repository_test_patch_judge_outcome_counts": dict(
+            sorted(patch_judge_outcome_counts.items())
+        ),
+        "repository_test_patch_judge_accept_success_count": _int(
+            patch_judge_outcome_counts.get("accept_success", 0)
+        ),
+        "repository_test_patch_judge_reject_failure_count": _int(
+            patch_judge_outcome_counts.get("reject_failure", 0)
+        ),
+        "repository_test_patch_judge_accept_failure_count": _int(
+            patch_judge_outcome_counts.get("accept_failure", 0)
+        ),
+        "repository_test_patch_judge_reject_success_count": _int(
+            patch_judge_outcome_counts.get("reject_success", 0)
+        ),
         "repository_test_patch_validation_failure_type_counts": dict(
             sorted(patch_validation_failure_type_counts.items())
         ),
@@ -4134,6 +4158,21 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         "repository_test_patch_judge_agreement_counts": _dict(
             summary.get("repository_test_patch_judge_agreement_counts")
         ),
+        "repository_test_patch_judge_outcome_counts": _dict(
+            summary.get("repository_test_patch_judge_outcome_counts")
+        ),
+        "repository_test_patch_judge_accept_success_count": _int(
+            summary.get("repository_test_patch_judge_accept_success_count", 0)
+        ),
+        "repository_test_patch_judge_reject_failure_count": _int(
+            summary.get("repository_test_patch_judge_reject_failure_count", 0)
+        ),
+        "repository_test_patch_judge_accept_failure_count": _int(
+            summary.get("repository_test_patch_judge_accept_failure_count", 0)
+        ),
+        "repository_test_patch_judge_reject_success_count": _int(
+            summary.get("repository_test_patch_judge_reject_success_count", 0)
+        ),
         "repository_test_repair_ready": bool(
             summary.get("repository_test_repair_ready", False)
         ),
@@ -4454,6 +4493,12 @@ def _attach_llm_repair_showcase_matrix(
             ),
             "llm_repair_metrics_judge_sandbox_agreement_rate": _float(
                 metrics_report.get("judge_sandbox_agreement_rate", 0.0)
+            ),
+            "llm_repair_metrics_patch_judge_accept_success_count": _int(
+                metrics_report.get("patch_judge_accept_success_count", 0)
+            ),
+            "llm_repair_metrics_patch_judge_reject_failure_count": _int(
+                metrics_report.get("patch_judge_reject_failure_count", 0)
             ),
             "llm_repair_metrics_agent_loop_trace_complete_count": _int(
                 metrics_report.get("agent_loop_trace_complete_count", 0)

@@ -177,6 +177,13 @@ def test_llm_repair_evaluation_matrix_reports_p6_metrics():
     assert metrics["llm_reflection_evidence_complete_count"] == 3
     assert metrics["llm_blocker_evidence_complete_count"] == 12
     assert metrics["evidence_incomplete_case_count"] == 0
+    assert metrics["patch_judge_llm_ready_case_count"] == 8
+    assert metrics["patch_judge_accept_success_count"] == 8
+    assert metrics["patch_judge_reject_failure_count"] == 3
+    assert metrics["patch_judge_outcome_counts"] == {
+        "accept_success": 8,
+        "reject_failure": 3,
+    }
     assert metrics["patch_success_at"] == {
         "1": 0.375,
         "3": 1.0,
@@ -236,6 +243,46 @@ def test_llm_repair_evaluation_matrix_flags_missing_reflection_evidence():
     assert metrics["llm_reflection_evidence_complete_count"] == 0
     assert checks["llm_reflection_success"]["passed"] is True
     assert checks["llm_reflection_evidence_complete"]["passed"] is False
+    assert evaluation["status"] == "incomplete"
+
+
+def test_llm_repair_evaluation_matrix_flags_missing_judge_outcome_evidence():
+    suite = {
+        "suite_name": "weak_judge_suite",
+        "runs": [
+            _llm_success_run(
+                name="judge_missing_outcome",
+                first_success_rank=1,
+                reflection_successes=0,
+                agreement_counts={"aligned": 1},
+                token_count=120,
+                include_judge_outcomes=False,
+            )
+        ],
+    }
+
+    evaluation = build_llm_repair_evaluation_matrix(
+        [suite],
+        targets={
+            "case_count": 1,
+            "llm_direct_success": 1,
+            "llm_reflection_success": 0,
+            "llm_blocker": 0,
+            "llm_direct_evidence_complete": 1,
+            "llm_reflection_evidence_complete": 0,
+            "llm_blocker_evidence_complete": 0,
+            "llm_patch_judge_ready": 1,
+            "llm_patch_judge_accept_success": 1,
+            "llm_patch_judge_reject_failure": 0,
+        },
+    )
+    metrics = evaluation["metrics_report"]
+    checks = {item["name"]: item for item in metrics["target_checks"]}
+
+    assert metrics["patch_judge_llm_ready_case_count"] == 1
+    assert metrics["patch_judge_accept_success_count"] == 0
+    assert checks["llm_patch_judge_ready"]["passed"] is True
+    assert checks["llm_patch_judge_accept_success"]["passed"] is False
     assert evaluation["status"] == "incomplete"
 
 
@@ -348,6 +395,7 @@ def _llm_success_run(
     token_count: int,
     reflection_candidates: int = 0,
     include_reflection_audit: bool = True,
+    include_judge_outcomes: bool = True,
 ) -> dict:
     reflection_audit = (
         [
@@ -366,6 +414,14 @@ def _llm_success_run(
         ]
         if reflection_candidates and include_reflection_audit
         else []
+    )
+    judge_outcome_counts = (
+        {
+            "accept_success": 1,
+            **({"reject_failure": 1} if reflection_candidates else {}),
+        }
+        if include_judge_outcomes
+        else {}
     )
     return {
         "name": name,
@@ -414,6 +470,13 @@ def _llm_success_run(
                 agreement_counts.values()
             ),
             "repository_test_patch_judge_agreement_counts": agreement_counts,
+            "repository_test_patch_judge_outcome_counts": judge_outcome_counts,
+            "repository_test_patch_judge_accept_success_count": (
+                judge_outcome_counts.get("accept_success", 0)
+            ),
+            "repository_test_patch_judge_reject_failure_count": (
+                judge_outcome_counts.get("reject_failure", 0)
+            ),
             "repository_test_patch_judge_authority": (
                 "sandbox_pytest_decides_success"
             ),

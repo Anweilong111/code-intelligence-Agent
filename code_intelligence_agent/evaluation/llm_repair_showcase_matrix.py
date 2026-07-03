@@ -21,6 +21,9 @@ P6_EVALUATION_TARGETS = {
     "llm_direct_evidence_complete": 5,
     "llm_reflection_evidence_complete": 3,
     "llm_blocker_evidence_complete": 5,
+    "llm_patch_judge_ready": 1,
+    "llm_patch_judge_accept_success": 1,
+    "llm_patch_judge_reject_failure": 1,
 }
 
 
@@ -158,6 +161,7 @@ def build_llm_repair_metrics_report(
     judge_candidate_count = sum(_int(row.get("patch_judge_candidate_count", 0)) for row in rows)
     judge_agreement_counts: Counter[str] = Counter()
     judge_verdict_counts: Counter[str] = Counter()
+    judge_outcome_counts: Counter[str] = Counter()
     for row in rows:
         judge_agreement_counts.update(
             _normalized_judge_agreement_counts(
@@ -165,6 +169,24 @@ def build_llm_repair_metrics_report(
             )
         )
         judge_verdict_counts.update(_dict(row.get("patch_judge_verdict_counts")))
+        judge_outcome_counts.update(
+            _normalized_judge_outcome_counts(
+                _dict(row.get("patch_judge_outcome_counts"))
+            )
+        )
+    patch_judge_llm_ready_case_count = sum(
+        1
+        for row in rows
+        if str(row.get("patch_judge_mode") or "").lower() == "llm"
+        and str(row.get("patch_judge_status") or "").lower() == "ready"
+        and _int(row.get("patch_judge_candidate_count", 0)) > 0
+    )
+    patch_judge_accept_success_count = _int(
+        judge_outcome_counts.get("accept_success", 0)
+    )
+    patch_judge_reject_failure_count = _int(
+        judge_outcome_counts.get("reject_failure", 0)
+    )
     runtime_values = [
         _float(row.get("runtime_seconds"))
         for row in rows
@@ -189,6 +211,9 @@ def build_llm_repair_metrics_report(
         direct_evidence_complete_count=direct_evidence_complete_count,
         reflection_evidence_complete_count=reflection_evidence_complete_count,
         blocker_evidence_complete_count=blocker_evidence_complete_count,
+        patch_judge_llm_ready_case_count=patch_judge_llm_ready_case_count,
+        patch_judge_accept_success_count=patch_judge_accept_success_count,
+        patch_judge_reject_failure_count=patch_judge_reject_failure_count,
     )
     loop_complete_count = sum(
         1 for row in rows if _agent_loop_trace_complete(_dict(row.get("agent_loop_evidence")))
@@ -250,6 +275,16 @@ def build_llm_repair_metrics_report(
             sum(judge_agreement_counts.values()),
         ),
         "patch_judge_verdict_counts": dict(sorted(judge_verdict_counts.items())),
+        "patch_judge_outcome_counts": dict(sorted(judge_outcome_counts.items())),
+        "patch_judge_llm_ready_case_count": patch_judge_llm_ready_case_count,
+        "patch_judge_accept_success_count": patch_judge_accept_success_count,
+        "patch_judge_reject_failure_count": patch_judge_reject_failure_count,
+        "patch_judge_accept_failure_count": _int(
+            judge_outcome_counts.get("accept_failure", 0)
+        ),
+        "patch_judge_reject_success_count": _int(
+            judge_outcome_counts.get("reject_success", 0)
+        ),
         "blocker_type_distribution": dict(sorted(blocker_distribution.items())),
         "agent_loop_trace_complete_count": loop_complete_count,
         "agent_loop_trace_complete_rate": _rate(loop_complete_count, case_count),
@@ -388,15 +423,17 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
             f"- Sandbox Pass Rate: {_float(metrics.get('sandbox_pass_rate', 0.0)):.4f}",
             f"- Safety Gate Block Rate: {_float(metrics.get('safety_gate_block_rate', 0.0)):.4f}",
             f"- Judge-Sandbox Agreement Rate: {_float(metrics.get('judge_sandbox_agreement_rate', 0.0)):.4f}",
+            f"- Patch Judge Accept Successes: {_int(metrics.get('patch_judge_accept_success_count', 0))}",
+            f"- Patch Judge Reject Failures: {_int(metrics.get('patch_judge_reject_failure_count', 0))}",
             f"- Average Runtime Seconds: {_float(metrics.get('average_runtime_seconds', 0.0)):.4f}",
             "",
             "## Cases",
             "",
             (
                 "| Case | Repo | Class | LLM Candidates | First Success Rank | "
-                "Sandbox Successes | Evidence | Judge Agreement | Agent Loop | Artifacts |"
+                "Sandbox Successes | Evidence | Judge Agreement | Judge Outcome | Agent Loop | Artifacts |"
             ),
-            "| --- | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- |",
+            "| --- | --- | --- | ---: | --- | ---: | --- | --- | --- | ---: | --- |",
         ]
     )
     for row in _list(payload.get("matrix")):
@@ -413,6 +450,7 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
                     str(_int(item.get("patch_validation_success_count", 0))),
                     _markdown_cell(item.get("evidence_status")),
                     _format_counts(_dict(item.get("patch_judge_agreement_counts"))),
+                    _format_counts(_dict(item.get("patch_judge_outcome_counts"))),
                     str(_agent_loop_trace_complete(_dict(item.get("agent_loop_evidence")))).lower(),
                     _markdown_cell(item.get("report_path")),
                 ]
@@ -420,7 +458,7 @@ def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str
             + " |"
         )
     if not _list(payload.get("matrix")):
-        lines.append("| none | none | none | 0 | none | 0 | none | none | false | none |")
+        lines.append("| none | none | none | 0 | none | 0 | none | none | none | false | none |")
     return "\n".join(lines) + "\n"
 
 
@@ -446,6 +484,10 @@ def render_llm_repair_metrics_report_markdown(payload: dict[str, Any]) -> str:
         f"- Safety Gate Block Rate: {_float(payload.get('safety_gate_block_rate', 0.0)):.4f}",
         f"- Judge-Sandbox Agreement: {_format_counts(_dict(payload.get('judge_sandbox_agreement_counts')))}",
         f"- Judge-Sandbox Agreement Rate: {_float(payload.get('judge_sandbox_agreement_rate', 0.0)):.4f}",
+        f"- Patch Judge Outcome Counts: {_format_counts(_dict(payload.get('patch_judge_outcome_counts')))}",
+        f"- Patch Judge LLM Ready Cases: {_int(payload.get('patch_judge_llm_ready_case_count', 0))}",
+        f"- Patch Judge Accept Successes: {_int(payload.get('patch_judge_accept_success_count', 0))}",
+        f"- Patch Judge Reject Failures: {_int(payload.get('patch_judge_reject_failure_count', 0))}",
         f"- Average Runtime Seconds: {_float(payload.get('average_runtime_seconds', 0.0)):.4f}",
         f"- Average LLM Tokens Per Case: {_float(token_cost.get('average_tokens_per_case', 0.0)):.4f}",
         f"- Average Estimated LLM Cost Per Case: {_float(token_cost.get('average_estimated_cost_per_case', 0.0)):.6f}",
@@ -643,6 +685,28 @@ def _showcase_row(
         repair_action_id=repair_action_id,
         reflection_action_id=reflection_action_id,
     )
+    patch_judge_outcome_counts = _normalized_judge_outcome_counts(
+        _dict(metrics.get("repository_test_patch_judge_outcome_counts"))
+    )
+    if not patch_judge_outcome_counts:
+        patch_judge_outcome_counts = {
+            key: value
+            for key, value in {
+                "accept_success": _int(
+                    metrics.get("repository_test_patch_judge_accept_success_count", 0)
+                ),
+                "reject_failure": _int(
+                    metrics.get("repository_test_patch_judge_reject_failure_count", 0)
+                ),
+                "accept_failure": _int(
+                    metrics.get("repository_test_patch_judge_accept_failure_count", 0)
+                ),
+                "reject_success": _int(
+                    metrics.get("repository_test_patch_judge_reject_success_count", 0)
+                ),
+            }.items()
+            if value > 0
+        }
     return {
         "name": str(run.get("name") or ""),
         "suite_name": suite_name,
@@ -708,6 +772,23 @@ def _showcase_row(
         ),
         "patch_judge_agreement_counts": _normalized_judge_agreement_counts(
             _dict(metrics.get("repository_test_patch_judge_agreement_counts"))
+        ),
+        "patch_judge_outcome_counts": patch_judge_outcome_counts,
+        "patch_judge_accept_success_count": _first_int(
+            metrics.get("repository_test_patch_judge_accept_success_count"),
+            patch_judge_outcome_counts.get("accept_success"),
+        ),
+        "patch_judge_reject_failure_count": _first_int(
+            metrics.get("repository_test_patch_judge_reject_failure_count"),
+            patch_judge_outcome_counts.get("reject_failure"),
+        ),
+        "patch_judge_accept_failure_count": _first_int(
+            metrics.get("repository_test_patch_judge_accept_failure_count"),
+            patch_judge_outcome_counts.get("accept_failure"),
+        ),
+        "patch_judge_reject_success_count": _first_int(
+            metrics.get("repository_test_patch_judge_reject_success_count"),
+            patch_judge_outcome_counts.get("reject_success"),
         ),
         "patch_judge_authority": str(
             metrics.get("repository_test_patch_judge_authority")
@@ -1078,6 +1159,9 @@ def _evaluation_target_checks(
     direct_evidence_complete_count: int,
     reflection_evidence_complete_count: int,
     blocker_evidence_complete_count: int,
+    patch_judge_llm_ready_case_count: int,
+    patch_judge_accept_success_count: int,
+    patch_judge_reject_failure_count: int,
 ) -> list[dict[str, Any]]:
     values = {
         "case_count": case_count,
@@ -1087,6 +1171,9 @@ def _evaluation_target_checks(
         "llm_direct_evidence_complete": direct_evidence_complete_count,
         "llm_reflection_evidence_complete": reflection_evidence_complete_count,
         "llm_blocker_evidence_complete": blocker_evidence_complete_count,
+        "llm_patch_judge_ready": patch_judge_llm_ready_case_count,
+        "llm_patch_judge_accept_success": patch_judge_accept_success_count,
+        "llm_patch_judge_reject_failure": patch_judge_reject_failure_count,
     }
     checks: list[dict[str, Any]] = []
     for name in (
@@ -1097,6 +1184,9 @@ def _evaluation_target_checks(
         "llm_direct_evidence_complete",
         "llm_reflection_evidence_complete",
         "llm_blocker_evidence_complete",
+        "llm_patch_judge_ready",
+        "llm_patch_judge_accept_success",
+        "llm_patch_judge_reject_failure",
     ):
         actual = _int(values.get(name, 0))
         expected = _int(targets.get(name, 0))
@@ -1138,6 +1228,32 @@ def _normalized_judge_agreement_counts(
         "judge_more_conservative": "judge_more_conservative",
         "conservative": "judge_more_conservative",
         "aligned": "aligned",
+    }
+    normalized: Counter[str] = Counter()
+    for key, value in counts.items():
+        raw = str(key or "unknown").strip().lower()
+        normalized[aliases.get(raw, raw or "unknown")] += _int(value)
+    return dict(sorted(normalized.items()))
+
+
+def _normalized_judge_outcome_counts(counts: dict[str, Any]) -> dict[str, int]:
+    aliases = {
+        "accepted_sandbox_success": "accept_success",
+        "accept_sandbox_success": "accept_success",
+        "accepted_success": "accept_success",
+        "judge_accept_success": "accept_success",
+        "rejected_sandbox_failure": "reject_failure",
+        "reject_sandbox_failure": "reject_failure",
+        "rejected_failure": "reject_failure",
+        "judge_reject_failure": "reject_failure",
+        "accepted_sandbox_failure": "accept_failure",
+        "accept_sandbox_failure": "accept_failure",
+        "accepted_failure": "accept_failure",
+        "judge_accept_failure": "accept_failure",
+        "rejected_sandbox_success": "reject_success",
+        "reject_sandbox_success": "reject_success",
+        "rejected_success": "reject_success",
+        "judge_reject_success": "reject_success",
     }
     normalized: Counter[str] = Counter()
     for key, value in counts.items():

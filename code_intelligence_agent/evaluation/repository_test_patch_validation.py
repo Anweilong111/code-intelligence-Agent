@@ -230,6 +230,7 @@ def build_repository_test_patch_validation(
         str(_dict(row.get("patch_judgment")).get("agreement") or "unknown")
         for row in patch_judge_rows
     )
+    patch_judge_outcome_counts = _patch_judge_outcome_counts(result_rows)
     best_index = _best_result_index(
         result_rows,
         prefer_deep_success=any(
@@ -317,6 +318,7 @@ def build_repository_test_patch_validation(
         "patch_judge_agreement_counts": dict(
             sorted(patch_judge_agreement_counts.items())
         ),
+        "patch_judge_outcome_counts": patch_judge_outcome_counts,
         "patch_judge_authority": "sandbox_pytest_decides_success",
         "reflection_rounds": max(0, reflection_rounds),
         "reflection_width": max(1, reflection_width),
@@ -469,6 +471,7 @@ def render_repository_test_patch_validation_markdown(payload: dict[str, Any]) ->
             f"- Judged Candidates: {_int(payload.get('patch_judge_candidate_count', 0))}",
             f"- Verdict Counts: `{_markdown_cell(_format_counts(_dict(payload.get('patch_judge_verdict_counts'))))}`",
             f"- Agreement Counts: `{_markdown_cell(_format_counts(_dict(payload.get('patch_judge_agreement_counts'))))}`",
+            f"- Outcome Counts: `{_markdown_cell(_format_counts(_dict(payload.get('patch_judge_outcome_counts'))))}`",
         ]
     )
     llm_reflection_audit = _list(payload.get("llm_reflection_audit"))
@@ -1554,6 +1557,7 @@ def _skipped(
         "patch_judge_candidate_count": 0,
         "patch_judge_verdict_counts": {},
         "patch_judge_agreement_counts": {},
+        "patch_judge_outcome_counts": {},
         "patch_judge_authority": "sandbox_pytest_decides_success",
         "successful_candidates": [],
         "results": [],
@@ -1602,6 +1606,37 @@ def _normalize_patch_judge_mode(value: Any) -> str:
     if mode in {"deepseek", "llm-judge", "patch-llm", "llm"}:
         return "llm"
     return mode
+
+
+def _patch_judge_outcome_counts(results: list[dict[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for row in results:
+        judgment = _dict(row.get("patch_judgment"))
+        if not judgment:
+            continue
+        verdict = str(judgment.get("verdict") or "unknown").strip().lower()
+        success = bool(row.get("success", False))
+        accepted = verdict in {"prefer", "accept", "pass"}
+        rejected = verdict in {"reject", "fail"}
+        if success:
+            counts["judged_sandbox_success"] += 1
+            if accepted:
+                counts["accept_success"] += 1
+                counts["outcome_aligned"] += 1
+            elif rejected:
+                counts["reject_success"] += 1
+                counts["outcome_mismatch"] += 1
+        else:
+            counts["judged_sandbox_failure"] += 1
+            if accepted:
+                counts["accept_failure"] += 1
+                counts["outcome_mismatch"] += 1
+            elif rejected:
+                counts["reject_failure"] += 1
+                counts["outcome_aligned"] += 1
+        if not accepted and not rejected:
+            counts["unknown_verdict"] += 1
+    return dict(sorted(counts.items()))
 
 
 def _preview(value: str, limit: int = 600) -> str:

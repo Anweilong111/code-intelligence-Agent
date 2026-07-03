@@ -154,6 +154,15 @@ LLM controller selected action 示例：
 
 注意：当前完成的是 reflection 执行、安全门和 LLM prompt/parse 审计链路增强；P6 Phase 4 仍需要继续补真实 DeepSeek/兼容 LLM reflection case，尤其是 test failure -> reflection success、safety blocked -> reflection/blocker、reflection 后仍失败 -> blocker 这三类真实 case。
 
+### Phase 5：LLM Patch Judge 与 Sandbox 校准证据
+
+本轮补齐候选级 patch judge 的 outcome audit：
+
+- `repository_test_patch_validation.json/md` 现在输出 `patch_judge_outcome_counts`，把每个带 `patch_judgment` 的候选按 judge verdict 与 sandbox success/failure 对齐统计。
+- 单仓库 `github_repo_intelligence.json/md`、suite summary 和 LLM repair matrix 会透传 `repository_test_patch_judge_outcome_counts`、`accept_success`、`reject_failure`、`accept_failure`、`reject_success` 等字段。
+- `llm_repair_metrics_report.json/md` 新增 P6 target：`llm_patch_judge_ready`、`llm_patch_judge_accept_success`、`llm_patch_judge_reject_failure`。只有出现 LLM judge ready case、judge 接受 sandbox 成功候选、judge 拒绝 sandbox 失败候选时，Phase 5 的矩阵目标才算通过。
+- `accept_failure` 和 `reject_success` 会作为 judge/sandbox outcome mismatch 暴露出来，用于审计 LLM judge 是否过度乐观或过度保守；最终成功仍由 `sandbox_pytest_decides_success` 决定。
+
 ### Phase 6：LLM Repair Evaluation Matrix 基础设施
 
 本轮新增 P6 命名评估 artifact：
@@ -171,6 +180,7 @@ LLM controller selected action 示例：
 - Safety Gate Block Rate
 - Sandbox Pass Rate
 - Judge-Sandbox Agreement
+- Patch Judge Outcome Counts
 - Average Runtime
 - LLM token / estimated cost 统计
 - Blocker Type Distribution
@@ -211,14 +221,14 @@ python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill
 - `tests/test_agent_controller.py`：`32 passed`
 - Phase 2 matrix / artifact inventory 定向测试：`5 passed`
 - Phase 3 LLM patch generator / candidate artifact 定向测试：`19 passed`
-- Phase 6 LLM repair matrix 定向测试：`5 passed`
+- Phase 6 LLM repair matrix 定向测试：`6 passed`
 - GitHub repo intelligence suite 回归测试：`57 passed`
 - Phase 4 reflection safety / Beam / AgentController 回归测试：`55 passed`
-- Phase 4 LLM reflection prompt / patch validation 定向测试：`25 passed`
+- Phase 4 LLM reflection prompt / patch validation 定向测试：`26 passed`
 - AgentController / repository patch candidates 回归测试：`40 passed`
 - GitHub repo intelligence suite / LLM repair matrix 回归测试：`62 passed`
 - Phase 3 / Phase 4 搜索与沙箱回归测试：`66 passed`
-- 完整测试：`1020 passed`
+- 完整测试：`1022 passed`
 - 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
 ## 后续未完成项

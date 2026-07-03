@@ -479,6 +479,40 @@ def test_repository_test_patch_validation_llm_patch_judge_missing_key_is_audit_o
     assert "sandbox_pytest_decides_success" in markdown
 
 
+def test_repository_test_patch_validation_patch_judge_records_outcome_counts(
+    tmp_path,
+):
+    _write_validation_repo(tmp_path)
+    localization = build_repository_test_fault_localization(
+        _dynamic_evidence(),
+        repository_root=tmp_path,
+        top_k=3,
+    )
+    patch_candidates = build_repository_test_patch_candidates(
+        localization,
+        repository_root=tmp_path,
+        candidate_limit=5,
+    )
+
+    payload = build_repository_test_patch_validation(
+        patch_candidates,
+        repository_root=tmp_path,
+        validation_limit=2,
+        reflection_rounds=0,
+        patch_judge=_AlwaysPreferPatchJudge(),
+        timeout=10,
+    )
+    markdown = render_repository_test_patch_validation_markdown(payload)
+
+    assert payload["patch_judge_candidate_count"] == 2
+    assert payload["patch_judge_outcome_counts"]["accept_success"] == 1
+    assert payload["patch_judge_outcome_counts"]["accept_failure"] == 1
+    assert payload["patch_judge_outcome_counts"]["judged_sandbox_success"] == 1
+    assert payload["patch_judge_outcome_counts"]["judged_sandbox_failure"] == 1
+    assert payload["patch_judge_outcome_counts"]["outcome_mismatch"] == 1
+    assert "Outcome Counts" in markdown
+
+
 def test_repository_test_patch_validation_patch_judge_cannot_override_sandbox_fail(
     tmp_path,
 ):
@@ -505,6 +539,8 @@ def test_repository_test_patch_validation_patch_judge_cannot_override_sandbox_fa
     assert payload["patch_judge_status"] == "ready"
     assert payload["patch_judge_candidate_count"] == 1
     assert payload["patch_judge_verdict_counts"] == {"prefer": 1}
+    assert payload["patch_judge_outcome_counts"]["accept_failure"] == 1
+    assert payload["patch_judge_outcome_counts"]["outcome_mismatch"] == 1
     assert payload["patch_judge_authority"] == "sandbox_pytest_decides_success"
     assert payload["results"][0]["patch_judgment"]["verdict"] == "prefer"
     assert payload["results"][0]["success"] is False
