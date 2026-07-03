@@ -4125,7 +4125,11 @@ def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     )
     matrix_path = output_dir / "llm_repair_showcase_matrix.json"
     matrix_markdown_path = output_dir / "llm_repair_showcase_matrix.md"
+    evaluation_matrix_path = output_dir / "llm_repair_evaluation_matrix.json"
+    metrics_report_path = output_dir / "llm_repair_metrics_report.json"
     matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+    evaluation_matrix = json.loads(evaluation_matrix_path.read_text(encoding="utf-8"))
+    metrics_report = json.loads(metrics_report_path.read_text(encoding="utf-8"))
     suite_markdown = (output_dir / "github_repo_intelligence_suite.md").read_text(
         encoding="utf-8"
     )
@@ -4145,6 +4149,17 @@ def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     assert report.summary["llm_repair_showcase_matrix_json"] == str(matrix_path)
     assert report.summary["llm_repair_showcase_matrix_markdown"] == str(
         matrix_markdown_path
+    )
+    assert report.summary["llm_repair_evaluation_matrix_status"] == "incomplete"
+    assert report.summary["llm_repair_evaluation_matrix_json"] == str(
+        evaluation_matrix_path
+    )
+    assert report.summary["llm_repair_metrics_report_status"] == "incomplete"
+    assert report.summary["llm_repair_metrics_report_json"] == str(
+        metrics_report_path
+    )
+    assert report.summary["llm_repair_metrics_patch_success_at"] == (
+        "1=0.0000, 3=0.0000, 5=0.0000"
     )
     suite_thresholds = {
         check["name"]: check for check in report.summary["suite_threshold_checks"]
@@ -4166,7 +4181,12 @@ def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     assert matrix["requirement_status"]["llm_blocker"] is True
     assert matrix["requirement_status"]["llm_direct_success"] is False
     assert matrix["requirement_status"]["llm_reflection_success"] is False
+    assert evaluation_matrix["metrics_report"]["sandbox_authority"] == (
+        "sandbox_pytest_decides_success"
+    )
+    assert metrics_report["llm_blocker_count"] == 1
     assert "LLM Repair Showcase Matrix Status: `incomplete`" in suite_markdown
+    assert "LLM Repair Evaluation Matrix Status: `incomplete`" in suite_markdown
     assert run.status == "llm_config_blocked"
     assert run.error == (
         "missing_enabled_llm_api_key_roles:patch_generation,judge"

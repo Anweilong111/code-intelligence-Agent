@@ -123,6 +123,30 @@ LLM controller selected action 示例：
 - `outputs_smoke/repo_intelligence_hybrid_no_key_showcase/thealgorithms_gronsfeld_hybrid_no_key/agent_action_registry.json`
 - `outputs_smoke/repo_intelligence_hybrid_no_key_showcase/thealgorithms_gronsfeld_hybrid_no_key/agent_policy_trace.json`
 
+### Phase 6：LLM Repair Evaluation Matrix 基础设施
+
+本轮新增 P6 命名评估 artifact：
+
+- `llm_repair_evaluation_matrix.json`
+- `llm_repair_evaluation_matrix.md`
+- `llm_repair_metrics_report.json`
+- `llm_repair_metrics_report.md`
+
+这些 artifact 由 `code_intelligence_agent/evaluation/llm_repair_showcase_matrix.py` 写出，并与既有 `llm_repair_showcase_matrix.json/md` 兼容。新增 metrics report 会集中汇总：
+
+- LLM Direct Success Rate
+- Reflection Success Rate
+- Patch Success@1 / @3 / @5
+- Safety Gate Block Rate
+- Sandbox Pass Rate
+- Judge-Sandbox Agreement
+- Average Runtime
+- LLM token / estimated cost 统计
+- Blocker Type Distribution
+- 每个 case 的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` trace 完整性
+
+注意：当前完成的是 Phase 6 评估 artifact 与指标基础设施，不代表已经满足 P6 要求的 20 个 repair/evaluation case、5 个 LLM direct success、3 个 LLM reflection success 和 5 个 blocker case。
+
 ## 已验证的 Policy 选择
 
 | 场景 | Selected Action | Canonical Action | Status |
@@ -139,6 +163,7 @@ LLM controller selected action 示例：
 ```bash
 python -m pytest tests/test_agent_controller.py -q
 python -m pytest tests/test_github_onboarding_matrix.py tests/test_github_repo_intelligence.py::test_artifact_inventory_flags_missing_current_stage_required_artifacts tests/test_github_repo_intelligence.py::test_artifact_inventory_requires_failure_overlay_artifacts_when_attempted -q
+python -m pytest tests/test_llm_repair_showcase_matrix.py tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed -q
 python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill-derived-artifacts --output-dir outputs_smoke/p6_onboarding_matrix_real_existing_backfilled <10 existing report paths>
 ```
 
@@ -146,6 +171,7 @@ python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill
 
 - `tests/test_agent_controller.py`：`32 passed`
 - Phase 2 matrix / artifact inventory 定向测试：`5 passed`
+- Phase 6 LLM repair matrix / suite integration 定向测试：`6 passed`
 - 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
 ## 后续未完成项
@@ -157,5 +183,5 @@ P6 仍未完成，后续应继续推进：
 3. Phase 3：LLM patch multi-candidate，一次生成 3-5 个候选，并展示非第一个候选成功的 case。
 4. Phase 4：Reflection strategy 深化，覆盖 test failure、safety blocked、reflection 后仍失败 blocker。
 5. Phase 5：LLM judge 校准报告，指标化 judge-sandbox agreement。
-6. Phase 6：扩展到 20 个 repair/evaluation case。
+6. Phase 6：扩展到 20 个 repair/evaluation case，并用 `llm_repair_evaluation_matrix.json/md` 与 `llm_repair_metrics_report.json/md` 验证 5 个 direct success、3 个 reflection success、5 个 blocker case。
 7. Phase 7：只有 P6 真实完成后，再更新最终 GitHub 展示、简历和面试材料，且不夸大能力。

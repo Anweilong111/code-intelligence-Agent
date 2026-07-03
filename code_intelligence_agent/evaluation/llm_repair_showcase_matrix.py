@@ -13,6 +13,13 @@ SHOWCASE_CLASSES = [
     "llm_blocker",
 ]
 
+P6_EVALUATION_TARGETS = {
+    "case_count": 20,
+    "llm_direct_success": 5,
+    "llm_reflection_success": 3,
+    "llm_blocker": 5,
+}
+
 
 def build_llm_repair_showcase_matrix(
     suite_reports: list[dict[str, Any]],
@@ -47,6 +54,191 @@ def build_llm_repair_showcase_matrix(
         "class_counts": dict(sorted(class_counts.items())),
         "case_count": len(rows),
         "matrix": rows,
+    }
+
+
+def build_llm_repair_evaluation_matrix(
+    suite_reports: list[dict[str, Any]],
+    *,
+    targets: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    showcase = build_llm_repair_showcase_matrix(suite_reports)
+    return build_llm_repair_evaluation_matrix_from_showcase(
+        showcase,
+        targets=targets,
+    )
+
+
+def build_llm_repair_evaluation_matrix_from_showcase(
+    showcase: dict[str, Any],
+    *,
+    targets: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    rows = [_dict(row) for row in _list(showcase.get("matrix"))]
+    target_values = {
+        **P6_EVALUATION_TARGETS,
+        **_dict(targets),
+    }
+    metrics_report = build_llm_repair_metrics_report(rows, targets=target_values)
+    target_summary = _dict(metrics_report.get("target_summary"))
+    status = "pass" if bool(target_summary.get("all_targets_met", False)) else "incomplete"
+    return {
+        "status": status,
+        "reason": (
+            "p6_llm_repair_evaluation_targets_met"
+            if status == "pass"
+            else "p6_llm_repair_evaluation_targets_not_met"
+        ),
+        "targets": target_values,
+        "case_count": len(rows),
+        "class_counts": _dict(showcase.get("class_counts")),
+        "showcase_status": str(showcase.get("status") or ""),
+        "showcase_reason": str(showcase.get("reason") or ""),
+        "metrics_report": metrics_report,
+        "matrix": rows,
+    }
+
+
+def build_llm_repair_metrics_report(
+    rows: list[dict[str, Any]],
+    *,
+    targets: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    target_values = {
+        **P6_EVALUATION_TARGETS,
+        **_dict(targets),
+    }
+    class_counts = Counter(str(row.get("class") or "unknown") for row in rows)
+    case_count = len(rows)
+    direct_success_count = class_counts["llm_direct_success"]
+    reflection_success_count = class_counts["llm_reflection_success"]
+    blocker_count = class_counts["llm_blocker"]
+    sandbox_success_case_count = sum(
+        1 for row in rows if _int(row.get("patch_validation_success_count", 0)) > 0
+    )
+    validation_attempt_case_count = sum(
+        1
+        for row in rows
+        if _int(row.get("patch_validation_candidate_count", 0)) > 0
+        or _int(row.get("patch_validation_executed_count", 0)) > 0
+        or str(row.get("patch_validation_status") or "")
+    )
+    reflection_attempt_case_count = sum(
+        1
+        for row in rows
+        if _int(row.get("reflection_candidate_count", 0)) > 0
+        or str(row.get("reflection_mode") or "").lower() not in {"", "none"}
+    )
+    first_success_ranks = [
+        _int(row.get("first_success_rank"))
+        for row in rows
+        if row.get("first_success_rank") is not None
+    ]
+    candidate_count = sum(_int(row.get("patch_validation_candidate_count", 0)) for row in rows)
+    executed_count = sum(_int(row.get("patch_validation_executed_count", 0)) for row in rows)
+    success_count = sum(_int(row.get("patch_validation_success_count", 0)) for row in rows)
+    safety_blocked_count = sum(
+        _int(row.get("patch_validation_safety_blocked_count", 0)) for row in rows
+    )
+    judge_candidate_count = sum(_int(row.get("patch_judge_candidate_count", 0)) for row in rows)
+    judge_agreement_counts: Counter[str] = Counter()
+    judge_verdict_counts: Counter[str] = Counter()
+    for row in rows:
+        judge_agreement_counts.update(
+            _normalized_judge_agreement_counts(
+                _dict(row.get("patch_judge_agreement_counts"))
+            )
+        )
+        judge_verdict_counts.update(_dict(row.get("patch_judge_verdict_counts")))
+    runtime_values = [
+        _float(row.get("runtime_seconds"))
+        for row in rows
+        if row.get("runtime_seconds") is not None
+    ]
+    token_values = [
+        _float(row.get("llm_token_count"))
+        for row in rows
+        if row.get("llm_token_count") is not None
+    ]
+    cost_values = [
+        _float(row.get("llm_estimated_cost"))
+        for row in rows
+        if row.get("llm_estimated_cost") is not None
+    ]
+    target_checks = _evaluation_target_checks(
+        targets=target_values,
+        case_count=case_count,
+        direct_success_count=direct_success_count,
+        reflection_success_count=reflection_success_count,
+        blocker_count=blocker_count,
+    )
+    loop_complete_count = sum(
+        1 for row in rows if _agent_loop_trace_complete(_dict(row.get("agent_loop_evidence")))
+    )
+    blocker_distribution = Counter(
+        str(row.get("blocker") or row.get("class") or "unknown") for row in rows
+    )
+    return {
+        "status": "pass" if all(bool(check.get("passed")) for check in target_checks) else "incomplete",
+        "reason": (
+            "p6_llm_repair_metrics_targets_met"
+            if all(bool(check.get("passed")) for check in target_checks)
+            else "p6_llm_repair_metrics_targets_not_met"
+        ),
+        "targets": target_values,
+        "target_checks": target_checks,
+        "target_summary": {
+            "all_targets_met": all(bool(check.get("passed")) for check in target_checks),
+            "failed_target_count": sum(1 for check in target_checks if not bool(check.get("passed"))),
+        },
+        "case_count": case_count,
+        "class_counts": dict(sorted(class_counts.items())),
+        "llm_direct_success_count": direct_success_count,
+        "llm_reflection_success_count": reflection_success_count,
+        "llm_blocker_count": blocker_count,
+        "llm_direct_success_rate": _rate(direct_success_count, case_count),
+        "reflection_success_rate": _rate(
+            reflection_success_count,
+            reflection_attempt_case_count,
+        ),
+        "reflection_success_case_rate": _rate(reflection_success_count, case_count),
+        "patch_success_case_count": sandbox_success_case_count,
+        "patch_success_case_rate": _rate(sandbox_success_case_count, case_count),
+        "patch_success_at": {
+            "1": _success_at(first_success_ranks, 1),
+            "3": _success_at(first_success_ranks, 3),
+            "5": _success_at(first_success_ranks, 5),
+        },
+        "rank_evidence_case_count": len(first_success_ranks),
+        "validation_attempt_case_count": validation_attempt_case_count,
+        "reflection_attempt_case_count": reflection_attempt_case_count,
+        "patch_validation_candidate_count": candidate_count,
+        "patch_validation_executed_count": executed_count,
+        "patch_validation_success_count": success_count,
+        "sandbox_pass_rate": _rate(success_count, executed_count),
+        "safety_gate_blocked_candidate_count": safety_blocked_count,
+        "safety_gate_block_rate": _rate(safety_blocked_count, candidate_count),
+        "patch_judge_candidate_count": judge_candidate_count,
+        "judge_sandbox_agreement_counts": dict(sorted(judge_agreement_counts.items())),
+        "judge_sandbox_agreement_rate": _rate(
+            judge_agreement_counts.get("aligned", 0),
+            sum(judge_agreement_counts.values()),
+        ),
+        "patch_judge_verdict_counts": dict(sorted(judge_verdict_counts.items())),
+        "blocker_type_distribution": dict(sorted(blocker_distribution.items())),
+        "agent_loop_trace_complete_count": loop_complete_count,
+        "agent_loop_trace_complete_rate": _rate(loop_complete_count, case_count),
+        "sandbox_authority": "sandbox_pytest_decides_success",
+        "average_runtime_seconds": _average(runtime_values),
+        "runtime_case_count": len(runtime_values),
+        "llm_token_cost": {
+            "total_tokens": round(sum(token_values), 4),
+            "average_tokens_per_case": _average(token_values),
+            "token_case_count": len(token_values),
+            "total_estimated_cost": round(sum(cost_values), 6),
+            "average_estimated_cost_per_case": _average(cost_values, digits=6),
+            "cost_case_count": len(cost_values),
+        },
     }
 
 
@@ -133,6 +325,129 @@ def render_llm_repair_showcase_matrix_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_llm_repair_evaluation_matrix_markdown(payload: dict[str, Any]) -> str:
+    metrics = _dict(payload.get("metrics_report"))
+    lines = [
+        "# LLM Repair Evaluation Matrix",
+        "",
+        f"- Status: `{_markdown_cell(payload.get('status'))}`",
+        f"- Reason: `{_markdown_cell(payload.get('reason'))}`",
+        f"- Case Count: {_int(payload.get('case_count', 0))}",
+        f"- Class Counts: {_format_counts(_dict(payload.get('class_counts')))}",
+        f"- Sandbox Authority: `{_markdown_cell(metrics.get('sandbox_authority') or 'sandbox_pytest_decides_success')}`",
+        "",
+        "## P6 Target Checks",
+        "",
+        "| Target | Actual | Expected | Passed |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for check in _list(metrics.get("target_checks")):
+        item = _dict(check)
+        lines.append(
+            "| "
+            f"{_markdown_cell(item.get('name'))} | "
+            f"{_markdown_cell(item.get('actual'))} | "
+            f"{_markdown_cell(item.get('expected'))} | "
+            f"{str(bool(item.get('passed'))).lower()} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Metrics",
+            "",
+            f"- LLM Direct Success Rate: {_float(metrics.get('llm_direct_success_rate', 0.0)):.4f}",
+            f"- Reflection Success Rate: {_float(metrics.get('reflection_success_rate', 0.0)):.4f}",
+            f"- Patch Success@1/@3/@5: {_format_success_at(_dict(metrics.get('patch_success_at')))}",
+            f"- Sandbox Pass Rate: {_float(metrics.get('sandbox_pass_rate', 0.0)):.4f}",
+            f"- Safety Gate Block Rate: {_float(metrics.get('safety_gate_block_rate', 0.0)):.4f}",
+            f"- Judge-Sandbox Agreement Rate: {_float(metrics.get('judge_sandbox_agreement_rate', 0.0)):.4f}",
+            f"- Average Runtime Seconds: {_float(metrics.get('average_runtime_seconds', 0.0)):.4f}",
+            "",
+            "## Cases",
+            "",
+            (
+                "| Case | Repo | Class | LLM Candidates | First Success Rank | "
+                "Sandbox Successes | Judge Agreement | Agent Loop | Artifacts |"
+            ),
+            "| --- | --- | --- | ---: | --- | ---: | --- | ---: | --- |",
+        ]
+    )
+    for row in _list(payload.get("matrix")):
+        item = _dict(row)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    _markdown_cell(item.get("name")),
+                    _markdown_cell(item.get("repo")),
+                    _markdown_cell(item.get("class")),
+                    str(_int(item.get("llm_candidate_count", 0))),
+                    _markdown_cell(item.get("first_success_rank") or "none"),
+                    str(_int(item.get("patch_validation_success_count", 0))),
+                    _format_counts(_dict(item.get("patch_judge_agreement_counts"))),
+                    str(_agent_loop_trace_complete(_dict(item.get("agent_loop_evidence")))).lower(),
+                    _markdown_cell(item.get("report_path")),
+                ]
+            )
+            + " |"
+        )
+    if not _list(payload.get("matrix")):
+        lines.append("| none | none | none | 0 | none | 0 | none | false | none |")
+    return "\n".join(lines) + "\n"
+
+
+def render_llm_repair_metrics_report_markdown(payload: dict[str, Any]) -> str:
+    token_cost = _dict(payload.get("llm_token_cost"))
+    lines = [
+        "# LLM Repair Metrics Report",
+        "",
+        f"- Status: `{_markdown_cell(payload.get('status'))}`",
+        f"- Reason: `{_markdown_cell(payload.get('reason'))}`",
+        f"- Case Count: {_int(payload.get('case_count', 0))}",
+        f"- Direct Successes: {_int(payload.get('llm_direct_success_count', 0))}",
+        f"- Reflection Successes: {_int(payload.get('llm_reflection_success_count', 0))}",
+        f"- Blocker Cases: {_int(payload.get('llm_blocker_count', 0))}",
+        f"- Patch Success Cases: {_int(payload.get('patch_success_case_count', 0))}",
+        f"- Rank Evidence Cases: {_int(payload.get('rank_evidence_case_count', 0))}",
+        f"- Patch Success@1/@3/@5: {_format_success_at(_dict(payload.get('patch_success_at')))}",
+        f"- Sandbox Pass Rate: {_float(payload.get('sandbox_pass_rate', 0.0)):.4f}",
+        f"- Safety Gate Block Rate: {_float(payload.get('safety_gate_block_rate', 0.0)):.4f}",
+        f"- Judge-Sandbox Agreement: {_format_counts(_dict(payload.get('judge_sandbox_agreement_counts')))}",
+        f"- Judge-Sandbox Agreement Rate: {_float(payload.get('judge_sandbox_agreement_rate', 0.0)):.4f}",
+        f"- Average Runtime Seconds: {_float(payload.get('average_runtime_seconds', 0.0)):.4f}",
+        f"- Average LLM Tokens Per Case: {_float(token_cost.get('average_tokens_per_case', 0.0)):.4f}",
+        f"- Average Estimated LLM Cost Per Case: {_float(token_cost.get('average_estimated_cost_per_case', 0.0)):.6f}",
+        "",
+        "## Target Checks",
+        "",
+        "| Target | Actual | Expected | Passed |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    for check in _list(payload.get("target_checks")):
+        item = _dict(check)
+        lines.append(
+            "| "
+            f"{_markdown_cell(item.get('name'))} | "
+            f"{_markdown_cell(item.get('actual'))} | "
+            f"{_markdown_cell(item.get('expected'))} | "
+            f"{str(bool(item.get('passed'))).lower()} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Blocker Distribution",
+            "",
+            "| Blocker | Count |",
+            "| --- | ---: |",
+        ]
+    )
+    for key, value in sorted(_dict(payload.get("blocker_type_distribution")).items()):
+        lines.append(f"| {_markdown_cell(key)} | {_int(value)} |")
+    if not _dict(payload.get("blocker_type_distribution")):
+        lines.append("| none | 0 |")
+    return "\n".join(lines) + "\n"
+
+
 def write_llm_repair_showcase_matrix_artifacts(
     payload: dict[str, Any],
     output_dir: str | Path,
@@ -141,6 +456,12 @@ def write_llm_repair_showcase_matrix_artifacts(
     root.mkdir(parents=True, exist_ok=True)
     json_path = root / "llm_repair_showcase_matrix.json"
     markdown_path = root / "llm_repair_showcase_matrix.md"
+    evaluation = build_llm_repair_evaluation_matrix_from_showcase(payload)
+    evaluation_json_path = root / "llm_repair_evaluation_matrix.json"
+    evaluation_markdown_path = root / "llm_repair_evaluation_matrix.md"
+    metrics_report = _dict(evaluation.get("metrics_report"))
+    metrics_json_path = root / "llm_repair_metrics_report.json"
+    metrics_markdown_path = root / "llm_repair_metrics_report.md"
     json_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -149,9 +470,29 @@ def write_llm_repair_showcase_matrix_artifacts(
         render_llm_repair_showcase_matrix_markdown(payload),
         encoding="utf-8",
     )
+    evaluation_json_path.write_text(
+        json.dumps(evaluation, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    evaluation_markdown_path.write_text(
+        render_llm_repair_evaluation_matrix_markdown(evaluation),
+        encoding="utf-8",
+    )
+    metrics_json_path.write_text(
+        json.dumps(metrics_report, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    metrics_markdown_path.write_text(
+        render_llm_repair_metrics_report_markdown(metrics_report),
+        encoding="utf-8",
+    )
     return {
         "llm_repair_showcase_matrix_json": str(json_path),
         "llm_repair_showcase_matrix_markdown": str(markdown_path),
+        "llm_repair_evaluation_matrix_json": str(evaluation_json_path),
+        "llm_repair_evaluation_matrix_markdown": str(evaluation_markdown_path),
+        "llm_repair_metrics_report_json": str(metrics_json_path),
+        "llm_repair_metrics_report_markdown": str(metrics_markdown_path),
     }
 
 
@@ -289,12 +630,41 @@ def _showcase_row(
         "patch_validation_status": str(
             metrics.get("repository_test_patch_validation_status") or ""
         ),
+        "patch_validation_candidate_count": _first_int(
+            metrics.get("repository_test_patch_validation_candidate_count"),
+            metrics.get("repository_test_patch_validation_input_candidate_count"),
+            metrics.get("phase4_search_candidate_count"),
+        ),
+        "patch_validation_executed_count": _first_int(
+            metrics.get("repository_test_patch_validation_executed_count"),
+            metrics.get("phase4_search_executed_count"),
+        ),
         "patch_validation_success_count": validation_success_count,
+        "patch_validation_safety_blocked_count": _int(
+            metrics.get(
+                "repository_test_patch_validation_safety_blocked_candidate_count",
+                0,
+            )
+        ),
+        "first_success_rank": _first_success_rank_from_metrics(metrics),
         "patch_judge_mode": str(
             metrics.get("repository_test_patch_judge_mode") or ""
         ),
         "patch_judge_status": str(
             metrics.get("repository_test_patch_judge_status") or ""
+        ),
+        "patch_judge_candidate_count": _int(
+            metrics.get("repository_test_patch_judge_candidate_count", 0)
+        ),
+        "patch_judge_verdict_counts": _dict(
+            metrics.get("repository_test_patch_judge_verdict_counts")
+        ),
+        "patch_judge_agreement_counts": _normalized_judge_agreement_counts(
+            _dict(metrics.get("repository_test_patch_judge_agreement_counts"))
+        ),
+        "patch_judge_authority": str(
+            metrics.get("repository_test_patch_judge_authority")
+            or "sandbox_pytest_decides_success"
         ),
         "reflection_mode": str(
             metrics.get("repository_test_patch_validation_reflection_mode")
@@ -310,6 +680,24 @@ def _showcase_row(
             or metrics.get("analysis_next_action")
             or metrics.get("next_action")
             or ""
+        ),
+        "runtime_seconds": _first_optional_float(
+            run.get("runtime_seconds"),
+            run.get("elapsed_seconds"),
+            metrics.get("runtime_seconds"),
+            metrics.get("elapsed_seconds"),
+            metrics.get("duration_seconds"),
+            metrics.get("command_runtime_seconds"),
+            metrics.get("repository_runtime_seconds"),
+            metrics.get("agent_runtime_seconds"),
+        ),
+        "llm_token_count": _llm_token_count(metrics),
+        "llm_estimated_cost": _first_optional_float(
+            metrics.get("llm_estimated_cost"),
+            metrics.get("llm_total_cost"),
+            metrics.get("repository_llm_patch_cost"),
+            metrics.get("repository_llm_reflection_cost"),
+            metrics.get("repository_test_patch_judge_cost"),
         ),
         "artifact_paths": _artifact_paths(run, metrics),
         "agent_loop_evidence": _agent_loop_evidence(
@@ -513,6 +901,132 @@ def _artifact_paths(run: dict[str, Any], metrics: dict[str, Any]) -> dict[str, s
     return paths
 
 
+def _evaluation_target_checks(
+    *,
+    targets: dict[str, Any],
+    case_count: int,
+    direct_success_count: int,
+    reflection_success_count: int,
+    blocker_count: int,
+) -> list[dict[str, Any]]:
+    values = {
+        "case_count": case_count,
+        "llm_direct_success": direct_success_count,
+        "llm_reflection_success": reflection_success_count,
+        "llm_blocker": blocker_count,
+    }
+    checks: list[dict[str, Any]] = []
+    for name in (
+        "case_count",
+        "llm_direct_success",
+        "llm_reflection_success",
+        "llm_blocker",
+    ):
+        actual = _int(values.get(name, 0))
+        expected = _int(targets.get(name, 0))
+        checks.append(
+            {
+                "name": name,
+                "actual": actual,
+                "expected": expected,
+                "passed": actual >= expected,
+            }
+        )
+    return checks
+
+
+def _first_success_rank_from_metrics(metrics: dict[str, Any]) -> int | None:
+    for key in (
+        "repository_test_patch_validation_first_success_rank",
+        "repository_patch_first_success_rank",
+        "phase4_search_first_success_rank",
+        "search_budget_first_success_rank",
+        "first_success_rank",
+    ):
+        value = metrics.get(key)
+        if value in (None, "", "none"):
+            continue
+        rank = _int(value)
+        if rank > 0:
+            return rank
+    return None
+
+
+def _normalized_judge_agreement_counts(
+    counts: dict[str, Any],
+) -> dict[str, int]:
+    aliases = {
+        "judge_more_optimistic": "judge_overoptimistic",
+        "judge_over_optimistic": "judge_overoptimistic",
+        "overoptimistic": "judge_overoptimistic",
+        "judge_more_conservative": "judge_more_conservative",
+        "conservative": "judge_more_conservative",
+        "aligned": "aligned",
+    }
+    normalized: Counter[str] = Counter()
+    for key, value in counts.items():
+        raw = str(key or "unknown").strip().lower()
+        normalized[aliases.get(raw, raw or "unknown")] += _int(value)
+    return dict(sorted(normalized.items()))
+
+
+def _agent_loop_trace_complete(loop: dict[str, Any]) -> bool:
+    return all(str(loop.get(step) or "").strip() for step in (
+        "observe",
+        "plan",
+        "act",
+        "verify",
+        "reflect",
+        "replan",
+    ))
+
+
+def _success_at(ranks: list[int], budget: int) -> float:
+    if not ranks:
+        return 0.0
+    return _rate(sum(1 for rank in ranks if rank <= budget), len(ranks))
+
+
+def _llm_token_count(metrics: dict[str, Any]) -> float | None:
+    direct = _first_optional_float(
+        metrics.get("llm_total_tokens"),
+        metrics.get("repository_llm_total_tokens"),
+        metrics.get("repository_llm_patch_total_tokens"),
+    )
+    if direct is not None:
+        return direct
+    parts = [
+        _first_optional_float(
+            metrics.get("repository_llm_patch_prompt_tokens"),
+            metrics.get("repository_llm_patch_input_tokens"),
+        ),
+        _first_optional_float(
+            metrics.get("repository_llm_patch_completion_tokens"),
+            metrics.get("repository_llm_patch_output_tokens"),
+        ),
+        _first_optional_float(
+            metrics.get("repository_llm_reflection_prompt_tokens"),
+            metrics.get("repository_llm_reflection_input_tokens"),
+        ),
+        _first_optional_float(
+            metrics.get("repository_llm_reflection_completion_tokens"),
+            metrics.get("repository_llm_reflection_output_tokens"),
+        ),
+        _first_optional_float(
+            metrics.get("repository_test_patch_judge_prompt_tokens"),
+            metrics.get("repository_test_patch_judge_input_tokens"),
+        ),
+        _first_optional_float(
+            metrics.get("repository_test_patch_judge_completion_tokens"),
+            metrics.get("repository_test_patch_judge_output_tokens"),
+        ),
+    ]
+    known = [value for value in parts if value is not None]
+    if not known:
+        return None
+    return sum(known)
+
+
 def _first_int(*values: Any) -> int:
     for value in values:
         if value is not None:
@@ -535,11 +1049,49 @@ def _int(value: Any) -> int:
         return 0
 
 
+def _float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _first_optional_float(*values: Any) -> float | None:
+    for value in values:
+        if value in (None, "", "none"):
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _rate(numerator: int | float, denominator: int | float) -> float:
+    if not denominator:
+        return 0.0
+    return round(float(numerator) / float(denominator), 4)
+
+
+def _average(values: list[float], *, digits: int = 4) -> float:
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), digits)
+
+
 def _format_counts(counts: dict[str, Any]) -> str:
     if not counts:
         return "none"
     return ", ".join(
         f"{key}={_int(value)}" for key, value in sorted(counts.items())
+    )
+
+
+def _format_success_at(values: dict[str, Any]) -> str:
+    if not values:
+        return "1=0.0000, 3=0.0000, 5=0.0000"
+    return ", ".join(
+        f"{key}={_float(value):.4f}" for key, value in sorted(values.items())
     )
 
 

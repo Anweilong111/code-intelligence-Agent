@@ -417,6 +417,10 @@ def render_github_repo_intelligence_suite_markdown(
         f"- LLM Repair Showcase Matrix Classes: {_format_counts(_dict(summary.get('llm_repair_showcase_matrix_class_counts')))}",
         f"- LLM Repair Showcase Matrix JSON: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_json') or 'none')}`",
         f"- LLM Repair Showcase Matrix Markdown: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_markdown') or 'none')}`",
+        f"- LLM Repair Evaluation Matrix Status: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_status') or 'not_run')}`",
+        f"- LLM Repair Evaluation Matrix JSON: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_json') or 'none')}`",
+        f"- LLM Repair Metrics Report JSON: `{_markdown_cell(summary.get('llm_repair_metrics_report_json') or 'none')}`",
+        f"- LLM Repair Patch Success@1/@3/@5: `{_markdown_cell(summary.get('llm_repair_metrics_patch_success_at') or 'none')}`",
         f"- Repo Input Kinds: {_int(summary.get('repo_input_kind_count', 0))}",
         f"- Scenario Tag Kinds: {_int(summary.get('scenario_tag_kind_count', 0))}",
         f"- Scenario Coverage Blocked Runs: {_int(summary.get('scenario_coverage_blocked_count', 0))}",
@@ -4395,6 +4399,13 @@ def _attach_llm_repair_showcase_matrix(
     paths = write_llm_repair_showcase_matrix_artifacts(matrix, output_dir)
     class_counts = _dict(matrix.get("class_counts"))
     requirement_status = _dict(matrix.get("requirement_status"))
+    evaluation_path = Path(str(paths.get("llm_repair_evaluation_matrix_json") or ""))
+    metrics_path = Path(str(paths.get("llm_repair_metrics_report_json") or ""))
+    evaluation = _json_artifact_payload(evaluation_path)
+    metrics_report = _dict(evaluation.get("metrics_report")) or _json_artifact_payload(
+        metrics_path
+    )
+    patch_success_at = _dict(metrics_report.get("patch_success_at"))
     report.summary.update(
         {
             "llm_repair_showcase_matrix_status": str(
@@ -4411,6 +4422,41 @@ def _attach_llm_repair_showcase_matrix(
             ),
             "llm_repair_showcase_matrix_markdown": str(
                 paths.get("llm_repair_showcase_matrix_markdown") or ""
+            ),
+            "llm_repair_evaluation_matrix_status": str(
+                evaluation.get("status") or ""
+            ),
+            "llm_repair_evaluation_matrix_reason": str(
+                evaluation.get("reason") or ""
+            ),
+            "llm_repair_evaluation_matrix_json": str(
+                paths.get("llm_repair_evaluation_matrix_json") or ""
+            ),
+            "llm_repair_evaluation_matrix_markdown": str(
+                paths.get("llm_repair_evaluation_matrix_markdown") or ""
+            ),
+            "llm_repair_metrics_report_status": str(
+                metrics_report.get("status") or ""
+            ),
+            "llm_repair_metrics_report_json": str(
+                paths.get("llm_repair_metrics_report_json") or ""
+            ),
+            "llm_repair_metrics_report_markdown": str(
+                paths.get("llm_repair_metrics_report_markdown") or ""
+            ),
+            "llm_repair_metrics_patch_success_at": (
+                f"1={_float(patch_success_at.get('1', 0.0)):.4f}, "
+                f"3={_float(patch_success_at.get('3', 0.0)):.4f}, "
+                f"5={_float(patch_success_at.get('5', 0.0)):.4f}"
+            ),
+            "llm_repair_metrics_sandbox_pass_rate": _float(
+                metrics_report.get("sandbox_pass_rate", 0.0)
+            ),
+            "llm_repair_metrics_judge_sandbox_agreement_rate": _float(
+                metrics_report.get("judge_sandbox_agreement_rate", 0.0)
+            ),
+            "llm_repair_metrics_agent_loop_trace_complete_count": _int(
+                metrics_report.get("agent_loop_trace_complete_count", 0)
             ),
             "llm_repair_showcase_matrix_class_counts": class_counts,
             "llm_repair_showcase_matrix_requirement_status": requirement_status,
