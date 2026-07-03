@@ -26,9 +26,17 @@ from code_intelligence_agent.evaluation.github_repo_intelligence import (
 from code_intelligence_agent.evaluation.llm_config_audit import (
     render_llm_config_audit_markdown,
 )
+from code_intelligence_agent.evaluation.github_onboarding_matrix import (
+    build_github_onboarding_matrix,
+    write_github_onboarding_matrix_artifacts,
+)
 from code_intelligence_agent.evaluation.llm_repair_showcase_matrix import (
     build_llm_repair_showcase_matrix,
     write_llm_repair_showcase_matrix_artifacts,
+)
+from code_intelligence_agent.evaluation.p6_readiness_audit import (
+    build_p6_readiness_audit,
+    write_p6_readiness_audit_artifacts,
 )
 
 
@@ -353,20 +361,42 @@ def run_github_repo_intelligence_suite(
     )
     if _bool_option(
         payload,
+        "run_github_onboarding_matrix",
+        _bool_option(defaults, "run_github_onboarding_matrix", False),
+    ):
+        _attach_github_onboarding_matrix(
+            report,
+            output_root,
+            required_case_count=_int(
+                payload.get(
+                    "github_onboarding_matrix_required_case_count",
+                    defaults.get("github_onboarding_matrix_required_case_count", 10),
+                ),
+                10,
+            ),
+        )
+    if _bool_option(
+        payload,
         "run_llm_repair_showcase_matrix",
         _bool_option(defaults, "run_llm_repair_showcase_matrix", False),
     ):
         _attach_llm_repair_showcase_matrix(report, output_root)
-        _refresh_suite_threshold_checks(summary, suite_thresholds)
-        passed = _suite_passed(summary)
-        report = GitHubRepoIntelligenceSuiteReport(
-            manifest_path=str(manifest),
-            output_dir=str(output_root),
-            suite_name=suite_name,
-            passed=passed,
-            summary=summary,
-            runs=run_results,
-        )
+    if _bool_option(
+        payload,
+        "run_p6_readiness_audit",
+        _bool_option(defaults, "run_p6_readiness_audit", False),
+    ):
+        _attach_p6_readiness_audit(report, output_root)
+    _refresh_suite_threshold_checks(summary, suite_thresholds)
+    passed = _suite_passed(summary)
+    report = GitHubRepoIntelligenceSuiteReport(
+        manifest_path=str(manifest),
+        output_dir=str(output_root),
+        suite_name=suite_name,
+        passed=passed,
+        summary=summary,
+        runs=run_results,
+    )
     _write_suite_outputs(report, output_root)
     return report
 
@@ -413,6 +443,10 @@ def render_github_repo_intelligence_suite_markdown(
         f"- Blocked Agent Answer Complete Runs: {_int(summary.get('blocked_agent_answer_complete_count', 0))}",
         f"- Blocked Agent Answer Incomplete Runs: {_int(summary.get('blocked_agent_answer_incomplete_count', 0))}",
         f"- Agent Answered Questions: {_format_counts(_dict(summary.get('agent_answer_question_answered_counts')))}",
+        f"- GitHub Onboarding Matrix Status: `{_markdown_cell(summary.get('github_onboarding_matrix_status') or 'not_run')}`",
+        f"- GitHub Onboarding Matrix Cases: {_int(summary.get('github_onboarding_matrix_case_count', 0))}",
+        f"- GitHub Onboarding Matrix JSON: `{_markdown_cell(summary.get('github_onboarding_matrix_json') or 'none')}`",
+        f"- GitHub Onboarding Matrix Markdown: `{_markdown_cell(summary.get('github_onboarding_matrix_markdown') or 'none')}`",
         f"- LLM Repair Showcase Matrix Status: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_status') or 'not_run')}`",
         f"- LLM Repair Showcase Matrix Classes: {_format_counts(_dict(summary.get('llm_repair_showcase_matrix_class_counts')))}",
         f"- LLM Repair Showcase Matrix JSON: `{_markdown_cell(summary.get('llm_repair_showcase_matrix_json') or 'none')}`",
@@ -421,6 +455,9 @@ def render_github_repo_intelligence_suite_markdown(
         f"- LLM Repair Evaluation Matrix JSON: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_json') or 'none')}`",
         f"- LLM Repair Metrics Report JSON: `{_markdown_cell(summary.get('llm_repair_metrics_report_json') or 'none')}`",
         f"- LLM Repair Patch Success@1/@3/@5: `{_markdown_cell(summary.get('llm_repair_metrics_patch_success_at') or 'none')}`",
+        f"- P6 Readiness Audit Status: `{_markdown_cell(summary.get('p6_readiness_audit_status') or 'not_run')}`",
+        f"- P6 Readiness Audit JSON: `{_markdown_cell(summary.get('p6_readiness_audit_json') or 'none')}`",
+        f"- P6 Readiness Missing Checks: `{_markdown_cell(_format_list(_list(summary.get('p6_readiness_audit_missing'))))}`",
         f"- Repo Input Kinds: {_int(summary.get('repo_input_kind_count', 0))}",
         f"- Scenario Tag Kinds: {_int(summary.get('scenario_tag_kind_count', 0))}",
         f"- Scenario Coverage Blocked Runs: {_int(summary.get('scenario_coverage_blocked_count', 0))}",
@@ -4426,6 +4463,67 @@ def _write_suite_outputs(
     )
 
 
+def _attach_github_onboarding_matrix(
+    report: GitHubRepoIntelligenceSuiteReport,
+    output_dir: Path,
+    *,
+    required_case_count: int,
+) -> None:
+    report_paths = [
+        run.report_path
+        for run in report.runs
+        if str(run.report_path or "").strip()
+    ]
+    matrix = build_github_onboarding_matrix(
+        report_paths,
+        required_case_count=required_case_count,
+    )
+    paths = write_github_onboarding_matrix_artifacts(matrix, output_dir)
+    scenario_coverage = _dict(matrix.get("scenario_coverage"))
+    covered_scenario_count = sum(
+        1
+        for row in scenario_coverage.values()
+        if _int(_dict(row).get("count", 0)) > 0
+    )
+    artifact_coverage = _dict(matrix.get("artifact_coverage"))
+    complete_artifact_group_count = sum(
+        1
+        for row in artifact_coverage.values()
+        if _int(_dict(row).get("missing", 0)) == 0
+        and _int(_dict(row).get("present", 0)) > 0
+    )
+    report.summary.update(
+        {
+            "github_onboarding_matrix_status": str(matrix.get("status") or ""),
+            "github_onboarding_matrix_reason": str(matrix.get("reason") or ""),
+            "github_onboarding_matrix_case_count": _int(
+                matrix.get("case_count", 0)
+            ),
+            "github_onboarding_matrix_required_case_count": _int(
+                matrix.get("required_case_count", required_case_count)
+            ),
+            "github_onboarding_matrix_passed_check_count": _int(
+                matrix.get("passed_check_count", 0)
+            ),
+            "github_onboarding_matrix_check_count": _int(
+                matrix.get("check_count", 0)
+            ),
+            "github_onboarding_matrix_covered_scenario_count": (
+                covered_scenario_count
+            ),
+            "github_onboarding_matrix_complete_artifact_group_count": (
+                complete_artifact_group_count
+            ),
+            "github_onboarding_matrix_json": str(
+                paths.get("github_onboarding_matrix_json") or ""
+            ),
+            "github_onboarding_matrix_markdown": str(
+                paths.get("github_onboarding_matrix_markdown") or ""
+            ),
+        }
+    )
+
+
 def _attach_llm_repair_showcase_matrix(
     report: GitHubRepoIntelligenceSuiteReport,
     output_dir: Path,
@@ -4522,6 +4620,71 @@ def _attach_llm_repair_showcase_matrix(
             ),
             "llm_repair_showcase_matrix_blocker_present": bool(
                 requirement_status.get("llm_blocker", False)
+            ),
+        }
+    )
+
+
+def _attach_p6_readiness_audit(
+    report: GitHubRepoIntelligenceSuiteReport,
+    output_dir: Path,
+) -> None:
+    onboarding_path = Path(str(report.summary.get("github_onboarding_matrix_json") or ""))
+    repair_path = Path(str(report.summary.get("llm_repair_evaluation_matrix_json") or ""))
+    onboarding_matrix = _json_artifact_payload(onboarding_path)
+    repair_matrix = _json_artifact_payload(repair_path)
+    if not onboarding_matrix or not repair_matrix:
+        report.summary.update(
+            {
+                "p6_readiness_audit_status": "not_run",
+                "p6_readiness_audit_reason": "required_matrices_missing",
+                "p6_readiness_audit_json": "",
+                "p6_readiness_audit_markdown": "",
+                "p6_readiness_audit_failed_check_count": 0,
+                "p6_readiness_audit_passed_check_count": 0,
+                "p6_readiness_audit_check_count": 0,
+                "p6_readiness_audit_missing": [
+                    name
+                    for name, payload in (
+                        ("github_onboarding_matrix", onboarding_matrix),
+                        ("llm_repair_evaluation_matrix", repair_matrix),
+                    )
+                    if not payload
+                ],
+            }
+        )
+        return
+    audit = build_p6_readiness_audit(
+        onboarding_matrix,
+        repair_matrix,
+        onboarding_matrix_path=str(onboarding_path),
+        repair_matrix_path=str(repair_path),
+    )
+    paths = write_p6_readiness_audit_artifacts(audit, output_dir)
+    summary = _dict(audit.get("summary"))
+    report.summary.update(
+        {
+            "p6_readiness_audit_status": str(audit.get("status") or ""),
+            "p6_readiness_audit_reason": str(audit.get("reason") or ""),
+            "p6_readiness_audit_json": str(
+                paths.get("p6_readiness_audit_json") or ""
+            ),
+            "p6_readiness_audit_markdown": str(
+                paths.get("p6_readiness_audit_markdown") or ""
+            ),
+            "p6_readiness_audit_failed_check_count": _int(
+                summary.get("failed_check_count", 0)
+            ),
+            "p6_readiness_audit_passed_check_count": _int(
+                summary.get("passed_check_count", 0)
+            ),
+            "p6_readiness_audit_check_count": _int(
+                summary.get("check_count", 0)
+            ),
+            "p6_readiness_audit_missing": _list(audit.get("missing")),
+            "p6_readiness_audit_next_actions": _list(audit.get("next_actions")),
+            "p6_readiness_audit_sandbox_authority": str(
+                audit.get("sandbox_authority") or ""
             ),
         }
     )
@@ -4900,6 +5063,12 @@ def _format_counts(counts: dict[str, Any]) -> str:
     return ", ".join(
         f"{key}={_int(value)}" for key, value in sorted(counts.items())
     )
+
+
+def _format_list(values: list[Any]) -> str:
+    if not values:
+        return "none"
+    return ", ".join(str(value) for value in values)
 
 
 def _markdown_cell(value: Any) -> str:
