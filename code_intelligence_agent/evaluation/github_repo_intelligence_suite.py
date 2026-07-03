@@ -1174,25 +1174,31 @@ def _llm_configuration_preflight_result(
         expected_status=expected_status,
         options=options,
     )
+    expectation_passed = all(bool(check.get("passed")) for check in expectation_checks)
+    expected_blocker = expectation_passed and expected_status == "llm_config_blocked"
     return GitHubRepoIntelligenceSuiteRunResult(
         name=name,
         repo=repo,
         output_dir=str(output_dir),
         report_path=str(preflight_path),
         status="llm_config_blocked",
-        passed=False,
+        passed=expected_blocker,
         expected_status=expected_status,
-        expectation_passed=False,
+        expectation_passed=expectation_passed,
         metrics=metrics,
         metric_checks=metric_checks,
         expectation_checks=expectation_checks,
         command_args=command_args,
         error=(
-            "missing_enabled_llm_api_key_roles:"
-            + ",".join(missing_roles)
-            if missing_roles
-            else "invalid_enabled_llm_api_key_roles:"
-            + ",".join(invalid_roles)
+            None
+            if expected_blocker
+            else (
+                "missing_enabled_llm_api_key_roles:"
+                + ",".join(missing_roles)
+                if missing_roles
+                else "invalid_enabled_llm_api_key_roles:"
+                + ",".join(invalid_roles)
+            )
         ),
     )
 
@@ -4725,6 +4731,7 @@ def _attach_llm_repair_case_catalog_audit(
     *,
     catalog_path: Path | None,
 ) -> None:
+    _write_suite_outputs(report, output_dir)
     repair_path_text = str(report.summary.get("llm_repair_evaluation_matrix_json") or "")
     repair_path = Path(repair_path_text) if repair_path_text else None
     repair_matrix = _json_artifact_payload(repair_path)

@@ -4062,6 +4062,45 @@ def test_intelligence_suite_llm_repair_smoke_manifest_requires_real_llm():
     assert "sandbox_patch_validation" in run["scenario_tags"]
 
 
+def test_intelligence_suite_p6_llm_repair_blocker_manifest_defines_expected_blockers():
+    manifest = json.loads(
+        Path(
+            "datasets/github_cases/repo_intelligence_p6_llm_repair_blockers.example.json"
+        ).read_text(encoding="utf-8")
+    )
+    defaults = manifest["defaults"]
+    thresholds = manifest["suite_thresholds"]
+    runs = manifest["runs"]
+
+    assert manifest["suite_name"] == "repo_intelligence_p6_llm_repair_blockers"
+    assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert manifest["run_llm_repair_case_catalog_audit"] is True
+    assert manifest["llm_repair_case_catalog_path"] == (
+        "llm_repair_case_catalog.example.json"
+    )
+    assert defaults["clear_llm_api_keys"] is True
+    assert defaults["require_llm_configuration"] is True
+    assert defaults["repository_patch_generation_mode"] == "llm"
+    assert defaults["repository_test_reflection_mode"] == "llm"
+    assert defaults["patch_judge_mode"] == "llm"
+    assert thresholds["max_command_failed_count"] == 0
+    assert thresholds["min_llm_repair_showcase_matrix_blocker_count"] == 3
+    assert thresholds["min_llm_repair_case_catalog_matched_case_count"] == 3
+    assert thresholds["max_llm_repair_case_catalog_missing_source_report_count"] == 0
+    assert len(runs) == 3
+    assert {run["name"] for run in runs} == {
+        "llm_failed_blocker_0",
+        "llm_failed_blocker_1",
+        "llm_failed_blocker_2",
+    }
+    assert all(run["expected_status"] == "llm_config_blocked" for run in runs)
+    assert all(
+        run["expected_llm_patch_generation_status"] == "blocked" for run in runs
+    )
+    assert all(run["expected_patch_judge_status"] == "unavailable" for run in runs)
+    assert all("blocker_expected" in run["scenario_tags"] for run in runs)
+
+
 def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     tmp_path,
     monkeypatch,
@@ -4272,6 +4311,135 @@ def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     assert "Accepted API Key Envs: CIA_LLM_API_KEY, DEEPSEEK_API_KEY" in markdown
     assert "Accepted API Key Envs: CIA_JUDGE_API_KEY, DEEPSEEK_API_KEY" in markdown
     assert "Checked API Key Envs" in markdown
+
+
+def test_intelligence_suite_treats_expected_llm_preflight_blockers_as_pass(
+    tmp_path,
+    monkeypatch,
+):
+    for env_name in (
+        "CIA_LLM_API_KEY",
+        "DEEPSEEK_API_KEY",
+        "CIA_JUDGE_API_KEY",
+        "DASHSCOPE_API_KEY",
+        "ALIBABA_API_KEY",
+    ):
+        monkeypatch.delenv(env_name, raising=False)
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    catalog_path = tmp_path / "catalog.json"
+    suite_report_path = output_dir / "github_repo_intelligence_suite.json"
+    case_names = [f"llm_failed_blocker_{index}" for index in range(3)]
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "name": "expected_blockers",
+                "targets": {
+                    "case_count": 3,
+                    "llm_direct_success": 0,
+                    "llm_reflection_success": 0,
+                    "llm_blocker": 3,
+                    "llm_direct_evidence_complete": 0,
+                    "llm_reflection_evidence_complete": 0,
+                    "llm_blocker_evidence_complete": 3,
+                    "llm_patch_judge_ready": 0,
+                    "llm_patch_judge_accept_success": 0,
+                    "llm_patch_judge_reject_failure": 0,
+                    "llm_failed_blocker": 3,
+                    "environment_blocker": 0,
+                    "no_test_oracle_blocker": 0,
+                    "safety_gate_blocker": 0,
+                    "agent_loop_trace_complete": 3,
+                },
+                "source_reports": [str(suite_report_path)],
+                "cases": [
+                    {
+                        "case_id": name,
+                        "repo": f"example/{name}",
+                        "expected_class": "llm_blocker",
+                        "expected_blocker_category": "llm_failed_blocker",
+                        "source_report_path": str(suite_report_path),
+                    }
+                    for name in case_names
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "expected_llm_blockers",
+                "run_llm_repair_showcase_matrix": True,
+                "run_llm_repair_case_catalog_audit": True,
+                "llm_repair_case_catalog_path": str(catalog_path),
+                "defaults": {
+                    "clear_llm_api_keys": True,
+                    "require_llm_configuration": True,
+                    "repository_patch_generation_mode": "llm",
+                    "repository_test_reflection_mode": "llm",
+                    "patch_judge_mode": "llm",
+                },
+                "suite_thresholds": {
+                    "max_command_failed_count": 0,
+                    "max_expectation_failed_count": 0,
+                    "min_llm_repair_showcase_matrix_blocker_count": 3,
+                    "min_llm_repair_case_catalog_matched_case_count": 3,
+                    "max_llm_repair_case_catalog_missing_case_count": 0,
+                    "max_llm_repair_case_catalog_missing_source_report_count": 0,
+                    "min_llm_repair_case_catalog_blocker_count": 3,
+                },
+                "runs": [
+                    {
+                        "name": name,
+                        "repo": f"example/{name}",
+                        "expected_status": "llm_config_blocked",
+                        "expected_patch_generation_mode": "llm",
+                        "expected_llm_patch_generation_status": "blocked",
+                        "expected_patch_judge_mode": "llm",
+                        "expected_patch_judge_status": "unavailable",
+                    }
+                    for name in case_names
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    def fail_if_runner_called(*args, **kwargs):
+        raise AssertionError("runner should not be called when LLM preflight blocks")
+
+    monkeypatch.setattr(
+        suite_module,
+        "run_github_repo_intelligence",
+        fail_if_runner_called,
+    )
+
+    report = run_github_repo_intelligence_suite(manifest_path, output_dir)
+    audit = json.loads(
+        (output_dir / "llm_repair_case_catalog_audit.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    checks = {
+        check["name"]: check for check in report.summary["suite_threshold_checks"]
+    }
+
+    assert report.passed is True
+    assert report.summary["agent_passed_count"] == 3
+    assert report.summary["command_failed_count"] == 0
+    assert report.summary["expectation_failed_count"] == 0
+    assert report.summary["llm_repair_showcase_matrix_blocker_count"] == 3
+    assert report.summary["llm_repair_case_catalog_audit_status"] == "pass"
+    assert report.summary["llm_repair_case_catalog_matched_case_count"] == 3
+    assert report.summary["llm_repair_case_catalog_missing_source_report_count"] == 0
+    assert audit["counts"]["llm_failed_blocker_count"] == 3
+    assert checks["max_command_failed_count"]["passed"] is True
+    assert checks["min_llm_repair_case_catalog_matched_case_count"]["passed"] is True
+    assert all(run.error is None for run in report.runs)
+    assert {run.status for run in report.runs} == {"llm_config_blocked"}
 
 
 def test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed(

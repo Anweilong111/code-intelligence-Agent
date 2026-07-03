@@ -989,6 +989,16 @@ def _blocker_category(
     )
     if any(token in text for token in no_oracle_tokens):
         return "no_test_oracle_blocker"
+    llm_status = str(
+        metrics.get("repository_llm_patch_generation_status") or ""
+    ).lower()
+    if (
+        llm_status in {"blocked", "unavailable", "failed"}
+        or "llm" in text
+        or "api_key" in text
+        or "missing_api_key" in text
+    ):
+        return "llm_failed_blocker"
     environment_tokens = (
         "environment",
         "dependency",
@@ -1007,16 +1017,6 @@ def _blocker_category(
     )
     if any(token in text for token in environment_tokens):
         return "environment_blocker"
-    llm_status = str(
-        metrics.get("repository_llm_patch_generation_status") or ""
-    ).lower()
-    if (
-        llm_status in {"blocked", "unavailable", "failed"}
-        or "llm" in text
-        or "api_key" in text
-        or "missing_api_key" in text
-    ):
-        return "llm_failed_blocker"
     return "generic_blocker"
 
 

@@ -23,6 +23,9 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
     assert manifest["llm_repair_case_catalog_path"] == (
         "llm_repair_case_catalog.example.json"
     )
+    assert manifest["llm_repair_source_reports"] == [
+        "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    ]
     assert manifest["github_onboarding_matrix_required_case_count"] == 10
     assert manifest["defaults"]["execution_profile"] == "agent-auto"
     assert manifest["defaults"]["repository_patch_generation_mode"] == "rule"
