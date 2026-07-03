@@ -351,6 +351,12 @@ def build_repository_test_patch_validation(
         "llm_reflection_config_audit": _dict(
             search_metadata.get("llm_reflection_config_audit")
         ),
+        "llm_reflection_audit": [
+            _dict(item) for item in _list(search_metadata.get("llm_reflection_audit"))
+        ],
+        "llm_reflection_attempt_count": len(
+            _list(search_metadata.get("llm_reflection_audit"))
+        ),
         "successful_candidates": [
             _candidate_success_summary(row) for row in success_rows
         ],
@@ -405,6 +411,10 @@ def render_repository_test_patch_validation_markdown(payload: dict[str, Any]) ->
         (
             "- Reflection Refiner Reason: "
             f"`{_markdown_cell(payload.get('reflection_refiner_reason') or 'none')}`"
+        ),
+        (
+            "- LLM Reflection Audit Attempts: "
+            f"{_int(payload.get('llm_reflection_attempt_count', 0))}"
         ),
         f"- Best Candidate: `{_markdown_cell(payload.get('best_candidate_id') or 'none')}`",
         (
@@ -461,6 +471,34 @@ def render_repository_test_patch_validation_markdown(payload: dict[str, Any]) ->
             f"- Agreement Counts: `{_markdown_cell(_format_counts(_dict(payload.get('patch_judge_agreement_counts'))))}`",
         ]
     )
+    llm_reflection_audit = _list(payload.get("llm_reflection_audit"))
+    lines.extend(["", "## LLM Reflection Audit", ""])
+    if llm_reflection_audit:
+        lines.append(
+            "| Parent | Round | Requested | Parsed | Accepted | Rejected | Prompt Status | Response Status | Missing Fields |"
+        )
+        lines.append("| --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |")
+        for item in llm_reflection_audit:
+            row = _dict(item)
+            prompt_audit = _dict(row.get("prompt_context_audit"))
+            response_parse = _dict(row.get("response_parse"))
+            missing = ", ".join(
+                str(value) for value in _list(prompt_audit.get("missing_fields"))
+            )
+            lines.append(
+                "| "
+                f"`{_markdown_cell(row.get('parent_patch_id') or 'none')}` | "
+                f"{_int(row.get('round_index', 0))} | "
+                f"{_int(row.get('requested_candidate_count', 0))} | "
+                f"{_int(row.get('parsed_candidate_count', 0))} | "
+                f"{_int(row.get('accepted_candidate_count', 0))} | "
+                f"{_int(row.get('rejected_candidate_count', 0))} | "
+                f"`{_markdown_cell(prompt_audit.get('status') or 'unknown')}` | "
+                f"`{_markdown_cell(response_parse.get('status') or 'unknown')}` | "
+                f"`{_markdown_cell(missing or 'none')}` |"
+            )
+    else:
+        lines.append("- none")
     blocked = _list(payload.get("safety_blocked_candidates"))
     lines.extend(["", "## Safety Blocked Candidates", ""])
     if blocked:
@@ -638,15 +676,21 @@ def _run_patch_validation_search(
         patch_judge=patch_judge_result["patch_judge"],
         patch_judge_weight=_float(patch_judge_result["patch_judge_weight"]),
     )
+    results = search.search(
+        repository_root,
+        candidates,
+        localization_scores=localization_scores,
+        test_args=test_args,
+    )
+    reflection_refiner = refiner_result.get("refiner")
+    llm_reflection_audit = _list(
+        getattr(reflection_refiner, "last_reflection_audit", [])
+    )
     return {
-        "results": search.search(
-            repository_root,
-            candidates,
-            localization_scores=localization_scores,
-            test_args=test_args,
-        ),
+        "results": results,
         "metadata": {
             **{key: value for key, value in refiner_result.items() if key != "refiner"},
+            "llm_reflection_audit": llm_reflection_audit,
             **{
                 key: value
                 for key, value in patch_judge_result.items()
@@ -1499,6 +1543,8 @@ def _skipped(
         "best_patch": {},
         "failure_type_counts": {},
         "llm_reflection_config_audit": {},
+        "llm_reflection_audit": [],
+        "llm_reflection_attempt_count": 0,
         "patch_judge_enabled": False,
         "patch_judge_mode": "none",
         "patch_judge_status": "disabled",

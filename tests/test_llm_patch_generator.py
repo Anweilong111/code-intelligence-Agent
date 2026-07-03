@@ -431,6 +431,14 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
             metadata={
                 **previous.metadata,
                 "refinement_context": refinement_context,
+                "patch_judgment": {
+                    "score": 0.2,
+                    "verdict": "reject",
+                    "reason": "Fails the observed assertion.",
+                    "risk": "medium",
+                    "confidence": 0.8,
+                    "agreement": "aligned",
+                },
             },
         )
         execution_result = ExecutionResult(
@@ -445,8 +453,9 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
             command=[],
         )
         client = StaticLLMClient(json.dumps({"fixed_sources": [alternative, fixed]}))
+        generator = LLMPatchGenerator(client)
 
-        candidates = LLMPatchGenerator(client).refine_many(
+        candidates = generator.refine_many(
             repo,
             previous,
             execution_result,
@@ -465,6 +474,13 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
         assert candidates[0].metadata["failure_analysis"]["failure_stage"] == (
             "test_assertion"
         )
+        assert candidates[0].metadata["reflection_strategy"]["id"] == (
+            "semantic_repair"
+        )
+        assert candidates[0].metadata["response_parse"]["status"] == "pass"
+        assert candidates[0].metadata["reflection_prompt_context_audit"][
+            "status"
+        ] == "pass"
         assert candidates[0].metadata["failed_source_fingerprints"]
         assert candidates[0].metadata["source_fingerprint"] not in (
             candidates[0].metadata["failed_source_fingerprints"]
@@ -474,9 +490,26 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
         assert candidates[1].rule_id == "llm_reflection_patch"
         payload = json.loads(client.prompts[0])
         assert payload["candidate_count"] == 2
+        assert payload["parent_candidate"]["id"] == "previous_patch"
+        assert payload["parent_candidate"]["target_function_id"] == (
+            previous.target_function_id
+        )
+        assert payload["previous_patch"]["diff_fingerprint"]
+        assert payload["previous_patch"]["fixed_source_fingerprint"]
+        assert payload["target_function_source"] == previous.old_source
+        assert payload["reflection_strategy"]["id"] == "semantic_repair"
         assert payload["execution_feedback"]["failure_type"] == "test_failure"
+        assert payload["failure_evidence"]["failure_type"] == "test_failure"
+        assert payload["failure_evidence"]["pytest_stdout"] == "F"
+        assert payload["failure_evidence"]["pytest_stderr"] == "AssertionError"
+        assert payload["failure_evidence"]["failed_patch_fingerprint"]
         assert payload["failure_analysis"]["refinement_hints"]
         assert payload["cross_file_context"] == refinement_context
+        assert payload["related_caller_callee_context"]["callers"] == (
+            refinement_context["callers"]
+        )
+        assert payload["judge_feedback"]["available"] is True
+        assert payload["judge_feedback"]["verdict"] == "reject"
         assert (
             "Use cross_file_context callers, callees, module dependencies, and "
             "data-flow neighbors to preserve the target function's contract."
@@ -496,6 +529,13 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
             "avoid_fixed_source_fingerprints"
         ] == memory["avoid_fixed_source_fingerprints"]
         assert "fixed_sources" in payload["required_schema"]
+        assert generator.last_reflection_audit[0]["accepted_candidate_count"] == 2
+        assert generator.last_reflection_audit[0]["prompt_context_audit"][
+            "judge_feedback_available"
+        ] is True
+        assert generator.last_reflection_audit[0]["response_parse"]["status"] == (
+            "pass"
+        )
 
 
 def test_llm_reflection_filters_near_duplicate_refined_sources():

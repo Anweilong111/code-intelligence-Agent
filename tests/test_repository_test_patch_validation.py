@@ -410,13 +410,26 @@ def test_repository_test_patch_validation_llm_refiner_repairs_failed_candidate(
     assert payload["reflection_refiner_status"] == "ready"
     assert payload["reflection_candidate_count"] == 1
     assert payload["successful_reflection_candidate_count"] == 1
+    assert payload["llm_reflection_attempt_count"] == 1
+    assert payload["llm_reflection_audit"][0]["parent_patch_id"] == conservative["id"]
+    assert payload["llm_reflection_audit"][0]["response_parse"]["status"] == (
+        "pass"
+    )
+    assert payload["llm_reflection_audit"][0]["accepted_candidate_count"] == 1
     assert payload["best_candidate_rule_id"] == "llm_reflection_patch"
     assert payload["successful_candidates"][0]["parent_candidate_id"] == (
         conservative["id"]
     )
     prompt = json.loads(client.prompts[0])
+    assert prompt["parent_candidate"]["id"] == conservative["id"]
+    assert prompt["reflection_strategy"]["id"] == "semantic_repair"
+    assert prompt["failure_evidence"]["failed_patch_fingerprint"]
     assert prompt["execution_feedback"]["failure_type"] == "test_failure"
     assert prompt["function"]["previous_fixed_source"] == conservative["new_source"]
+    markdown = render_repository_test_patch_validation_markdown(payload)
+    assert "## LLM Reflection Audit" in markdown
+    trace = build_repository_test_reflection_trace(payload)
+    assert trace["llm_reflection_attempt_count"] == 1
 
 
 def test_repository_test_patch_validation_llm_patch_judge_missing_key_is_audit_only(

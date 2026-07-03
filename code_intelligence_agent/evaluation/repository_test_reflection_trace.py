@@ -135,6 +135,7 @@ def render_repository_test_reflection_trace_markdown(payload: dict[str, Any]) ->
             "api_key_present="
             f"{str(bool(_dict(payload.get('llm_reflection_config_audit')).get('api_key_present', False))).lower()}"
         ),
+        f"- LLM Reflection Audit Attempts: {_int(payload.get('llm_reflection_attempt_count', 0))}",
         f"- Reflection Rounds: {_int(payload.get('reflection_rounds', 0))}",
         f"- Reflection Width: {_int(payload.get('reflection_width', 0))}",
         f"- Max Depth Executed: {_int(payload.get('max_depth_executed', 0))}",
@@ -349,6 +350,12 @@ def _common_fields(payload: dict[str, Any]) -> dict[str, Any]:
         ),
         "llm_reflection_config_audit": _dict(
             payload.get("llm_reflection_config_audit")
+        ),
+        "llm_reflection_audit": [
+            _dict(item) for item in _list(payload.get("llm_reflection_audit"))
+        ],
+        "llm_reflection_attempt_count": _int(
+            payload.get("llm_reflection_attempt_count", 0)
         ),
         "reflection_rounds": _int(payload.get("reflection_rounds", 0)),
         "reflection_width": _int(payload.get("reflection_width", 0)),
@@ -654,6 +661,8 @@ def _skipped(reason: str, message: str) -> dict[str, Any]:
         "reflection_mode": "",
         "reflection_refiner_status": "",
         "reflection_refiner_reason": "",
+        "llm_reflection_audit": [],
+        "llm_reflection_attempt_count": 0,
         "reflection_rounds": 0,
         "reflection_width": 0,
         "reflection_candidate_count": 0,

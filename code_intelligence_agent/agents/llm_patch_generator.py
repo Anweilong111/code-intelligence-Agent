@@ -29,6 +29,7 @@ class LLMPatchGenerator:
         self.client = client
         self.top_k_functions = top_k_functions
         self.last_generation_audit: list[dict] = []
+        self.last_reflection_audit: list[dict] = []
 
     def generate(
         self,
@@ -164,6 +165,7 @@ class LLMPatchGenerator:
         limit: int = 1,
     ) -> list[PatchCandidate]:
         limit = max(1, limit)
+        self.last_reflection_audit = []
         execution_feedback = _execution_feedback(previous_patch, execution_result)
         failed_patch_memory = _failed_patch_memory(previous_patch, execution_feedback)
         cross_file_context = _cross_file_context(previous_patch)
@@ -176,17 +178,38 @@ class LLMPatchGenerator:
             failed_patch_memory=failed_patch_memory,
             cross_file_context=cross_file_context,
         )
+        prompt_payload = _json_prompt_payload(prompt)
+        prompt_context_audit = _reflection_prompt_context_audit(prompt_payload)
         response = self.client.complete(prompt)
+        fixed_sources = parse_fixed_sources(response.text)
+        response_parse = _response_parse_audit(response.text, fixed_sources)
+        attempt_audit = {
+            "parent_patch_id": previous_patch.id,
+            "target_function_id": previous_patch.target_function_id,
+            "target_function_name": previous_patch.target_function_name,
+            "round_index": round_index,
+            "requested_candidate_count": limit,
+            "parsed_candidate_count": len(fixed_sources),
+            "prompt_context_audit": prompt_context_audit,
+            "response_parse": response_parse,
+            "accepted_candidate_count": 0,
+            "rejected_candidate_count": 0,
+            "rejection_counts": {},
+        }
+        if not fixed_sources:
+            _record_rejection(attempt_audit, "invalid_json_or_schema")
         candidates: list[PatchCandidate] = []
         seen_sources = {previous_patch.old_source, previous_patch.new_source}
         accepted_sources: list[str] = []
-        for fixed_source in parse_fixed_sources(response.text):
+        for fixed_source in fixed_sources:
             if not fixed_source or fixed_source in seen_sources:
+                _record_rejection(attempt_audit, "duplicate_or_empty_source")
                 continue
             seen_sources.add(fixed_source)
             if _source_fingerprint(fixed_source) in failed_patch_memory[
                 "avoid_fixed_source_fingerprints"
             ]:
+                _record_rejection(attempt_audit, "previous_failed_fingerprint")
                 continue
             validation = validate_function_patch(
                 previous_patch.old_source,
@@ -194,6 +217,7 @@ class LLMPatchGenerator:
                 allow_signature_change=_allows_signature_change(previous_patch),
             )
             if not validation.valid:
+                _record_rejection(attempt_audit, "invalid_function_patch")
                 continue
             diversity = candidate_diversity(
                 old_source=previous_patch.old_source,
@@ -202,6 +226,7 @@ class LLMPatchGenerator:
                 accepted_sources=accepted_sources,
             )
             if not diversity.accepted:
+                _record_rejection(attempt_audit, "low_diversity")
                 continue
             accepted_sources.append(fixed_source)
             relative = _relative_file(repo_path, previous_patch.target_file)
@@ -238,6 +263,12 @@ class LLMPatchGenerator:
                         "failed_source_fingerprints": failed_patch_memory[
                             "avoid_fixed_source_fingerprints"
                         ],
+                        "reflection_strategy": _reflection_strategy(
+                            execution_feedback
+                        ),
+                        "reflection_prompt_context_audit": prompt_context_audit,
+                        "prompt_context_audit": prompt_context_audit,
+                        "response_parse": response_parse,
                         "source_fingerprint": diversity.source_fingerprint,
                         "edit_fingerprint": diversity.edit_fingerprint,
                         "candidate_diversity": diversity.to_dict(),
@@ -246,8 +277,10 @@ class LLMPatchGenerator:
                     },
                 )
             )
+            attempt_audit["accepted_candidate_count"] += 1
             if len(candidates) >= limit:
                 break
+        self.last_reflection_audit.append(attempt_audit)
         return candidates
 
 
@@ -381,6 +414,8 @@ def build_reflection_prompt(
         execution_feedback,
     )
     cross_file_context = cross_file_context or _cross_file_context(previous_patch)
+    reflection_strategy = _reflection_strategy(execution_feedback)
+    judge_feedback = _judge_feedback(previous_patch)
     payload = {
         "task": (
             (
@@ -422,6 +457,25 @@ def build_reflection_prompt(
             "previous_fixed_source": previous_patch.new_source,
             "previous_diff": previous_patch.diff,
         },
+        "parent_candidate": {
+            "id": previous_patch.id,
+            "rule_id": previous_patch.rule_id,
+            "variant": str(previous_patch.metadata.get("variant") or ""),
+            "generator": str(previous_patch.metadata.get("generator") or ""),
+            "target_function_id": previous_patch.target_function_id,
+        },
+        "previous_patch": {
+            "diff": previous_patch.diff,
+            "diff_fingerprint": _source_fingerprint(previous_patch.diff),
+            "fixed_source_fingerprint": _source_fingerprint(
+                previous_patch.new_source
+            ),
+            "failed_source_fingerprints": failed_patch_memory[
+                "avoid_fixed_source_fingerprints"
+            ],
+        },
+        "target_function_source": previous_patch.old_source,
+        "reflection_strategy": reflection_strategy,
         "execution_result": {
             "success": execution_result.success,
             "returncode": execution_result.returncode,
@@ -432,9 +486,33 @@ def build_reflection_prompt(
             "stderr": _truncate(execution_result.stderr),
             "traceback": _truncate(execution_result.traceback),
         },
+        "failure_evidence": {
+            "failure_type": execution_feedback.get("failure_type", ""),
+            "failure_stage": execution_feedback.get("failure_stage", ""),
+            "pytest_stdout": _truncate(execution_result.stdout),
+            "pytest_stderr": _truncate(execution_result.stderr),
+            "traceback": _truncate(execution_result.traceback),
+            "failed_patch_fingerprint": failed_patch_memory[
+                "previous_fixed_source_fingerprint"
+            ],
+            "previous_diff_fingerprint": failed_patch_memory[
+                "previous_diff_fingerprint"
+            ],
+        },
         "execution_feedback": execution_feedback,
         "failure_analysis": _failure_analysis(execution_feedback),
         "cross_file_context": cross_file_context,
+        "related_caller_callee_context": {
+            "callers": _list(cross_file_context.get("callers")),
+            "callees": _list(cross_file_context.get("callees")),
+            "module_dependencies": _list(
+                cross_file_context.get("module_dependencies")
+            ),
+            "data_flow_neighbors": _list(
+                cross_file_context.get("data_flow_neighbors")
+            ),
+        },
+        "judge_feedback": judge_feedback,
         "failed_patch_memory": failed_patch_memory,
         "diversity_requirements": _diversity_requirements(
             failed_patch_memory,
@@ -642,6 +720,109 @@ def _record_rejection(attempt_audit: dict, reason: str) -> None:
     counts = _dict(attempt_audit.get("rejection_counts"))
     counts[reason] = int(counts.get(reason, 0)) + 1
     attempt_audit["rejection_counts"] = dict(sorted(counts.items()))
+
+
+def _reflection_prompt_context_audit(payload: dict) -> dict:
+    parent = _dict(payload.get("parent_candidate"))
+    previous_patch = _dict(payload.get("previous_patch"))
+    failure = _dict(payload.get("failure_evidence"))
+    execution = _dict(payload.get("execution_result"))
+    related = _dict(payload.get("related_caller_callee_context"))
+    judge = _dict(payload.get("judge_feedback"))
+    has_related_context = any(
+        _list(related.get(key))
+        for key in (
+            "callers",
+            "callees",
+            "module_dependencies",
+            "data_flow_neighbors",
+        )
+    )
+    fields = {
+        "parent_candidate_id": bool(parent.get("id")),
+        "previous_diff": bool(previous_patch.get("diff")),
+        "failure_type": bool(failure.get("failure_type")),
+        "pytest_stdout_or_stderr_or_traceback": bool(
+            execution.get("stdout")
+            or execution.get("stderr")
+            or execution.get("traceback")
+        ),
+        "failed_patch_fingerprint": bool(
+            failure.get("failed_patch_fingerprint")
+        ),
+        "target_function_source": bool(payload.get("target_function_source")),
+        "reflection_strategy": bool(_dict(payload.get("reflection_strategy")).get("id")),
+        "related_caller_callee_context": has_related_context,
+    }
+    return {
+        "status": "pass" if all(fields.values()) else "review",
+        "fields": fields,
+        "missing_fields": [
+            key for key, value in fields.items() if not bool(value)
+        ],
+        "judge_feedback_available": bool(judge.get("available", False)),
+        "candidate_count_requested": _int(payload.get("candidate_count", 1)),
+        "required_schema": _dict(payload.get("required_schema")),
+    }
+
+
+def _reflection_strategy(feedback: dict) -> dict:
+    failure_type = str(feedback.get("failure_type") or "").strip().lower()
+    strategies = {
+        "syntax_error": {
+            "id": "syntax_repair",
+            "action": "Regenerate syntactically valid Python for exactly the target function.",
+        },
+        "attribute_error": {
+            "id": "null_or_type_guard",
+            "action": "Use traceback receiver evidence to add a minimal null/type guard or contract fix.",
+        },
+        "type_error": {
+            "id": "null_or_type_guard",
+            "action": "Use traceback argument evidence to repair the local type contract.",
+        },
+        "test_failure": {
+            "id": "semantic_repair",
+            "action": "Compare the failed assertion against the previous diff and refine localized logic.",
+        },
+        "timeout": {
+            "id": "loop_or_recursion_guard",
+            "action": "Repair nontermination risk by narrowing loop or recursion termination logic.",
+        },
+        "safety_gate_blocked": {
+            "id": "smaller_scoped_patch",
+            "action": "Regenerate a smaller AST-valid patch scoped to the original function.",
+        },
+        "patch_apply_error": {
+            "id": "applicable_diff_repair",
+            "action": "Realign the returned fixed source with the current target function source.",
+        },
+    }
+    return {
+        "failure_type": failure_type or "unknown_failure",
+        **strategies.get(
+            failure_type,
+            {
+                "id": "execution_feedback_repair",
+                "action": "Use stdout, stderr, traceback, and execution feedback to choose a minimal repair.",
+            },
+        ),
+    }
+
+
+def _judge_feedback(previous_patch: PatchCandidate) -> dict:
+    judgment = _dict(previous_patch.metadata.get("patch_judgment"))
+    if not judgment:
+        return {"available": False}
+    return {
+        "available": True,
+        "score": judgment.get("score"),
+        "verdict": str(judgment.get("verdict") or ""),
+        "reason": str(judgment.get("reason") or ""),
+        "risk": str(judgment.get("risk") or ""),
+        "confidence": judgment.get("confidence"),
+        "agreement": str(judgment.get("agreement") or ""),
+    }
 
 
 def _truncate(text: str, limit: int = 4000) -> str:
