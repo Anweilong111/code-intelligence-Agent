@@ -30,9 +30,14 @@ def test_llm_repair_showcase_matrix_classifies_required_case_types():
                     "repository_llm_patch_api_key_present": True,
                     "repository_patch_generator_llm_candidate_count": 2,
                     "repository_test_patch_validation_status": "pass",
+                    "repository_test_patch_validation_executed_count": 1,
+                    "repository_test_patch_validation_candidate_count": 2,
                     "repository_test_patch_validation_success_count": 1,
                     "repository_test_patch_validation_reflection_candidate_count": 0,
                     "repository_test_patch_validation_successful_reflection_count": 0,
+                    "repository_test_patch_judge_authority": (
+                        "sandbox_pytest_decides_success"
+                    ),
                 },
             },
             {
@@ -49,12 +54,19 @@ def test_llm_repair_showcase_matrix_classifies_required_case_types():
                     "repository_llm_patch_api_key_present": True,
                     "repository_patch_generator_llm_candidate_count": 1,
                     "repository_test_patch_validation_status": "pass",
+                    "repository_test_patch_validation_executed_count": 2,
+                    "repository_test_patch_validation_candidate_count": 2,
                     "repository_test_patch_validation_success_count": 1,
                     "repository_llm_reflection_status": "ready",
                     "repository_llm_reflection_provider": "deepseek",
                     "repository_llm_reflection_model": "deepseek-v4-pro",
+                    "repository_test_patch_validation_reflection_mode": "llm",
                     "repository_test_patch_validation_reflection_candidate_count": 2,
                     "repository_test_patch_validation_successful_reflection_count": 1,
+                    "repository_test_patch_validation_llm_reflection_attempt_count": 1,
+                    "repository_test_patch_judge_authority": (
+                        "sandbox_pytest_decides_success"
+                    ),
                 },
             },
             {
@@ -91,13 +103,16 @@ def test_llm_repair_showcase_matrix_classifies_required_case_types():
     }
     rows = {row["name"]: row for row in matrix["matrix"]}
     assert rows["direct"]["class"] == "llm_direct_success"
+    assert rows["direct"]["evidence_status"] == "complete"
     assert rows["direct"]["repair_action_id"] == "generate_llm_patch_candidates"
     assert rows["reflection"]["class"] == "llm_reflection_success"
+    assert rows["reflection"]["evidence_status"] == "complete"
     assert rows["reflection"]["repair_action_id"] == "generate_llm_patch_candidates"
     assert rows["reflection"]["reflection_action_id"] == (
         "run_llm_patch_reflection_loop"
     )
     assert rows["blocked"]["class"] == "llm_blocker"
+    assert rows["blocked"]["evidence_status"] == "complete"
     assert rows["blocked"]["repair_action_id"] == "configure_llm_patch_api_key"
     assert "repair_action=configure_llm_patch_api_key" in (
         rows["blocked"]["agent_loop_evidence"]["plan"]
@@ -158,6 +173,10 @@ def test_llm_repair_evaluation_matrix_reports_p6_metrics():
     assert metrics["llm_direct_success_count"] == 5
     assert metrics["llm_reflection_success_count"] == 3
     assert metrics["llm_blocker_count"] == 12
+    assert metrics["llm_direct_evidence_complete_count"] == 5
+    assert metrics["llm_reflection_evidence_complete_count"] == 3
+    assert metrics["llm_blocker_evidence_complete_count"] == 12
+    assert metrics["evidence_incomplete_case_count"] == 0
     assert metrics["patch_success_at"] == {
         "1": 0.375,
         "3": 1.0,
@@ -176,6 +195,48 @@ def test_llm_repair_evaluation_matrix_reports_p6_metrics():
     assert evaluation["matrix"][0]["patch_judge_authority"] == (
         "sandbox_pytest_decides_success"
     )
+
+
+def test_llm_repair_evaluation_matrix_flags_missing_reflection_evidence():
+    suite = {
+        "suite_name": "weak_reflection_suite",
+        "runs": [
+            _llm_success_run(
+                name="reflection_missing_audit",
+                first_success_rank=2,
+                reflection_successes=1,
+                reflection_candidates=2,
+                agreement_counts={"aligned": 1},
+                token_count=120,
+                include_reflection_audit=False,
+            )
+        ],
+    }
+
+    evaluation = build_llm_repair_evaluation_matrix(
+        [suite],
+        targets={
+            "case_count": 1,
+            "llm_direct_success": 0,
+            "llm_reflection_success": 1,
+            "llm_blocker": 0,
+            "llm_direct_evidence_complete": 0,
+            "llm_reflection_evidence_complete": 1,
+            "llm_blocker_evidence_complete": 0,
+        },
+    )
+    metrics = evaluation["metrics_report"]
+    row = evaluation["matrix"][0]
+    checks = {item["name"]: item for item in metrics["target_checks"]}
+
+    assert row["class"] == "llm_reflection_success"
+    assert row["evidence_status"] == "review"
+    assert "llm_reflection_audit_present" in row["evidence_missing"]
+    assert metrics["llm_reflection_success_count"] == 1
+    assert metrics["llm_reflection_evidence_complete_count"] == 0
+    assert checks["llm_reflection_success"]["passed"] is True
+    assert checks["llm_reflection_evidence_complete"]["passed"] is False
+    assert evaluation["status"] == "incomplete"
 
 
 def test_llm_repair_showcase_matrix_cli_writes_blocker_artifacts_without_secret(
@@ -286,10 +347,31 @@ def _llm_success_run(
     agreement_counts: dict[str, int],
     token_count: int,
     reflection_candidates: int = 0,
+    include_reflection_audit: bool = True,
 ) -> dict:
+    reflection_audit = (
+        [
+            {
+                "parent_patch_id": f"{name}_parent",
+                "round_index": 1,
+                "requested_candidate_count": reflection_candidates,
+                "parsed_candidate_count": reflection_candidates,
+                "accepted_candidate_count": reflection_successes,
+                "rejected_candidate_count": max(
+                    0, reflection_candidates - reflection_successes
+                ),
+                "prompt_context_audit": {"status": "pass", "missing_fields": []},
+                "response_parse": {"status": "pass"},
+            }
+        ]
+        if reflection_candidates and include_reflection_audit
+        else []
+    )
     return {
         "name": name,
         "repo": f"example/{name}",
+        "output_dir": f"out/{name}",
+        "report_path": f"out/{name}/github_repo_intelligence.json",
         "status": "pass",
         "passed": True,
         "runtime_seconds": 2.5,
@@ -301,6 +383,12 @@ def _llm_success_run(
             "repository_llm_patch_api_key_present": True,
             "repository_patch_generator_llm_candidate_count": 3,
             "repository_test_patch_validation_status": "pass",
+            "repository_test_patch_validation_json": (
+                f"out/{name}/repository_test_patch_validation.json"
+            ),
+            "repository_test_patch_validation_markdown": (
+                f"out/{name}/repository_test_patch_validation.md"
+            ),
             "repository_test_patch_validation_candidate_count": 3,
             "repository_test_patch_validation_executed_count": 1,
             "repository_test_patch_validation_success_count": 1,
@@ -313,6 +401,12 @@ def _llm_success_run(
             ),
             "repository_test_patch_validation_successful_reflection_count": (
                 reflection_successes
+            ),
+            "repository_test_patch_validation_llm_reflection_attempt_count": (
+                len(reflection_audit)
+            ),
+            "repository_test_patch_validation_llm_reflection_audit": (
+                reflection_audit
             ),
             "repository_test_patch_judge_mode": "llm",
             "repository_test_patch_judge_status": "ready",
@@ -333,6 +427,8 @@ def _llm_blocker_run(*, name: str) -> dict:
     return {
         "name": name,
         "repo": f"example/{name}",
+        "output_dir": f"out/{name}",
+        "report_path": f"out/{name}/llm_config_preflight.json",
         "status": "llm_config_blocked",
         "passed": False,
         "metrics": {

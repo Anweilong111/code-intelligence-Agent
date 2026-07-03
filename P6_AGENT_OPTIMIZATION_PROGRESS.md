@@ -175,8 +175,9 @@ LLM controller selected action 示例：
 - LLM token / estimated cost 统计
 - Blocker Type Distribution
 - 每个 case 的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` trace 完整性
+- 每个 LLM direct success、LLM reflection success 和 blocker case 的 evidence completeness：provider/model、key 审计、候选数量、sandbox authority、patch validation artifact、LLM reflection audit、blocker next action 等字段缺失时会标记为 `evidence_status=review`
 
-注意：当前完成的是 Phase 6 评估 artifact 与指标基础设施，不代表已经满足 P6 要求的 20 个 repair/evaluation case、5 个 LLM direct success、3 个 LLM reflection success 和 5 个 blocker case。
+注意：当前完成的是 Phase 6 评估 artifact、指标基础设施和证据完整性门禁，不代表已经满足 P6 要求的 20 个 repair/evaluation case、5 个 LLM direct success、3 个 LLM reflection success 和 5 个 blocker case。
 
 ## 已验证的 Policy 选择
 
@@ -210,13 +211,14 @@ python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill
 - `tests/test_agent_controller.py`：`32 passed`
 - Phase 2 matrix / artifact inventory 定向测试：`5 passed`
 - Phase 3 LLM patch generator / candidate artifact 定向测试：`19 passed`
-- Phase 6 LLM repair matrix / suite integration 定向测试：`6 passed`
+- Phase 6 LLM repair matrix 定向测试：`5 passed`
+- GitHub repo intelligence suite 回归测试：`57 passed`
 - Phase 4 reflection safety / Beam / AgentController 回归测试：`55 passed`
 - Phase 4 LLM reflection prompt / patch validation 定向测试：`25 passed`
 - AgentController / repository patch candidates 回归测试：`40 passed`
-- GitHub repo intelligence suite / LLM repair matrix 回归测试：`61 passed`
+- GitHub repo intelligence suite / LLM repair matrix 回归测试：`62 passed`
 - Phase 3 / Phase 4 搜索与沙箱回归测试：`66 passed`
-- 完整测试：`1019 passed`
+- 完整测试：`1020 passed`
 - 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
 ## 后续未完成项
