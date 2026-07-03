@@ -1,0 +1,137 @@
+{
+  "suite_name": "repo_intelligence_p6_onboarding_blockers",
+  "description": "P6 onboarding blocker source suite. It reuses real Python GitHub repository onboarding paths to produce auditable environment and no-test-oracle blocker evidence for the LLM repair catalog.",
+  "run_llm_repair_showcase_matrix": true,
+  "defaults": {
+    "execution_profile": "agent-auto",
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 30,
+    "max_candidates": 10,
+    "auto_fallback": false,
+    "run_repository_test_command": false,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_timeout": 120,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 0
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 3,
+    "min_llm_repair_showcase_matrix_blocker_count": 3,
+    "min_agent_controller_loop_complete_count": 3,
+    "min_agent_decision_timeline_complete_count": 3,
+    "min_agent_answer_coverage_complete_count": 3,
+    "min_objective_compliance_pass_count": 3
+  },
+  "runs": [
+    {
+      "name": "environment_blocker_0",
+      "repo": "pypa/sampleproject",
+      "agent": true,
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pypa_sampleproject.discovery.json",
+      "run_repository_test_command": true,
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "environment_blocker",
+        "p6_onboarding_blocker",
+        "owner_repo_input",
+        "pyproject_project",
+        "tox_or_nox_project",
+        "dependency_missing",
+        "test_environment_blocker"
+      ],
+      "expected_status": "pass",
+      "expected_agent_shortcut": true,
+      "expected_execution_profile": "agent-auto",
+      "expected_repository_test_setup_doctor_blocker": "environment:test_tool_missing",
+      "expected_planned_repository_test_runner": "unittest",
+      "expected_planned_repository_test_result_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_test_environment_diagnosed": 1,
+        "repository_test_setup_doctor_diagnosed": 1,
+        "recommended_install_command_present": 1,
+        "planned_repository_test_runner_fallback_used": 1,
+        "planned_repository_test_result_test_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "no_test_oracle_blocker_0",
+      "repo": "https://github.com/pytest-dev/pluggy",
+      "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pytest_dev_pluggy_7fce99c.discovery.json",
+      "include": [
+        "src/pluggy/__init__.py",
+        "src/pluggy/_tracing.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "no_test_oracle_blocker",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "src_layout_project",
+        "pyproject_project",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_blocker": "dynamic_evidence_not_usable",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 2,
+        "repository_structure_src_layout_package_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "no_test_oracle_blocker_1",
+      "repo": "https://github.com/karpathy/nanoGPT",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/karpathy_nanogpt_master.discovery.json",
+      "checkout_repository_tests": true,
+      "run_repository_test_command": true,
+      "repository_test_timeout": 8,
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "no_test_oracle_blocker",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "default_branch_discovery",
+        "no_tests",
+        "no_test_command"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_blocker": "no_static_candidates",
+      "expected_repository_test_setup_doctor_blocker": "test_command:no_recommended_test_command",
+      "expected_planned_repository_test_result_status": "skipped",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "discovery_cache_reuse": 1,
+        "discovery_cache_preferred": 1,
+        "repository_structure_analyzed_file_count": 10,
+        "repo_graph_program_graph_available": 1,
+        "repository_test_environment_diagnosed": 1,
+        "repository_test_setup_doctor_diagnosed": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    }
+  ]
+}

@@ -7,7 +7,8 @@
   "run_p6_readiness_audit": true,
   "llm_repair_case_catalog_path": "llm_repair_case_catalog.example.json",
   "llm_repair_source_reports": [
-    "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
   ],
   "github_onboarding_matrix_required_case_count": 10,
   "defaults": {

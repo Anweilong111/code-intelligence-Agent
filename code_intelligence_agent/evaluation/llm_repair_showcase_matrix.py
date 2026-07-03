@@ -976,6 +976,7 @@ def _blocker_category(
         "no_tests",
         "no tests",
         "no_test_command",
+        "no_recommended_test_command",
         "no recommended test command",
         "validation_args_missing",
         "no_failing_test",
@@ -1112,6 +1113,7 @@ def _case_evidence_audit(
         llm_status = str(
             metrics.get("repository_llm_patch_generation_status") or ""
         ).lower()
+        controller_action = _controller_action_id(metrics)
         next_action = str(
             metrics.get("agent_answers_next_action")
             or metrics.get("analysis_next_action")
@@ -1124,7 +1126,9 @@ def _case_evidence_audit(
                 or llm_status in {"blocked", "unavailable", "failed"},
                 "no_sandbox_success_claim": validation_success_count <= 0,
                 "next_action_recorded": bool(next_action),
-                "repair_action_recorded": bool(repair_action_id),
+                "agent_or_repair_action_recorded": bool(
+                    repair_action_id or controller_action
+                ),
             }
         )
     missing = [name for name, passed in checks.items() if not passed]
@@ -1157,12 +1161,7 @@ def _agent_loop_evidence(
     )
     provider = str(metrics.get("repository_llm_patch_provider") or "none")
     model = str(metrics.get("repository_llm_patch_model") or "none")
-    action = str(
-        metrics.get("controller_action_id")
-        or metrics.get("agent_auto_last_action_id")
-        or metrics.get("agent_auto_action_id")
-        or "none"
-    )
+    action = _controller_action_id(metrics) or "none"
     patch_validation_status = str(
         metrics.get("repository_test_patch_validation_status") or "none"
     )
@@ -1202,6 +1201,15 @@ def _agent_loop_evidence(
         ),
         "replan": next_action,
     }
+
+
+def _controller_action_id(metrics: dict[str, Any]) -> str:
+    return str(
+        metrics.get("controller_action_id")
+        or metrics.get("agent_auto_last_action_id")
+        or metrics.get("agent_auto_action_id")
+        or ""
+    )
 
 
 def _repair_action_id(*, patch_mode: str, llm_patch_status: str) -> str:

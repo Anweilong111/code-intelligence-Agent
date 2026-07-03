@@ -3,7 +3,8 @@
   "description": "Declared P6 repair/evaluation catalog. Run the catalog audit against a real llm_repair_evaluation_matrix.json before using it as evidence.",
   "matrix_path": "../../outputs_smoke/p6_llm_repair/llm_repair_evaluation_matrix.json",
   "source_reports": [
-    "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
   ],
   "cases": [
     {
@@ -80,14 +81,14 @@
       "repo": "controlled/environment_blocker_0",
       "expected_class": "llm_blocker",
       "expected_blocker_category": "environment_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "environment_blocker_1",
       "repo": "controlled/environment_blocker_1",
       "expected_class": "llm_blocker",
       "expected_blocker_category": "environment_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "environment_blocker_2",
@@ -101,14 +102,14 @@
       "repo": "controlled/no_test_oracle_blocker_0",
       "expected_class": "llm_blocker",
       "expected_blocker_category": "no_test_oracle_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "no_test_oracle_blocker_1",
       "repo": "controlled/no_test_oracle_blocker_1",
       "expected_class": "llm_blocker",
       "expected_blocker_category": "no_test_oracle_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "no_test_oracle_blocker_2",

@@ -4101,6 +4101,38 @@ def test_intelligence_suite_p6_llm_repair_blocker_manifest_defines_expected_bloc
     assert all("blocker_expected" in run["scenario_tags"] for run in runs)
 
 
+def test_intelligence_suite_p6_onboarding_blocker_manifest_defines_source_cases():
+    manifest = json.loads(
+        Path(
+            "datasets/github_cases/repo_intelligence_p6_onboarding_blockers.example.json"
+        ).read_text(encoding="utf-8")
+    )
+    thresholds = manifest["suite_thresholds"]
+    runs = {run["name"]: run for run in manifest["runs"]}
+
+    assert manifest["suite_name"] == "repo_intelligence_p6_onboarding_blockers"
+    assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert manifest["defaults"]["execution_profile"] == "agent-auto"
+    assert manifest["defaults"]["repository_patch_generation_mode"] == "rule"
+    assert thresholds["min_run_count"] == 3
+    assert thresholds["min_llm_repair_showcase_matrix_blocker_count"] == 3
+    assert set(runs) == {
+        "environment_blocker_0",
+        "no_test_oracle_blocker_0",
+        "no_test_oracle_blocker_1",
+    }
+    assert "environment_blocker" in runs["environment_blocker_0"]["scenario_tags"]
+    assert runs["environment_blocker_0"][
+        "expected_repository_test_setup_doctor_blocker"
+    ] == "environment:test_tool_missing"
+    assert "no_test_oracle_blocker" in runs["no_test_oracle_blocker_0"][
+        "scenario_tags"
+    ]
+    assert runs["no_test_oracle_blocker_1"][
+        "expected_repository_test_setup_doctor_blocker"
+    ] == "test_command:no_recommended_test_command"
+
+
 def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     tmp_path,
     monkeypatch,

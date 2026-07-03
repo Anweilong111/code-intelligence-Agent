@@ -350,6 +350,76 @@ def test_llm_repair_evaluation_matrix_flags_missing_blocker_categories():
     assert evaluation["status"] == "incomplete"
 
 
+def test_llm_repair_showcase_matrix_accepts_controller_blocker_evidence():
+    suite = {
+        "suite_name": "controller_blocker_suite",
+        "runs": [
+            {
+                "name": "environment_blocker",
+                "repo": "example/environment",
+                "output_dir": "out/environment",
+                "report_path": "out/environment/github_repo_intelligence.json",
+                "status": "pass",
+                "passed": True,
+                "metrics": {
+                    "status": "pass",
+                    "blocker": "dynamic_evidence_not_usable:passing_tests",
+                    "controller_action_id": "diagnose_environment",
+                    "repository_patch_generation_mode": "rule",
+                    "repository_llm_patch_generation_status": "disabled",
+                    "repository_test_setup_doctor_blocker": (
+                        "environment:test_tool_missing"
+                    ),
+                    "repository_test_patch_validation_success_count": 0,
+                    "agent_answers_next_action": "Install test tooling and rerun.",
+                },
+            },
+            {
+                "name": "no_test_oracle_blocker",
+                "repo": "example/no-tests",
+                "output_dir": "out/no-tests",
+                "report_path": "out/no-tests/github_repo_intelligence.json",
+                "status": "pass",
+                "passed": True,
+                "metrics": {
+                    "status": "pass",
+                    "blocker": "no_static_candidates",
+                    "controller_action_id": "discover_tests",
+                    "repository_patch_generation_mode": "rule",
+                    "repository_llm_patch_generation_status": "disabled",
+                    "repository_test_setup_doctor_blocker": (
+                        "test_command:no_recommended_test_command"
+                    ),
+                    "repository_test_patch_validation_success_count": 0,
+                    "agent_answers_next_action": "Add a failing pytest oracle.",
+                },
+            },
+        ],
+    }
+
+    matrix = build_llm_repair_showcase_matrix([suite])
+    rows = {row["name"]: row for row in matrix["matrix"]}
+
+    assert rows["environment_blocker"]["class"] == "llm_blocker"
+    assert rows["environment_blocker"]["blocker_category"] == "environment_blocker"
+    assert rows["environment_blocker"]["evidence_status"] == "complete"
+    assert rows["environment_blocker"]["repair_action_id"] == ""
+    assert rows["environment_blocker"]["evidence_checks"][
+        "agent_or_repair_action_recorded"
+    ] is True
+    assert "controller_next_action=diagnose_environment" in (
+        rows["environment_blocker"]["agent_loop_evidence"]["plan"]
+    )
+    assert rows["no_test_oracle_blocker"]["class"] == "llm_blocker"
+    assert rows["no_test_oracle_blocker"]["blocker_category"] == (
+        "no_test_oracle_blocker"
+    )
+    assert rows["no_test_oracle_blocker"]["evidence_status"] == "complete"
+    assert rows["no_test_oracle_blocker"]["evidence_checks"][
+        "agent_or_repair_action_recorded"
+    ] is True
+
+
 def test_llm_repair_showcase_matrix_cli_writes_blocker_artifacts_without_secret(
     tmp_path,
     capsys,
