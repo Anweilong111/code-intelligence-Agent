@@ -18,7 +18,11 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
     assert manifest["suite_name"] == "repo_intelligence_p6_onboarding_readiness"
     assert manifest["run_github_onboarding_matrix"] is True
     assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert manifest["run_llm_repair_case_catalog_audit"] is True
     assert manifest["run_p6_readiness_audit"] is True
+    assert manifest["llm_repair_case_catalog_path"] == (
+        "llm_repair_case_catalog.example.json"
+    )
     assert manifest["github_onboarding_matrix_required_case_count"] == 10
     assert manifest["defaults"]["execution_profile"] == "agent-auto"
     assert manifest["defaults"]["repository_patch_generation_mode"] == "rule"
@@ -38,6 +42,12 @@ def test_p6_onboarding_readiness_manifest_defines_real_ten_repo_gate():
             "min_github_onboarding_matrix_complete_artifact_group_count"
         ]
         == len(REQUIRED_ONBOARDING_ARTIFACTS)
+    )
+    assert (
+        manifest["suite_thresholds"][
+            "min_llm_repair_case_catalog_declared_case_count"
+        ]
+        == 20
     )
     assert manifest["suite_thresholds"]["min_p6_readiness_audit_check_count"] >= 20
 

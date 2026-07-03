@@ -35,6 +35,10 @@ from code_intelligence_agent.evaluation.llm_repair_showcase_matrix import (
     build_llm_repair_showcase_matrix,
     write_llm_repair_showcase_matrix_artifacts,
 )
+from code_intelligence_agent.evaluation.llm_repair_case_catalog import (
+    build_llm_repair_case_catalog_audit,
+    write_llm_repair_case_catalog_audit_artifacts,
+)
 from code_intelligence_agent.evaluation.p6_readiness_audit import (
     build_p6_readiness_audit,
     write_p6_readiness_audit_artifacts,
@@ -392,6 +396,20 @@ def run_github_repo_intelligence_suite(
         )
     if _bool_option(
         payload,
+        "run_llm_repair_case_catalog_audit",
+        _bool_option(defaults, "run_llm_repair_case_catalog_audit", False),
+    ):
+        _attach_llm_repair_case_catalog_audit(
+            report,
+            output_root,
+            catalog_path=_llm_repair_case_catalog_path(
+                payload,
+                defaults=defaults,
+                manifest=manifest,
+            ),
+        )
+    if _bool_option(
+        payload,
         "run_p6_readiness_audit",
         _bool_option(defaults, "run_p6_readiness_audit", False),
     ):
@@ -467,6 +485,11 @@ def render_github_repo_intelligence_suite_markdown(
         f"- LLM Repair Evaluation Matrix JSON: `{_markdown_cell(summary.get('llm_repair_evaluation_matrix_json') or 'none')}`",
         f"- LLM Repair Metrics Report JSON: `{_markdown_cell(summary.get('llm_repair_metrics_report_json') or 'none')}`",
         f"- LLM Repair Patch Success@1/@3/@5: `{_markdown_cell(summary.get('llm_repair_metrics_patch_success_at') or 'none')}`",
+        f"- LLM Repair Case Catalog Audit Status: `{_markdown_cell(summary.get('llm_repair_case_catalog_audit_status') or 'not_run')}`",
+        f"- LLM Repair Case Catalog Matched Cases: {_int(summary.get('llm_repair_case_catalog_matched_case_count', 0))}/{_int(summary.get('llm_repair_case_catalog_declared_case_count', 0))}",
+        f"- LLM Repair Case Catalog Missing Sources: {_int(summary.get('llm_repair_case_catalog_missing_source_report_count', 0))}",
+        f"- LLM Repair Case Catalog Audit JSON: `{_markdown_cell(summary.get('llm_repair_case_catalog_audit_json') or 'none')}`",
+        f"- LLM Repair Case Catalog Missing Checks: `{_markdown_cell(_format_list(_list(summary.get('llm_repair_case_catalog_audit_missing'))))}`",
         f"- P6 Readiness Audit Status: `{_markdown_cell(summary.get('p6_readiness_audit_status') or 'not_run')}`",
         f"- P6 Readiness Audit JSON: `{_markdown_cell(summary.get('p6_readiness_audit_json') or 'none')}`",
         f"- P6 Readiness Missing Checks: `{_markdown_cell(_format_list(_list(summary.get('p6_readiness_audit_missing'))))}`",
@@ -4694,6 +4717,132 @@ def _load_llm_repair_source_reports(
         payload.setdefault("suite_report_path", str(resolved))
         payloads.append(payload)
     return payloads, missing
+
+
+def _attach_llm_repair_case_catalog_audit(
+    report: GitHubRepoIntelligenceSuiteReport,
+    output_dir: Path,
+    *,
+    catalog_path: Path | None,
+) -> None:
+    repair_path_text = str(report.summary.get("llm_repair_evaluation_matrix_json") or "")
+    repair_path = Path(repair_path_text) if repair_path_text else None
+    repair_matrix = _json_artifact_payload(repair_path)
+    catalog = _json_artifact_payload(catalog_path) if catalog_path else {}
+    if not catalog:
+        report.summary.update(
+            {
+                "llm_repair_case_catalog_audit_status": "not_run",
+                "llm_repair_case_catalog_audit_reason": "catalog_missing",
+                "llm_repair_case_catalog_path": str(catalog_path or ""),
+                "llm_repair_case_catalog_matrix_path": repair_path_text,
+                "llm_repair_case_catalog_audit_json": "",
+                "llm_repair_case_catalog_audit_markdown": "",
+                "llm_repair_case_catalog_declared_case_count": 0,
+                "llm_repair_case_catalog_matched_case_count": 0,
+                "llm_repair_case_catalog_missing_case_count": 0,
+                "llm_repair_case_catalog_missing_source_report_count": 0,
+                "llm_repair_case_catalog_failed_check_count": 0,
+                "llm_repair_case_catalog_passed_check_count": 0,
+                "llm_repair_case_catalog_check_count": 0,
+                "llm_repair_case_catalog_audit_missing": [
+                    "llm_repair_case_catalog"
+                ],
+            }
+        )
+        return
+    audit = build_llm_repair_case_catalog_audit(
+        catalog,
+        repair_matrix,
+        catalog_path=str(catalog_path or ""),
+        matrix_path=repair_path_text,
+    )
+    paths = write_llm_repair_case_catalog_audit_artifacts(audit, output_dir)
+    summary = _dict(audit.get("summary"))
+    counts = _dict(audit.get("counts"))
+    report.summary.update(
+        {
+            "llm_repair_case_catalog_audit_status": str(audit.get("status") or ""),
+            "llm_repair_case_catalog_audit_reason": str(audit.get("reason") or ""),
+            "llm_repair_case_catalog_path": str(catalog_path or ""),
+            "llm_repair_case_catalog_matrix_path": repair_path_text,
+            "llm_repair_case_catalog_audit_json": str(
+                paths.get("llm_repair_case_catalog_audit_json") or ""
+            ),
+            "llm_repair_case_catalog_audit_markdown": str(
+                paths.get("llm_repair_case_catalog_audit_markdown") or ""
+            ),
+            "llm_repair_case_catalog_declared_case_count": _int(
+                summary.get("declared_case_count", 0)
+            ),
+            "llm_repair_case_catalog_matched_case_count": _int(
+                summary.get("matched_case_count", 0)
+            ),
+            "llm_repair_case_catalog_missing_case_count": _int(
+                summary.get("missing_case_count", 0)
+            ),
+            "llm_repair_case_catalog_matrix_case_count": _int(
+                summary.get("matrix_case_count", 0)
+            ),
+            "llm_repair_case_catalog_matrix_exists": bool(
+                summary.get("matrix_exists", False)
+            ),
+            "llm_repair_case_catalog_source_report_count": _int(
+                summary.get("source_report_count", 0)
+            ),
+            "llm_repair_case_catalog_missing_source_report_count": _int(
+                summary.get("missing_source_report_count", 0)
+            ),
+            "llm_repair_case_catalog_direct_success_count": _int(
+                counts.get("llm_direct_success_count", 0)
+            ),
+            "llm_repair_case_catalog_reflection_success_count": _int(
+                counts.get("llm_reflection_success_count", 0)
+            ),
+            "llm_repair_case_catalog_blocker_count": _int(
+                counts.get("llm_blocker_count", 0)
+            ),
+            "llm_repair_case_catalog_agent_loop_trace_complete_count": _int(
+                counts.get("agent_loop_trace_complete_count", 0)
+            ),
+            "llm_repair_case_catalog_failed_check_count": _int(
+                summary.get("failed_target_check_count", 0)
+            ),
+            "llm_repair_case_catalog_passed_check_count": _int(
+                summary.get("passed_target_check_count", 0)
+            ),
+            "llm_repair_case_catalog_check_count": _int(
+                summary.get("target_check_count", 0)
+            ),
+            "llm_repair_case_catalog_audit_missing": _list(audit.get("missing")),
+            "llm_repair_case_catalog_audit_next_actions": _list(
+                audit.get("next_actions")
+            ),
+            "llm_repair_case_catalog_sandbox_authority": str(
+                audit.get("sandbox_authority") or ""
+            ),
+        }
+    )
+
+
+def _llm_repair_case_catalog_path(
+    payload: dict[str, Any],
+    *,
+    defaults: dict[str, Any],
+    manifest: Path,
+) -> Path | None:
+    for key in (
+        "llm_repair_case_catalog",
+        "llm_repair_case_catalog_path",
+        "llm_repair_case_catalog_manifest",
+    ):
+        value = str(payload.get(key) or defaults.get(key) or "")
+        if value:
+            path = Path(value)
+            if path.is_absolute() or path.exists():
+                return path
+            return manifest.parent / path
+    return None
 
 
 def _attach_p6_readiness_audit(

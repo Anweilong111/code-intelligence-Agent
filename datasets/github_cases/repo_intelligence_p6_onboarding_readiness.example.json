@@ -3,7 +3,9 @@
   "description": "P6 onboarding readiness suite for the public Python GitHub repository intelligence Agent. It prepares a 10-repository matrix for real repository onboarding, AgentController trace auditing, onboarding matrix generation, and P6 readiness reporting. Run with: python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite datasets/github_cases/repo_intelligence_p6_onboarding_readiness.example.json outputs_smoke/repo_intelligence_p6_onboarding_readiness_current --require-success",
   "run_github_onboarding_matrix": true,
   "run_llm_repair_showcase_matrix": true,
+  "run_llm_repair_case_catalog_audit": true,
   "run_p6_readiness_audit": true,
+  "llm_repair_case_catalog_path": "llm_repair_case_catalog.example.json",
   "github_onboarding_matrix_required_case_count": 10,
   "defaults": {
     "execution_profile": "agent-auto",
@@ -59,6 +61,7 @@
     "min_github_onboarding_matrix_case_count": 10,
     "min_github_onboarding_matrix_covered_scenario_count": 10,
     "min_github_onboarding_matrix_complete_artifact_group_count": 12,
+    "min_llm_repair_case_catalog_declared_case_count": 20,
     "min_p6_readiness_audit_check_count": 20
   },
   "runs": [

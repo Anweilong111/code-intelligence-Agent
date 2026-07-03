@@ -4449,6 +4449,124 @@ def test_intelligence_suite_aggregates_external_llm_repair_source_reports(tmp_pa
     assert "Missing LLM Repair Source Reports: 0" in suite_markdown
 
 
+def test_intelligence_suite_writes_llm_repair_case_catalog_audit(tmp_path):
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    source_path = tmp_path / "external_suite.json"
+    catalog_path = tmp_path / "catalog.json"
+    source_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "external_llm_repair_suite",
+                "runs": [
+                    _catalog_llm_direct_success_run("direct_catalog"),
+                    _catalog_llm_reflection_success_run("reflection_catalog"),
+                    _catalog_llm_blocker_run("missing_key_catalog"),
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "name": "small_catalog",
+                "targets": {
+                    "case_count": 3,
+                    "llm_direct_success": 1,
+                    "llm_reflection_success": 1,
+                    "llm_blocker": 1,
+                    "llm_direct_evidence_complete": 1,
+                    "llm_reflection_evidence_complete": 1,
+                    "llm_blocker_evidence_complete": 1,
+                    "llm_patch_judge_ready": 2,
+                    "llm_patch_judge_accept_success": 1,
+                    "llm_patch_judge_reject_failure": 1,
+                    "llm_failed_blocker": 1,
+                    "environment_blocker": 0,
+                    "no_test_oracle_blocker": 0,
+                    "safety_gate_blocker": 0,
+                    "agent_loop_trace_complete": 3,
+                },
+                "source_reports": [str(source_path)],
+                "cases": [
+                    {
+                        "case_id": "direct_catalog",
+                        "repo": "example/direct_catalog",
+                        "expected_class": "llm_direct_success",
+                        "source_report_path": str(source_path),
+                    },
+                    {
+                        "case_id": "reflection_catalog",
+                        "repo": "example/reflection_catalog",
+                        "expected_class": "llm_reflection_success",
+                        "source_report_path": str(source_path),
+                    },
+                    {
+                        "case_id": "missing_key_catalog",
+                        "repo": "example/missing_key_catalog",
+                        "expected_class": "llm_blocker",
+                        "expected_blocker_category": "llm_failed_blocker",
+                        "source_report_path": str(source_path),
+                    },
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "repair_catalog_audit_suite",
+                "run_llm_repair_showcase_matrix": True,
+                "run_llm_repair_case_catalog_audit": True,
+                "llm_repair_source_reports": [str(source_path)],
+                "llm_repair_case_catalog_path": str(catalog_path),
+                "suite_thresholds": {
+                    "max_llm_repair_source_report_missing_count": 0,
+                    "min_llm_repair_source_report_count": 1,
+                    "min_llm_repair_case_catalog_matched_case_count": 3,
+                    "max_llm_repair_case_catalog_missing_case_count": 0,
+                    "max_llm_repair_case_catalog_missing_source_report_count": 0,
+                    "min_llm_repair_case_catalog_agent_loop_trace_complete_count": 3,
+                },
+                "runs": [],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_github_repo_intelligence_suite(manifest_path, output_dir)
+    audit_path = output_dir / "llm_repair_case_catalog_audit.json"
+    audit = json.loads(audit_path.read_text(encoding="utf-8"))
+    suite_markdown = (output_dir / "github_repo_intelligence_suite.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert report.passed is True
+    assert audit["status"] == "pass"
+    assert report.summary["llm_repair_case_catalog_audit_status"] == "pass"
+    assert report.summary["llm_repair_case_catalog_audit_json"] == str(audit_path)
+    assert report.summary["llm_repair_case_catalog_declared_case_count"] == 3
+    assert report.summary["llm_repair_case_catalog_matched_case_count"] == 3
+    assert report.summary["llm_repair_case_catalog_missing_case_count"] == 0
+    assert (
+        report.summary["llm_repair_case_catalog_missing_source_report_count"]
+        == 0
+    )
+    assert report.summary["llm_repair_case_catalog_direct_success_count"] == 1
+    assert report.summary["llm_repair_case_catalog_reflection_success_count"] == 1
+    assert report.summary["llm_repair_case_catalog_blocker_count"] == 1
+    assert report.summary[
+        "llm_repair_case_catalog_agent_loop_trace_complete_count"
+    ] == 3
+    assert "LLM Repair Case Catalog Audit Status: `pass`" in suite_markdown
+    assert "LLM Repair Case Catalog Matched Cases: 3/3" in suite_markdown
+
+
 def test_intelligence_suite_reports_missing_external_llm_repair_source(tmp_path):
     manifest_path = tmp_path / "manifest.json"
     output_dir = tmp_path / "suite"
@@ -4549,6 +4667,112 @@ def _external_llm_blocker_run(name: str) -> dict:
             "repository_test_patch_validation_success_count": 0,
             "agent_answers_next_action": (
                 "Re-run the LLM repair suite after environment setup."
+            ),
+        },
+    }
+
+
+def _catalog_llm_direct_success_run(name: str) -> dict:
+    return {
+        "name": name,
+        "repo": f"example/{name}",
+        "output_dir": f"out/{name}",
+        "report_path": f"out/{name}/github_repo_intelligence.json",
+        "status": "pass",
+        "passed": True,
+        "metrics": {
+            "repository_patch_generation_mode": "llm",
+            "repository_llm_patch_generation_status": "pass",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": True,
+            "repository_patch_generator_llm_candidate_count": 2,
+            "repository_test_patch_validation_status": "pass",
+            "repository_test_patch_validation_json": (
+                f"out/{name}/repository_test_patch_validation.json"
+            ),
+            "repository_test_patch_validation_markdown": (
+                f"out/{name}/repository_test_patch_validation.md"
+            ),
+            "repository_test_patch_validation_executed_count": 1,
+            "repository_test_patch_validation_candidate_count": 2,
+            "repository_test_patch_validation_success_count": 1,
+            "repository_test_patch_validation_first_success_rank": 1,
+            "repository_test_patch_validation_successful_reflection_count": 0,
+            "repository_test_patch_judge_mode": "llm",
+            "repository_test_patch_judge_status": "ready",
+            "repository_test_patch_judge_candidate_count": 1,
+            "repository_test_patch_judge_authority": (
+                "sandbox_pytest_decides_success"
+            ),
+            "repository_test_patch_judge_agreement_counts": {"aligned": 1},
+            "repository_test_patch_judge_outcome_counts": {"accept_success": 1},
+            "agent_answers_next_action": "Generate final agent report.",
+        },
+    }
+
+
+def _catalog_llm_reflection_success_run(name: str) -> dict:
+    payload = _catalog_llm_direct_success_run(name)
+    payload["metrics"].update(
+        {
+            "repository_test_patch_validation_executed_count": 2,
+            "repository_test_patch_validation_reflection_mode": "llm",
+            "repository_test_patch_validation_reflection_candidate_count": 2,
+            "repository_test_patch_validation_successful_reflection_count": 1,
+            "repository_test_patch_validation_llm_reflection_attempt_count": 1,
+            "repository_test_patch_validation_llm_reflection_audit": [
+                {
+                    "parent_patch_id": f"{name}_parent",
+                    "round_index": 1,
+                    "requested_candidate_count": 2,
+                    "parsed_candidate_count": 2,
+                    "accepted_candidate_count": 1,
+                    "rejected_candidate_count": 1,
+                    "prompt_context_audit": {
+                        "status": "pass",
+                        "missing_fields": [],
+                    },
+                    "response_parse": {"status": "pass"},
+                }
+            ],
+            "repository_llm_reflection_status": "ready",
+            "repository_llm_reflection_provider": "deepseek",
+            "repository_llm_reflection_model": "deepseek-v4-pro",
+            "repository_test_patch_judge_candidate_count": 2,
+            "repository_test_patch_judge_agreement_counts": {
+                "aligned": 1,
+                "judge_more_conservative": 1,
+            },
+            "repository_test_patch_judge_outcome_counts": {
+                "accept_success": 1,
+                "reject_failure": 1,
+            },
+        }
+    )
+    return payload
+
+
+def _catalog_llm_blocker_run(name: str) -> dict:
+    return {
+        "name": name,
+        "repo": f"example/{name}",
+        "output_dir": f"out/{name}",
+        "report_path": f"out/{name}/llm_config_preflight.json",
+        "status": "llm_config_blocked",
+        "passed": False,
+        "metrics": {
+            "status": "llm_config_blocked",
+            "blocker": "llm_config_missing_api_key",
+            "repository_patch_generation_mode": "llm",
+            "repository_llm_patch_generation_status": "blocked",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": False,
+            "repository_patch_generator_llm_candidate_count": 0,
+            "repository_test_patch_validation_success_count": 0,
+            "agent_answers_next_action": (
+                "Configure the LLM key and rerun the repair suite."
             ),
         },
     }
