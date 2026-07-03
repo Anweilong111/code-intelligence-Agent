@@ -75,16 +75,16 @@ REQUIRED_ONBOARDING_ARTIFACTS: tuple[tuple[str, str, str], ...] = (
 )
 
 REQUIRED_SCENARIOS: tuple[tuple[str, str], ...] = (
-    ("pytest_project", "普通 pytest 项目"),
-    ("src_layout_project", "src layout 项目"),
-    ("pyproject_project", "pyproject 项目"),
-    ("requirements_project", "requirements 项目"),
-    ("tox_or_nox_project", "tox/nox 项目"),
-    ("no_python_sources", "无 Python 源码项目"),
-    ("no_tests", "无 tests 项目"),
-    ("dependency_missing", "测试依赖缺失项目"),
-    ("timeout", "测试超时项目"),
-    ("failing_test_evidence", "可产生 failing test evidence 的项目"),
+    ("pytest_project", "pytest project"),
+    ("src_layout_project", "src-layout project"),
+    ("pyproject_project", "pyproject project"),
+    ("requirements_project", "requirements project"),
+    ("tox_or_nox_project", "tox/nox project"),
+    ("no_python_sources", "no Python sources"),
+    ("no_tests", "no tests"),
+    ("dependency_missing", "missing test dependency"),
+    ("timeout", "test timeout"),
+    ("failing_test_evidence", "failing-test evidence"),
 )
 
 
@@ -147,6 +147,177 @@ def backfill_github_onboarding_artifacts(
         "report_count": len(rows),
         "status_counts": dict(sorted(status_counts.items())),
         "rows": rows,
+    }
+
+
+def _backfill_onboarding_artifacts_for_report(
+    report_path: Path,
+    *,
+    dry_run: bool,
+) -> dict[str, Any]:
+    resolved = _resolve_report_path(report_path)
+    payload = _read_json(resolved)
+    if not payload:
+        return {
+            "report_path": str(resolved),
+            "status": "error",
+            "reason": "report_not_readable",
+            "written_artifacts": [],
+            "skipped_artifacts": [],
+        }
+    report_dir = resolved.parent
+    summary = _dict(payload.get("summary")) if "summary" in payload else payload
+    output_paths = {
+        **_dict(payload.get("output_paths")),
+        **_dict(summary.get("output_paths")),
+    }
+    output_dir = _report_output_dir(payload, summary, report_dir)
+    if not dry_run:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    written: list[str] = []
+    skipped: list[str] = []
+
+    profile = (
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_profile_json",
+            "repository_profile.json",
+            report_dir=report_dir,
+        )
+        or _dict(summary.get("repository_profile"))
+        or _dict(_dict(payload.get("onboarding_report")).get("repository_profile"))
+        or _derive_profile_from_structure(_dict(summary.get("repository_structure")))
+    )
+    structure = (
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_structure_json",
+            "repository_structure.json",
+            report_dir=report_dir,
+        )
+        or _dict(summary.get("repository_structure"))
+    )
+    test_discovery = (
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_test_discovery_json",
+            "repository_test_discovery.json",
+            report_dir=report_dir,
+        )
+        or _dict(summary.get("repository_test_discovery"))
+        or _derive_test_discovery(profile, structure)
+    )
+    environment = _artifact_payload(
+        summary,
+        output_paths,
+        output_dir,
+        "repository_test_environment_json",
+        "repository_test_environment.json",
+        report_dir=report_dir,
+    ) or plan_repository_test_environment(
+        profile,
+        repository_root=_repository_checkout_root(output_dir),
+    )
+    execution_plan = _artifact_payload(
+        summary,
+        output_paths,
+        output_dir,
+        "repository_test_execution_plan_json",
+        "repository_test_execution_plan.json",
+        report_dir=report_dir,
+    ) or plan_repository_test_execution(
+        profile,
+        repository_test_environment=environment,
+        repository_root=_repository_checkout_root(output_dir),
+    )
+
+    _write_missing_artifact(
+        output_dir / "repository_profile.json",
+        output_dir / "repository_profile.md",
+        profile,
+        render_github_repository_profile_markdown(profile),
+        dry_run=dry_run,
+        written=written,
+        skipped=skipped,
+    )
+    _write_missing_artifact(
+        output_dir / "repository_structure.json",
+        output_dir / "repository_structure.md",
+        structure,
+        _render_simple_artifact_markdown("Repository Structure", structure),
+        dry_run=dry_run,
+        written=written,
+        skipped=skipped,
+    )
+    _write_missing_artifact(
+        output_dir / "repository_test_discovery.json",
+        output_dir / "repository_test_discovery.md",
+        test_discovery,
+        _render_test_discovery_markdown(test_discovery),
+        dry_run=dry_run,
+        written=written,
+        skipped=skipped,
+    )
+    if _artifact_missing(output_dir / "repository_test_environment.json") or _artifact_missing(
+        output_dir / "repository_test_environment.md"
+    ):
+        if dry_run:
+            skipped.append("repository_test_environment")
+        else:
+            paths = write_repository_test_environment_artifacts(environment, output_dir)
+            written.extend(sorted(Path(path).name for path in paths.values()))
+    else:
+        skipped.append("repository_test_environment")
+    if _artifact_missing(output_dir / "repository_test_execution_plan.json") or _artifact_missing(
+        output_dir / "repository_test_execution_plan.md"
+    ):
+        if dry_run:
+            skipped.append("repository_test_execution_plan")
+        else:
+            paths = write_repository_test_execution_plan_artifacts(
+                execution_plan,
+                output_dir,
+            )
+            written.extend(sorted(Path(path).name for path in paths.values()))
+    else:
+        skipped.append("repository_test_execution_plan")
+
+    if _artifact_missing(output_dir / "agent_policy_trace.json") or _artifact_missing(
+        output_dir / "agent_policy_trace.md"
+    ):
+        if dry_run:
+            skipped.append("agent_policy_trace")
+        else:
+            controller = _dict(summary.get("agent_controller")) or build_agent_controller_plan(
+                summary
+            )
+            paths = write_agent_controller_artifacts(controller, output_dir)
+            written.extend(
+                sorted(
+                    Path(path).name
+                    for key, path in paths.items()
+                    if key.startswith("agent_policy_trace")
+                    or key.startswith("agent_action_registry")
+                    or key.startswith("agent_controller")
+                )
+            )
+    else:
+        skipped.append("agent_policy_trace")
+
+    return {
+        "report_path": str(resolved),
+        "output_dir": str(output_dir),
+        "status": "pass",
+        "reason": "derived_artifacts_backfilled",
+        "dry_run": dry_run,
+        "written_artifacts": sorted(dict.fromkeys(written)),
+        "skipped_artifacts": sorted(dict.fromkeys(skipped)),
     }
 
 
@@ -276,18 +447,40 @@ def _build_onboarding_row(report_path: str | Path) -> dict[str, Any]:
         **_dict(payload.get("output_paths")),
         **_dict(summary.get("output_paths")),
     }
-    output_dir = Path(str(payload.get("output_dir") or summary.get("output_dir") or report_dir))
+    output_dir = _report_output_dir(payload, summary, report_dir)
     profile = (
-        _artifact_payload(summary, output_paths, output_dir, "repository_profile_json", "repository_profile.json")
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_profile_json",
+            "repository_profile.json",
+            report_dir=report_dir,
+        )
         or _dict(summary.get("repository_profile"))
         or _dict(_dict(payload.get("onboarding_report")).get("repository_profile"))
+        or _derive_profile_from_structure(_dict(summary.get("repository_structure")))
     )
     structure = (
-        _artifact_payload(summary, output_paths, output_dir, "repository_structure_json", "repository_structure.json")
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_structure_json",
+            "repository_structure.json",
+            report_dir=report_dir,
+        )
         or _dict(summary.get("repository_structure"))
     )
     test_discovery = (
-        _artifact_payload(summary, output_paths, output_dir, "repository_test_discovery_json", "repository_test_discovery.json")
+        _artifact_payload(
+            summary,
+            output_paths,
+            output_dir,
+            "repository_test_discovery_json",
+            "repository_test_discovery.json",
+            report_dir=report_dir,
+        )
         or _dict(summary.get("repository_test_discovery"))
         or _derive_test_discovery(profile, structure)
     )
@@ -297,6 +490,7 @@ def _build_onboarding_row(report_path: str | Path) -> dict[str, Any]:
         output_dir,
         "repository_test_environment_json",
         "repository_test_environment.json",
+        report_dir=report_dir,
     )
     execution_plan = _artifact_payload(
         summary,
@@ -304,6 +498,7 @@ def _build_onboarding_row(report_path: str | Path) -> dict[str, Any]:
         output_dir,
         "repository_test_execution_plan_json",
         "repository_test_execution_plan.json",
+        report_dir=report_dir,
     )
     execution_result = _artifact_payload(
         summary,
@@ -311,6 +506,7 @@ def _build_onboarding_row(report_path: str | Path) -> dict[str, Any]:
         output_dir,
         "repository_test_execution_result_json",
         "repository_test_execution_result.json",
+        report_dir=report_dir,
     )
     policy_trace = _artifact_payload(
         summary,
@@ -318,8 +514,14 @@ def _build_onboarding_row(report_path: str | Path) -> dict[str, Any]:
         output_dir,
         "agent_policy_trace_json",
         "agent_policy_trace.json",
+        report_dir=report_dir,
     )
-    artifact_status = _required_artifact_status(summary, output_paths, output_dir)
+    artifact_status = _required_artifact_status(
+        summary,
+        output_paths,
+        output_dir,
+        report_dir=report_dir,
+    )
     project_config_files = _project_config_files(profile, structure, test_discovery)
     runners = _test_runners(profile, structure, test_discovery, execution_plan)
     scenario_tags = _scenario_tags(
@@ -381,11 +583,20 @@ def _required_artifact_status(
     summary: dict[str, Any],
     output_paths: dict[str, Any],
     output_dir: Path,
+    *,
+    report_dir: Path | None = None,
 ) -> dict[str, Any]:
     artifacts: list[dict[str, Any]] = []
     missing: list[str] = []
     for artifact_id, path_key, filename in REQUIRED_ONBOARDING_ARTIFACTS:
-        path = _artifact_path(summary, output_paths, output_dir, path_key, filename)
+        path = _artifact_path(
+            summary,
+            output_paths,
+            output_dir,
+            path_key,
+            filename,
+            report_dir=report_dir,
+        )
         exists = bool(path and path.is_file() and path.stat().st_size > 0)
         row = {
             "id": artifact_id,
@@ -526,8 +737,17 @@ def _artifact_payload(
     output_dir: Path,
     path_key: str,
     filename: str,
+    *,
+    report_dir: Path | None = None,
 ) -> dict[str, Any]:
-    path = _artifact_path(summary, output_paths, output_dir, path_key, filename)
+    path = _artifact_path(
+        summary,
+        output_paths,
+        output_dir,
+        path_key,
+        filename,
+        report_dir=report_dir,
+    )
     return _read_json(path) if path else {}
 
 
@@ -537,12 +757,21 @@ def _artifact_path(
     output_dir: Path,
     path_key: str,
     filename: str,
+    *,
+    report_dir: Path | None = None,
 ) -> Path | None:
     raw = str(summary.get(path_key) or output_paths.get(path_key) or "")
-    candidates = []
+    candidates: list[Path] = []
     if raw:
-        candidates.append(Path(raw))
+        raw_path = Path(raw)
+        candidates.append(raw_path)
+        if not raw_path.is_absolute():
+            candidates.append(output_dir / raw_path)
+            if report_dir is not None:
+                candidates.append(report_dir / raw_path)
     candidates.append(output_dir / filename)
+    if report_dir is not None:
+        candidates.append(report_dir / filename)
     for candidate in candidates:
         if candidate.is_file():
             return candidate
@@ -557,6 +786,70 @@ def _resolve_report_path(path: str | Path) -> Path:
             if candidate.is_file():
                 return candidate
     return value
+
+
+def _report_output_dir(
+    payload: dict[str, Any],
+    summary: dict[str, Any],
+    report_dir: Path,
+) -> Path:
+    raw = str(payload.get("output_dir") or summary.get("output_dir") or "")
+    if not raw:
+        return report_dir
+    value = Path(raw)
+    if value.is_absolute() and value.exists():
+        return value
+    if value.exists():
+        return value
+    # Older suite outputs can store a path relative to the suite output root
+    # while the report itself lives in that directory. Prefer the report
+    # location when the recorded path is stale or no longer rooted correctly.
+    if (report_dir / "github_repo_intelligence.json").is_file() or (
+        report_dir / "github_repo_agent.json"
+    ).is_file():
+        return report_dir
+    return value
+
+
+def _repository_checkout_root(output_dir: Path) -> Path | None:
+    checkout = output_dir / "repository_checkout"
+    return checkout if checkout.is_dir() else None
+
+
+def _artifact_missing(path: Path) -> bool:
+    return not path.is_file() or path.stat().st_size <= 0
+
+
+def _write_missing_artifact(
+    json_path: Path,
+    markdown_path: Path,
+    payload: dict[str, Any],
+    markdown: str,
+    *,
+    dry_run: bool,
+    written: list[str],
+    skipped: list[str],
+) -> None:
+    if not payload:
+        skipped.append(json_path.stem)
+        return
+    missing_json = _artifact_missing(json_path)
+    missing_markdown = _artifact_missing(markdown_path)
+    if not missing_json and not missing_markdown:
+        skipped.append(json_path.stem)
+        return
+    if dry_run:
+        skipped.append(json_path.stem)
+        return
+    if missing_json:
+        json_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        written.append(json_path.name)
+    if missing_markdown:
+        markdown_path.write_text(markdown, encoding="utf-8")
+        written.append(markdown_path.name)
 
 
 def _derive_test_discovery(
@@ -593,6 +886,104 @@ def _derive_test_discovery(
             )
         ),
     }
+
+
+def _derive_profile_from_structure(structure: dict[str, Any]) -> dict[str, Any]:
+    if not structure:
+        return {}
+    package_structure = _dict(structure.get("package_structure"))
+    test_structure = _dict(structure.get("test_structure"))
+    project_config = _dict(structure.get("project_config"))
+    return {
+        "discovery_item_count": _int(structure.get("source_entry_count", 0)),
+        "imported_source_count": _int(
+            structure.get("source_entry_count", structure.get("analyzed_file_count", 0))
+        ),
+        "python_source_ratio": 1.0
+        if _int(structure.get("analyzed_file_count", 0)) > 0
+        else 0.0,
+        "test_source_count": _int(test_structure.get("test_source_count", 0)),
+        "test_source_paths": _list(test_structure.get("test_source_paths")),
+        "package_roots": _list(package_structure.get("package_roots")),
+        "src_layout_packages": _list(package_structure.get("src_layout_packages")),
+        "project_config_files": _list(project_config.get("project_config_files")),
+        "project_config_count": _int(
+            project_config.get(
+                "project_config_count",
+                len(_list(project_config.get("project_config_files"))),
+            )
+        ),
+        "test_framework_signals": _list(
+            test_structure.get("test_framework_signals")
+        ),
+        "test_command_candidates": _list(
+            test_structure.get("test_command_candidates")
+        ),
+        "test_command_candidate_count": _int(
+            test_structure.get(
+                "test_command_candidate_count",
+                len(_list(test_structure.get("test_command_candidates"))),
+            )
+        ),
+        "recommended_test_command": str(
+            test_structure.get("recommended_test_command") or ""
+        ),
+        "recommended_target_prefix": str(
+            package_structure.get("recommended_target_prefix") or ""
+        ),
+        "dependency_tool_signals": _list(project_config.get("dependency_tool_signals")),
+    }
+
+
+def _render_test_discovery_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Repository Test Discovery",
+        "",
+        f"- Status: `{_markdown_cell(payload.get('status') or 'unknown')}`",
+        f"- Reason: `{_markdown_cell(payload.get('reason') or 'none')}`",
+        f"- Blocker: `{_markdown_cell(payload.get('blocker') or 'none')}`",
+        f"- Test Sources: {_int(payload.get('test_source_count', 0))}",
+        (
+            "- Recommended Test Command: "
+            f"`{_markdown_cell(payload.get('recommended_test_command') or 'none')}`"
+        ),
+        (
+            "- Test Framework Signals: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(payload.get('test_framework_signals'))) or 'none')}"
+        ),
+        "",
+        "## Test Directories",
+        "",
+    ]
+    for value in _list(payload.get("test_directories")):
+        lines.append(f"- `{_markdown_cell(value)}`")
+    if not _list(payload.get("test_directories")):
+        lines.append("- none")
+    lines.extend(["", "## Test Command Candidates", ""])
+    candidates = _list(payload.get("test_command_candidates"))
+    for candidate_value in candidates:
+        candidate = _dict(candidate_value)
+        lines.append(
+            "- "
+            f"`{_markdown_cell(candidate.get('command') or '')}` "
+            f"runner=`{_markdown_cell(candidate.get('runner') or 'unknown')}` "
+            f"reason=`{_markdown_cell(candidate.get('reason') or 'none')}`"
+        )
+    if not candidates:
+        lines.append("- none")
+    return "\n".join(lines) + "\n"
+
+
+def _render_simple_artifact_markdown(title: str, payload: dict[str, Any]) -> str:
+    lines = [f"# {title}", "", "| Field | Value |", "| --- | --- |"]
+    for key, value in payload.items():
+        rendered = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else str(value)
+        if len(rendered) > 240:
+            rendered = rendered[:237] + "..."
+        lines.append(f"| {_markdown_cell(key)} | {_markdown_cell(rendered)} |")
+    if not payload:
+        lines.append("| none | none |")
+    return "\n".join(lines) + "\n"
 
 
 def _source_summary(profile: dict[str, Any], structure: dict[str, Any]) -> dict[str, Any]:
@@ -902,6 +1293,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", default="", help="Write matrix artifacts here.")
     parser.add_argument("--required-case-count", type=int, default=10)
     parser.add_argument(
+        "--backfill-derived-artifacts",
+        action="store_true",
+        help=(
+            "Write missing onboarding audit artifacts that can be derived from "
+            "existing repo intelligence reports before building the matrix."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run-backfill",
+        action="store_true",
+        help="Plan derived artifact backfill without writing files.",
+    )
+    parser.add_argument(
         "--format",
         choices=("json", "markdown"),
         default="json",
@@ -913,10 +1317,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> None:
     args = build_arg_parser().parse_args(argv)
+    backfill = {}
+    if args.backfill_derived_artifacts:
+        backfill = backfill_github_onboarding_artifacts(
+            [Path(item) for item in args.reports],
+            dry_run=bool(args.dry_run_backfill),
+        )
     matrix = build_github_onboarding_matrix(
         [Path(item) for item in args.reports],
         required_case_count=args.required_case_count,
     )
+    if backfill:
+        matrix["backfill"] = backfill
     if args.output_dir:
         write_github_onboarding_matrix_artifacts(matrix, args.output_dir)
     if args.format == "markdown":

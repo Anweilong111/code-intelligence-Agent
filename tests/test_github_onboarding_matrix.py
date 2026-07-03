@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from code_intelligence_agent.evaluation.github_onboarding_matrix import (
+    backfill_github_onboarding_artifacts,
     build_github_onboarding_matrix,
     render_github_onboarding_matrix_markdown,
     write_github_onboarding_matrix_artifacts,
@@ -144,6 +145,110 @@ def test_github_onboarding_matrix_marks_missing_policy_trace_incomplete(tmp_path
     assert artifact_check["passed"] is False
 
 
+def test_github_onboarding_matrix_backfills_derived_artifacts_from_legacy_report(tmp_path):
+    report_dir = tmp_path / "legacy_report"
+    report_dir.mkdir()
+    structure = _structure_payload(
+        config_files=["pyproject.toml"],
+        test_count=1,
+        runners=["pytest"],
+        src_layout_packages=["src/demo"],
+    )
+    report = {
+        "repo": "example/legacy",
+        "repo_spec": "example/legacy",
+        "output_dir": "stale/relative/path",
+        "status": "pass",
+        "passed": True,
+        "repository_structure": structure,
+        "agent_controller": {
+            "control_loop": ["observe", "plan", "act", "verify", "reflect", "replan"],
+            "selected_action": {
+                "id": "discover_repository_tests",
+                "reason": "derive test discovery from repository structure",
+            },
+            "observations": {},
+            "plan": {},
+            "verification": {},
+            "reflection": {},
+            "replan": {},
+        },
+    }
+    report_path = report_dir / "github_repo_intelligence.json"
+    _write_json(report_path, report)
+
+    backfill = backfill_github_onboarding_artifacts([report_path])
+    matrix = build_github_onboarding_matrix([report_path], required_case_count=1)
+    row = matrix["rows"][0]
+
+    assert backfill["status"] == "pass"
+    assert backfill["rows"][0]["written_artifacts"]
+    for filename in (
+        "repository_profile.json",
+        "repository_structure.json",
+        "repository_test_discovery.json",
+        "repository_test_environment.json",
+        "repository_test_execution_plan.json",
+        "agent_policy_trace.json",
+    ):
+        assert (report_dir / filename).exists()
+    assert row["missing_required_artifacts"] == []
+    assert row["policy_trace"]["present"] is True
+    assert row["output_dir"] == str(report_dir)
+
+
+def test_github_onboarding_matrix_backfill_dry_run_does_not_write_artifacts(tmp_path):
+    report_dir = tmp_path / "legacy_report"
+    report_dir.mkdir()
+    report = {
+        "repo": "example/legacy",
+        "repo_spec": "example/legacy",
+        "status": "pass",
+        "passed": True,
+        "repository_structure": _structure_payload(
+            config_files=["pyproject.toml"],
+            test_count=1,
+            runners=["pytest"],
+        ),
+    }
+    report_path = report_dir / "github_repo_intelligence.json"
+    _write_json(report_path, report)
+
+    backfill = backfill_github_onboarding_artifacts([report_path], dry_run=True)
+
+    assert backfill["status"] == "pass"
+    assert backfill["dry_run"] is True
+    assert backfill["rows"][0]["written_artifacts"] == []
+    for filename in (
+        "repository_profile.json",
+        "repository_structure.json",
+        "repository_test_discovery.json",
+        "repository_test_environment.json",
+        "repository_test_execution_plan.json",
+        "agent_policy_trace.json",
+    ):
+        assert not (report_dir / filename).exists()
+
+
+def test_github_onboarding_matrix_resolves_stale_relative_output_dir(tmp_path):
+    report = _write_case(
+        tmp_path,
+        "stale_output_dir",
+        config_files=["pyproject.toml"],
+        test_count=1,
+        runners=["pytest"],
+    )
+    payload = json.loads(Path(report).read_text(encoding="utf-8"))
+    payload["output_dir"] = "outputs/stale_output_dir"
+    _write_json(Path(report), payload)
+
+    matrix = build_github_onboarding_matrix([report], required_case_count=1)
+    row = matrix["rows"][0]
+
+    assert row["missing_required_artifacts"] == []
+    assert row["output_dir"] == str(Path(report).parent)
+
+
 def _write_case(
     root: Path,
     name: str,
@@ -275,6 +380,51 @@ def _write_case(
     }
     _write_json(case_dir / "github_repo_intelligence.json", report)
     return case_dir / "github_repo_intelligence.json"
+
+
+def _structure_payload(
+    *,
+    config_files: list[str],
+    test_count: int,
+    runners: list[str],
+    src_layout_packages: list[str] | None = None,
+) -> dict:
+    candidates = [
+        {
+            "rank": index + 1,
+            "runner": runner,
+            "command": _command_for_runner(runner),
+            "confidence": 0.9,
+            "reason": f"{runner}_signal",
+            "evidence": [runner],
+        }
+        for index, runner in enumerate(runners)
+    ]
+    test_paths = [f"tests/test_{index}.py" for index in range(test_count)]
+    return {
+        "source_entry_count": 3,
+        "analyzed_file_count": 3,
+        "package_structure": {
+            "package_roots": ["demo"],
+            "src_layout_packages": src_layout_packages or [],
+            "recommended_target_prefix": (
+                (src_layout_packages or [""])[0] if src_layout_packages else ""
+            ),
+        },
+        "project_config": {
+            "project_config_files": config_files,
+            "dependency_tool_signals": [Path(item).stem for item in config_files],
+        },
+        "test_structure": {
+            "test_source_count": test_count,
+            "test_source_paths": test_paths,
+            "test_directories": ["tests"] if test_count else [],
+            "test_framework_signals": runners,
+            "recommended_test_command": candidates[0]["command"] if candidates else "",
+            "test_command_candidates": candidates,
+            "test_command_candidate_count": len(candidates),
+        },
+    }
 
 
 def _command_for_runner(runner: str) -> str:

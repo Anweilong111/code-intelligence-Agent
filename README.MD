@@ -166,7 +166,7 @@ python -m code_intelligence_agent.evaluation.llm_repair_showcase_matrix \
 
 P6 Agent 优化已经启动：AgentController 现在会写出标准 `agent_action_registry.json/md` 与 `agent_policy_trace.json/md`。Action Registry 覆盖 `clone_or_load_repository`、`discover_tests`、`generate_llm_patch_candidates`、`run_llm_patch_reflection_loop`、`emit_blocker_report` 等 13 个核心动作；Policy Trace 会把当前 selected action 映射到 canonical action，并展开 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 六步证据。
 
-Phase 2 已开始补强真实 GitHub 仓库 onboarding 审计：系统现在会写出独立 `repository_test_discovery.json/md`，并新增 `github_onboarding_matrix.json/md` 汇总多个仓库的源码、layout、测试发现、环境诊断、执行计划、blocker 和 Agent policy trace 覆盖情况。注意：这一步目前完成的是 matrix 基础设施和本地合成测试；至少 10 个真实 GitHub 仓库的实跑矩阵仍是后续工作。阶段性审计见 `P6_AGENT_OPTIMIZATION_PROGRESS.md`。
+Phase 2 已开始补强真实 GitHub 仓库 onboarding 审计：系统现在会写出独立 `repository_test_discovery.json/md`，并新增 `github_onboarding_matrix.json/md` 汇总多个仓库的源码、layout、测试发现、环境诊断、执行计划、blocker 和 Agent policy trace 覆盖情况。矩阵工具支持 `--backfill-derived-artifacts`，可以从旧版 `github_repo_intelligence.json` / `github_repo_agent.json` 中回填可推导的审计 artifact，便于把历史真实仓库运行结果纳入统一审计。注意：这一步目前完成的是 matrix 基础设施、旧报告回填能力和本地真实报告回填验证；新的 10 仓库可复现实跑矩阵仍是后续工作。阶段性审计见 `P6_AGENT_OPTIMIZATION_PROGRESS.md`。
 
 ## 边界说明
 

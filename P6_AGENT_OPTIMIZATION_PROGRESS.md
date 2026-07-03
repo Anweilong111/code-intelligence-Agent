@@ -83,6 +83,13 @@ AgentController 每次写出 controller artifact 时，会同时写出：
 
 该 artifact 从 `repository_structure.test_structure` 和 repository profile 中抽取测试发现结果；即使仓库没有 tests，也会输出 `oracle:no_tests` blocker，而不是让信息隐含在大 JSON 里。
 
+本轮继续新增旧报告回填能力：
+
+- CLI 参数：`--backfill-derived-artifacts`
+- Dry-run 参数：`--dry-run-backfill`
+- 能力：从已有 `github_repo_intelligence.json` / `github_repo_agent.json` 中推导并补齐缺失的 `repository_profile`、`repository_structure`、`repository_test_discovery`、`repository_test_environment`、`repository_test_execution_plan` 和 `agent_policy_trace` artifact。
+- 路径兼容：当旧报告中记录的相对 `output_dir` 已失效时，matrix 会回退到 report 所在目录查找 artifact，避免把历史输出误判为缺失。
+
 当前 matrix 已支持检查 P6 Phase 2 要求的 10 类场景：
 
 - 普通 pytest 项目
@@ -96,7 +103,7 @@ AgentController 每次写出 controller artifact 时，会同时写出：
 - 测试超时项目
 - 可产生 failing test evidence 的项目
 
-注意：当前完成的是 matrix 基础设施和本地合成测试。至少 10 个真实 GitHub 仓库的实跑矩阵还未完成。
+注意：当前完成的是 matrix 基础设施、旧报告回填能力、本地合成测试，以及对既有 10 个真实仓库报告的本地回填验证。该回填验证使用 ignored 的 `outputs_smoke/` 历史输出，不会作为仓库交付物提交；新的 10 仓库可复现实跑矩阵仍是后续工作。
 
 ## 当前示例 artifact
 
@@ -132,19 +139,21 @@ LLM controller selected action 示例：
 ```bash
 python -m pytest tests/test_agent_controller.py -q
 python -m pytest tests/test_github_onboarding_matrix.py tests/test_github_repo_intelligence.py::test_artifact_inventory_flags_missing_current_stage_required_artifacts tests/test_github_repo_intelligence.py::test_artifact_inventory_requires_failure_overlay_artifacts_when_attempted -q
+python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill-derived-artifacts --output-dir outputs_smoke/p6_onboarding_matrix_real_existing_backfilled <10 existing report paths>
 ```
 
 当前结果：
 
 - `tests/test_agent_controller.py`：`32 passed`
-- Phase 2 matrix / artifact inventory 定向测试：`4 passed`
+- Phase 2 matrix / artifact inventory 定向测试：`5 passed`
+- 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
 ## 后续未完成项
 
 P6 仍未完成，后续应继续推进：
 
-1. Phase 2：跑至少 10 个真实 GitHub 仓库，生成真实 `github_onboarding_matrix.json/md`。
-2. Phase 2：确保每个真实仓库都输出 `repository_profile`、`repository_structure`、`repository_test_discovery`、`repository_test_environment`、`repository_test_execution_plan`、`agent_policy_trace`。
+1. Phase 2：重新跑至少 10 个真实 GitHub 仓库，生成可复现的真实 `github_onboarding_matrix.json/md`，而不是只依赖历史输出回填。
+2. Phase 2：确保每个新跑真实仓库都输出 `repository_profile`、`repository_structure`、`repository_test_discovery`、`repository_test_environment`、`repository_test_execution_plan`、`agent_policy_trace`。
 3. Phase 3：LLM patch multi-candidate，一次生成 3-5 个候选，并展示非第一个候选成功的 case。
 4. Phase 4：Reflection strategy 深化，覆盖 test failure、safety blocked、reflection 后仍失败 blocker。
 5. Phase 5：LLM judge 校准报告，指标化 judge-sandbox agreement。
