@@ -28,6 +28,7 @@ class LLMPatchGenerator:
     def __init__(self, client: LLMClient, top_k_functions: int = 5) -> None:
         self.client = client
         self.top_k_functions = top_k_functions
+        self.last_generation_audit: list[dict] = []
 
     def generate(
         self,
@@ -37,10 +38,16 @@ class LLMPatchGenerator:
         limit: int = 1,
         repair_context: dict | None = None,
     ) -> list[PatchCandidate]:
+        self.last_generation_audit = []
         function_map = {function.id: function for function in functions}
         candidates: list[PatchCandidate] = []
         top_k = max(1, self.top_k_functions)
+        ranked_context = _top_k_context(ranked[:top_k], function_map)
         for result in ranked[:top_k]:
+            remaining = max(0, limit - len(candidates))
+            if remaining <= 0:
+                break
+            requested_count = min(remaining, 5)
             function = function_map.get(result.function_id)
             if function is None:
                 continue
@@ -48,50 +55,88 @@ class LLMPatchGenerator:
                 function,
                 result,
                 top_k_functions=top_k,
+                candidate_count=requested_count,
                 repair_context=repair_context,
+                top_k_context=ranked_context,
             )
+            prompt_payload = _json_prompt_payload(prompt)
+            prompt_context_audit = _prompt_context_audit(prompt_payload)
             response = self.client.complete(prompt)
-            fixed_source = parse_fixed_source(response.text)
-            if not fixed_source or fixed_source == function.source:
-                continue
+            fixed_sources = parse_fixed_sources(response.text)
+            response_parse = _response_parse_audit(response.text, fixed_sources)
+            attempt_audit = {
+                "target_function_id": function.id,
+                "target_function_name": function.metadata.get(
+                    "qualified_name", function.name
+                ),
+                "suspicious_rank": result.rank,
+                "requested_candidate_count": requested_count,
+                "parsed_candidate_count": len(fixed_sources),
+                "prompt_context_audit": prompt_context_audit,
+                "response_parse": response_parse,
+                "accepted_candidate_count": 0,
+                "rejected_candidate_count": 0,
+                "rejection_counts": {},
+            }
+            if not fixed_sources:
+                _record_rejection(attempt_audit, response_parse["status"])
             rule_ids = [finding.rule_id for finding in result.findings]
-            validation = validate_function_patch(
-                function.source,
-                fixed_source,
-                allow_signature_change=allow_signature_change_for_rules(rule_ids),
-            )
-            if not validation.valid:
-                continue
-            relative = _relative_file(repo_path, function.file_path)
-            diff = render_unified_diff(function.source, fixed_source, relative)
-            candidates.append(
-                PatchCandidate(
-                    id=f"{function.id}::llm::{len(candidates)}",
-                    target_file=function.file_path,
-                    relative_file_path=relative,
-                    target_function_id=function.id,
-                    target_function_name=function.metadata.get(
-                        "qualified_name", function.name
-                    ),
-                    rule_id="llm_patch",
-                    description="LLM-generated patch candidate.",
-                    old_source=function.source,
-                    new_source=fixed_source,
-                    diff=diff,
-                    metadata={
-                        "generator": "llm",
-                        "localization_score": result.score,
-                        "suspicious_rank": result.rank,
-                        "suspicious_top_k": top_k,
-                        "constraint": "top_k_suspicious_minimal_diff",
-                        "static_rule_ids": rule_ids,
-                        "validation": validation.to_dict(),
-                        "llm_metadata": response.metadata,
-                    },
+            for llm_candidate_index, fixed_source in enumerate(fixed_sources):
+                if len(candidates) >= limit:
+                    _record_rejection(attempt_audit, "candidate_limit_reached")
+                    break
+                if not fixed_source:
+                    _record_rejection(attempt_audit, "empty_fixed_source")
+                    continue
+                if fixed_source == function.source:
+                    _record_rejection(attempt_audit, "unchanged_source")
+                    continue
+                validation = validate_function_patch(
+                    function.source,
+                    fixed_source,
+                    allow_signature_change=allow_signature_change_for_rules(rule_ids),
                 )
-            )
-            if len(candidates) >= limit:
-                break
+                if not validation.valid:
+                    reasons = validation.reasons or ["invalid_patch"]
+                    for reason in reasons:
+                        _record_rejection(attempt_audit, str(reason))
+                    continue
+                relative = _relative_file(repo_path, function.file_path)
+                diff = render_unified_diff(function.source, fixed_source, relative)
+                candidate_id = f"{function.id}::llm::{len(candidates)}"
+                candidates.append(
+                    PatchCandidate(
+                        id=candidate_id,
+                        target_file=function.file_path,
+                        relative_file_path=relative,
+                        target_function_id=function.id,
+                        target_function_name=function.metadata.get(
+                            "qualified_name", function.name
+                        ),
+                        rule_id="llm_patch",
+                        description="LLM-generated patch candidate.",
+                        old_source=function.source,
+                        new_source=fixed_source,
+                        diff=diff,
+                        metadata={
+                            "generator": "llm",
+                            "candidate_id": candidate_id,
+                            "llm_candidate_index": llm_candidate_index,
+                            "llm_candidate_count_requested": requested_count,
+                            "localization_score": result.score,
+                            "suspicious_rank": result.rank,
+                            "suspicious_top_k": top_k,
+                            "constraint": "top_k_suspicious_minimal_diff",
+                            "static_rule_ids": rule_ids,
+                            "prompt_context_audit": prompt_context_audit,
+                            "response_parse": response_parse,
+                            "validation": validation.to_dict(),
+                            "llm_metadata": response.metadata,
+                        },
+                    )
+                )
+                attempt_audit["accepted_candidate_count"] += 1
+            self.last_generation_audit.append(attempt_audit)
         return candidates
 
     def refine(
@@ -210,8 +255,11 @@ def build_patch_prompt(
     function: CodeEntity,
     result: FaultLocalizationResult,
     top_k_functions: int = 5,
+    candidate_count: int = 1,
     repair_context: dict | None = None,
+    top_k_context: list[dict] | None = None,
 ) -> str:
+    candidate_count = max(1, candidate_count)
     findings = [
         {
             "rule_id": finding.rule_id,
@@ -222,8 +270,17 @@ def build_patch_prompt(
         }
         for finding in result.findings
     ]
+    dynamic_oracle = _dict(repair_context)
     payload = {
-        "task": "Return a minimal corrected version of fixed_source for this function.",
+        "task": (
+            "Return a minimal corrected version of fixed_source for this function."
+            if candidate_count == 1
+            else (
+                "Return up to "
+                f"{candidate_count} distinct minimal fixed_source alternatives "
+                "for this function."
+            )
+        ),
         "constraints": [
             "Return only JSON.",
             "Do not include markdown.",
@@ -257,6 +314,17 @@ def build_patch_prompt(
                 f"{top_k_functions} suspicious functions."
             ),
         ],
+        "candidate_count": candidate_count,
+        "top_k_suspicious_functions": top_k_context or [
+            {
+                "rank": result.rank,
+                "function_id": result.function_id,
+                "function_name": result.function_name,
+                "file_path": result.file_path,
+                "score": result.score,
+                "reason": result.reason,
+            }
+        ],
         "function": {
             "id": function.id,
             "name": function.metadata.get("qualified_name", function.name),
@@ -272,11 +340,25 @@ def build_patch_prompt(
             "reason": result.reason,
             "findings": findings,
         },
-        "required_schema": {"fixed_source": "string"},
+        "failing_test_nodeids": _failing_test_nodeids(dynamic_oracle),
+        "failure_evidence": _failure_evidence(dynamic_oracle),
+        "public_api_evidence": _public_api_evidence(dynamic_oracle),
+        "call_graph_context": _call_graph_context(dynamic_oracle),
+        "previous_failed_patch_fingerprints": _previous_failed_patch_fingerprints(
+            dynamic_oracle
+        ),
+        "required_schema": (
+            {"fixed_source": "string"}
+            if candidate_count == 1
+            else {"fixed_sources": ["string"]}
+        ),
     }
-    dynamic_oracle = _dict(repair_context)
     if dynamic_oracle:
         payload["dynamic_oracle"] = dynamic_oracle
+    if candidate_count > 1:
+        payload["constraints"].append(
+            "Return distinct alternatives ordered from most likely to pass tests."
+        )
     return json.dumps(payload, indent=2)
 
 
@@ -411,6 +493,155 @@ def _strip_code_fence(text: str) -> str:
 
 def _dict(value) -> dict:
     return value if isinstance(value, dict) else {}
+
+
+def _list(value) -> list:
+    return value if isinstance(value, list) else []
+
+
+def _int(value) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _json_prompt_payload(prompt: str) -> dict:
+    try:
+        return _dict(json.loads(prompt))
+    except json.JSONDecodeError:
+        return {}
+
+
+def _top_k_context(
+    ranked: list[FaultLocalizationResult],
+    function_map: dict[str, CodeEntity],
+) -> list[dict]:
+    rows: list[dict] = []
+    for result in ranked:
+        function = function_map.get(result.function_id)
+        rows.append(
+            {
+                "rank": result.rank,
+                "function_id": result.function_id,
+                "function_name": result.function_name,
+                "file_path": result.file_path,
+                "score": result.score,
+                "reason": result.reason,
+                "start_line": function.start_line if function else result.start_line,
+                "end_line": function.end_line if function else result.end_line,
+                "source": function.source if function else "",
+            }
+        )
+    return rows
+
+
+def _failing_test_nodeids(context: dict) -> list[str]:
+    nodeids: list[str] = []
+    for value in _dict(context.get("dynamic_evidence_nodeids")).values():
+        if str(value or "").strip():
+            nodeids.append(str(value).strip())
+    for key in ("matched_failing_tests", "unmatched_failing_tests"):
+        for item_value in _list(context.get(key)):
+            item = _dict(item_value)
+            nodeid = str(item.get("nodeid") or "").strip()
+            if nodeid:
+                nodeids.append(nodeid)
+    command = str(context.get("recommended_validation_command") or "").strip()
+    if "::" in command:
+        nodeids.append(command.split()[-1])
+    return list(dict.fromkeys(nodeids))
+
+
+def _failure_evidence(context: dict) -> dict:
+    direct = {
+        key: _truncate(str(context.get(key) or ""))
+        for key in ("stdout", "stderr", "traceback")
+        if str(context.get(key) or "")
+    }
+    execution = _dict(context.get("execution_result"))
+    for key in ("stdout", "stderr", "traceback"):
+        if key not in direct and str(execution.get(key) or ""):
+            direct[key] = _truncate(str(execution.get(key) or ""))
+    for key in ("matched_failing_tests", "unmatched_failing_tests"):
+        rows = _list(context.get(key))
+        if rows:
+            direct[key] = rows[:3]
+    return direct
+
+
+def _public_api_evidence(context: dict) -> dict:
+    direct = _dict(context.get("public_api_evidence"))
+    if direct:
+        return direct
+    overlay = _dict(context.get("overlay_case_context"))
+    return _dict(overlay.get("public_api_evidence"))
+
+
+def _call_graph_context(context: dict) -> dict:
+    for key in ("call_graph_context", "graph_context", "refinement_context"):
+        value = _dict(context.get(key))
+        if value:
+            return value
+    return {}
+
+
+def _previous_failed_patch_fingerprints(context: dict) -> list[str]:
+    for key in (
+        "previous_failed_patch_fingerprints",
+        "failed_source_fingerprints",
+        "avoid_fixed_source_fingerprints",
+    ):
+        values = [str(item) for item in _list(context.get(key)) if str(item)]
+        if values:
+            return list(dict.fromkeys(values))
+    return []
+
+
+def _prompt_context_audit(payload: dict) -> dict:
+    fields = {
+        "top_k_suspicious_functions": bool(
+            _list(payload.get("top_k_suspicious_functions"))
+        ),
+        "target_function_source": bool(
+            _dict(payload.get("function")).get("source")
+        ),
+        "failing_test_nodeid": bool(_list(payload.get("failing_test_nodeids"))),
+        "traceback_or_output_summary": bool(_dict(payload.get("failure_evidence"))),
+        "public_api_evidence": bool(_dict(payload.get("public_api_evidence"))),
+        "dynamic_oracle": bool(_dict(payload.get("dynamic_oracle"))),
+        "call_graph_context": bool(_dict(payload.get("call_graph_context"))),
+        "previous_failed_patch_fingerprint": bool(
+            _list(payload.get("previous_failed_patch_fingerprints"))
+        ),
+    }
+    return {
+        "required_fields": fields,
+        "present_count": sum(1 for value in fields.values() if value),
+        "missing_fields": [
+            key for key, value in fields.items() if not bool(value)
+        ],
+        "candidate_count_requested": _int(payload.get("candidate_count", 1)),
+        "required_schema": _dict(payload.get("required_schema")),
+    }
+
+
+def _response_parse_audit(text: str, fixed_sources: list[str]) -> dict:
+    schema = "fixed_sources" if '"fixed_sources"' in text else "fixed_source"
+    return {
+        "status": "pass" if fixed_sources else "invalid_json_or_schema",
+        "schema": schema,
+        "parsed_candidate_count": len(fixed_sources),
+    }
+
+
+def _record_rejection(attempt_audit: dict, reason: str) -> None:
+    attempt_audit["rejected_candidate_count"] = (
+        int(attempt_audit.get("rejected_candidate_count", 0)) + 1
+    )
+    counts = _dict(attempt_audit.get("rejection_counts"))
+    counts[reason] = int(counts.get(reason, 0)) + 1
+    attempt_audit["rejection_counts"] = dict(sorted(counts.items()))
 
 
 def _truncate(text: str, limit: int = 4000) -> str:

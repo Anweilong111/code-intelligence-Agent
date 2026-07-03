@@ -92,6 +92,100 @@ def test_llm_patch_generator_builds_candidate_from_fake_client():
         assert Sandbox(timeout=10).apply_patch_and_test(repo, candidates[0]).success
 
 
+def test_llm_patch_generator_accepts_multiple_candidates_from_one_response():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        repo = Path(tmp_dir)
+        source_path = repo / "sample.py"
+        source_path.write_text(
+            "def normalize(values):\n"
+            "    return values[0]\n",
+            encoding="utf-8",
+        )
+        function = _function(
+            "normalize",
+            source_path,
+            1,
+            2,
+            "def normalize(values):\n    return values[0]\n",
+        )
+        first = "def normalize(values):\n    return values[0] if values else None\n"
+        second = (
+            "def normalize(values):\n"
+            "    if not values:\n"
+            "        return None\n"
+            "    return values[0]\n"
+        )
+        client = StaticLLMClient(json.dumps({"fixed_sources": [first, second]}))
+        repair_context = {
+            "dynamic_evidence_level": "failing_tests",
+            "dynamic_evidence_nodeids": {
+                "test_empty": "tests/test_sample.py::test_empty"
+            },
+            "stdout": "F",
+            "stderr": "IndexError: list index out of range",
+            "traceback": "Traceback...",
+            "public_api_evidence": {
+                "trigger_expression": "normalize([])",
+                "public_call_args": [[]],
+            },
+            "call_graph_context": {
+                "callers": ["api.normalize_request"],
+                "callees": [],
+            },
+            "previous_failed_patch_fingerprints": ["sha256:badpatch"],
+        }
+
+        candidates = LLMPatchGenerator(client).generate(
+            repo,
+            [function],
+            [_ranked(function, rank=1)],
+            limit=2,
+            repair_context=repair_context,
+        )
+
+        assert len(candidates) == 2
+        assert len(client.prompts) == 1
+        prompt_payload = json.loads(client.prompts[0])
+        assert prompt_payload["candidate_count"] == 2
+        assert "fixed_sources" in prompt_payload["required_schema"]
+        assert prompt_payload["failing_test_nodeids"] == [
+            "tests/test_sample.py::test_empty"
+        ]
+        assert prompt_payload["failure_evidence"]["stderr"].startswith("IndexError")
+        assert prompt_payload["public_api_evidence"]["trigger_expression"] == (
+            "normalize([])"
+        )
+        assert prompt_payload["call_graph_context"]["callers"] == [
+            "api.normalize_request"
+        ]
+        assert prompt_payload["previous_failed_patch_fingerprints"] == [
+            "sha256:badpatch"
+        ]
+        assert candidates[0].id != candidates[1].id
+        assert candidates[0].metadata["generator"] == "llm"
+        assert candidates[0].metadata["candidate_id"] == candidates[0].id
+        assert candidates[0].metadata["llm_candidate_index"] == 0
+        assert candidates[1].metadata["llm_candidate_index"] == 1
+        assert candidates[1].metadata["llm_candidate_count_requested"] == 2
+        assert candidates[0].metadata["response_parse"] == {
+            "status": "pass",
+            "schema": "fixed_sources",
+            "parsed_candidate_count": 2,
+        }
+        audit = candidates[0].metadata["prompt_context_audit"]
+        assert audit["required_fields"] == {
+            "top_k_suspicious_functions": True,
+            "target_function_source": True,
+            "failing_test_nodeid": True,
+            "traceback_or_output_summary": True,
+            "public_api_evidence": True,
+            "dynamic_oracle": True,
+            "call_graph_context": True,
+            "previous_failed_patch_fingerprint": True,
+        }
+        assert audit["missing_fields"] == []
+
+
 def test_llm_patch_prompt_marks_overlay_expected_exception_as_legacy_failure():
     source_path = Path("sample.py")
     function = _function(

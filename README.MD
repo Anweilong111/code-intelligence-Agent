@@ -168,6 +168,8 @@ P6 Agent 优化已经启动：AgentController 现在会写出标准 `agent_actio
 
 Phase 2 已开始补强真实 GitHub 仓库 onboarding 审计：系统现在会写出独立 `repository_test_discovery.json/md`，并新增 `github_onboarding_matrix.json/md` 汇总多个仓库的源码、layout、测试发现、环境诊断、执行计划、blocker 和 Agent policy trace 覆盖情况。矩阵工具支持 `--backfill-derived-artifacts`，可以从旧版 `github_repo_intelligence.json` / `github_repo_agent.json` 中回填可推导的审计 artifact，便于把历史真实仓库运行结果纳入统一审计。注意：这一步目前完成的是 matrix 基础设施、旧报告回填能力和本地真实报告回填验证；新的 10 仓库可复现实跑矩阵仍是后续工作。阶段性审计见 `P6_AGENT_OPTIMIZATION_PROGRESS.md`。
 
+Phase 3 的 LLM patch 多候选链路也已补强：`LLMPatchGenerator` 现在支持一次响应返回多个 `fixed_sources`，每个候选都会记录 `candidate_id`、LLM candidate index、target function、diff、JSON parse 结果、prompt context audit、AST/scope/signature validation 和 safety gate 结果；`repository_test_patch_candidates.json/md` 会提升 `llm_generation_audit`，展示每次 LLM 调用请求了几个候选、解析出几个、接受/拒绝几个，以及缺失哪些 prompt 上下文字段。
+
 Phase 6 的 LLM repair 评估层也开始补齐：`llm_repair_showcase_matrix` 现在除旧版 `llm_repair_showcase_matrix.json/md` 外，还会写出 P6 命名的 `llm_repair_evaluation_matrix.json/md` 与 `llm_repair_metrics_report.json/md`，集中汇总 LLM direct success、reflection success、blocker case、Patch Success@1/@3/@5、sandbox pass rate、safety gate block rate、judge-sandbox agreement、平均运行时间、LLM token/cost 统计和每个 case 的 Agent loop trace。完整 P6 目标仍要求后续补足 20 个 repair/evaluation case、5 个 direct success、3 个 reflection success 和 5 个 blocker case。
 
 ## 边界说明

@@ -191,6 +191,16 @@ def test_repository_test_patch_candidates_hybrid_adds_llm_candidates(
     assert payload["generator_counts"] == {"rule": 2, "llm": 1}
     assert payload["llm_generation_status"] == "pass"
     assert payload["llm_generation_reason"] == "llm_patch_candidates_generated"
+    assert len(payload["llm_generation_audit"]) == 1
+    assert payload["llm_generation_audit"][0]["requested_candidate_count"] == 1
+    assert payload["llm_generation_audit"][0]["parsed_candidate_count"] == 1
+    assert payload["llm_generation_audit"][0]["accepted_candidate_count"] == 1
+    assert (
+        payload["llm_generation_audit"][0]["prompt_context_audit"][
+            "required_fields"
+        ]["failing_test_nodeid"]
+        is True
+    )
     assert payload["llm_repair_context"]["dynamic_evidence_level"] == (
         "failing_tests"
     )
@@ -218,8 +228,13 @@ def test_repository_test_patch_candidates_hybrid_adds_llm_candidates(
     assert len(llm_candidates) == 1
     assert llm_candidates[0]["metadata"]["validation"]["valid"] is True
     assert llm_candidates[0]["metadata"]["safety_gate"]["status"] == "pass"
+    assert llm_candidates[0]["metadata"]["response_parse"]["status"] == "pass"
+    assert llm_candidates[0]["metadata"]["prompt_context_audit"][
+        "candidate_count_requested"
+    ] == 1
     assert "Patch Generation Mode: `hybrid`" in markdown
     assert "llm=1" in markdown
+    assert "LLM Generation Audit" in markdown
 
 
 def test_repository_test_patch_candidates_llm_mode_blocks_without_api_key(

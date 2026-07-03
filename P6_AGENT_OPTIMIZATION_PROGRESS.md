@@ -123,6 +123,24 @@ LLM controller selected action 示例：
 - `outputs_smoke/repo_intelligence_hybrid_no_key_showcase/thealgorithms_gronsfeld_hybrid_no_key/agent_action_registry.json`
 - `outputs_smoke/repo_intelligence_hybrid_no_key_showcase/thealgorithms_gronsfeld_hybrid_no_key/agent_policy_trace.json`
 
+### Phase 3：LLM Patch 多候选与 Prompt Audit
+
+本轮新增：
+
+- `LLMPatchGenerator.generate()` 支持一次 LLM 响应返回多个 `fixed_sources`。
+- `build_patch_prompt()` 增加 `candidate_count`、`top_k_suspicious_functions`、`failing_test_nodeids`、`failure_evidence`、`public_api_evidence`、`call_graph_context` 和 `previous_failed_patch_fingerprints` 字段。
+- 每个 LLM patch candidate metadata 记录：
+  - `candidate_id`
+  - `llm_candidate_index`
+  - `llm_candidate_count_requested`
+  - `prompt_context_audit`
+  - `response_parse`
+  - `validation`
+  - `safety_gate`
+- `repository_test_patch_candidates.json/md` 增加 `llm_generation_audit`，记录每次 LLM 调用的 requested / parsed / accepted / rejected candidate 数量和 prompt context 缺口。
+
+注意：当前补强的是多候选生成、prompt 审计和 artifact 记录能力；后续仍需要用真实 DeepSeek/兼容 LLM 在多 case 中跑出“非第一个 LLM candidate 成功”的 sandbox 证据。
+
 ### Phase 6：LLM Repair Evaluation Matrix 基础设施
 
 本轮新增 P6 命名评估 artifact：
@@ -163,6 +181,7 @@ LLM controller selected action 示例：
 ```bash
 python -m pytest tests/test_agent_controller.py -q
 python -m pytest tests/test_github_onboarding_matrix.py tests/test_github_repo_intelligence.py::test_artifact_inventory_flags_missing_current_stage_required_artifacts tests/test_github_repo_intelligence.py::test_artifact_inventory_requires_failure_overlay_artifacts_when_attempted -q
+python -m pytest tests/test_llm_patch_generator.py tests/test_repository_test_patch_candidates.py -q
 python -m pytest tests/test_llm_repair_showcase_matrix.py tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner tests/test_github_repo_intelligence_suite.py::test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed -q
 python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill-derived-artifacts --output-dir outputs_smoke/p6_onboarding_matrix_real_existing_backfilled <10 existing report paths>
 ```
@@ -171,6 +190,7 @@ python -m code_intelligence_agent.evaluation.github_onboarding_matrix --backfill
 
 - `tests/test_agent_controller.py`：`32 passed`
 - Phase 2 matrix / artifact inventory 定向测试：`5 passed`
+- Phase 3 LLM patch generator / candidate artifact 定向测试：`19 passed`
 - Phase 6 LLM repair matrix / suite integration 定向测试：`6 passed`
 - 旧报告回填验证：`backfill_status=pass`、`matrix_status=pass`、`case_count=10`
 
@@ -180,7 +200,7 @@ P6 仍未完成，后续应继续推进：
 
 1. Phase 2：重新跑至少 10 个真实 GitHub 仓库，生成可复现的真实 `github_onboarding_matrix.json/md`，而不是只依赖历史输出回填。
 2. Phase 2：确保每个新跑真实仓库都输出 `repository_profile`、`repository_structure`、`repository_test_discovery`、`repository_test_environment`、`repository_test_execution_plan`、`agent_policy_trace`。
-3. Phase 3：LLM patch multi-candidate，一次生成 3-5 个候选，并展示非第一个候选成功的 case。
+3. Phase 3：用真实 DeepSeek/兼容 LLM 跑出 3-5 个候选的多 case 证据，并展示非第一个候选成功的 sandbox case。
 4. Phase 4：Reflection strategy 深化，覆盖 test failure、safety blocked、reflection 后仍失败 blocker。
 5. Phase 5：LLM judge 校准报告，指标化 judge-sandbox agreement。
 6. Phase 6：扩展到 20 个 repair/evaluation case，并用 `llm_repair_evaluation_matrix.json/md` 与 `llm_repair_metrics_report.json/md` 验证 5 个 direct success、3 个 reflection success、5 个 blocker case。

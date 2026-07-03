@@ -139,6 +139,7 @@ def build_repository_test_patch_candidates(
         "candidate_variant_filter": generation["candidate_variant_filter"],
         "llm_generation_status": generation["llm_generation_status"],
         "llm_generation_reason": generation["llm_generation_reason"],
+        "llm_generation_audit": generation["llm_generation_audit"],
         "llm_config_audit": generation["llm_config_audit"],
         "generation_errors": generation["generation_errors"],
         "safety_gate": safety_gate,
@@ -242,6 +243,7 @@ def _generate_candidates(
     llm_audit = llm_config_audit("patch_generation", enabled=mode in {"llm", "hybrid"})
     llm_status = "disabled" if mode == "rule" else "not_run"
     llm_reason = "patch_generation_mode_rule" if mode == "rule" else ""
+    llm_generation_audit: list[dict[str, Any]] = []
 
     if mode in {"rule", "hybrid"} and candidate_limit > 0:
         try:
@@ -286,6 +288,9 @@ def _generate_candidates(
                     limit=remaining,
                     repair_context=repair_context,
                 )
+                llm_generation_audit = list(
+                    getattr(active_llm_generator, "last_generation_audit", [])
+                )
                 candidates.extend(llm_candidates)
                 generator_counts["llm"] = len(llm_candidates)
                 llm_status = "pass" if llm_candidates else "warning"
@@ -321,6 +326,7 @@ def _generate_candidates(
         "candidate_variant_filter": variant_filter,
         "llm_generation_status": llm_status,
         "llm_generation_reason": llm_reason,
+        "llm_generation_audit": llm_generation_audit,
         "llm_config_audit": llm_audit.to_dict(),
         "generation_errors": generation_errors,
     }
@@ -627,6 +633,29 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
         lines.append(f"- `{_markdown_cell(rule)}`: {_int(count)}")
     if not rule_counts:
         lines.append("- none")
+    lines.extend(["", "## LLM Generation Audit", ""])
+    llm_generation_audit = _list(payload.get("llm_generation_audit"))
+    if llm_generation_audit:
+        lines.extend(
+            [
+                "| Target | Requested | Parsed | Accepted | Rejected | Missing Prompt Context |",
+                "| --- | ---: | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for item_value in llm_generation_audit:
+            item = _dict(item_value)
+            prompt_audit = _dict(item.get("prompt_context_audit"))
+            lines.append(
+                "| "
+                f"`{_markdown_cell(item.get('target_function_name') or item.get('target_function_id') or '')}` | "
+                f"{_int(item.get('requested_candidate_count', 0))} | "
+                f"{_int(item.get('parsed_candidate_count', 0))} | "
+                f"{_int(item.get('accepted_candidate_count', 0))} | "
+                f"{_int(item.get('rejected_candidate_count', 0))} | "
+                f"`{_markdown_cell(_format_list(_list(prompt_audit.get('missing_fields'))))}` |"
+            )
+    else:
+        lines.append("- none")
     lines.extend(["", "## Next Actions", ""])
     for action in _list(payload.get("next_actions")):
         lines.append(f"- {_markdown_cell(action)}")
@@ -797,6 +826,7 @@ def _skipped(
         "llm_generation_reason": (
             reason if llm_enabled else "patch_generation_mode_rule"
         ),
+        "llm_generation_audit": [],
         "llm_candidate_limit": llm_candidate_limit,
         "llm_config_audit": llm_config_audit(
             "patch_generation",
