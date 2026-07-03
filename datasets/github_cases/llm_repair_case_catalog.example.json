@@ -1,0 +1,142 @@
+{
+  "name": "p6_llm_repair_case_catalog",
+  "description": "Declared P6 repair/evaluation catalog. Run the catalog audit against a real llm_repair_evaluation_matrix.json before using it as evidence.",
+  "matrix_path": "../../outputs_smoke/p6_llm_repair/llm_repair_evaluation_matrix.json",
+  "source_reports": [
+    "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+  ],
+  "cases": [
+    {
+      "case_id": "direct_guard_0",
+      "repo": "controlled/direct_guard_0",
+      "expected_class": "llm_direct_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "direct_guard_1",
+      "repo": "controlled/direct_guard_1",
+      "expected_class": "llm_direct_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "direct_guard_2",
+      "repo": "controlled/direct_guard_2",
+      "expected_class": "llm_direct_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "direct_guard_3",
+      "repo": "controlled/direct_guard_3",
+      "expected_class": "llm_direct_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "direct_guard_4",
+      "repo": "controlled/direct_guard_4",
+      "expected_class": "llm_direct_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "reflection_guard_0",
+      "repo": "controlled/reflection_guard_0",
+      "expected_class": "llm_reflection_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "reflection_guard_1",
+      "repo": "controlled/reflection_guard_1",
+      "expected_class": "llm_reflection_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "reflection_guard_2",
+      "repo": "controlled/reflection_guard_2",
+      "expected_class": "llm_reflection_success",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "llm_failed_blocker_0",
+      "repo": "controlled/llm_failed_blocker_0",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "llm_failed_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "llm_failed_blocker_1",
+      "repo": "controlled/llm_failed_blocker_1",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "llm_failed_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "llm_failed_blocker_2",
+      "repo": "controlled/llm_failed_blocker_2",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "llm_failed_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "environment_blocker_0",
+      "repo": "controlled/environment_blocker_0",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "environment_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "environment_blocker_1",
+      "repo": "controlled/environment_blocker_1",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "environment_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "environment_blocker_2",
+      "repo": "controlled/environment_blocker_2",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "environment_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "no_test_oracle_blocker_0",
+      "repo": "controlled/no_test_oracle_blocker_0",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "no_test_oracle_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "no_test_oracle_blocker_1",
+      "repo": "controlled/no_test_oracle_blocker_1",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "no_test_oracle_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "no_test_oracle_blocker_2",
+      "repo": "controlled/no_test_oracle_blocker_2",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "no_test_oracle_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "safety_gate_blocker_0",
+      "repo": "controlled/safety_gate_blocker_0",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "safety_gate_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "safety_gate_blocker_1",
+      "repo": "controlled/safety_gate_blocker_1",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "safety_gate_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    },
+    {
+      "case_id": "safety_gate_blocker_2",
+      "repo": "controlled/safety_gate_blocker_2",
+      "expected_class": "llm_blocker",
+      "expected_blocker_category": "safety_gate_blocker",
+      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+    }
+  ]
+}
