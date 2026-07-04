@@ -28,15 +28,15 @@
     "max_command_failed_count": 0,
     "max_expectation_failed_count": 0,
     "max_metric_check_failed_count": 0,
-    "min_run_count": 3,
-    "min_llm_repair_showcase_matrix_direct_success_count": 3,
-    "min_repository_patch_generator_llm_candidate_count": 3,
-    "min_repository_test_patch_validation_success_count": 3,
-    "min_repository_test_patch_judge_candidate_count": 3,
-    "min_repository_test_patch_judge_accept_success_count": 3,
-    "min_agent_controller_loop_complete_count": 3,
-    "min_agent_decision_timeline_complete_count": 3,
-    "min_agent_answer_coverage_complete_count": 3
+    "min_run_count": 5,
+    "min_llm_repair_showcase_matrix_direct_success_count": 5,
+    "min_repository_patch_generator_llm_candidate_count": 5,
+    "min_repository_test_patch_validation_success_count": 5,
+    "min_repository_test_patch_judge_candidate_count": 5,
+    "min_repository_test_patch_judge_accept_success_count": 5,
+    "min_agent_controller_loop_complete_count": 5,
+    "min_agent_decision_timeline_complete_count": 5,
+    "min_agent_answer_coverage_complete_count": 5
   },
   "runs": [
     {
@@ -139,6 +139,80 @@
       "expected_patch_judge_mode": "llm",
       "expected_patch_judge_status": "ready",
       "expected_repair_validation_scope": "narrow_and_regression",
+      "metric_thresholds": {
+        "repository_patch_generator_llm_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_judge_candidate_count": 1,
+        "repository_test_patch_judge_accept_success_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 3
+      }
+    },
+    {
+      "name": "direct_guard_3",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "machine_learning/linear_regression.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "llm_direct_success",
+        "real_llm_required",
+        "llm_patch_generation",
+        "patch_judge_llm",
+        "sandbox_patch_validation"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "llm",
+      "expected_llm_patch_generation_status": "pass",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_patch_judge_mode": "llm",
+      "expected_patch_judge_status": "ready",
+      "expected_repair_validation_scope": "narrow_and_unchanged_regression_baseline",
+      "metric_thresholds": {
+        "repository_patch_generator_llm_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_judge_candidate_count": 1,
+        "repository_test_patch_judge_accept_success_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 3
+      }
+    },
+    {
+      "name": "direct_guard_4",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "scheduling/first_come_first_served.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "llm_direct_success",
+        "real_llm_required",
+        "llm_patch_generation",
+        "patch_judge_llm",
+        "sandbox_patch_validation"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "llm",
+      "expected_llm_patch_generation_status": "pass",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_patch_judge_mode": "llm",
+      "expected_patch_judge_status": "ready",
+      "expected_repair_validation_scope": "narrow_and_unchanged_regression_baseline",
       "metric_thresholds": {
         "repository_patch_generator_llm_count": 1,
         "repository_test_patch_candidate_count": 1,
