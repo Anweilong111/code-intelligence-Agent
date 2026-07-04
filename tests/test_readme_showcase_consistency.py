@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from code_intelligence_agent.evaluation.readme_showcase_sync import (
+    METRIC_LABELS,
     extract_readme_showcase_metrics,
     readme_showcase_mismatches,
     showcase_overview_metrics,
@@ -20,120 +21,100 @@ SHOWCASE = (
     / "experiment_suite_62case_showcase_final"
     / "showcase_report.json"
 )
-RESUME_SHOWCASE = (
+P6_ROOT = (
     ROOT
     / "outputs_smoke"
-    / "experiment_suite_62case_showcase_final"
-    / "resume_showcase.md"
+    / "repo_intelligence_p6_onboarding_readiness_cached2_current"
 )
 
 
-def test_readme_project_overview_matches_showcase_artifact():
+def test_readme_p6_summary_matches_current_artifacts():
     readme = README.read_text(encoding="utf-8")
-    showcase = json.loads(SHOWCASE.read_text(encoding="utf-8"))
-    metrics = extract_readme_showcase_metrics(readme)
-    expected = showcase_overview_metrics(showcase)
+    onboarding = json.loads(
+        (P6_ROOT / "github_onboarding_matrix.json").read_text(encoding="utf-8")
+    )
+    repair = json.loads(
+        (P6_ROOT / "llm_repair_evaluation_matrix.json").read_text(encoding="utf-8")
+    )
+    catalog = json.loads(
+        (P6_ROOT / "llm_repair_case_catalog_audit.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    audit = json.loads(
+        (P6_ROOT / "p6_readiness_audit.json").read_text(encoding="utf-8")
+    )
+    audit_summary = audit["summary"]
+    repair_metrics = repair["metrics_report"]
+    catalog_summary = catalog["summary"]
 
-    assert metrics == expected
-    assert expected["Program Slice Cases"] == "62"
-    assert expected["Slice-grounded Cases"] == "62"
-    assert expected["Average Top-1 Slice Support"] == "0.9839"
-    assert expected["Generated Diversity-Assisted Successes"] == "1"
-    assert expected["Generated Diversity Success Lift"] == "3.0000"
-    assert expected["Generated Diversity Success Bonus"] == "0.5900"
+    assert audit["status"] == "pass"
+    assert repair["status"] == "pass"
+    assert catalog["status"] == "pass"
+    assert onboarding["status"] == "pass"
+    assert (
+        f"| P6 readiness checks | "
+        f"{audit_summary['passed_check_count']}/{audit_summary['check_count']} pass |"
+        in readme
+    )
+    assert f"| Real GitHub onboarding cases | {onboarding['case_count']} |" in readme
+    assert (
+        f"| Onboarding matrix checks | "
+        f"{onboarding['passed_check_count']}/{onboarding['check_count']} pass |"
+        in readme
+    )
+    assert f"| Repair/evaluation cases | {repair['case_count']} |" in readme
+    assert (
+        f"| LLM direct success cases | "
+        f"{repair_metrics['llm_direct_success_count']} |"
+        in readme
+    )
+    assert (
+        f"| LLM reflection success cases | "
+        f"{repair_metrics['llm_reflection_success_count']} |"
+        in readme
+    )
+    assert (
+        f"| LLM blocker cases | {repair_metrics['llm_blocker_count']} |"
+        in readme
+    )
+    assert (
+        f"| Reflection evidence complete | "
+        f"{repair_metrics['llm_reflection_evidence_complete_count']} |"
+        in readme
+    )
+    assert (
+        f"| Declared catalog cases matched | "
+        f"{catalog_summary['matched_case_count']}/"
+        f"{catalog_summary['declared_case_count']} |"
+        in readme
+    )
 
 
-def test_readme_project_overview_artifact_links_exist():
+def test_readme_links_public_materials_and_states_boundaries():
     readme = README.read_text(encoding="utf-8")
+
     for relative_path in [
-        "outputs_smoke/experiment_suite_62case_showcase_final/suite.json",
-        "outputs_smoke/experiment_suite_62case_showcase_final/suite.md",
-        "outputs_smoke/experiment_suite_62case_showcase_final/showcase_report.json",
-        "outputs_smoke/experiment_suite_62case_showcase_final/showcase_report.md",
-        "outputs_smoke/experiment_suite_62case_showcase_final/resume_showcase.md",
+        "RESUME_AGENT_PROJECT.md",
+        "INTERVIEW_QA_AGENT_PROJECT.md",
+        "docs/showcase/github_release_guide.md",
+        "docs/examples/README.md",
     ]:
-        assert f"`{relative_path}`" in readme
+        assert f"]({relative_path})" in readme
         assert (ROOT / relative_path).exists()
 
-    resume = RESUME_SHOWCASE.read_text(encoding="utf-8")
-    assert "# Code Intelligence Agent Resume Showcase" in resume
-    assert "## Key Metrics" in resume
-    assert "## Ablation-Linked Hard Cases" in resume
+    assert "sandbox_pytest_decides_success" in readme
+    assert "LLM judge 可以参与候选排序" in readme
+    assert "不承诺" in readme
+    assert "API key 只能通过环境变量注入" in readme
+    assert "Observe -> Plan -> Act -> Verify -> Reflect -> Replan" in readme
 
 
-def test_readme_lists_default_output_agent_acceptance_gates():
-    readme = README.read_text(encoding="utf-8")
-    gates = [
-        (
-            "repo_intelligence_agent_cli_default_output_smoke.example.json",
-            "outputs_smoke/repo_intelligence_agent_cli_default_output_current",
-        ),
-        (
-            "repo_intelligence_agent_cli_default_output_matrix.example.json",
-            "outputs_smoke/repo_intelligence_agent_cli_default_output_matrix_current",
-        ),
-        (
-            "repo_intelligence_agent_cli_default_output_repair_smoke.example.json",
-            "outputs_smoke/repo_intelligence_agent_cli_default_output_repair_current",
-        ),
-        (
-            "repo_intelligence_agent_cli_default_output_blocker_matrix.example.json",
-            "outputs_smoke/repo_intelligence_agent_cli_default_output_blocker_matrix_current",
-        ),
-        (
-            "repo_intelligence_agent_cli_default_output_acceptance.example.json",
-            "outputs_smoke/repo_intelligence_agent_cli_default_output_acceptance_current",
-        ),
-    ]
-
-    for manifest_name, output_dir in gates:
-        manifest_path = ROOT / "datasets" / "github_cases" / manifest_name
-        assert manifest_name in readme
-        assert output_dir in readme
-        assert manifest_path.is_file()
-        if "acceptance.example.json" not in manifest_name:
-            assert (ROOT / output_dir).is_dir()
-
-    assert "current user-facing\nAgent acceptance set" in readme
-    assert "single combined acceptance command" in readme
-    assert "patch-validation plus reflection recovery" in readme
-    assert "environment/test-command blocker diagnosis" in readme
-    assert "output_dir_defaulted" in readme
-
-
-def test_resume_showcase_ablation_rollups_match_showcase_artifact():
+def test_readme_showcase_sync_updates_stale_metrics_from_fixture():
     showcase = json.loads(SHOWCASE.read_text(encoding="utf-8"))
-    resume = RESUME_SHOWCASE.read_text(encoding="utf-8")
-    link_summary = showcase["generated_hard_case_ablation_link_summary"]
-
-    assert "| Signal | Linked Cases | Component | Variants | Strongest Delta |" in resume
-    for row in link_summary["by_signal"]:
-        expected = (
-            f"| {row['signal']} | {row['linked_cases']} | "
-            f"{_join(row['components'])} | {_join(row['variants'])} | "
-            f"{row['strongest_delta_metric']}={_fmt(row['strongest_delta'])} |"
-        )
-        assert expected in resume
-
-    assert (
-        "| Component | Linked Cases | Regressions | Signals | Strongest Delta |"
-        in resume
-    )
-    for row in link_summary["by_component"]:
-        expected = (
-            f"| {row['component']} | {row['linked_cases']} | "
-            f"{row['regression_linked_cases']} | "
-            f"{_join(row['target_signals'])} | "
-            f"{row['strongest_delta_metric']}={_fmt(row['strongest_delta'])} |"
-        )
-        assert expected in resume
-
-
-def test_readme_showcase_sync_updates_stale_metrics():
-    readme = README.read_text(encoding="utf-8")
-    showcase = json.loads(SHOWCASE.read_text(encoding="utf-8"))
-    stale = readme.replace("| Benchmark Cases | 62 |", "| Benchmark Cases | 0 |")
     expected = showcase_overview_metrics(showcase)
+    readme = _showcase_table(expected)
+    stale = readme.replace("| Benchmark Cases | 62 |", "| Benchmark Cases | 0 |")
 
     assert readme_showcase_mismatches(stale, expected) == [
         {
@@ -143,16 +124,18 @@ def test_readme_showcase_sync_updates_stale_metrics():
         }
     ]
     assert sync_readme_showcase_text(stale, expected) == readme
+    assert extract_readme_showcase_metrics(readme) == expected
 
 
 def test_readme_showcase_sync_cli_can_update_file():
     showcase_payload = json.loads(SHOWCASE.read_text(encoding="utf-8"))
+    expected = showcase_overview_metrics(showcase_payload)
     with tempfile.TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
         readme_path = root / "README.MD"
         showcase_path = root / "showcase_report.json"
         readme_path.write_text(
-            README.read_text(encoding="utf-8").replace(
+            _showcase_table(expected).replace(
                 "| Generated Hard Cases | 5 |",
                 "| Generated Hard Cases | 0 |",
             ),
@@ -185,12 +168,16 @@ def test_readme_showcase_sync_cli_can_update_file():
         assert output["mismatch_count"] == 1
         assert extract_readme_showcase_metrics(
             readme_path.read_text(encoding="utf-8")
-        ) == showcase_overview_metrics(showcase_payload)
+        ) == expected
 
 
-def _join(items: list[str]) -> str:
-    return ", ".join(items)
-
-
-def _fmt(value: float) -> str:
-    return f"{float(value):.4f}"
+def _showcase_table(metrics: dict[str, str]) -> str:
+    lines = [
+        "# Synthetic README",
+        "",
+        "| Metric | Value |",
+        "| --- | ---: |",
+    ]
+    for label in METRIC_LABELS:
+        lines.append(f"| {label} | {metrics[label]} |")
+    return "\n".join(lines) + "\n"
