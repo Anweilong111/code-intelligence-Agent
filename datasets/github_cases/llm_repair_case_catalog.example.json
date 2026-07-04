@@ -17,9 +17,9 @@
     },
     {
       "case_id": "direct_guard_1",
-      "repo": "controlled/direct_guard_1",
+      "repo": "https://github.com/Anweilong111/code-intelligence-Agent",
       "expected_class": "llm_direct_success",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_llm_direct_success/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "direct_guard_2",
