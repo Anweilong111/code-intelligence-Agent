@@ -43,6 +43,15 @@ from code_intelligence_agent.evaluation.p6_readiness_audit import (
     build_p6_readiness_audit,
     write_p6_readiness_audit_artifacts,
 )
+from code_intelligence_agent.evaluation.repository_test_patch_candidates import (
+    write_repository_test_patch_candidates_artifacts,
+)
+from code_intelligence_agent.evaluation.repository_test_patch_validation import (
+    build_repository_test_patch_validation,
+    write_repository_test_patch_validation_artifacts,
+)
+from code_intelligence_agent.tools.diff_utils import render_unified_diff
+from code_intelligence_agent.tools.patch_validation import validate_function_patch
 
 
 EXPECTED_AGENT_CONTROLLER_LOOP = [
@@ -141,6 +150,18 @@ def run_github_repo_intelligence_suite(
                     agent_shortcut=_bool_option(options, "agent", False),
                 )
             command_args = _command_args(repo, run_output, options)
+            controlled_result = _controlled_repair_case_result(
+                name=name,
+                repo=repo,
+                output_dir=run_output,
+                expected_status=expected_status,
+                options=options,
+                metric_thresholds=_metric_thresholds(options),
+                command_args=command_args,
+            )
+            if controlled_result is not None:
+                run_results.append(controlled_result)
+                continue
             if _reuse_existing_report_requested(
                 options,
                 suite_reuse_existing_reports=reuse_existing_reports,
@@ -1098,6 +1119,399 @@ def _failed_run_result(
         ],
         command_args=command_args or [],
         error=error,
+    )
+
+
+def _controlled_repair_case_result(
+    *,
+    name: str,
+    repo: str,
+    output_dir: Path,
+    expected_status: str,
+    options: dict[str, Any],
+    metric_thresholds: dict[str, float],
+    command_args: list[str],
+) -> GitHubRepoIntelligenceSuiteRunResult | None:
+    case_kind = str(options.get("controlled_repair_case") or "").strip().lower()
+    if not case_kind:
+        return None
+    if case_kind != "safety_gate_blocker":
+        raise ValueError(f"unsupported controlled_repair_case: {case_kind}")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    repo_root = output_dir / "controlled_repo"
+    tests_root = repo_root / "tests"
+    tests_root.mkdir(parents=True, exist_ok=True)
+    old_source = "def pick(values):\n    return values[0]\n"
+    unsafe_source = (
+        "def pick(values):\n"
+        "    if not values:\n"
+        "        return None\n"
+        "    return values[0]\n"
+        "\n"
+        "class EscapedPatchScope:\n"
+        "    pass\n"
+    )
+    (repo_root / "sample.py").write_text(old_source, encoding="utf-8")
+    (tests_root / "test_sample.py").write_text(
+        "from sample import pick\n\n\n"
+        "def test_pick_empty():\n"
+        "    assert pick([]) is None\n",
+        encoding="utf-8",
+    )
+
+    validation = validate_function_patch(old_source, unsafe_source)
+    safety_gate = {
+        "status": "pass" if validation.valid else "blocked",
+        "ast_valid": validation.ast_valid,
+        "scope_limited": validation.scope_limited,
+        "minimal_diff": not (
+            "patch_too_large" in validation.reasons
+            or "patch_change_ratio_too_large" in validation.reasons
+        ),
+        "signature_change_allowed": validation.signature_change_allowed,
+        "reasons": validation.reasons,
+    }
+    patch_candidates = {
+        "status": "pass",
+        "reason": "controlled_safety_gate_candidate",
+        "message": (
+            "Controlled repair case generated a candidate that must be "
+            "blocked before sandbox execution."
+        ),
+        "repository_root": str(repo_root),
+        "candidate_count": 1,
+        "patch_generation_mode": str(
+            options.get("repository_patch_generation_mode") or "hybrid"
+        ),
+        "generator_counts": {"controlled": 1},
+        "safety_gate": {
+            "status": "blocked",
+            "candidate_count": 1,
+            "passed_count": 0,
+            "blocked_count": 1,
+            "all_candidates_safe": False,
+            "reason_counts": {
+                str(reason): validation.reasons.count(reason)
+                for reason in sorted(set(validation.reasons))
+            },
+            "required_checks": [
+                "ast_valid",
+                "scope_limited",
+                "signature_guard",
+                "minimal_diff",
+            ],
+        },
+        "recommended_pytest_args": ["tests/test_sample.py::test_pick_empty"],
+        "recommended_pytest_args_source": "controlled_dynamic_oracle",
+        "recommended_validation_command": (
+            "python -m pytest -q tests/test_sample.py::test_pick_empty"
+        ),
+        "targets": [{"function_id": "sample.py::pick", "score": 1.0}],
+        "candidates": [
+            {
+                "id": f"{name}_unsafe_patch",
+                "target_file": str(repo_root / "sample.py"),
+                "relative_file_path": "sample.py",
+                "target_function_id": "sample.py::pick",
+                "target_function_name": "pick",
+                "rule_id": "controlled_safety_gate_probe",
+                "description": "Controlled unsafe patch for safety gate evidence.",
+                "old_source": old_source,
+                "new_source": unsafe_source,
+                "diff": render_unified_diff(old_source, unsafe_source, "sample.py"),
+                "metadata": {
+                    "generator": "controlled_safety_gate",
+                    "variant": "scope_escape_probe",
+                    "safety_gate": safety_gate,
+                    "validation": validation.to_dict(),
+                },
+            }
+        ],
+        "next_actions": [
+            "Inspect safety-gate reasons before retrying patch generation.",
+            "Generate a smaller AST-valid patch limited to the target function.",
+        ],
+    }
+    candidate_paths = write_repository_test_patch_candidates_artifacts(
+        patch_candidates,
+        output_dir,
+    )
+    patch_validation = build_repository_test_patch_validation(
+        patch_candidates,
+        repository_root=repo_root,
+        validation_limit=1,
+        reflection_mode="none",
+        reflection_rounds=0,
+        reflection_width=0,
+        timeout=_int(options.get("repository_test_timeout", 10)),
+    )
+    validation_paths = write_repository_test_patch_validation_artifacts(
+        patch_validation,
+        output_dir,
+    )
+    summary = _controlled_safety_gate_summary(
+        name=name,
+        repo=repo,
+        output_dir=output_dir,
+        repo_root=repo_root,
+        patch_candidates=patch_candidates,
+        patch_validation=patch_validation,
+        candidate_paths=candidate_paths,
+        validation_paths=validation_paths,
+        options=options,
+    )
+    report_path = output_dir / "github_repo_intelligence.json"
+    report_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    markdown_path = output_dir / "github_repo_intelligence.md"
+    markdown_path.write_text(
+        _controlled_safety_gate_markdown(summary),
+        encoding="utf-8",
+    )
+    summary["intelligence_json"] = str(report_path)
+    summary["intelligence_markdown"] = str(markdown_path)
+    report_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    metrics = _suite_metric_snapshot(summary)
+    metrics["execution_profile"] = str(options.get("execution_profile") or "controlled")
+    metrics["agent_shortcut_expected"] = False
+    metrics["repo_input_kind"] = "controlled"
+    metrics["scenario_tags"] = _scenario_tags(options)
+    metric_checks = _evaluate_metric_thresholds(metrics, metric_thresholds)
+    expectation_checks = _evaluate_expectations(
+        metrics,
+        expected_status=expected_status,
+        options=options,
+    )
+    expectation_passed = all(bool(check.get("passed")) for check in expectation_checks)
+    if metric_checks:
+        expectation_passed = expectation_passed and all(
+            bool(check.get("passed")) for check in metric_checks
+        )
+    return GitHubRepoIntelligenceSuiteRunResult(
+        name=name,
+        repo=repo,
+        output_dir=str(output_dir),
+        report_path=str(report_path),
+        status=str(summary.get("status") or ""),
+        passed=bool(summary.get("passed", False)),
+        expected_status=expected_status,
+        expectation_passed=expectation_passed,
+        metrics=metrics,
+        metric_checks=metric_checks,
+        expectation_checks=expectation_checks,
+        command_args=command_args,
+    )
+
+
+def _controlled_safety_gate_summary(
+    *,
+    name: str,
+    repo: str,
+    output_dir: Path,
+    repo_root: Path,
+    patch_candidates: dict[str, Any],
+    patch_validation: dict[str, Any],
+    candidate_paths: dict[str, str],
+    validation_paths: dict[str, str],
+    options: dict[str, Any],
+) -> dict[str, Any]:
+    blocker = "patch_candidates_blocked_by_safety_gate"
+    next_action = (
+        "Generate a smaller AST-valid, scope-limited patch before rerunning "
+        "sandbox validation."
+    )
+    selected_action = {
+        "id": "regenerate_safe_patch_candidates",
+        "phase": "phase3",
+        "tool": "repository_test_patch_candidates",
+        "reason": "All controlled candidates were blocked by the pre-sandbox safety gate.",
+        "command": "rerun patch generation with a narrower scope",
+    }
+    decision_trace = [
+        {"phase": phase, "action_id": selected_action["id"]}
+        for phase in EXPECTED_AGENT_CONTROLLER_LOOP
+    ]
+    validation_status = str(patch_validation.get("status") or "")
+    validation_reason = str(patch_validation.get("reason") or "")
+    safety_blocked_count = _int(
+        patch_validation.get("safety_blocked_candidate_count", 0)
+    )
+    return {
+        "repo": repo,
+        "repo_spec": repo,
+        "output_dir": str(output_dir),
+        "status": "pass",
+        "passed": True,
+        "repository_root": str(repo_root),
+        "controlled_repair_case": "safety_gate_blocker",
+        "analysis_readiness": {
+            "current_stage": "phase3_patch_validation",
+            "next_stage": "phase3_patch_reflection_or_expansion",
+            "blocker": blocker,
+            "patch_validation_status": validation_status,
+            "patch_validation_reason": validation_reason,
+            "patch_validation_input_candidate_count": _int(
+                patch_validation.get("input_candidate_count", 0)
+            ),
+            "patch_validation_candidate_count": _int(
+                patch_validation.get("candidate_count", 0)
+            ),
+            "patch_validation_safety_blocked_candidate_count": safety_blocked_count,
+            "repair_ready": False,
+            "repair_validation_scope": "none",
+        },
+        "repository_structure": {
+            "analyzed_file_count": 1,
+            "function_count": 1,
+            "class_count": 0,
+            "total_loc": 2,
+            "test_structure": {
+                "test_directory_count": 1,
+                "test_command_candidate_count": 1,
+                "test_command_runner_counts": {"pytest": 1},
+                "test_command_runner_kind_count": 1,
+                "test_framework_signals": ["pytest"],
+            },
+            "package_structure": {},
+        },
+        "fault_localization": {
+            "mode": "controlled",
+            "status": "pass",
+            "reason": "controlled_safety_gate_probe",
+            "top_function": "pick",
+            "rankings": [
+                {
+                    "rank": 1,
+                    "function_id": "sample.py::pick",
+                    "function_name": "pick",
+                    "file_path": "sample.py",
+                    "final_score": 1.0,
+                    "dynamic_test_evidence_score": 1.0,
+                }
+            ],
+        },
+        "agent_controller": {
+            "control_loop": EXPECTED_AGENT_CONTROLLER_LOOP,
+            "decision_trace": decision_trace,
+            "selected_action": selected_action,
+            "primary_blocker": blocker,
+            "observations": [{"signal": "patch_validation_reason", "value": validation_reason}],
+            "plan": [{"step": 1, "action": selected_action["id"]}],
+        },
+        "agent_decision_timeline": {
+            "status": "complete",
+            "complete": True,
+            "step_count": len(EXPECTED_AGENT_CONTROLLER_LOOP),
+            "complete_step_count": len(EXPECTED_AGENT_CONTROLLER_LOOP),
+            "executed_step_count": 1,
+            "blocked_step_count": 1,
+        },
+        "agent_answers": {
+            "blocker": blocker,
+            "next_action": next_action,
+            "repairability": {
+                "status": blocker,
+                "can_repair": True,
+                "answer": (
+                    "The candidate was blocked by AST/scope safety checks before "
+                    "pytest; regenerate a smaller function-scoped patch."
+                ),
+            },
+            "testability": {
+                "status": "controlled_oracle_available",
+                "answer": "The controlled pytest nodeid is available but was not executed after the safety gate blocked the patch.",
+            },
+            "answer_coverage": {
+                "complete": True,
+                "answered_question_count": 3,
+                "required_question_count": 3,
+                "missing_questions": [],
+                "questions": [
+                    {"id": "blocker", "answered": True},
+                    {"id": "next_action", "answered": True},
+                    {"id": "repairability", "answered": True},
+                ],
+            },
+        },
+        "repository_test_patch_candidates_status": str(patch_candidates.get("status") or ""),
+        "repository_test_patch_candidates_reason": str(patch_candidates.get("reason") or ""),
+        "repository_test_patch_candidate_count": _int(patch_candidates.get("candidate_count", 0)),
+        "repository_patch_generation_mode": str(
+            options.get("repository_patch_generation_mode") or "hybrid"
+        ),
+        "repository_patch_generator_counts": _dict(patch_candidates.get("generator_counts")),
+        "repository_patch_safety_gate_status": "blocked",
+        "repository_patch_safety_gate_blocked_count": _int(
+            _dict(patch_candidates.get("safety_gate")).get("blocked_count", 0)
+        ),
+        "repository_patch_candidate_variant_filter": {},
+        "repository_llm_patch_generation_status": "not_run",
+        "repository_llm_patch_generation_reason": "controlled_safety_gate_case",
+        "repository_test_patch_validation_status": validation_status,
+        "repository_test_patch_validation_reason": validation_reason,
+        "repository_test_patch_validation_input_candidate_count": _int(
+            patch_validation.get("input_candidate_count", 0)
+        ),
+        "repository_test_patch_validation_candidate_count": _int(
+            patch_validation.get("candidate_count", 0)
+        ),
+        "repository_test_patch_validation_safety_blocked_candidate_count": safety_blocked_count,
+        "repository_test_patch_validation_executed_count": _int(
+            patch_validation.get("executed_count", 0)
+        ),
+        "repository_test_patch_validation_success_count": _int(
+            patch_validation.get("success_count", 0)
+        ),
+        "repository_test_patch_validation_failure_type_counts": {},
+        "repository_test_patch_validation_reflection_candidate_count": 0,
+        "repository_test_patch_validation_successful_reflection_count": 0,
+        "repository_test_patch_validation_json": str(
+            validation_paths.get("repository_test_patch_validation_json") or ""
+        ),
+        "repository_test_patch_validation_markdown": str(
+            validation_paths.get("repository_test_patch_validation_markdown") or ""
+        ),
+        "repository_test_patch_candidates_json": str(
+            candidate_paths.get("repository_test_patch_candidates_json") or ""
+        ),
+        "repository_test_patch_candidates_markdown": str(
+            candidate_paths.get("repository_test_patch_candidates_markdown") or ""
+        ),
+        "repository_test_patch_judge_mode": "none",
+        "repository_test_patch_judge_status": "disabled",
+        "repository_test_patch_judge_authority": "sandbox_pytest_decides_success",
+        "repository_test_patch_judge_candidate_count": 0,
+        "repository_test_repair_ready": False,
+        "repository_test_repair_validation_scope": "none",
+        "final_report": {
+            "objective_compliance": {
+                "status": "pass",
+                "passed": True,
+                "section_count": 1,
+                "passed_section_count": 1,
+                "failed_section_count": 0,
+                "failed_sections": [],
+                "sections": [{"id": "safety_gate_blocker", "passed": True}],
+            }
+        },
+    }
+
+
+def _controlled_safety_gate_markdown(summary: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "# Controlled Safety Gate Repair Case",
+            "",
+            f"- Repo: `{summary.get('repo_spec')}`",
+            f"- Status: `{summary.get('status')}`",
+            f"- Blocker: `{_dict(summary.get('analysis_readiness')).get('blocker')}`",
+            f"- Patch Validation: `{summary.get('repository_test_patch_validation_status')}`",
+            f"- Patch Validation Reason: `{summary.get('repository_test_patch_validation_reason')}`",
+            f"- Safety Blocked Candidates: {summary.get('repository_test_patch_validation_safety_blocked_candidate_count')}",
+            "- Sandbox Authority: `sandbox_pytest_decides_success`",
+            "",
+        ]
     )
 
 
@@ -4931,6 +5345,8 @@ def _apply_execution_profile_options(options: dict[str, Any]) -> dict[str, Any]:
         and normalized.get("repository_test_timeout") is not None
     )
     if profile == "static":
+        return normalized
+    if profile == "controlled-repair":
         return normalized
     if profile == "checkout":
         normalized["checkout_repository_tests"] = True

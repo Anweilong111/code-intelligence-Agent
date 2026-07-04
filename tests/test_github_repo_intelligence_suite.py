@@ -4133,6 +4133,118 @@ def test_intelligence_suite_p6_onboarding_blocker_manifest_defines_source_cases(
     ] == "test_command:no_recommended_test_command"
 
 
+def test_intelligence_suite_p6_safety_gate_blocker_manifest_defines_source_case():
+    manifest = json.loads(
+        Path(
+            "datasets/github_cases/repo_intelligence_p6_safety_gate_blockers.example.json"
+        ).read_text(encoding="utf-8")
+    )
+    defaults = manifest["defaults"]
+    thresholds = manifest["suite_thresholds"]
+    run = manifest["runs"][0]
+
+    assert manifest["suite_name"] == "repo_intelligence_p6_safety_gate_blockers"
+    assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert defaults["controlled_repair_case"] == "safety_gate_blocker"
+    assert defaults["repository_patch_generation_mode"] == "hybrid"
+    assert thresholds["min_llm_repair_showcase_matrix_blocker_count"] == 1
+    assert thresholds[
+        "min_repository_test_patch_validation_safety_blocked_candidate_count"
+    ] == 1
+    assert run["name"] == "safety_gate_blocker_0"
+    assert run["expected_blocker"] == "patch_candidates_blocked_by_safety_gate"
+    assert run["expected_controller_action"] == "regenerate_safe_patch_candidates"
+    assert run["expected_patch_safety_gate_status"] == "blocked"
+    assert run["expected_patch_validation_status"] == "skipped"
+    assert "pre_sandbox_safety_gate" in run["scenario_tags"]
+
+
+def test_intelligence_suite_runs_controlled_safety_gate_blocker_case(tmp_path):
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "controlled_safety_gate_suite",
+                "run_llm_repair_showcase_matrix": True,
+                "defaults": {
+                    "execution_profile": "controlled-repair",
+                    "controlled_repair_case": "safety_gate_blocker",
+                    "repository_patch_generation_mode": "hybrid",
+                    "repository_test_reflection_mode": "none",
+                },
+                "suite_thresholds": {
+                    "max_command_failed_count": 0,
+                    "max_expectation_failed_count": 0,
+                    "min_llm_repair_showcase_matrix_blocker_count": 1,
+                    "min_repository_test_patch_validation_safety_blocked_candidate_count": 1,
+                },
+                "runs": [
+                    {
+                        "name": "safety_gate_blocker_0",
+                        "repo": "controlled/safety_gate_blocker_0",
+                        "expected_status": "pass",
+                        "expected_blocker": (
+                            "patch_candidates_blocked_by_safety_gate"
+                        ),
+                        "expected_controller_action": (
+                            "regenerate_safe_patch_candidates"
+                        ),
+                        "expected_patch_generation_mode": "hybrid",
+                        "expected_patch_safety_gate_status": "blocked",
+                        "expected_patch_validation_status": "skipped",
+                        "metric_thresholds": {
+                            "repository_test_patch_candidate_count": 1,
+                            "repository_patch_safety_gate_blocked_count": 1,
+                            "repository_test_patch_validation_input_candidate_count": 1,
+                            "repository_test_patch_validation_safety_blocked_candidate_count": 1,
+                            "agent_controller_loop_complete": 1,
+                            "agent_decision_timeline_complete": 1,
+                            "agent_answer_coverage_answered_count": 3,
+                        },
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_github_repo_intelligence_suite(manifest_path, output_dir)
+    run = report.runs[0]
+    validation = json.loads(
+        (output_dir / "safety_gate_blocker_0" / "repository_test_patch_validation.json")
+        .read_text(encoding="utf-8")
+    )
+    matrix = json.loads(
+        (output_dir / "llm_repair_showcase_matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    row = matrix["matrix"][0]
+
+    assert report.passed is True
+    assert run.status == "pass"
+    assert run.metrics["blocker"] == "patch_candidates_blocked_by_safety_gate"
+    assert run.metrics["repository_test_patch_validation_status"] == "skipped"
+    assert (
+        run.metrics["repository_test_patch_validation_reason"]
+        == "all_candidates_blocked_by_safety_gate"
+    )
+    assert (
+        run.metrics["repository_test_patch_validation_safety_blocked_candidate_count"]
+        == 1
+    )
+    assert validation["reason"] == "all_candidates_blocked_by_safety_gate"
+    assert validation["success_count"] == 0
+    assert validation["safety_blocked_candidate_count"] == 1
+    assert row["class"] == "llm_blocker"
+    assert row["blocker_category"] == "safety_gate_blocker"
+    assert row["evidence_status"] == "complete"
+    assert row["patch_validation_safety_blocked_count"] == 1
+    assert row["patch_judge_authority"] == "sandbox_pytest_decides_success"
+
+
 def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     tmp_path,
     monkeypatch,
