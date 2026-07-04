@@ -401,7 +401,11 @@ def _insert_len_zero_guard(
             score += 2
         matches.append((score, index, indent, variable))
     if not matches:
-        return "\n".join(lines)
+        return _insert_direct_len_zero_guard(
+            lines,
+            len_source=target_len_source,
+            body_line=body_line,
+        )
     matches.sort(key=lambda item: (-item[0], item[1]))
     _, index, indent, variable = matches[0]
     guard_indent = f"{indent}    "
@@ -410,6 +414,32 @@ def _insert_len_zero_guard(
         f"{guard_indent}{body_line}",
     ]
     lines[index + 1 : index + 1] = guard
+    return "\n".join(lines)
+
+
+def _insert_direct_len_zero_guard(
+    lines: list[str],
+    *,
+    len_source: str,
+    body_line: str,
+) -> str:
+    if not len_source:
+        return "\n".join(lines)
+    pattern = re.compile(
+        rf"^(\s*).*(?:/|//|%)\s*len\(\s*{re.escape(len_source)}\s*\)"
+    )
+    for index, line in enumerate(lines):
+        match = pattern.match(line)
+        if not match:
+            continue
+        indent = match.group(1)
+        guard_indent = f"{indent}    "
+        guard = [
+            f"{indent}if not {len_source}:",
+            f"{guard_indent}{body_line}",
+        ]
+        lines[index:index] = guard
+        return "\n".join(lines)
     return "\n".join(lines)
 
 

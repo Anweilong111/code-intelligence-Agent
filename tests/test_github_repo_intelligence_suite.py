@@ -4073,6 +4073,7 @@ def test_intelligence_suite_p6_llm_direct_success_manifest_defines_real_source_c
     runs = {run["name"]: run for run in manifest["runs"]}
     run = runs["direct_guard_0"]
     self_run = runs["direct_guard_1"]
+    algorithm_run = runs["direct_guard_2"]
 
     assert manifest["suite_name"] == "repo_intelligence_p6_llm_direct_success"
     assert manifest["run_llm_repair_showcase_matrix"] is True
@@ -4082,10 +4083,10 @@ def test_intelligence_suite_p6_llm_direct_success_manifest_defines_real_source_c
     assert defaults["repository_llm_patch_candidate_limit"] == 2
     assert defaults["repository_test_reflection_mode"] == "llm"
     assert defaults["patch_judge_mode"] == "llm"
-    assert thresholds["min_run_count"] == 2
-    assert thresholds["min_llm_repair_showcase_matrix_direct_success_count"] == 2
-    assert thresholds["min_repository_patch_generator_llm_candidate_count"] == 2
-    assert thresholds["min_repository_test_patch_judge_accept_success_count"] == 2
+    assert thresholds["min_run_count"] == 3
+    assert thresholds["min_llm_repair_showcase_matrix_direct_success_count"] == 3
+    assert thresholds["min_repository_patch_generator_llm_candidate_count"] == 3
+    assert thresholds["min_repository_test_patch_judge_accept_success_count"] == 3
     assert run["name"] == "direct_guard_0"
     assert run["expected_status"] == "pass"
     assert run["expected_patch_generation_mode"] == "llm"
@@ -4114,6 +4115,21 @@ def test_intelligence_suite_p6_llm_direct_success_manifest_defines_real_source_c
     )
     assert "real_llm_required" in self_run["scenario_tags"]
     assert "sandbox_patch_validation" in self_run["scenario_tags"]
+    assert algorithm_run["repo"] == "https://github.com/keon/algorithms"
+    assert algorithm_run["ref"] == "f9896169928237b9772371656d878215a43cd57f"
+    assert algorithm_run["include"] == [
+        "algorithms/searching/next_greatest_letter.py"
+    ]
+    assert algorithm_run["expected_repair_validation_scope"] == "narrow_and_regression"
+    assert algorithm_run["expected_patch_judge_mode"] == "llm"
+    assert (
+        algorithm_run["metric_thresholds"][
+            "repository_test_patch_judge_accept_success_count"
+        ]
+        == 1
+    )
+    assert "real_llm_required" in algorithm_run["scenario_tags"]
+    assert "sandbox_patch_validation" in algorithm_run["scenario_tags"]
 
 
 def test_intelligence_suite_p6_llm_repair_blocker_manifest_defines_expected_blockers():

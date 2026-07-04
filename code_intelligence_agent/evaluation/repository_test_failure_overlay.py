@@ -14,6 +14,7 @@ from typing import Any
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
 from code_intelligence_agent.core.models import BugFinding, CodeEntity, RepoParseResult
 from code_intelligence_agent.core.repo_parser import DEFAULT_EXCLUDED_DIRS, RepoParser
+from code_intelligence_agent.core.source_normalization import normalize_function_source
 from code_intelligence_agent.evaluation.repository_test_dynamic_evidence import (
     build_repository_test_dynamic_evidence,
 )
@@ -2614,7 +2615,7 @@ def _copy_repository(source: Path, destination: Path) -> None:
 
 def _function_def(function: CodeEntity) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
     try:
-        tree = ast.parse(textwrap.dedent(function.source))
+        tree = ast.parse(normalize_function_source(function.source))
     except SyntaxError:
         return None
     if not tree.body or not isinstance(tree.body[0], (ast.FunctionDef, ast.AsyncFunctionDef)):

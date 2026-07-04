@@ -1974,6 +1974,31 @@ def test_repo_parser_skips_unparseable_files_when_parsing_directory():
     assert names == {"real_function"}
 
 
+def test_rule_based_bug_detector_normalizes_indented_multiline_string_methods():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        (root / "sample.py").write_text(
+            "class TemplateCase:\n"
+            "    def mean(self, values):\n"
+            "        template = \"\"\"\\\n"
+            "{% for item in values %}\n"
+            "{{ item }}\n"
+            "{% endfor %}\"\"\"\n"
+            "        count = len(values)\n"
+            "        return sum(values) / count\n",
+            encoding="utf-8",
+        )
+
+        parsed = RepoParser().parse(root)
+        findings = RuleBasedBugDetector().detect(parsed.functions)
+
+    assert any(
+        finding.rule_id == "missing_len_zero_guard"
+        and finding.function_name == "TemplateCase.mean"
+        for finding in findings
+    )
+
+
 def test_rule_based_bug_detector_finds_phase1_rules():
     parsed = RepoParser().parse(FIXTURE)
     detector = RuleBasedBugDetector()
@@ -2122,7 +2147,9 @@ def test_len_denominator_guard_accepts_positive_threshold_checks():
             "    return sum(values) / n\n\n"
             "def unguarded_mean(values):\n"
             "    n = len(values)\n"
-            "    return sum(values) / n\n",
+            "    return sum(values) / n\n\n"
+            "def direct_len_mean(values):\n"
+            "    return sum(values) / len(values)\n",
             encoding="utf-8",
         )
 
@@ -2135,8 +2162,18 @@ def test_len_denominator_guard_accepts_positive_threshold_checks():
         if finding.rule_id == "missing_len_zero_guard"
     }
     assert "unguarded_mean" in missing_guard_by_function
+    assert "direct_len_mean" in missing_guard_by_function
     assert "guarded_mean" not in missing_guard_by_function
     assert "guarded_pair_mean" not in missing_guard_by_function
+
+    direct_finding = next(
+        finding
+        for finding in findings
+        if finding.rule_id == "missing_len_zero_guard"
+        and finding.function_name == "direct_len_mean"
+    )
+    assert direct_finding.evidence["len_source"] == "values"
+    assert direct_finding.evidence["denominator_kind"] == "direct_len_call"
 
 
 def test_rule_precision_filters_static_negative_samples():

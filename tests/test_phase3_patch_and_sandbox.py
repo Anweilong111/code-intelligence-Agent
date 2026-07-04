@@ -602,6 +602,38 @@ def test_patch_generator_uses_len_source_evidence_for_missing_len_guard():
         ].startswith("ev_key_len_")
 
 
+def test_patch_generator_fixes_direct_len_denominator_guard():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        repo = Path(tmp_dir)
+        (repo / "sample.py").write_text(
+            "def average_value(values):\n"
+            "    return sum(values) / len(values)\n",
+            encoding="utf-8",
+        )
+
+        parsed = RepoParser().parse(repo)
+        graph = build_call_graph(parsed.functions, parsed.calls)
+        program_graph = build_program_graph(parsed, graph)
+        findings = RuleBasedBugDetector().detect(parsed.functions)
+        ranked = FaultLocalizer().rank(program_graph, findings)
+        candidates = PatchGenerator().generate(repo, parsed.functions, ranked)
+        direct_candidates = [
+            item
+            for item in candidates
+            if item.rule_id == "missing_len_zero_guard"
+            and item.metadata["finding_evidence"].get("denominator_kind")
+            == "direct_len_call"
+        ]
+        by_variant = {
+            str(item.metadata.get("variant")): item for item in direct_candidates
+        }
+
+        assert "if not values:" in by_variant["insert_len_zero_guard"].new_source
+        assert "raise ValueError" in by_variant["insert_len_zero_guard"].new_source
+        assert "if not values:" in by_variant["return_default_on_empty"].new_source
+        assert "return 0" in by_variant["return_default_on_empty"].new_source
+
+
 def test_patch_generator_reflects_failed_missing_len_guard_to_default_return():
     with tempfile.TemporaryDirectory() as tmp_dir:
         repo = Path(tmp_dir)

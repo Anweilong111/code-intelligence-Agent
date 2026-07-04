@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import ast
-import textwrap
 from collections import defaultdict
 from pathlib import Path
 
 from code_intelligence_agent.core.call_graph import CallGraph
 from code_intelligence_agent.core.models import BugFinding, CodeEntity, SuspiciousFunction
+from code_intelligence_agent.core.source_normalization import normalize_function_source
 
 
 class RuleBasedBugDetector:
@@ -15,7 +15,10 @@ class RuleBasedBugDetector:
     def detect(self, functions: list[CodeEntity]) -> list[BugFinding]:
         findings: list[BugFinding] = []
         for function in functions:
-            findings.extend(_FunctionRuleVisitor(function).run())
+            try:
+                findings.extend(_FunctionRuleVisitor(function).run())
+            except SyntaxError:
+                continue
         return findings
 
     def rank(
@@ -62,7 +65,7 @@ class _FunctionRuleVisitor(ast.NodeVisitor):
     def __init__(self, function: CodeEntity) -> None:
         self.function = function
         self.findings: list[BugFinding] = []
-        self._tree = ast.parse(textwrap.dedent(function.source))
+        self._tree = ast.parse(normalize_function_source(function.source))
 
     def run(self) -> list[BugFinding]:
         self._check_mutable_defaults()
@@ -233,9 +236,6 @@ class _FunctionRuleVisitor(ast.NodeVisitor):
                     node,
                     _len_call_source_name(node.value),
                 )
-        if not len_assignments:
-            return
-
         denominator_uses = _LenDenominatorUseVisitor(set(len_assignments))
         denominator_uses.visit(root)
         for name, use_line in sorted(denominator_uses.names.items()):
@@ -256,6 +256,22 @@ class _FunctionRuleVisitor(ast.NodeVisitor):
                     "variable": name,
                     "len_source": len_source,
                     "denominator_line": use_line,
+                },
+            )
+        for len_source, use_line, node in denominator_uses.direct_len_calls:
+            if _has_zero_guard_before(root, len_source, use_line):
+                continue
+            self._add(
+                rule_id="missing_len_zero_guard",
+                bug_type="zero division error",
+                message="direct len() denominator is used without an empty-input guard.",
+                node=node,
+                confidence=0.74,
+                evidence={
+                    "variable": "",
+                    "len_source": len_source,
+                    "denominator_line": use_line,
+                    "denominator_kind": "direct_len_call",
                 },
             )
 
@@ -722,11 +738,18 @@ class _LenDenominatorUseVisitor(ast.NodeVisitor):
     def __init__(self, candidate_names: set[str]) -> None:
         self.candidate_names = candidate_names
         self.names: dict[str, int] = {}
+        self.direct_len_calls: list[tuple[str, int, ast.AST]] = []
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if isinstance(node.op, (ast.Div, ast.FloorDiv, ast.Mod)):
             if isinstance(node.right, ast.Name) and node.right.id in self.candidate_names:
                 self.names.setdefault(node.right.id, getattr(node.right, "lineno", 0))
+            elif _is_len_call(node.right):
+                len_source = _len_call_source_name(node.right)
+                if len_source:
+                    self.direct_len_calls.append(
+                        (len_source, getattr(node.right, "lineno", 0), node.right)
+                    )
         self.generic_visit(node)
 
 
