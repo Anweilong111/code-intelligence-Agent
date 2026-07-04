@@ -151,6 +151,7 @@ LLM judge 参与候选排序和风险判断，输入包括 candidate summary、d
 
 - 主要面向 Python 仓库。
 - 不承诺任意真实 bug 都能自动发现和修复。
+- 不承诺任意 GitHub 仓库都能 100% 自动修复真实 bug。
 - 没有 failing evidence 或 test oracle 时不能声称修复成功。
 - 复杂系统依赖、私有服务、超大型 monorepo 仍需要更多工程化。
 - LLM 输出必须经过结构化解析、安全门禁和 sandbox 验证。
