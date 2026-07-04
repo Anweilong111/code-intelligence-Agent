@@ -12,7 +12,7 @@ ALIBABA_DASHSCOPE_CHAT_COMPLETIONS_URL = (
     "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
 )
 DEEPSEEK_CHAT_COMPLETIONS_URL = "https://api.deepseek.com/chat/completions"
-ALIBABA_BEST_QWEN_MODEL = "qwen3-max-thinking"
+ALIBABA_BEST_QWEN_MODEL = "qwen-plus"
 ALIBABA_BEST_JUDGE_MODEL = ALIBABA_BEST_QWEN_MODEL
 DEEPSEEK_BEST_MODEL = "deepseek-v4-pro"
 DEEPSEEK_BEST_JUDGE_MODEL = DEEPSEEK_BEST_MODEL

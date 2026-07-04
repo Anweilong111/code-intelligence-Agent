@@ -105,7 +105,7 @@ def test_alibaba_judge_client_defaults_to_best_qwen_model(monkeypatch):
 
     assert client.provider == "alibaba"
     assert client.api_key == "fake-key"
-    assert ALIBABA_BEST_JUDGE_MODEL == "qwen3-max-thinking"
+    assert ALIBABA_BEST_JUDGE_MODEL == "qwen-plus"
     assert client.model == ALIBABA_BEST_JUDGE_MODEL
     assert client.base_url == ALIBABA_DASHSCOPE_CHAT_COMPLETIONS_URL
     assert client.system_prompt == JUDGE_SYSTEM_PROMPT

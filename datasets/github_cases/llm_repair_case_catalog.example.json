@@ -4,15 +4,16 @@
   "matrix_path": "../../outputs_smoke/p6_llm_repair/llm_repair_evaluation_matrix.json",
   "source_reports": [
     "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/p6_llm_direct_success/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_safety_gate_blockers/github_repo_intelligence_suite.json"
   ],
   "cases": [
     {
       "case_id": "direct_guard_0",
-      "repo": "controlled/direct_guard_0",
+      "repo": "https://github.com/TheAlgorithms/Python",
       "expected_class": "llm_direct_success",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_llm_direct_success/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "direct_guard_1",

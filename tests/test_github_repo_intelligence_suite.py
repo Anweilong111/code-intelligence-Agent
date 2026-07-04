@@ -4062,6 +4062,44 @@ def test_intelligence_suite_llm_repair_smoke_manifest_requires_real_llm():
     assert "sandbox_patch_validation" in run["scenario_tags"]
 
 
+def test_intelligence_suite_p6_llm_direct_success_manifest_defines_real_source_case():
+    manifest = json.loads(
+        Path(
+            "datasets/github_cases/repo_intelligence_p6_llm_direct_success.example.json"
+        ).read_text(encoding="utf-8")
+    )
+    defaults = manifest["defaults"]
+    thresholds = manifest["suite_thresholds"]
+    run = manifest["runs"][0]
+
+    assert manifest["suite_name"] == "repo_intelligence_p6_llm_direct_success"
+    assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert defaults["clear_llm_api_keys"] is False
+    assert defaults["require_llm_configuration"] is True
+    assert defaults["repository_patch_generation_mode"] == "llm"
+    assert defaults["repository_llm_patch_candidate_limit"] == 2
+    assert defaults["repository_test_reflection_mode"] == "llm"
+    assert defaults["patch_judge_mode"] == "llm"
+    assert thresholds["min_llm_repair_showcase_matrix_direct_success_count"] == 1
+    assert thresholds["min_repository_patch_generator_llm_candidate_count"] == 1
+    assert thresholds["min_repository_test_patch_judge_accept_success_count"] == 1
+    assert run["name"] == "direct_guard_0"
+    assert run["expected_status"] == "pass"
+    assert run["expected_patch_generation_mode"] == "llm"
+    assert run["expected_llm_patch_generation_status"] == "pass"
+    assert run["expected_patch_safety_gate_status"] == "pass"
+    assert run["expected_patch_validation_status"] == "pass"
+    assert run["expected_patch_judge_mode"] == "llm"
+    assert run["expected_patch_judge_status"] == "ready"
+    assert run["metric_thresholds"]["repository_patch_generator_llm_count"] == 1
+    assert (
+        run["metric_thresholds"]["repository_test_patch_judge_accept_success_count"]
+        == 1
+    )
+    assert "real_llm_required" in run["scenario_tags"]
+    assert "sandbox_patch_validation" in run["scenario_tags"]
+
+
 def test_intelligence_suite_p6_llm_repair_blocker_manifest_defines_expected_blockers():
     manifest = json.loads(
         Path(

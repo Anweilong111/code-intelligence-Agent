@@ -1479,7 +1479,7 @@ python -m code_intelligence_agent.evaluation.run_benchmark datasets/toy_bugs/man
 python -m code_intelligence_agent.evaluation.run_benchmark datasets/toy_bugs/manifest.json --format markdown --patch-judge-mode llm
 ```
 
-`CIA_JUDGE_*` 用于 LLM-as-judge report 和可选 patch-level judge，不参与 patch generation。默认 judge provider 是 DeepSeek，默认 judge model 是 `deepseek-v4-pro`；如果账号开通了更新或更强的 DeepSeek 模型，可以通过 `CIA_JUDGE_MODEL` 覆盖。`CIA_JUDGE_MODEL=deepseekv4PRO` 这类大小写/分隔符写法会被归一化为 `deepseek-v4-pro`。DeepSeek API key 可以放在角色专用的 `CIA_JUDGE_API_KEY` / `CIA_LOCALIZATION_LLM_API_KEY`，也可以放在通用的 `DEEPSEEK_API_KEY` 里作为兜底。API key 只应通过环境变量注入，不要写入代码、README、测试或评测报告。Alibaba/Qwen 仍然可用：将 `CIA_JUDGE_PROVIDER=alibaba`、`CIA_JUDGE_MODEL=qwen3-max-thinking`、`CIA_JUDGE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` 即可切回。
+`CIA_JUDGE_*` 用于 LLM-as-judge report 和可选 patch-level judge，不参与 patch generation。默认 judge provider 是 DeepSeek，默认 judge model 是 `deepseek-v4-pro`；如果账号开通了更新或更强的 DeepSeek 模型，可以通过 `CIA_JUDGE_MODEL` 覆盖。`CIA_JUDGE_MODEL=deepseekv4PRO` 这类大小写/分隔符写法会被归一化为 `deepseek-v4-pro`。DeepSeek API key 可以放在角色专用的 `CIA_JUDGE_API_KEY` / `CIA_LOCALIZATION_LLM_API_KEY`，也可以放在通用的 `DEEPSEEK_API_KEY` 里作为兜底。API key 只应通过环境变量注入，不要写入代码、README、测试或评测报告。Alibaba/Qwen 仍然可用：将 `CIA_JUDGE_PROVIDER=alibaba`、`CIA_JUDGE_MODEL=qwen-plus`、`CIA_JUDGE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` 即可切回。
 
 在真正运行 DeepSeek judge 前，可以先做一次本地配置审计，不会联网，也不会打印原始 API key：
 
