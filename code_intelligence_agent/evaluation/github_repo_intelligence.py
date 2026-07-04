@@ -63,6 +63,7 @@ def run_github_repo_intelligence(
     repository_test_root: str | Path | None = None,
     repository_test_timeout: int = 20,
     repository_test_failure_overlay_candidate_limit: int = 5,
+    repository_test_patch_validation_limit: int = 5,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -115,6 +116,7 @@ def run_github_repo_intelligence(
         "repository_test_failure_overlay_candidate_limit": (
             repository_test_failure_overlay_candidate_limit
         ),
+        "repository_test_patch_validation_limit": repository_test_patch_validation_limit,
         "repository_patch_generation_mode": repository_patch_generation_mode,
         "repository_llm_patch_candidate_limit": repository_llm_patch_candidate_limit,
         "repository_patch_candidate_variant_allowlist": (
@@ -204,6 +206,7 @@ def run_github_repo_intelligence(
         auto_fallback=auto_fallback,
         repository_test_root=repository_test_root,
         repository_test_timeout=repository_test_timeout,
+        repository_test_patch_validation_limit=repository_test_patch_validation_limit,
         repository_patch_generation_mode=repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=(
@@ -258,6 +261,7 @@ def _agent_invocation_summary(
     auto_fallback: bool,
     repository_test_root: str | Path | None,
     repository_test_timeout: int,
+    repository_test_patch_validation_limit: int,
     repository_patch_generation_mode: str,
     repository_llm_patch_candidate_limit: int | None,
     repository_patch_candidate_variant_allowlist: list[str] | None,
@@ -317,6 +321,9 @@ def _agent_invocation_summary(
         "auto_fallback": bool(auto_fallback),
         "repository_test_root": str(repository_test_root or ""),
         "repository_test_timeout": _int(repository_test_timeout),
+        "repository_test_patch_validation_limit": _int(
+            repository_test_patch_validation_limit
+        ),
         "run_repository_test_command": bool(run_repository_test_command),
         "run_repository_test_environment_setup": bool(
             run_repository_test_environment_setup
@@ -4582,6 +4589,9 @@ def github_repo_intelligence_summary(
         "repository_test_failure_overlay_candidate_limit": _int(
             summary.get("repository_test_failure_overlay_candidate_limit", 0)
         ),
+        "repository_test_patch_validation_limit": _int(
+            summary.get("repository_test_patch_validation_limit", 0)
+        ),
         "repository_test_failure_overlay_strategy_policy": str(
             summary.get("repository_test_failure_overlay_strategy_policy") or ""
         ),
@@ -4669,6 +4679,9 @@ def github_repo_intelligence_summary(
         "repository_patch_generator_counts": _dict(
             summary.get("repository_patch_generator_counts")
         ) or _dict(patch_candidates_payload.get("generator_counts")),
+        "repository_patch_generator_llm_candidate_count": _int(
+            llm_patch_audit.get("llm_candidate_count", 0)
+        ),
         "repository_patch_candidate_variant_filter": _dict(
             summary.get("repository_patch_candidate_variant_filter")
         ) or _dict(patch_candidates_payload.get("candidate_variant_filter")),
@@ -4769,6 +4782,14 @@ def github_repo_intelligence_summary(
         ),
         "repository_test_patch_validation_refiner_reason": str(
             summary.get("repository_test_patch_validation_refiner_reason") or ""
+        ),
+        "repository_test_patch_validation_llm_reflection_attempt_count": _int(
+            summary.get("repository_test_patch_validation_llm_reflection_attempt_count")
+            or patch_validation_payload.get("llm_reflection_attempt_count", 0)
+        ),
+        "repository_test_patch_validation_llm_reflection_audit": _list(
+            summary.get("repository_test_patch_validation_llm_reflection_audit")
+            or patch_validation_payload.get("llm_reflection_audit")
         ),
         "repository_test_patch_validation_reflection_candidate_count": _int(
             summary.get("repository_test_patch_validation_reflection_candidate_count", 0)
@@ -4993,7 +5014,10 @@ def _repository_llm_patch_generation_audit(
     enabled = bool(config_audit.get("enabled", mode in {"llm", "hybrid"}))
     api_key_present = bool(config_audit.get("api_key_present", False))
     rule_count = _int(generator_counts.get("rule", 0))
-    llm_count = _int(generator_counts.get("llm", 0))
+    llm_count = max(
+        _int(generator_counts.get("llm", 0)),
+        _llm_generation_audit_candidate_count(patch_candidates_payload),
+    )
     blocked = bool(
         status == "blocked"
         or reason in {"missing_llm_api_key", "fault_localization_not_ready"}
@@ -5037,6 +5061,21 @@ def _repository_llm_patch_generation_audit(
         "warnings": [str(item) for item in _list(config_audit.get("warnings"))],
         "config_audit": config_audit,
     }
+
+
+def _llm_generation_audit_candidate_count(
+    patch_candidates_payload: dict[str, Any],
+) -> int:
+    count = 0
+    for entry in _list(_dict(patch_candidates_payload).get("llm_generation_audit")):
+        audit = _dict(entry)
+        count += _int(
+            audit.get(
+                "accepted_candidate_count",
+                audit.get("parsed_candidate_count", 0),
+            )
+        )
+    return count
 
 
 def _repository_llm_reflection_audit(
@@ -11570,6 +11609,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=5,
     )
     parser.add_argument(
+        "--repository-test-patch-validation-limit",
+        type=int,
+        default=5,
+    )
+    parser.add_argument(
         "--repository-patch-generation-mode",
         choices=["rule", "llm", "hybrid"],
         default="rule",
@@ -11693,6 +11737,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
         repository_test_failure_overlay_candidate_limit=(
             args.repository_test_failure_overlay_candidate_limit
         ),
+        repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
         repository_patch_generation_mode=args.repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=args.repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=(

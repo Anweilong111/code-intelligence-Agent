@@ -82,6 +82,30 @@ def test_p6_readiness_audit_reports_missing_onboarding_and_repair_targets():
     assert any("sandbox pytest" in item for item in audit["next_actions"])
 
 
+def test_p6_readiness_audit_accepts_filename_artifact_coverage_and_policy_status():
+    onboarding = _complete_onboarding_matrix()
+    case_count = onboarding["case_count"]
+    onboarding["artifact_coverage"] = {
+        filename: {"present": case_count, "missing": 0}
+        for _name, _path_key, filename in REQUIRED_ONBOARDING_ARTIFACTS
+    }
+    onboarding["rows"][0]["policy_trace"] = {
+        "present": True,
+        "status": "warning",
+        "selected_action": "expand_static_candidate_search",
+        "canonical_action": "expand_static_candidate_search",
+        "loop": [],
+    }
+
+    audit = build_p6_readiness_audit(onboarding, _complete_repair_matrix())
+
+    assert audit["status"] == "pass"
+    assert audit["onboarding"]["complete_artifact_group_count"] == len(
+        REQUIRED_ONBOARDING_ARTIFACTS
+    )
+    assert audit["onboarding"]["agent_policy_trace_complete"] is True
+
+
 def test_p6_readiness_audit_cli_writes_artifacts_and_requires_complete(
     tmp_path,
     capsys,

@@ -435,6 +435,17 @@ def build_reflection_prompt(
             "Do not remove tests.",
             "Keep the same function name and public signature unless required.",
             "Use stdout, stderr, and traceback as feedback.",
+            (
+                "Treat the failing pytest message and test body as the oracle: "
+                "a different exception for the same failing input is still a "
+                "sandbox failure."
+            ),
+            (
+                "If feedback says boundary-safe behavior is expected, refine "
+                "the function so that boundary input does not raise; do not "
+                "replace the original failure with ValueError, TypeError, or "
+                "another new exception."
+            ),
             "Use structured execution_feedback to prioritize likely fixable failures.",
             "Use failure_analysis.refinement_hints before making broad rewrites.",
             (
@@ -442,6 +453,7 @@ def build_reflection_prompt(
                 "data-flow neighbors to preserve the target function's contract."
             ),
             "Return only the corrected source for the target function, not related files.",
+            "Do not rewrite docstring examples unless the executable logic requires it.",
             (
                 "Do not return a fixed_source whose normalized fingerprint appears "
                 "in failed_patch_memory.avoid_fixed_source_fingerprints."

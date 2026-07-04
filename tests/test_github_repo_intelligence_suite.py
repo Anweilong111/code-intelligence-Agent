@@ -4153,6 +4153,63 @@ def test_intelligence_suite_p6_llm_direct_success_manifest_defines_real_source_c
         assert "sandbox_patch_validation" in extra_run["scenario_tags"]
 
 
+def test_intelligence_suite_p6_llm_reflection_success_manifest_defines_real_source_cases():
+    manifest = json.loads(
+        Path(
+            "datasets/github_cases/repo_intelligence_p6_llm_reflection_success.example.json"
+        ).read_text(encoding="utf-8")
+    )
+    defaults = manifest["defaults"]
+    thresholds = manifest["suite_thresholds"]
+    runs = {run["name"]: run for run in manifest["runs"]}
+
+    assert manifest["suite_name"] == "repo_intelligence_p6_llm_reflection_success"
+    assert manifest["run_llm_repair_showcase_matrix"] is True
+    assert defaults["require_llm_configuration"] is True
+    assert defaults["repository_patch_generation_mode"] == "hybrid"
+    assert defaults["repository_llm_patch_candidate_limit"] == 2
+    assert defaults["repository_patch_candidate_variant_allowlist"] == [
+        "insert_len_zero_guard"
+    ]
+    assert defaults["repository_test_patch_validation_limit"] == 1
+    assert defaults["repository_test_reflection_mode"] == "llm"
+    assert defaults["patch_judge_mode"] == "llm"
+    assert thresholds["min_run_count"] == 3
+    assert thresholds["min_llm_repair_showcase_matrix_reflection_success_count"] == 3
+    assert thresholds["min_repository_patch_generator_llm_candidate_count"] == 3
+    assert set(runs) == {
+        "reflection_guard_0",
+        "reflection_guard_1",
+        "reflection_guard_2",
+    }
+    assert runs["reflection_guard_0"]["include"] == [
+        "machine_learning/linear_regression.py"
+    ]
+    assert runs["reflection_guard_1"]["include"] == [
+        "scheduling/first_come_first_served.py"
+    ]
+    assert runs["reflection_guard_2"]["repo"] == (
+        "https://github.com/Anweilong111/code-intelligence-Agent"
+    )
+    for run in runs.values():
+        assert run["expected_patch_generation_mode"] == "hybrid"
+        assert run["expected_llm_patch_generation_status"] == "pass"
+        assert run["expected_patch_validation_status"] == "pass"
+        assert run["expected_patch_judge_mode"] == "llm"
+        assert (
+            run["metric_thresholds"][
+                "repository_test_patch_validation_successful_reflection_count"
+            ]
+            == 1
+        )
+        assert (
+            run["metric_thresholds"]["repository_patch_generator_llm_candidate_count"]
+            == 1
+        )
+        assert "llm_reflection_success" in run["scenario_tags"]
+        assert "sandbox_patch_validation" in run["scenario_tags"]
+
+
 def test_intelligence_suite_p6_llm_repair_blocker_manifest_defines_expected_blockers():
     manifest = json.loads(
         Path(
@@ -4205,13 +4262,18 @@ def test_intelligence_suite_p6_onboarding_blocker_manifest_defines_source_cases(
     assert manifest["run_llm_repair_showcase_matrix"] is True
     assert manifest["defaults"]["execution_profile"] == "agent-auto"
     assert manifest["defaults"]["repository_patch_generation_mode"] == "rule"
-    assert thresholds["min_run_count"] == 3
-    assert thresholds["min_llm_repair_showcase_matrix_blocker_count"] == 3
-    assert set(runs) == {
+    assert thresholds["min_run_count"] == 8
+    assert thresholds["min_llm_repair_showcase_matrix_blocker_count"] == 8
+    assert {
         "environment_blocker_0",
         "no_test_oracle_blocker_0",
         "no_test_oracle_blocker_1",
-    }
+        "requests_p6_tox_requirements",
+        "click_p6_src_layout_pyproject",
+        "rich_p6_complex_pyproject",
+        "fastapi_p6_pyproject_dependency",
+        "code_intelligence_agent_p6_timeout",
+    } == set(runs)
     assert "environment_blocker" in runs["environment_blocker_0"]["scenario_tags"]
     assert runs["environment_blocker_0"][
         "expected_repository_test_setup_doctor_blocker"
@@ -4222,6 +4284,10 @@ def test_intelligence_suite_p6_onboarding_blocker_manifest_defines_source_cases(
     assert runs["no_test_oracle_blocker_1"][
         "expected_repository_test_setup_doctor_blocker"
     ] == "test_command:no_recommended_test_command"
+    assert runs["requests_p6_tox_requirements"]["repo"] == (
+        "https://github.com/psf/requests"
+    )
+    assert runs["code_intelligence_agent_p6_timeout"]["repository_test_timeout"] == 1
 
 
 def test_intelligence_suite_p6_safety_gate_blocker_manifest_defines_source_case():

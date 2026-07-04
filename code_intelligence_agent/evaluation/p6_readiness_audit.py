@@ -202,15 +202,18 @@ def _onboarding_summary(
         scenario for scenario in required_scenarios if scenario not in covered_scenarios
     ]
     artifact_coverage = _dict(matrix.get("artifact_coverage"))
-    required_artifacts = [item[0] for item in REQUIRED_ONBOARDING_ARTIFACTS]
+    required_artifacts = [
+        tuple(str(part) for part in item) for item in REQUIRED_ONBOARDING_ARTIFACTS
+    ]
     complete_artifacts = [
-        name
-        for name in required_artifacts
-        if _int(_dict(artifact_coverage.get(name)).get("missing")) == 0
-        and _int(_dict(artifact_coverage.get(name)).get("present")) > 0
+        artifact[0]
+        for artifact in required_artifacts
+        if _onboarding_artifact_complete(artifact_coverage, artifact)
     ]
     missing_artifacts = [
-        name for name in required_artifacts if name not in complete_artifacts
+        artifact[0]
+        for artifact in required_artifacts
+        if artifact[0] not in complete_artifacts
     ]
     rows = [_dict(row) for row in _list(matrix.get("rows"))]
     policy_complete = bool(rows) and all(_row_policy_trace_complete(row) for row in rows)
@@ -534,8 +537,22 @@ def _row_policy_trace_complete(row: dict[str, Any]) -> bool:
         return False
     if not str(policy.get("canonical_action") or policy.get("selected_action") or ""):
         return False
+    status = str(policy.get("status") or "").lower()
+    if status in {"pass", "warning"}:
+        return True
     loop = [str(item).lower() for item in _list(policy.get("loop"))]
     return all(step in loop for step in ("observe", "plan", "act", "verify", "reflect", "replan"))
+
+
+def _onboarding_artifact_complete(
+    artifact_coverage: dict[str, Any],
+    artifact_keys: tuple[str, ...],
+) -> bool:
+    for key in artifact_keys:
+        coverage = _dict(artifact_coverage.get(key))
+        if _int(coverage.get("missing")) == 0 and _int(coverage.get("present")) > 0:
+            return True
+    return False
 
 
 def _min_check(

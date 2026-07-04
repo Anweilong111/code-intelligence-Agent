@@ -9,6 +9,7 @@
   "llm_repair_source_reports": [
     "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_llm_direct_success/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/p6_llm_reflection_success/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_safety_gate_blockers/github_repo_intelligence_suite.json"
   ],

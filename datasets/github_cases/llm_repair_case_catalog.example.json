@@ -5,6 +5,7 @@
   "source_reports": [
     "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_llm_direct_success/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/p6_llm_reflection_success/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json",
     "../../outputs_smoke/p6_safety_gate_blockers/github_repo_intelligence_suite.json"
   ],
@@ -41,21 +42,21 @@
     },
     {
       "case_id": "reflection_guard_0",
-      "repo": "controlled/reflection_guard_0",
+      "repo": "https://github.com/TheAlgorithms/Python",
       "expected_class": "llm_reflection_success",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_llm_reflection_success/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "reflection_guard_1",
-      "repo": "controlled/reflection_guard_1",
+      "repo": "https://github.com/TheAlgorithms/Python",
       "expected_class": "llm_reflection_success",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_llm_reflection_success/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "reflection_guard_2",
-      "repo": "controlled/reflection_guard_2",
+      "repo": "https://github.com/Anweilong111/code-intelligence-Agent",
       "expected_class": "llm_reflection_success",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_llm_reflection_success/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "llm_failed_blocker_0",
@@ -86,18 +87,16 @@
       "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
-      "case_id": "environment_blocker_1",
-      "repo": "controlled/environment_blocker_1",
+      "case_id": "requests_p6_tox_requirements",
+      "repo": "https://github.com/psf/requests",
       "expected_class": "llm_blocker",
-      "expected_blocker_category": "environment_blocker",
       "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
-      "case_id": "environment_blocker_2",
-      "repo": "controlled/environment_blocker_2",
+      "case_id": "click_p6_src_layout_pyproject",
+      "repo": "https://github.com/pallets/click",
       "expected_class": "llm_blocker",
-      "expected_blocker_category": "environment_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "no_test_oracle_blocker_0",
@@ -114,11 +113,10 @@
       "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
-      "case_id": "no_test_oracle_blocker_2",
-      "repo": "controlled/no_test_oracle_blocker_2",
+      "case_id": "rich_p6_complex_pyproject",
+      "repo": "https://github.com/Textualize/rich",
       "expected_class": "llm_blocker",
-      "expected_blocker_category": "no_test_oracle_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
       "case_id": "safety_gate_blocker_0",
@@ -128,18 +126,16 @@
       "source_report_path": "../../outputs_smoke/p6_safety_gate_blockers/github_repo_intelligence_suite.json"
     },
     {
-      "case_id": "safety_gate_blocker_1",
-      "repo": "controlled/safety_gate_blocker_1",
+      "case_id": "fastapi_p6_pyproject_dependency",
+      "repo": "https://github.com/tiangolo/fastapi",
       "expected_class": "llm_blocker",
-      "expected_blocker_category": "safety_gate_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     },
     {
-      "case_id": "safety_gate_blocker_2",
-      "repo": "controlled/safety_gate_blocker_2",
+      "case_id": "code_intelligence_agent_p6_timeout",
+      "repo": "https://github.com/Anweilong111/code-intelligence-Agent",
       "expected_class": "llm_blocker",
-      "expected_blocker_category": "safety_gate_blocker",
-      "source_report_path": "../../outputs_smoke/p6_llm_repair/github_repo_intelligence_suite.json"
+      "source_report_path": "../../outputs_smoke/p6_onboarding_blockers/github_repo_intelligence_suite.json"
     }
   ]
 }

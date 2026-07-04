@@ -20,12 +20,12 @@
     "max_command_failed_count": 0,
     "max_expectation_failed_count": 0,
     "max_metric_check_failed_count": 0,
-    "min_run_count": 3,
-    "min_llm_repair_showcase_matrix_blocker_count": 3,
-    "min_agent_controller_loop_complete_count": 3,
-    "min_agent_decision_timeline_complete_count": 3,
-    "min_agent_answer_coverage_complete_count": 3,
-    "min_objective_compliance_pass_count": 3
+    "min_run_count": 8,
+    "min_llm_repair_showcase_matrix_blocker_count": 8,
+    "min_agent_controller_loop_complete_count": 8,
+    "min_agent_decision_timeline_complete_count": 8,
+    "min_agent_answer_coverage_complete_count": 8,
+    "min_objective_compliance_pass_count": 8
   },
   "runs": [
     {
@@ -124,6 +124,176 @@
         "discovery_cache_reuse": 1,
         "discovery_cache_preferred": 1,
         "repository_structure_analyzed_file_count": 10,
+        "repo_graph_program_graph_available": 1,
+        "repository_test_environment_diagnosed": 1,
+        "repository_test_setup_doctor_diagnosed": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "requests_p6_tox_requirements",
+      "repo": "https://github.com/psf/requests",
+      "ref": "v2.31.0",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/psf_requests_v2_31_0.discovery.json",
+      "include": [
+        "requests/models.py"
+      ],
+      "target_prefix": "requests",
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "pinned_ref",
+        "source_cache",
+        "include_filter",
+        "requirements_project",
+        "tox_or_nox_project",
+        "dependency_missing",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_blocker": "no_static_candidates",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "click_p6_src_layout_pyproject",
+      "repo": "https://github.com/pallets/click",
+      "ref": "8.1.7",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pallets_click_8_1_7.discovery.json",
+      "include": [
+        "src/click/utils.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "src_layout_project",
+        "pyproject_project",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_blocker": "no_static_candidates",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "rich_p6_complex_pyproject",
+      "repo": "https://github.com/Textualize/rich",
+      "ref": "v13.7.1",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/textualize_rich_v13_7_1.discovery.json",
+      "include": [
+        "rich/console.py"
+      ],
+      "target_prefix": "rich",
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "pyproject_project",
+        "dependency_missing",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "fastapi_p6_pyproject_dependency",
+      "repo": "https://github.com/tiangolo/fastapi",
+      "ref": "0.111.0",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/tiangolo_fastapi_0_111_0.discovery.json",
+      "include": [
+        "fastapi/applications.py"
+      ],
+      "target_prefix": "fastapi",
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "pinned_ref",
+        "include_filter",
+        "pyproject_project",
+        "dependency_missing",
+        "test_execution_disabled"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 7,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "code_intelligence_agent_p6_timeout",
+      "repo": "https://github.com/Anweilong111/code-intelligence-Agent",
+      "checkout_repository_tests": true,
+      "run_repository_test_command": true,
+      "repository_test_timeout": 1,
+      "include": [
+        "code_intelligence_agent/evaluation/github_repo_intelligence_suite.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "p6_onboarding_blocker",
+        "github_url_input",
+        "default_branch_discovery",
+        "include_filter",
+        "pytest_project",
+        "pyproject_project",
+        "timeout"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "agent-auto",
+      "expected_artifact_inventory_status": "pass",
+      "expected_planned_repository_test_result_status": "fail",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 1,
         "repo_graph_program_graph_available": 1,
         "repository_test_environment_diagnosed": 1,
         "repository_test_setup_doctor_diagnosed": 1,

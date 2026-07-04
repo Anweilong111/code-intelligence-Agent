@@ -65,6 +65,7 @@ def run_github_repo_agent(
     repository_test_root: str | Path | None = None,
     repository_test_timeout: int = 20,
     repository_test_failure_overlay_candidate_limit: int = 5,
+    repository_test_patch_validation_limit: int = 5,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -137,6 +138,7 @@ def run_github_repo_agent(
             repository_test_root=repository_test_root,
             repository_test_timeout=repository_test_timeout,
             repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+            repository_test_patch_validation_limit=repository_test_patch_validation_limit,
             repository_patch_generation_mode=repository_patch_generation_mode,
             repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
             repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -211,6 +213,7 @@ def run_github_repo_agent(
             repository_test_root=repository_test_root,
             repository_test_timeout=repository_test_timeout,
             repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+            repository_test_patch_validation_limit=repository_test_patch_validation_limit,
             repository_patch_generation_mode=repository_patch_generation_mode,
             repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
             repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -307,6 +310,7 @@ def run_github_repo_agent(
             repository_test_root=repository_test_root,
             repository_test_timeout=repository_test_timeout,
             repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+            repository_test_patch_validation_limit=repository_test_patch_validation_limit,
             repository_patch_generation_mode=repository_patch_generation_mode,
             repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
             repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -1371,6 +1375,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--repository-test-patch-validation-limit",
+        type=int,
+        default=5,
+        help="Maximum repository-test patch candidates to validate before reflection.",
+    )
+    parser.add_argument(
         "--repository-patch-generation-mode",
         choices=["rule", "llm", "hybrid"],
         default="rule",
@@ -1510,6 +1520,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
             repository_test_root=args.repository_test_root,
             repository_test_timeout=args.repository_test_timeout,
             repository_test_failure_overlay_candidate_limit=args.repository_test_failure_overlay_candidate_limit,
+            repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
             repository_patch_generation_mode=args.repository_patch_generation_mode,
             repository_llm_patch_candidate_limit=args.repository_llm_patch_candidate_limit,
             repository_patch_candidate_variant_allowlist=(
@@ -3260,6 +3271,9 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         ),
         "repository_test_failure_overlay_candidate_limit": _int(
             repository_test_config.get("failure_overlay_candidate_limit", 0)
+        ),
+        "repository_test_patch_validation_limit": _int(
+            repository_test_config.get("patch_validation_limit", 0)
         ),
         "repository_test_failure_overlay_strategy_policy": str(
             repository_failure_overlay_strategy.get("policy") or ""

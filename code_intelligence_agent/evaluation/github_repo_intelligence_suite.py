@@ -249,6 +249,9 @@ def run_github_repo_intelligence_suite(
                             5,
                         )
                     ),
+                    repository_test_patch_validation_limit=_int(
+                        options.get("repository_test_patch_validation_limit", 5)
+                    ),
                     repository_patch_generation_mode=str(
                         options.get("repository_patch_generation_mode") or "rule"
                     ),
@@ -2771,8 +2774,9 @@ def _suite_summary(
         rule_patch_candidate_total += _int(
             metrics.get("repository_patch_generator_rule_count", 0)
         )
-        llm_patch_candidate_total += _int(
-            metrics.get("repository_patch_generator_llm_count", 0)
+        llm_patch_candidate_total += _first_int(
+            metrics.get("repository_patch_generator_llm_candidate_count"),
+            metrics.get("repository_patch_generator_llm_count"),
         )
         patch_safety_gate_blocked_total += _int(
             metrics.get("repository_patch_safety_gate_blocked_count", 0)
@@ -4518,6 +4522,10 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         "repository_patch_generator_llm_count": _int(
             patch_generator_counts.get("llm", 0)
         ),
+        "repository_patch_generator_llm_candidate_count": _first_int(
+            summary.get("repository_patch_generator_llm_candidate_count"),
+            patch_generator_counts.get("llm", 0),
+        ),
         "repository_llm_patch_generation_status": str(
             summary.get("repository_llm_patch_generation_status") or ""
         ),
@@ -4583,6 +4591,15 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
             summary.get("repository_llm_reflection_api_key_fingerprint")
             or llm_reflection_audit.get("api_key_fingerprint")
             or ""
+        ),
+        "repository_test_patch_validation_llm_reflection_attempt_count": _int(
+            summary.get(
+                "repository_test_patch_validation_llm_reflection_attempt_count",
+                0,
+            )
+        ),
+        "repository_test_patch_validation_llm_reflection_audit": _list(
+            summary.get("repository_test_patch_validation_llm_reflection_audit")
         ),
         "repository_patch_safety_gate_status": str(
             summary.get("repository_patch_safety_gate_status") or ""
@@ -5448,6 +5465,13 @@ def _command_args(repo: str, output_dir: Path, options: dict[str, Any]) -> list[
             [
                 "--repository-test-failure-overlay-candidate-limit",
                 str(options.get("repository_test_failure_overlay_candidate_limit")),
+            ]
+        )
+    if options.get("repository_test_patch_validation_limit") is not None:
+        args.extend(
+            [
+                "--repository-test-patch-validation-limit",
+                str(options.get("repository_test_patch_validation_limit")),
             ]
         )
     if options.get("repository_patch_generation_mode") is not None:

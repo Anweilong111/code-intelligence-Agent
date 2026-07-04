@@ -442,6 +442,7 @@ def onboard_from_discovery(
     repository_test_root: str | Path | None = None,
     repository_test_timeout: int = 20,
     repository_test_failure_overlay_candidate_limit: int = 5,
+    repository_test_patch_validation_limit: int = 5,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -467,6 +468,10 @@ def onboard_from_discovery(
     _validate_positive_limit(
         "repository_test_failure_overlay_candidate_limit",
         repository_test_failure_overlay_candidate_limit,
+    )
+    _validate_positive_limit(
+        "repository_test_patch_validation_limit",
+        repository_test_patch_validation_limit,
     )
     _validate_positive_limit(
         "repository_test_reflection_width",
@@ -1241,6 +1246,7 @@ def onboard_from_discovery(
         repository_test_patch_validation = build_repository_test_patch_validation(
             repository_test_patch_candidates,
             repository_root=effective_repository_test_analysis_root,
+            validation_limit=repository_test_patch_validation_limit,
             timeout=repository_test_timeout,
             reflection_mode=repository_test_reflection_mode,
             reflection_rounds=repository_test_reflection_rounds,
@@ -1512,6 +1518,7 @@ def onboard_from_discovery(
         repository_test_root=repository_test_root,
         repository_test_timeout=repository_test_timeout,
         repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+        repository_test_patch_validation_limit=repository_test_patch_validation_limit,
         repository_patch_generation_mode=repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -1595,6 +1602,7 @@ def onboard_tree(
     repository_test_root: str | Path | None = None,
     repository_test_timeout: int = 20,
     repository_test_failure_overlay_candidate_limit: int = 5,
+    repository_test_patch_validation_limit: int = 5,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -1661,6 +1669,7 @@ def onboard_tree(
         repository_test_root=repository_test_root,
         repository_test_timeout=repository_test_timeout,
         repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+        repository_test_patch_validation_limit=repository_test_patch_validation_limit,
         repository_patch_generation_mode=repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -1724,6 +1733,7 @@ def onboard_search(
     repository_test_root: str | Path | None = None,
     repository_test_timeout: int = 20,
     repository_test_failure_overlay_candidate_limit: int = 5,
+    repository_test_patch_validation_limit: int = 5,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -1793,6 +1803,7 @@ def onboard_search(
         repository_test_root=repository_test_root,
         repository_test_timeout=repository_test_timeout,
         repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+        repository_test_patch_validation_limit=repository_test_patch_validation_limit,
         repository_patch_generation_mode=repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -4275,6 +4286,7 @@ def build_onboarding_run_config(
     repository_test_root: str | Path | None,
     repository_test_timeout: int,
     repository_test_failure_overlay_candidate_limit: int,
+    repository_test_patch_validation_limit: int,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -4451,6 +4463,7 @@ def build_onboarding_run_config(
             else None,
             "timeout": repository_test_timeout,
             "failure_overlay_candidate_limit": repository_test_failure_overlay_candidate_limit,
+            "patch_validation_limit": repository_test_patch_validation_limit,
             "patch_generation_mode": repository_patch_generation_mode,
             "llm_patch_candidate_limit": repository_llm_patch_candidate_limit,
             "patch_candidate_variant_allowlist": [
@@ -5992,6 +6005,7 @@ def _onboard_fetch_report(
     repository_test_root: str | Path | None,
     repository_test_timeout: int,
     repository_test_failure_overlay_candidate_limit: int,
+    repository_test_patch_validation_limit: int,
     repository_patch_generation_mode: str = "rule",
     repository_llm_patch_candidate_limit: int | None = None,
     repository_patch_candidate_variant_allowlist: list[str] | None = None,
@@ -6052,6 +6066,7 @@ def _onboard_fetch_report(
         repository_test_root=repository_test_root,
         repository_test_timeout=repository_test_timeout,
         repository_test_failure_overlay_candidate_limit=repository_test_failure_overlay_candidate_limit,
+        repository_test_patch_validation_limit=repository_test_patch_validation_limit,
         repository_patch_generation_mode=repository_patch_generation_mode,
         repository_llm_patch_candidate_limit=repository_llm_patch_candidate_limit,
         repository_patch_candidate_variant_allowlist=repository_patch_candidate_variant_allowlist,
@@ -8390,6 +8405,15 @@ def _add_shared_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--repository-test-patch-validation-limit",
+        type=int,
+        default=5,
+        help=(
+            "Maximum patch candidates to validate in the repository-test "
+            "sandbox before reflection."
+        ),
+    )
+    parser.add_argument(
         "--repository-test-reflection-mode",
         choices=["rule", "llm", "none"],
         default="rule",
@@ -8576,6 +8600,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
             repository_test_root=args.repository_test_root,
             repository_test_timeout=args.repository_test_timeout,
             repository_test_failure_overlay_candidate_limit=args.repository_test_failure_overlay_candidate_limit,
+            repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
             repository_test_reflection_mode=args.repository_test_reflection_mode,
             repository_test_reflection_rounds=args.repository_test_reflection_rounds,
             repository_test_reflection_width=args.repository_test_reflection_width,
@@ -8639,6 +8664,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
                 repository_test_root=args.repository_test_root,
                 repository_test_timeout=args.repository_test_timeout,
                 repository_test_failure_overlay_candidate_limit=args.repository_test_failure_overlay_candidate_limit,
+                repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
                 repository_test_reflection_mode=args.repository_test_reflection_mode,
                 repository_test_reflection_rounds=args.repository_test_reflection_rounds,
                 repository_test_reflection_width=args.repository_test_reflection_width,
@@ -8698,6 +8724,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
                 repository_test_root=args.repository_test_root,
                 repository_test_timeout=args.repository_test_timeout,
                 repository_test_failure_overlay_candidate_limit=args.repository_test_failure_overlay_candidate_limit,
+                repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
                 repository_test_reflection_mode=args.repository_test_reflection_mode,
                 repository_test_reflection_rounds=args.repository_test_reflection_rounds,
                 repository_test_reflection_width=args.repository_test_reflection_width,
@@ -8760,6 +8787,7 @@ def main(argv: list[str] | None = None, opener=None) -> None:
                 repository_test_root=args.repository_test_root,
                 repository_test_timeout=args.repository_test_timeout,
                 repository_test_failure_overlay_candidate_limit=args.repository_test_failure_overlay_candidate_limit,
+                repository_test_patch_validation_limit=args.repository_test_patch_validation_limit,
                 repository_test_reflection_mode=args.repository_test_reflection_mode,
                 repository_test_reflection_rounds=args.repository_test_reflection_rounds,
                 repository_test_reflection_width=args.repository_test_reflection_width,

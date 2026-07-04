@@ -1,0 +1,169 @@
+{
+  "suite_name": "repo_intelligence_p6_llm_reflection_success",
+  "description": "P6 real LLM reflection-success source suite. It requires LLM and patch-judge credentials through environment variables only, starts from a constrained failing patch candidate, refines it through the reflection loop, validates refined candidates with sandbox pytest, and records judge/sandbox agreement without letting the judge replace sandbox success.",
+  "run_llm_repair_showcase_matrix": true,
+  "defaults": {
+    "execution_profile": "phase3-fast",
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 50,
+    "max_candidates": 20,
+    "auto_fallback": true,
+    "clear_llm_api_keys": false,
+    "require_llm_configuration": true,
+    "reject_placeholder_llm_api_keys": true,
+    "llm_api_key_min_length": 20,
+    "run_repository_test_command": true,
+    "repository_test_timeout": 3,
+    "repository_checkout_depth": 1,
+    "repository_test_failure_overlay_candidate_limit": 6,
+    "repository_patch_generation_mode": "hybrid",
+    "repository_llm_patch_candidate_limit": 2,
+    "repository_patch_candidate_variant_allowlist": [
+      "insert_len_zero_guard"
+    ],
+    "repository_test_patch_validation_limit": 1,
+    "repository_test_reflection_mode": "llm",
+    "repository_test_reflection_rounds": 1,
+    "repository_test_reflection_width": 2,
+    "patch_judge_mode": "llm"
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 3,
+    "min_llm_repair_showcase_matrix_reflection_success_count": 3,
+    "min_repository_patch_generator_llm_candidate_count": 3,
+    "min_repository_test_patch_validation_success_count": 3,
+    "min_repository_test_patch_validation_successful_reflection_count": 3,
+    "min_repository_test_patch_judge_candidate_count": 3,
+    "min_repository_test_patch_judge_accept_success_count": 3,
+    "min_repository_test_patch_judge_reject_failure_count": 3,
+    "min_agent_controller_loop_complete_count": 3,
+    "min_agent_decision_timeline_complete_count": 3,
+    "min_agent_answer_coverage_complete_count": 3
+  },
+  "runs": [
+    {
+      "name": "reflection_guard_0",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "machine_learning/linear_regression.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "llm_reflection_success",
+        "real_llm_required",
+        "llm_patch_generation",
+        "llm_reflection_generation",
+        "patch_judge_llm",
+        "sandbox_patch_validation"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "hybrid",
+      "expected_llm_patch_generation_status": "pass",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_patch_judge_mode": "llm",
+      "expected_patch_judge_status": "ready",
+      "expected_repair_validation_scope": "narrow_and_unchanged_regression_baseline",
+      "metric_thresholds": {
+        "repository_patch_generator_llm_candidate_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_validation_successful_reflection_count": 1,
+        "repository_test_patch_judge_candidate_count": 1,
+        "repository_test_patch_judge_accept_success_count": 1,
+        "repository_test_patch_judge_reject_failure_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 3
+      }
+    },
+    {
+      "name": "reflection_guard_1",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+      "include": [
+        "scheduling/first_come_first_served.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "llm_reflection_success",
+        "real_llm_required",
+        "llm_patch_generation",
+        "llm_reflection_generation",
+        "patch_judge_llm",
+        "sandbox_patch_validation"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "hybrid",
+      "expected_llm_patch_generation_status": "pass",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_patch_judge_mode": "llm",
+      "expected_patch_judge_status": "ready",
+      "expected_repair_validation_scope": "narrow_and_unchanged_regression_baseline",
+      "metric_thresholds": {
+        "repository_patch_generator_llm_candidate_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_validation_successful_reflection_count": 1,
+        "repository_test_patch_judge_candidate_count": 1,
+        "repository_test_patch_judge_accept_success_count": 1,
+        "repository_test_patch_judge_reject_failure_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 3
+      }
+    },
+    {
+      "name": "reflection_guard_2",
+      "repo": "https://github.com/Anweilong111/code-intelligence-Agent",
+      "ref": "b30b814d7dcca0555b42f86d09b4f48a2e6b5a28",
+      "include": [
+        "code_intelligence_agent/evaluation/report.py"
+      ],
+      "scenario_tags": [
+        "p6_llm_repair_matrix",
+        "llm_reflection_success",
+        "real_llm_required",
+        "llm_patch_generation",
+        "llm_reflection_generation",
+        "patch_judge_llm",
+        "sandbox_patch_validation"
+      ],
+      "expected_status": "pass",
+      "expected_execution_profile": "phase3-fast",
+      "expected_failure_overlay_status": "pass",
+      "expected_patch_candidates_status": "pass",
+      "expected_patch_generation_mode": "hybrid",
+      "expected_llm_patch_generation_status": "pass",
+      "expected_patch_safety_gate_status": "pass",
+      "expected_patch_validation_status": "pass",
+      "expected_patch_judge_mode": "llm",
+      "expected_patch_judge_status": "ready",
+      "expected_repair_validation_scope": "narrow_and_regression",
+      "metric_thresholds": {
+        "repository_patch_generator_llm_candidate_count": 1,
+        "repository_test_patch_candidate_count": 1,
+        "repository_test_patch_validation_success_count": 1,
+        "repository_test_patch_validation_successful_reflection_count": 1,
+        "repository_test_patch_judge_candidate_count": 1,
+        "repository_test_patch_judge_accept_success_count": 1,
+        "repository_test_patch_judge_reject_failure_count": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "agent_answer_coverage_answered_count": 3
+      }
+    }
+  ]
+}
