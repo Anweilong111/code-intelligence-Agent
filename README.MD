@@ -454,15 +454,59 @@ Agent-auto planning behavior:
 - In `agent-auto` / `--agent` mode, the LLM Planner is treated as the default
   planning proposer when replan credentials are available.
 - The planner prompt includes compact session memory, repo memory, repair
-  memory, failed patch fingerprints, user constraints, and repair strategy
-  preferences.
-- The planner proposal records `selected_action`, `reason`, `confidence`,
-  `risk`, `required_evidence`, `next_plan`, and `memory_used`.
+  memory, repository profile, Top-k localization, static and graph signals,
+  pytest/traceback evidence, executed actions, failed patch fingerprints, user
+  constraints, and remaining action/time/cost budgets.
+- The planner response is schema-gated and must contain `selected_action`,
+  `arguments`, `reason`, `confidence`, `risk`, `required_evidence`,
+  `expected_outcome`, `fallback_action`, `termination_condition`,
+  `memory_used`, and `next_plan`.
+- `--planner-mode rule` never calls the planning model. `llm` adopts a safe
+  registered alternative at confidence `>= 0.65`. `hybrid` compares the model
+  proposal with the rule action and requires confidence `>= 0.75` when they
+  disagree.
+- Every model-selected action must exist in the Action Registry. The Safety
+  Gate validates its argument allowlist, transition, risk, confirmation
+  requirement, executor availability, repeated-state history, and remaining
+  budget before adoption.
 - If the LLM is unavailable or no replan key is configured, the controller
   falls back to the rule-selected action and records
   `fallback_to_rule_planner=true`; the safety gate still shows the adopted
   controller action.
-- The LLM never bypasses action registry, risk policy, or sandbox validation.
+- Provider failures, response-schema failures, safety rejections, planner-rule
+  disagreements, fallbacks, token usage, and estimated cost are preserved in
+  `planner_trace`, `planner_resolution`, and `planner_metrics`.
+- The LLM never bypasses Action Registry, risk policy, action/time/cost budget,
+  or sandbox validation.
+
+受预算约束的 Hybrid Planner 运行示例：
+
+```powershell
+python -m code_intelligence_agent agent pypa/sampleproject `
+  outputs_smoke/sampleproject_hybrid_planner `
+  --execution-profile agent-auto `
+  --planner-mode hybrid `
+  --auto-controller-max-actions 4 `
+  --agent-time-budget-seconds 600 `
+  --agent-llm-cost-budget-usd 0.50 `
+  --user-goal "定位失败测试并生成经过 sandbox 验证的最小补丁" `
+  --preset mining `
+  --format markdown
+```
+
+离线复现 Rule / LLM / Hybrid 的受控对比：
+
+```powershell
+python -m code_intelligence_agent.evaluation.planner_strategy_evaluation `
+  datasets/planner_evaluation/v2_planner_controlled_cases.json `
+  outputs/phase2_planner_eval `
+  --format markdown `
+  --require-pass
+```
+
+Phase 2 的机器可读指标与验收说明位于
+`docs/v2/phase2_planner_metrics.json` 和
+`docs/v2/phase2_planner_metrics.md`。
 
 ## 目录结构
 

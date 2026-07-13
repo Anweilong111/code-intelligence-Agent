@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_planner_controlled_cases",
+  "description": "Offline controlled cases for rule, LLM+safety-gate, and hybrid planner comparison.",
+  "cases": [
+    {
+      "name": "safe_hybrid_alternative",
+      "proposal": {
+        "selected_action": "generate_hybrid_patch_candidates",
+        "arguments": {"candidate_limit": 3, "strategy": "hybrid fallback"},
+        "confidence": 0.94
+      },
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_hybrid_patch_candidates", "hybrid": "generate_hybrid_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "none", "hybrid": "none"}
+    },
+    {
+      "name": "same_action_consensus",
+      "proposal": {"selected_action": "generate_llm_patch_candidates", "arguments": {}, "confidence": 0.96},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "none", "hybrid": "none"}
+    },
+    {
+      "name": "moderate_confidence_disagreement",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {}, "confidence": 0.7},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_hybrid_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "none", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "unregistered_action",
+      "proposal": {"selected_action": "delete_repository", "arguments": {}, "confidence": 0.99},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "invalid_arguments",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {"shell_command": "pytest"}, "confidence": 0.93},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "low_confidence",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {}, "confidence": 0.31},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "high_risk_confirmation",
+      "summary_mode": "environment_diagnosis",
+      "proposal": {"selected_action": "prepare_repository_test_environment", "arguments": {"timeout_seconds": 120}, "confidence": 0.92, "risk": "low"},
+      "expected_actions": {"rule": "diagnose_test_execution_failure", "llm": "diagnose_test_execution_failure", "hybrid": "diagnose_test_execution_failure"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "invalid_fallback",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {}, "fallback_action": "delete_repository", "confidence": 0.9},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "invalid_json_response",
+      "client_mode": "invalid_json",
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "response_schema", "hybrid": "response_schema"}
+    },
+    {
+      "name": "missing_required_schema_fields",
+      "client_mode": "schema_error",
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "response_schema", "hybrid": "response_schema"}
+    },
+    {
+      "name": "network_provider_error",
+      "client_mode": "network_error",
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "network", "hybrid": "network"}
+    },
+    {
+      "name": "action_budget_exhausted",
+      "summary_mode": "budget_exhausted",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {}, "confidence": 0.9},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "repeated_unchanged_failure_state",
+      "summary_mode": "repeated_action",
+      "proposal": {"selected_action": "generate_hybrid_patch_candidates", "arguments": {}, "confidence": 0.9},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    },
+    {
+      "name": "unsafe_stage_transition",
+      "proposal": {"selected_action": "run_repository_tests_with_checkout", "arguments": {}, "confidence": 0.9},
+      "expected_actions": {"rule": "generate_llm_patch_candidates", "llm": "generate_llm_patch_candidates", "hybrid": "generate_llm_patch_candidates"},
+      "expected_classification": {"rule": "none", "llm": "safety_gate", "hybrid": "safety_gate"}
+    }
+  ]
+}

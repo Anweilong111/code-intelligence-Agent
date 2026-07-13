@@ -5,10 +5,12 @@ import ast
 import json
 import os
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from code_intelligence_agent.agents.action_registry import action_execution_policy
 from code_intelligence_agent.agents.llm_client import llm_config_audit
 from code_intelligence_agent.agents.controller import (
     build_agent_controller_plan,
@@ -96,6 +98,10 @@ def run_github_repo_intelligence(
     prefer_cached_discovery: bool = False,
     auto_controller_actions: bool = False,
     auto_controller_max_actions: int = 2,
+    planner_mode: str = "",
+    agent_time_budget_seconds: float = 0.0,
+    agent_llm_cost_budget_usd: float = 0.0,
+    user_goal: str = "",
     auto_phase4_evaluation: bool = False,
     auto_phase4_strategy_reruns: bool = False,
     phase4_strategy_rerun_limit: int = 3,
@@ -174,6 +180,31 @@ def run_github_repo_intelligence(
             error=exc,
         )
         _write_agent_report(report)
+    effective_planner_mode = str(planner_mode or "").strip().lower()
+    if not effective_planner_mode:
+        effective_planner_mode = (
+            "hybrid" if auto_controller_actions or agent_shortcut else "rule"
+        )
+    if effective_planner_mode not in {"rule", "llm", "hybrid"}:
+        raise ValueError(f"unsupported planner mode: {effective_planner_mode}")
+    controller_invocation = {
+        "effective_execution_profile": str(execution_profile or ""),
+        "agent_mode": bool(agent_shortcut or auto_controller_actions),
+        "auto_controller_actions": bool(auto_controller_actions),
+        "auto_controller_max_actions": _int(auto_controller_max_actions),
+        "planner_mode": effective_planner_mode,
+        "agent_time_budget_seconds": max(0.0, float(agent_time_budget_seconds)),
+        "agent_llm_cost_budget_usd": max(0.0, float(agent_llm_cost_budget_usd)),
+        "user_goal": str(user_goal or ""),
+    }
+    report.summary["agent_invocation"] = dict(controller_invocation)
+    report.summary["planner_mode"] = effective_planner_mode
+    report.summary["agent_time_budget_seconds"] = controller_invocation[
+        "agent_time_budget_seconds"
+    ]
+    report.summary["agent_llm_cost_budget_usd"] = controller_invocation[
+        "agent_llm_cost_budget_usd"
+    ]
     if auto_controller_actions:
         report = _run_auto_controller_actions(
             report,
@@ -189,6 +220,7 @@ def run_github_repo_intelligence(
                 if phase4_strategy_rerun_timeout is None
                 else phase4_strategy_rerun_timeout
             ),
+            controller_invocation=controller_invocation,
         )
     else:
         report.summary.setdefault("agent_auto_enabled", False)
@@ -243,6 +275,10 @@ def run_github_repo_intelligence(
         prefer_cached_discovery=prefer_cached_discovery,
         auto_controller_actions=auto_controller_actions,
         auto_controller_max_actions=auto_controller_max_actions,
+        planner_mode=effective_planner_mode,
+        agent_time_budget_seconds=agent_time_budget_seconds,
+        agent_llm_cost_budget_usd=agent_llm_cost_budget_usd,
+        user_goal=user_goal,
         auto_phase4_evaluation=auto_phase4_evaluation,
         auto_phase4_strategy_reruns=auto_phase4_strategy_reruns,
         phase4_strategy_rerun_limit=phase4_strategy_rerun_limit,
@@ -292,6 +328,10 @@ def _agent_invocation_summary(
     prefer_cached_discovery: bool,
     auto_controller_actions: bool,
     auto_controller_max_actions: int,
+    planner_mode: str,
+    agent_time_budget_seconds: float,
+    agent_llm_cost_budget_usd: float,
+    user_goal: str,
     auto_phase4_evaluation: bool,
     auto_phase4_strategy_reruns: bool,
     phase4_strategy_rerun_limit: int,
@@ -376,6 +416,10 @@ def _agent_invocation_summary(
         "patch_judge_mode": str(patch_judge_mode or ""),
         "auto_controller_actions": bool(auto_controller_actions),
         "auto_controller_max_actions": _int(auto_controller_max_actions),
+        "planner_mode": str(planner_mode or "rule"),
+        "agent_time_budget_seconds": max(0.0, float(agent_time_budget_seconds)),
+        "agent_llm_cost_budget_usd": max(0.0, float(agent_llm_cost_budget_usd)),
+        "user_goal": str(user_goal or ""),
         "auto_phase4_evaluation": bool(auto_phase4_evaluation),
         "auto_phase4_strategy_reruns": bool(auto_phase4_strategy_reruns),
         "phase4_strategy_rerun_limit": _int(phase4_strategy_rerun_limit),
@@ -413,6 +457,7 @@ def _run_auto_controller_actions(
     auto_phase4_strategy_reruns: bool = False,
     phase4_strategy_rerun_limit: int = 3,
     phase4_strategy_rerun_timeout: int = DEFAULT_REPOSITORY_TEST_TIMEOUT,
+    controller_invocation: dict[str, Any] | None = None,
 ) -> GitHubRepoAgentReport:
     current_report = report
     current_kwargs = dict(agent_kwargs)
@@ -421,13 +466,45 @@ def _run_auto_controller_actions(
     trace: list[dict[str, Any]] = []
     max_auto_actions = max(0, _int(max_actions))
     stop_reason = "max_actions_zero" if max_auto_actions <= 0 else ""
+    controller_invocation = _dict(controller_invocation)
+    started_at = time.monotonic()
+    time_budget = max(
+        0.0,
+        float(controller_invocation.get("agent_time_budget_seconds") or 0.0),
+    )
+    cost_budget = max(
+        0.0,
+        float(controller_invocation.get("agent_llm_cost_budget_usd") or 0.0),
+    )
+    llm_cost_used = max(
+        0.0,
+        float(current_report.summary.get("agent_llm_cost_used_usd") or 0.0),
+    )
+    last_controller: dict[str, Any] = {}
 
     while not stop_reason:
+        current_report.summary.pop("_agent_controller_snapshot", None)
+        elapsed_seconds = round(time.monotonic() - started_at, 6)
+        current_report.summary["agent_invocation"] = dict(controller_invocation)
+        current_report.summary["planner_mode"] = str(
+            controller_invocation.get("planner_mode") or "rule"
+        )
+        current_report.summary["agent_elapsed_seconds"] = elapsed_seconds
+        current_report.summary["agent_time_budget_seconds"] = time_budget
+        current_report.summary["agent_llm_cost_budget_usd"] = cost_budget
+        current_report.summary["agent_llm_cost_used_usd"] = round(llm_cost_used, 8)
+        if time_budget and elapsed_seconds >= time_budget:
+            stop_reason = "time_budget_exhausted"
+            break
+        if cost_budget and llm_cost_used >= cost_budget:
+            stop_reason = "llm_cost_budget_exhausted"
+            break
         iteration = len(trace) + 1
         current_report.summary["agent_auto_actions"] = list(actions)
         current_report.summary["agent_auto_trace"] = list(trace)
         summary = github_repo_intelligence_summary(current_report)
         controller = _dict(summary.get("agent_controller"))
+        last_controller = controller
         selected_action = _dict(controller.get("selected_action"))
         action_id = str(selected_action.get("id") or "")
         trace_item = _auto_trace_item(
@@ -436,6 +513,42 @@ def _run_auto_controller_actions(
             controller=controller,
             selected_action=selected_action,
         )
+        planner_cost = _controller_planner_cost_usd(controller)
+        if planner_cost:
+            llm_cost_used = round(llm_cost_used + planner_cost, 8)
+            current_report.summary["agent_llm_cost_used_usd"] = llm_cost_used
+        elapsed_seconds = round(time.monotonic() - started_at, 6)
+        current_report.summary["agent_elapsed_seconds"] = elapsed_seconds
+        budget_stop_reason = ""
+        if time_budget and elapsed_seconds >= time_budget:
+            budget_stop_reason = "time_budget_exhausted"
+        elif cost_budget and llm_cost_used >= cost_budget:
+            budget_stop_reason = "llm_cost_budget_exhausted"
+        policy = action_execution_policy(action_id)
+        if not budget_stop_reason and not policy.get("registered"):
+            budget_stop_reason = "unregistered_action_registry_block"
+        if (
+            not budget_stop_reason
+            and selected_action.get("proposal_source") == "llm"
+            and policy.get("requires_confirmation")
+        ):
+            budget_stop_reason = "high_risk_action_requires_confirmation"
+        if budget_stop_reason:
+            stop_reason = budget_stop_reason
+            trace_item["auto_executed"] = False
+            trace_item["stop_reason"] = stop_reason
+            trace_item.update(
+                _auto_trace_stop_fields(
+                    stop_reason=stop_reason,
+                    summary=summary,
+                    controller=controller,
+                    selected_action=selected_action,
+                    action_count=len(actions),
+                    max_actions=max_auto_actions,
+                )
+            )
+            trace.append(trace_item)
+            break
 
         if len(actions) >= max_auto_actions:
             limit_reason = _auto_stop_reason(
@@ -491,7 +604,10 @@ def _run_auto_controller_actions(
                 phase4_strategy_rerun_limit=phase4_strategy_rerun_limit,
                 phase4_strategy_rerun_timeout=phase4_strategy_rerun_timeout,
             )
-            after_summary = github_repo_intelligence_summary(current_report)
+            after_summary = _controller_loop_summary(
+                current_report,
+                planner_mode_override="rule",
+            )
             action_record = _auto_local_action_record(
                 action_id=action_id,
                 selected_action=selected_action,
@@ -508,6 +624,11 @@ def _run_auto_controller_actions(
             continue
 
         rerun_kwargs = _auto_action_rerun_kwargs(action_id, current_kwargs)
+        if rerun_kwargs is not None and selected_action.get("proposal_source") == "llm":
+            rerun_kwargs = _apply_planner_action_arguments(
+                rerun_kwargs,
+                _dict(selected_action.get("arguments")),
+            )
         if rerun_kwargs is None:
             stop_reason = _auto_stop_reason(action_id, selected_action, current_kwargs)
             trace_item["auto_executed"] = False
@@ -537,7 +658,14 @@ def _run_auto_controller_actions(
         trace_item.update(snapshot_paths)
 
         rerun_report = run_github_repo_agent(repo_spec, output_dir, **rerun_kwargs)
-        after_summary = github_repo_intelligence_summary(rerun_report)
+        rerun_report.summary["agent_invocation"] = dict(controller_invocation)
+        rerun_report.summary["planner_mode"] = str(
+            controller_invocation.get("planner_mode") or "rule"
+        )
+        after_summary = _controller_loop_summary(
+            rerun_report,
+            planner_mode_override="rule",
+        )
         action_record = _auto_action_record(
             action_id=action_id,
             selected_action=selected_action,
@@ -555,7 +683,19 @@ def _run_auto_controller_actions(
         current_report = rerun_report
         current_kwargs = rerun_kwargs
 
-    final_summary = github_repo_intelligence_summary(current_report)
+    current_report.summary["agent_invocation"] = dict(controller_invocation)
+    current_report.summary["agent_elapsed_seconds"] = round(
+        time.monotonic() - started_at,
+        6,
+    )
+    current_report.summary["agent_time_budget_seconds"] = time_budget
+    current_report.summary["agent_llm_cost_budget_usd"] = cost_budget
+    current_report.summary["agent_llm_cost_used_usd"] = round(llm_cost_used, 8)
+    final_summary = _controller_loop_summary(
+        current_report,
+        planner_mode_override="rule" if not last_controller else None,
+        controller_override=last_controller,
+    )
     final_controller = _dict(final_summary.get("agent_controller"))
     final_selected_action = _dict(final_controller.get("selected_action"))
     stop_state = _auto_stop_state(
@@ -598,7 +738,49 @@ def _run_auto_controller_actions(
         trace,
         stop_reason,
     )
+    controller_snapshot = last_controller or final_controller
+    if controller_snapshot:
+        current_report.summary["_agent_controller_snapshot"] = controller_snapshot
     return current_report
+
+
+def _controller_loop_summary(
+    report: GitHubRepoAgentReport,
+    *,
+    planner_mode_override: str | None = None,
+    controller_override: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    marker = object()
+    previous_mode = report.summary.get("_planner_mode_override", marker)
+    previous_controller = report.summary.get("_agent_controller_snapshot", marker)
+    if planner_mode_override:
+        report.summary["_planner_mode_override"] = planner_mode_override
+    if controller_override:
+        report.summary["_agent_controller_snapshot"] = controller_override
+    try:
+        return github_repo_intelligence_summary(report)
+    finally:
+        if previous_mode is marker:
+            report.summary.pop("_planner_mode_override", None)
+        else:
+            report.summary["_planner_mode_override"] = previous_mode
+        if previous_controller is marker:
+            report.summary.pop("_agent_controller_snapshot", None)
+        else:
+            report.summary["_agent_controller_snapshot"] = previous_controller
+
+
+def _controller_planner_cost_usd(controller: dict[str, Any]) -> float:
+    advisor = _dict(controller.get("llm_replan_advisor"))
+    metadata = _dict(advisor.get("request_metadata"))
+    cost = _dict(metadata.get("cost_estimate"))
+    if not cost.get("available", False):
+        return 0.0
+    try:
+        value = float(cost.get("estimated_cost_usd") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+    return max(0.0, value)
 
 
 def _auto_trace_stop_fields(
@@ -731,8 +913,17 @@ def _auto_stop_category(stop_reason: str) -> str:
     reason = str(stop_reason or "")
     if reason == "disabled":
         return "disabled"
-    if reason in {"max_actions_zero", "max_actions_reached"}:
+    if reason in {
+        "max_actions_zero",
+        "max_actions_reached",
+        "time_budget_exhausted",
+        "llm_cost_budget_exhausted",
+    }:
         return "budget_exhausted"
+    if reason == "high_risk_action_requires_confirmation":
+        return "manual_or_blocked"
+    if reason == "unregistered_action_registry_block":
+        return "unsupported_action"
     if reason.startswith("phase_goal_reached:"):
         return "phase_goal_reached"
     if reason == "selected_action_not_executable":
@@ -833,6 +1024,8 @@ def _auto_stop_external_input_kind(
     combined = " ".join([action_id, blocker, stop_reason]).lower()
     if category == "disabled":
         return "agent_auto_disabled"
+    if stop_reason == "high_risk_action_requires_confirmation":
+        return "user_confirmation"
     if category == "budget_exhausted":
         return "controller_budget"
     if "github_fetch" in combined or "github_token" in combined:
@@ -864,6 +1057,8 @@ def _auto_stop_recovery_policy(
         return "stop_phase_goal_reached"
     if category == "budget_exhausted":
         return "increase_auto_controller_budget_or_run_next_action"
+    if stop_reason == "high_risk_action_requires_confirmation":
+        return "request_explicit_user_confirmation"
     if external_input_kind == "environment":
         return "apply_environment_repair_then_rerun_agent"
     if external_input_kind == "github_token_or_cache":
@@ -890,6 +1085,8 @@ def _auto_stop_recommended_next_action(
 ) -> str:
     if category == "phase_goal_reached":
         return "Review generated artifacts and proceed to optional Phase 4 evaluation."
+    if external_input_kind == "user_confirmation":
+        return "Review the planned high-risk action and confirm it explicitly before execution."
     if external_input_kind == "controller_budget":
         return "Rerun with a larger --auto-controller-max-actions value or execute the selected command manually."
     if external_input_kind == "environment":
@@ -1018,6 +1215,34 @@ def _source_filter_rerun_kwargs(
         rerun_kwargs["max_candidates"] = DEFAULT_MAX_CANDIDATES
         changed = True
     return rerun_kwargs if changed else None
+
+
+def _apply_planner_action_arguments(
+    rerun_kwargs: dict[str, Any],
+    arguments: dict[str, Any],
+) -> dict[str, Any]:
+    updated = dict(rerun_kwargs)
+    if arguments.get("scope"):
+        updated["include"] = [str(arguments["scope"])]
+    if arguments.get("timeout_seconds") is not None:
+        updated["repository_test_timeout"] = _int(arguments["timeout_seconds"])
+    if arguments.get("top_k") is not None:
+        updated["max_candidates"] = _int(arguments["top_k"])
+    if arguments.get("candidate_limit") is not None:
+        limit = _int(arguments["candidate_limit"])
+        updated["repository_llm_patch_candidate_limit"] = limit
+        updated["repository_test_patch_validation_limit"] = limit
+    if arguments.get("reflection_rounds") is not None:
+        updated["repository_test_reflection_rounds"] = _int(
+            arguments["reflection_rounds"]
+        )
+    if arguments.get("reflection_width") is not None:
+        updated["repository_test_reflection_width"] = _int(
+            arguments["reflection_width"]
+        )
+    if arguments.get("ref"):
+        updated["ref"] = str(arguments["ref"])
+    return updated
 
 
 def _static_mining_rerun_kwargs(
@@ -2959,6 +3184,9 @@ def _auto_trace_item(
         "observe_agent_goal_readiness_failed_criteria": [
             str(item) for item in _list(goal_readiness.get("failed_criteria"))
         ],
+        "observe_state_fingerprint": str(
+            controller.get("planner_state_fingerprint") or ""
+        ),
         "plan_selected_action": str(selected_action.get("id") or ""),
         "plan_action_phase": str(selected_action.get("phase") or ""),
         "plan_action_tool": str(selected_action.get("tool") or ""),
@@ -4163,8 +4391,20 @@ def _write_auto_controller_snapshot(
 
 def github_repo_intelligence_summary(
     report: GitHubRepoAgentReport,
+    *,
+    planner_mode_override: str | None = None,
+    controller_override: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     summary = report.summary
+    planner_mode_override = (
+        planner_mode_override
+        or str(summary.get("_planner_mode_override") or "")
+        or None
+    )
+    effective_controller_override = (
+        _dict(controller_override)
+        or _dict(summary.get("_agent_controller_snapshot"))
+    )
     structure = _repository_structure_summary(report)
     repo_graph = _dict(structure.get("repo_graph"))
     static_fault_localization = _static_fault_localization_summary(
@@ -4991,7 +5231,11 @@ def github_repo_intelligence_summary(
         ),
     }
     payload["agent_memory_report"] = build_agent_memory_report_from_summary(payload)
-    payload["agent_controller"] = build_agent_controller_plan(payload)
+    rule_controller = build_agent_controller_plan(payload, planner_mode="rule")
+    payload["agent_controller"] = _controller_with_planner_snapshot(
+        rule_controller,
+        effective_controller_override,
+    )
     payload["agent_decision_timeline"] = _agent_decision_timeline_summary(payload)
     payload["agent_execution_trace"] = build_agent_execution_trace(payload)
     payload["agent_decision_report"] = build_agent_decision_report_from_summary(payload)
@@ -5000,7 +5244,11 @@ def github_repo_intelligence_summary(
     payload.update(_github_repo_intelligence_status_summary(payload))
     payload["agent_answers"] = _agent_answers_summary(payload)
     payload["acceptance_gate"] = _acceptance_gate_summary(payload)
-    _refresh_agent_goal_readiness_and_controller(payload)
+    _refresh_agent_goal_readiness_and_controller(
+        payload,
+        planner_mode_override=planner_mode_override,
+        controller_override=effective_controller_override,
+    )
     payload["final_report"] = _final_agent_report_summary(payload)
     return payload
 
@@ -8044,10 +8292,22 @@ def _agent_goal_check(name: str, passed: bool, evidence: str) -> dict[str, Any]:
 
 def _refresh_agent_goal_readiness_and_controller(
     payload: dict[str, Any],
+    *,
+    planner_mode_override: str | None = None,
+    controller_override: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload["agent_goal_readiness"] = _agent_goal_readiness_summary(payload)
     payload["agent_memory_report"] = build_agent_memory_report_from_summary(payload)
-    payload["agent_controller"] = build_agent_controller_plan(payload)
+    if _dict(controller_override):
+        payload["agent_controller"] = _controller_with_planner_snapshot(
+            _dict(payload.get("agent_controller")),
+            _dict(controller_override),
+        )
+    else:
+        payload["agent_controller"] = build_agent_controller_plan(
+            payload,
+            planner_mode=planner_mode_override,
+        )
     payload["agent_decision_timeline"] = _agent_decision_timeline_summary(payload)
     payload["agent_execution_trace"] = build_agent_execution_trace(payload)
     payload["agent_decision_report"] = build_agent_decision_report_from_summary(payload)
@@ -8055,6 +8315,42 @@ def _refresh_agent_goal_readiness_and_controller(
     payload["agent_goal_readiness"] = _agent_goal_readiness_summary(payload)
     payload["final_report"] = _final_agent_report_summary(payload)
     return payload
+
+
+def _controller_with_planner_snapshot(
+    rule_controller: dict[str, Any],
+    planner_snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    if not planner_snapshot:
+        return rule_controller
+    merged = dict(rule_controller)
+    for key in (
+        "status",
+        "selected_action",
+        "planner_strategy",
+        "planner_resolution",
+        "planner_trace",
+        "planner_metrics",
+        "plan",
+        "verification",
+        "reflection",
+        "replan",
+        "termination",
+        "llm_replan_advisor",
+        "action_decision_audit",
+        "policy_trace",
+        "decision_trace",
+    ):
+        if key in planner_snapshot:
+            merged[key] = planner_snapshot[key]
+    policy_trace = _dict(merged.get("policy_trace"))
+    if policy_trace:
+        policy_trace = dict(policy_trace)
+        policy_trace["planner_budget"] = _dict(
+            rule_controller.get("planner_budget")
+        )
+        merged["policy_trace"] = policy_trace
+    return merged
 
 
 def _acceptance_check(name: str, passed: bool, evidence: str) -> dict[str, Any]:
@@ -9919,7 +10215,10 @@ def _ensure_repository_test_environment_repair_plan_artifacts(
         }
     )
     summary["agent_memory_report"] = build_agent_memory_report_from_summary(summary)
-    summary["agent_controller"] = build_agent_controller_plan(summary)
+    summary["agent_controller"] = build_agent_controller_plan(
+        summary,
+        planner_mode="rule",
+    )
     summary["artifact_inventory"] = _artifact_inventory_summary(summary)
     summary["agent_answers"] = _agent_answers_summary(summary)
     summary["acceptance_gate"] = _acceptance_gate_summary(summary)
@@ -11955,6 +12254,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--auto-controller-actions", action="store_true")
     parser.add_argument("--auto-controller-max-actions", type=int, default=2)
     parser.add_argument(
+        "--planner-mode",
+        choices=["rule", "llm", "hybrid"],
+        help=(
+            "Planner strategy. Agent mode defaults to hybrid; LLM/provider "
+            "failure always falls back to the rule planner."
+        ),
+    )
+    parser.add_argument("--agent-time-budget-seconds", type=float, default=0.0)
+    parser.add_argument("--agent-llm-cost-budget-usd", type=float, default=0.0)
+    parser.add_argument(
+        "--user-goal",
+        default="",
+        help="Natural-language repository objective supplied to the planner.",
+    )
+    parser.add_argument(
         "--auto-phase4-evaluation",
         action="store_true",
         help=(
@@ -12145,6 +12459,10 @@ def main(argv: list[str] | None = None, opener=None) -> None:
         prefer_cached_discovery=args.prefer_cached_discovery,
         auto_controller_actions=args.auto_controller_actions,
         auto_controller_max_actions=args.auto_controller_max_actions,
+        planner_mode=args.planner_mode or "",
+        agent_time_budget_seconds=args.agent_time_budget_seconds,
+        agent_llm_cost_budget_usd=args.agent_llm_cost_budget_usd,
+        user_goal=args.user_goal,
         auto_phase4_evaluation=args.auto_phase4_evaluation,
         auto_phase4_strategy_reruns=args.auto_phase4_strategy_reruns,
         phase4_strategy_rerun_limit=args.phase4_strategy_rerun_limit,
@@ -12213,6 +12531,8 @@ def _apply_execution_profile(
         return
     if profile == "agent-auto":
         args.auto_controller_actions = True
+        if not getattr(args, "planner_mode", None):
+            args.planner_mode = "hybrid"
         if not getattr(args, "source_cache_dir", None):
             args.source_cache_dir = str(Path(str(args.output_dir)) / "source_cache")
         if (

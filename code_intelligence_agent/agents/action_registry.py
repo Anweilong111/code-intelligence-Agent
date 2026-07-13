@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -61,6 +62,70 @@ ACTION_ALIASES = {
     "expand_patch_candidates_or_reflection": "run_llm_patch_reflection_loop",
     "regenerate_safe_patch_candidates": "generate_hybrid_patch_candidates",
     "run_search_and_ablation_evaluation": "generate_final_agent_report",
+}
+
+
+AUTO_EXECUTABLE_ACTION_IDS = {
+    "adjust_source_filters",
+    "expand_static_candidate_search",
+    "mine_static_bug_signals",
+    "build_static_graph_fault_ranking",
+    "adjust_application_source_focus",
+    "discover_repository_tests",
+    "run_repository_tests_with_checkout",
+    "collect_dynamic_failure_evidence",
+    "generate_controlled_failure_overlay",
+    "build_dynamic_fault_localization",
+    "generate_and_validate_patches",
+    "generate_llm_patch_candidates",
+    "generate_hybrid_patch_candidates",
+    "run_patch_reflection_loop",
+    "run_llm_patch_reflection_loop",
+    "regenerate_safe_patch_candidates",
+    "narrow_repository_tests_after_timeout",
+    "run_search_and_ablation_evaluation",
+    "convert_passing_tests_to_regression_guard",
+    "prepare_repository_test_environment",
+}
+
+HIGH_RISK_ACTION_IDS = {
+    "prepare_repository_test_environment",
+}
+
+MEDIUM_RISK_CANONICAL_ACTION_IDS = {
+    "clone_or_load_repository",
+    "run_repository_tests",
+    "generate_llm_patch_candidates",
+    "retry_llm_patch_generation",
+    "generate_hybrid_patch_candidates",
+    "validate_patch_in_sandbox",
+    "run_llm_patch_reflection_loop",
+    "run_llm_patch_judge",
+}
+
+ACTION_ARGUMENT_ALLOWLIST = {
+    "clone_or_load_repository": {"ref"},
+    "discover_repository_structure": {"scope"},
+    "discover_tests": {"scope"},
+    "diagnose_environment": {"timeout_seconds"},
+    "run_repository_tests": {"timeout_seconds"},
+    "localize_fault": {"scope", "top_k"},
+    "generate_llm_patch_candidates": {"candidate_limit", "strategy"},
+    "diagnose_llm_provider_failure": {"provider", "model"},
+    "retry_llm_patch_generation": {"candidate_limit", "strategy"},
+    "generate_hybrid_patch_candidates": {"candidate_limit", "strategy"},
+    "validate_patch_in_sandbox": {
+        "candidate_ids",
+        "timeout_seconds",
+    },
+    "run_llm_patch_reflection_loop": {
+        "reflection_rounds",
+        "reflection_width",
+        "strategy",
+    },
+    "run_llm_patch_judge": {"candidate_ids"},
+    "emit_blocker_report": set(),
+    "generate_final_agent_report": set(),
 }
 
 
@@ -363,6 +428,10 @@ ACTION_SPECS = [
 def build_agent_action_registry() -> dict[str, Any]:
     actions = [spec.to_dict() for spec in ACTION_SPECS]
     action_ids = {spec.action_id for spec in ACTION_SPECS}
+    policy_action_ids = sorted(action_ids | set(ACTION_ALIASES))
+    execution_policies = [
+        action_execution_policy(action_id) for action_id in policy_action_ids
+    ]
     required_status = {
         action_id: action_id in action_ids for action_id in REQUIRED_ACTION_IDS
     }
@@ -378,6 +447,8 @@ def build_agent_action_registry() -> dict[str, Any]:
         "action_count": len(actions),
         "alias_count": sum(len(spec.aliases) for spec in ACTION_SPECS),
         "actions": actions,
+        "execution_policy_count": len(execution_policies),
+        "execution_policies": execution_policies,
     }
 
 
@@ -392,6 +463,136 @@ def action_spec_for(action_id: Any) -> dict[str, Any]:
         if spec.action_id == canonical:
             return spec.to_dict()
     return {}
+
+
+def action_execution_policy(action_id: Any) -> dict[str, Any]:
+    requested = str(action_id or "")
+    canonical = canonical_action_id(requested)
+    registered = bool(action_spec_for(requested))
+    if requested in HIGH_RISK_ACTION_IDS:
+        risk = "high"
+    elif canonical in MEDIUM_RISK_CANONICAL_ACTION_IDS:
+        risk = "medium"
+    else:
+        risk = "low"
+    return {
+        "action_id": requested,
+        "canonical_action_id": canonical,
+        "registered": registered,
+        "risk": risk,
+        "requires_confirmation": risk == "high",
+        "auto_executable": requested in AUTO_EXECUTABLE_ACTION_IDS,
+        "allowed_argument_keys": sorted(
+            ACTION_ARGUMENT_ALLOWLIST.get(canonical, set())
+        ),
+    }
+
+
+def validate_action_arguments(
+    action_id: Any,
+    arguments: Any,
+) -> tuple[dict[str, Any], list[str]]:
+    policy = action_execution_policy(action_id)
+    if not isinstance(arguments, dict):
+        return {}, ["arguments_not_object"]
+    allowed = set(policy["allowed_argument_keys"])
+    unknown = sorted(set(arguments) - allowed)
+    errors = ["unknown_argument_keys"] if unknown else []
+    normalized: dict[str, Any] = {}
+    for key, value in arguments.items():
+        if key not in allowed:
+            continue
+        if key == "scope":
+            path = _safe_relative_path(value)
+            if path:
+                normalized[key] = path
+            elif value:
+                errors.append(f"unsafe_{key}")
+            continue
+        if key in {
+            "timeout_seconds",
+            "top_k",
+            "candidate_limit",
+            "reflection_rounds",
+            "reflection_width",
+        }:
+            number = _bounded_integer(key, value)
+            if number is None:
+                errors.append(f"invalid_{key}")
+            else:
+                normalized[key] = number
+            continue
+        if key == "candidate_ids":
+            if not isinstance(value, list):
+                errors.append("candidate_ids_not_list")
+                continue
+            candidates = [
+                item
+                for item in (_safe_identifier(item) for item in value[:20])
+                if item
+            ]
+            if len(candidates) != len(value[:20]):
+                errors.append("unsafe_candidate_id")
+            if candidates:
+                normalized[key] = candidates
+            continue
+        if key == "ref":
+            ref = str(value or "").strip()
+            if re.fullmatch(r"[A-Za-z0-9_./-]{1,160}", ref) and ".." not in ref:
+                normalized[key] = ref
+            elif value:
+                errors.append("unsafe_ref")
+            continue
+        if key in {"strategy", "provider", "model"}:
+            text = _safe_text(value, limit=300)
+            if text:
+                normalized[key] = text
+            elif value:
+                errors.append(f"unsafe_{key}")
+    return normalized, list(dict.fromkeys(errors))
+
+
+def _safe_relative_path(value: Any) -> str:
+    text = str(value or "").strip().replace("\\", "/")
+    if not text or len(text) > 300:
+        return ""
+    if text.startswith(("/", "~")) or re.match(r"^[A-Za-z]:", text):
+        return ""
+    if ".." in text.split("/"):
+        return ""
+    if not re.fullmatch(r"[A-Za-z0-9_./*-]+", text):
+        return ""
+    return text.strip("/")
+
+
+def _bounded_integer(key: str, value: Any) -> int | None:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    limits = {
+        "timeout_seconds": (1, 3600),
+        "top_k": (1, 100),
+        "candidate_limit": (1, 20),
+        "reflection_rounds": (1, 5),
+        "reflection_width": (1, 10),
+    }
+    minimum, maximum = limits[key]
+    return number if minimum <= number <= maximum else None
+
+
+def _safe_identifier(value: Any) -> str:
+    text = str(value or "").strip()
+    return text if re.fullmatch(r"[A-Za-z0-9_.:-]{1,120}", text) else ""
+
+
+def _safe_text(value: Any, *, limit: int) -> str:
+    text = " ".join(str(value or "").strip().split())
+    if not text or len(text) > limit or any(ord(char) < 32 for char in text):
+        return ""
+    if re.search(r"[;&|<>`]", text):
+        return ""
+    return text
 
 
 def build_agent_policy_trace(
@@ -482,6 +683,37 @@ def render_agent_action_registry_markdown(payload: dict[str, Any]) -> str:
                     _markdown_cell(row.get("blocker_type")),
                     _markdown_cell(row.get("retry_policy")),
                     _markdown_cell(", ".join(str(x) for x in _list(row.get("next_possible_actions")))),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Execution Policies",
+            "",
+            "| Action | Canonical | Risk | Auto Executable | Confirmation | Allowed Arguments |",
+            "| --- | --- | --- | ---: | ---: | --- |",
+        ]
+    )
+    for item in _list(payload.get("execution_policies")):
+        row = _dict(item)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    f"`{_markdown_cell(row.get('action_id'))}`",
+                    f"`{_markdown_cell(row.get('canonical_action_id'))}`",
+                    _markdown_cell(row.get("risk")),
+                    str(bool(row.get("auto_executable", False))).lower(),
+                    str(bool(row.get("requires_confirmation", False))).lower(),
+                    _markdown_cell(
+                        ", ".join(
+                            str(value)
+                            for value in _list(row.get("allowed_argument_keys"))
+                        )
+                        or "none"
+                    ),
                 ]
             )
             + " |"

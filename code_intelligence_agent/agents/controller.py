@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,12 +13,14 @@ from code_intelligence_agent.agents.llm_client import (
     llm_config_audit,
 )
 from code_intelligence_agent.agents.action_registry import (
+    action_execution_policy,
     action_spec_for,
     build_agent_action_registry,
     build_agent_policy_trace,
     canonical_action_id,
     render_agent_action_registry_markdown,
     render_agent_policy_trace_markdown,
+    validate_action_arguments,
 )
 
 
@@ -38,33 +41,62 @@ def build_agent_controller_plan(
     *,
     llm_replan_client: LLMClient | None = None,
     enable_llm_replan: bool | None = None,
+    planner_mode: str | None = None,
 ) -> dict[str, Any]:
     readiness = _dict(intelligence_summary.get("analysis_readiness"))
     fault = _dict(intelligence_summary.get("fault_localization"))
-    selected_action = _select_action(intelligence_summary, readiness, fault)
+    rule_selected_action = _select_action(intelligence_summary, readiness, fault)
     observations = _observations(intelligence_summary, readiness, fault)
-    plan = _plan_steps(selected_action, readiness, fault)
-    verification = _verification(selected_action, readiness, fault)
-    reflection = _reflection(selected_action, readiness, fault)
-    replan = _replan(
-        selected_action,
-        readiness,
-        reflection,
-        verification,
-        _dict(intelligence_summary.get("agent_goal_readiness")),
-    )
-    termination = _termination(selected_action, readiness)
-    selected_action = _enrich_selected_action_decision(
+    cycle = _controller_cycle(
         summary=intelligence_summary,
         readiness=readiness,
         fault=fault,
-        selected_action=selected_action,
+        selected_action=rule_selected_action,
         observations=observations,
-        verification=verification,
-        reflection=reflection,
-        replan=replan,
-        termination=termination,
     )
+    rule_selected_action = cycle["selected_action"]
+    strategy = _planner_strategy(
+        intelligence_summary,
+        client=llm_replan_client,
+        enabled=enable_llm_replan,
+        explicit=planner_mode,
+    )
+    budget = _planner_budget_context(intelligence_summary)
+    llm_replan_advisor = _llm_replan_advisor(
+        intelligence_summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=rule_selected_action,
+        observations=observations,
+        verification=cycle["verification"],
+        reflection=cycle["reflection"],
+        replan=cycle["replan"],
+        termination=cycle["termination"],
+        client=llm_replan_client,
+        enabled=enable_llm_replan,
+        planner_mode=strategy,
+        budget_context=budget,
+    )
+    selected_action, planner_resolution = _resolve_planner_selection(
+        intelligence_summary,
+        rule_selected_action=rule_selected_action,
+        advisor=llm_replan_advisor,
+        planner_mode=strategy,
+    )
+    if selected_action != rule_selected_action:
+        cycle = _controller_cycle(
+            summary=intelligence_summary,
+            readiness=readiness,
+            fault=fault,
+            selected_action=selected_action,
+            observations=observations,
+        )
+        selected_action = cycle["selected_action"]
+    plan = cycle["plan"]
+    verification = cycle["verification"]
+    reflection = cycle["reflection"]
+    replan = cycle["replan"]
+    termination = cycle["termination"]
     auto_controller = _auto_controller_summary(intelligence_summary)
     llm_repair_action_audit = _llm_repair_action_audit(
         intelligence_summary,
@@ -82,19 +114,9 @@ def build_agent_controller_plan(
         llm_repair_action_audit=llm_repair_action_audit,
         action_registry=action_registry,
     )
-    llm_replan_advisor = _llm_replan_advisor(
-        intelligence_summary,
-        readiness=readiness,
-        fault=fault,
-        selected_action=selected_action,
-        observations=observations,
-        verification=verification,
-        reflection=reflection,
-        replan=replan,
-        termination=termination,
-        client=llm_replan_client,
-        enabled=enable_llm_replan,
-    )
+    policy_trace["planner_strategy"] = strategy
+    policy_trace["planner_budget"] = budget
+    policy_trace["planner_resolution"] = planner_resolution
     action_decision_audit = _action_decision_audit(
         intelligence_summary,
         readiness=readiness,
@@ -116,6 +138,17 @@ def build_agent_controller_plan(
         replan=replan,
         termination=termination,
     )
+    planner_trace = _planner_trace(
+        observations=observations,
+        advisor=llm_replan_advisor,
+        resolution=planner_resolution,
+        selected_action=selected_action,
+    )
+    planner_metrics = _planner_run_metrics(
+        advisor=llm_replan_advisor,
+        resolution=planner_resolution,
+    )
+    planner_state_fingerprint = _planner_state_fingerprint(intelligence_summary)
     return {
         "agent_type": "code_intelligence_controller",
         "control_loop": AGENT_LOOP,
@@ -125,6 +158,13 @@ def build_agent_controller_plan(
         "next_stage": str(readiness.get("next_stage") or ""),
         "primary_blocker": str(readiness.get("blocker") or ""),
         "selected_action": selected_action,
+        "rule_selected_action": rule_selected_action,
+        "planner_strategy": strategy,
+        "planner_budget": budget,
+        "planner_resolution": planner_resolution,
+        "planner_trace": planner_trace,
+        "planner_metrics": planner_metrics,
+        "planner_state_fingerprint": planner_state_fingerprint,
         "observations": observations,
         "plan": plan,
         "verification": verification,
@@ -151,8 +191,52 @@ def build_agent_controller_plan(
     }
 
 
+def _controller_cycle(
+    *,
+    summary: dict[str, Any],
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+) -> dict[str, Any]:
+    plan = _plan_steps(selected_action, readiness, fault)
+    verification = _verification(selected_action, readiness, fault)
+    reflection = _reflection(selected_action, readiness, fault)
+    replan = _replan(
+        selected_action,
+        readiness,
+        reflection,
+        verification,
+        _dict(summary.get("agent_goal_readiness")),
+    )
+    termination = _termination(selected_action, readiness)
+    selected_action = _enrich_selected_action_decision(
+        summary=summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        observations=observations,
+        verification=verification,
+        reflection=reflection,
+        replan=replan,
+        termination=termination,
+    )
+    return {
+        "selected_action": selected_action,
+        "plan": plan,
+        "verification": verification,
+        "reflection": reflection,
+        "replan": replan,
+        "termination": termination,
+    }
+
+
 def render_agent_controller_markdown(payload: dict[str, Any]) -> str:
     selected = _dict(payload.get("selected_action"))
+    rule_selected = _dict(payload.get("rule_selected_action"))
+    planner_resolution = _dict(payload.get("planner_resolution"))
+    planner_budget = _dict(payload.get("planner_budget"))
+    planner_metrics = _dict(payload.get("planner_metrics"))
     lines = [
         "# GitHub Repo Agent Controller",
         "",
@@ -166,6 +250,20 @@ def render_agent_controller_markdown(payload: dict[str, Any]) -> str:
         f"- Current Stage: `{_markdown_cell(payload.get('current_stage'))}`",
         f"- Next Stage: `{_markdown_cell(payload.get('next_stage'))}`",
         f"- Primary Blocker: `{_markdown_cell(payload.get('primary_blocker'))}`",
+        "",
+        "## Planner Resolution",
+        "",
+        f"- Strategy: `{_markdown_cell(payload.get('planner_strategy') or 'rule')}`",
+        f"- Rule Action: `{_markdown_cell(rule_selected.get('id') or 'none')}`",
+        f"- LLM Proposed Action: `{_markdown_cell(planner_resolution.get('llm_proposed_action') or 'none')}`",
+        f"- Adopted Action: `{_markdown_cell(planner_resolution.get('adopted_action') or selected.get('id') or 'none')}`",
+        f"- Adopted Source: `{_markdown_cell(planner_resolution.get('adopted_source') or 'rule')}`",
+        f"- Resolution Reason: `{_markdown_cell(planner_resolution.get('resolution_reason') or 'none')}`",
+        f"- Remaining Actions: `{_markdown_cell(planner_budget.get('remaining_actions'))}`",
+        f"- Remaining Time Seconds: `{_markdown_cell(planner_budget.get('remaining_time_seconds'))}`",
+        f"- Remaining LLM Cost USD: `{_markdown_cell(planner_budget.get('remaining_llm_cost_usd'))}`",
+        f"- Safety Rejections: {_int(planner_metrics.get('safety_gate_rejection_count', 0))}",
+        f"- Planner Fallbacks: {_int(planner_metrics.get('fallback_count', 0))}",
         "",
         "## Selected Action",
         "",
@@ -3831,6 +3929,282 @@ def _decision_trace(
     ]
 
 
+def _planner_strategy(
+    summary: dict[str, Any],
+    *,
+    client: LLMClient | None,
+    enabled: bool | None,
+    explicit: str | None,
+) -> str:
+    invocation = _dict(summary.get("agent_invocation"))
+    configured = str(
+        explicit
+        or summary.get("planner_mode")
+        or invocation.get("planner_mode")
+        or os.environ.get("CIA_AGENT_PLANNER_MODE")
+        or ""
+    ).strip().lower()
+    if configured:
+        if configured not in {"rule", "llm", "hybrid"}:
+            return "rule"
+        return configured
+    if enabled is False:
+        return "rule"
+    if (
+        client is not None
+        or enabled is True
+        or _env_flag("CIA_LLM_REPLAN_ENABLED")
+        or _agent_auto_llm_planner_enabled(summary)
+    ):
+        return "hybrid"
+    return "rule"
+
+
+def _planner_budget_context(summary: dict[str, Any]) -> dict[str, Any]:
+    invocation = _dict(summary.get("agent_invocation"))
+    action_limit = _int(
+        summary.get("agent_auto_max_actions")
+        or invocation.get("auto_controller_max_actions")
+        or 0
+    )
+    actions_used = _int(
+        summary.get("agent_auto_action_count")
+        or len(_list(summary.get("agent_auto_actions")))
+    )
+    time_limit = _float(
+        summary.get("agent_time_budget_seconds")
+        or invocation.get("agent_time_budget_seconds")
+        or 0.0
+    )
+    elapsed = _float(summary.get("agent_elapsed_seconds") or 0.0)
+    cost_limit = _float(
+        summary.get("agent_llm_cost_budget_usd")
+        or invocation.get("agent_llm_cost_budget_usd")
+        or 0.0
+    )
+    cost_used = _float(summary.get("agent_llm_cost_used_usd") or 0.0)
+    remaining_actions = max(0, action_limit - actions_used) if action_limit else None
+    remaining_time = max(0.0, time_limit - elapsed) if time_limit else None
+    remaining_cost = max(0.0, cost_limit - cost_used) if cost_limit else None
+    exhausted_reasons = []
+    if remaining_actions == 0:
+        exhausted_reasons.append("action_budget_exhausted")
+    if remaining_time == 0.0:
+        exhausted_reasons.append("time_budget_exhausted")
+    if remaining_cost == 0.0:
+        exhausted_reasons.append("llm_cost_budget_exhausted")
+    return {
+        "action_limit": action_limit,
+        "actions_used": actions_used,
+        "remaining_actions": remaining_actions,
+        "time_limit_seconds": time_limit,
+        "elapsed_seconds": elapsed,
+        "remaining_time_seconds": remaining_time,
+        "llm_cost_limit_usd": cost_limit,
+        "llm_cost_used_usd": cost_used,
+        "remaining_llm_cost_usd": remaining_cost,
+        "exhausted": bool(exhausted_reasons),
+        "exhausted_reasons": exhausted_reasons,
+    }
+
+
+def _resolve_planner_selection(
+    summary: dict[str, Any],
+    *,
+    rule_selected_action: dict[str, Any],
+    advisor: dict[str, Any],
+    planner_mode: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    rule_action_id = str(rule_selected_action.get("id") or "")
+    proposal = _dict(advisor.get("planner_decision"))
+    gate = _dict(advisor.get("safety_gate"))
+    proposal_source = str(proposal.get("proposal_source") or "")
+    proposed_action = str(proposal.get("selected_action") or "")
+    adopted_action = str(gate.get("adopted_action") or rule_action_id)
+    use_llm = bool(
+        planner_mode in {"llm", "hybrid"}
+        and advisor.get("status") == "pass"
+        and gate.get("status") == "pass"
+        and adopted_action
+        and adopted_action != rule_action_id
+    )
+    if use_llm:
+        selected = _planner_selected_action(
+            summary,
+            proposal=proposal,
+            action_id=adopted_action,
+        )
+        if not selected:
+            use_llm = False
+            selected = rule_selected_action
+            resolution_reason = "adopted_action_could_not_be_materialized"
+        else:
+            resolution_reason = "safe_llm_action_adopted"
+    else:
+        selected = rule_selected_action
+        resolution_reason = str(
+            advisor.get("fallback_reason")
+            or gate.get("reason")
+            or "rule_planner_selected"
+        )
+    disagreement = bool(
+        proposal_source == "llm"
+        and proposed_action
+        and canonical_action_id(proposed_action)
+        != canonical_action_id(rule_action_id)
+    )
+    gate_status = str(gate.get("status") or "")
+    safety_fallback = bool(
+        proposal_source == "llm"
+        and not use_llm
+        and gate_status in {"blocked", "requires_confirmation", "advisory_only"}
+    )
+    fallback_used = bool(
+        advisor.get("fallback_to_rule_planner", False) or safety_fallback
+    )
+    return selected, {
+        "planner_mode": planner_mode,
+        "rule_action": rule_action_id,
+        "proposal_source": proposal_source,
+        "llm_proposed_action": proposed_action if proposal_source == "llm" else "",
+        "adopted_action": str(selected.get("id") or rule_action_id),
+        "adopted_source": "llm" if use_llm else "rule",
+        "disagreement": disagreement,
+        "resolution_reason": resolution_reason,
+        "safety_gate_status": gate_status,
+        "fallback_used": fallback_used,
+    }
+
+
+def _planner_selected_action(
+    summary: dict[str, Any],
+    *,
+    proposal: dict[str, Any],
+    action_id: str,
+) -> dict[str, Any]:
+    del summary
+    spec = action_spec_for(action_id)
+    policy = action_execution_policy(action_id)
+    if not spec or not policy.get("registered"):
+        return {}
+    arguments, errors = validate_action_arguments(
+        action_id,
+        proposal.get("arguments", {}),
+    )
+    if errors:
+        return {}
+    action = _action(
+        action_id,
+        str(spec.get("phase") or ""),
+        str(spec.get("tool") or ""),
+        f"Action Registry dispatch: {action_id}",
+        str(proposal.get("reason") or "LLM planner selected this registered action."),
+        str(policy.get("risk") or "medium"),
+        executable_now=bool(
+            policy.get("auto_executable")
+            and not policy.get("requires_confirmation")
+        ),
+    )
+    action.update(
+        {
+            "arguments": arguments,
+            "confidence": _float(proposal.get("confidence", 0.0)),
+            "expected_outcome": str(proposal.get("expected_outcome") or ""),
+            "fallback_action": str(proposal.get("fallback_action") or ""),
+            "termination_condition": str(
+                proposal.get("termination_condition") or ""
+            ),
+            "required_evidence": _list(proposal.get("required_evidence")),
+            "memory_used": _list(proposal.get("memory_used")),
+            "proposal_source": "llm",
+        }
+    )
+    return action
+
+
+def _planner_trace(
+    *,
+    observations: list[dict[str, str]],
+    advisor: dict[str, Any],
+    resolution: dict[str, Any],
+    selected_action: dict[str, Any],
+) -> list[dict[str, Any]]:
+    proposal = _dict(advisor.get("planner_decision"))
+    gate = _dict(advisor.get("safety_gate"))
+    return [
+        {
+            "step": "observe",
+            "status": "complete",
+            "evidence": observations[:40],
+        },
+        {
+            "step": "propose",
+            "status": str(advisor.get("status") or "disabled"),
+            "source": str(proposal.get("proposal_source") or "rule"),
+            "selected_action": str(proposal.get("selected_action") or ""),
+            "reason": str(proposal.get("reason") or advisor.get("reason") or ""),
+        },
+        {
+            "step": "safety_gate",
+            "status": str(gate.get("status") or "not_requested"),
+            "reason": str(gate.get("reason") or ""),
+            "registered": bool(gate.get("recommended_registered", False)),
+            "argument_errors": _list(gate.get("argument_errors")),
+            "blocked_reasons": _list(gate.get("blocked_reasons")),
+        },
+        {
+            "step": "adopt",
+            "status": "complete",
+            "selected_action": str(selected_action.get("id") or ""),
+            "source": str(resolution.get("adopted_source") or "rule"),
+            "reason": str(resolution.get("resolution_reason") or ""),
+        },
+    ]
+
+
+def _planner_run_metrics(
+    *,
+    advisor: dict[str, Any],
+    resolution: dict[str, Any],
+) -> dict[str, Any]:
+    metadata = _dict(advisor.get("request_metadata"))
+    usage = _dict(metadata.get("usage"))
+    cost = _dict(metadata.get("cost_estimate"))
+    gate = _dict(advisor.get("safety_gate"))
+    proposal = _dict(advisor.get("planner_decision"))
+    proposal_source = str(proposal.get("proposal_source") or "")
+    gate_status = str(gate.get("status") or "")
+    llm_called = bool(metadata or advisor.get("status") in {"pass", "error"})
+    safety_rejected = gate_status in {
+        "blocked",
+        "requires_confirmation",
+        "advisory_only",
+    }
+    fallback_used = bool(advisor.get("fallback_to_rule_planner", False)) or bool(
+        proposal_source == "llm"
+        and str(resolution.get("adopted_source") or "rule") == "rule"
+        and safety_rejected
+    )
+    return {
+        "planner_mode": str(resolution.get("planner_mode") or "rule"),
+        "selected_source": str(resolution.get("adopted_source") or "rule"),
+        "llm_called": llm_called,
+        "llm_total_tokens": _int(usage.get("total_tokens", 0)),
+        "llm_estimated_cost_usd": _float(cost.get("estimated_cost_usd", 0.0)),
+        "safety_gate_rejection_count": int(safety_rejected),
+        "fallback_count": int(fallback_used),
+        "invalid_action_count": int(
+            proposal_source == "llm"
+            and (
+                "action_not_registered" in _list(gate.get("blocked_reasons"))
+                or "invalid_action_arguments" in _list(gate.get("blocked_reasons"))
+            )
+        ),
+        "provider_failure_class": str(advisor.get("provider_failure_class") or ""),
+        "disagreement": bool(resolution.get("disagreement", False)),
+    }
+
+
 def _llm_replan_advisor(
     summary: dict[str, Any],
     *,
@@ -3844,7 +4218,10 @@ def _llm_replan_advisor(
     termination: dict[str, Any],
     client: LLMClient | None = None,
     enabled: bool | None = None,
+    planner_mode: str = "hybrid",
+    budget_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    budget_context = _dict(budget_context)
     explicit_enabled = enabled
     if explicit_enabled is None:
         explicit_enabled = (
@@ -3852,7 +4229,10 @@ def _llm_replan_advisor(
             or _env_flag("CIA_LLM_REPLAN_ENABLED")
             or _agent_auto_llm_planner_enabled(summary)
         )
-    active = bool(client is not None or explicit_enabled)
+    active = bool(
+        planner_mode in {"llm", "hybrid"}
+        and (client is not None or explicit_enabled)
+    )
     audit = llm_config_audit("replan", enabled=active).to_dict()
     memory_context = _llm_planner_memory_context(summary)
     base = {
@@ -3867,13 +4247,46 @@ def _llm_replan_advisor(
         "advice": {},
         "planner_decision": {},
         "llm_planner_proposal": {},
-        "safety_gate": _llm_planner_safety_gate({}, selected_action),
+        "safety_gate": _llm_planner_safety_gate(
+            {},
+            selected_action,
+            summary=summary,
+            planner_mode=planner_mode,
+            budget_context=budget_context,
+        ),
         "request_metadata": {},
         "memory_context": memory_context,
         "fallback_to_rule_planner": False,
+        "planner_mode": planner_mode,
+        "budget_context": budget_context,
+        "provider_failure_class": "",
     }
     if not active:
         return base
+    if budget_context.get("exhausted"):
+        fallback = _rule_fallback_planner_proposal(
+            selected_action=selected_action,
+            verification=verification,
+            memory_context=memory_context,
+            reason="planner_budget_exhausted",
+        )
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "planner_budget_exhausted",
+            "blocker": "planner_budget_exhausted",
+            "planner_decision": fallback,
+            "llm_planner_proposal": fallback,
+            "safety_gate": _llm_planner_safety_gate(
+                fallback,
+                selected_action,
+                summary=summary,
+                planner_mode=planner_mode,
+                budget_context=budget_context,
+            ),
+            "fallback_to_rule_planner": True,
+            "fallback_reason": "planner_budget_exhausted",
+        }
     if client is None and not bool(audit.get("api_key_present", False)):
         fallback = _rule_fallback_planner_proposal(
             selected_action=selected_action,
@@ -3895,6 +4308,7 @@ def _llm_replan_advisor(
             ),
             "fallback_to_rule_planner": True,
             "fallback_reason": "missing_llm_replan_api_key",
+            "provider_failure_class": "credential",
         }
     try:
         active_client = client or create_replan_client()
@@ -3910,9 +4324,14 @@ def _llm_replan_advisor(
                 replan=replan,
                 termination=termination,
                 memory_context=memory_context,
+                budget_context=budget_context,
             )
         )
     except LLMRequestError as exc:
+        provider_failure_class = _llm_provider_failure_class(
+            str(_dict(exc.metadata).get("error_reason") or exc.reason),
+            exc.reason,
+        )
         fallback = _rule_fallback_planner_proposal(
             selected_action=selected_action,
             verification=verification,
@@ -3929,6 +4348,7 @@ def _llm_replan_advisor(
             "llm_planner_proposal": fallback,
             "fallback_to_rule_planner": True,
             "fallback_reason": exc.reason,
+            "provider_failure_class": provider_failure_class,
         }
     except Exception as exc:  # pragma: no cover - defensive artifact path
         reason = type(exc).__name__
@@ -3948,6 +4368,7 @@ def _llm_replan_advisor(
             "llm_planner_proposal": fallback,
             "fallback_to_rule_planner": True,
             "fallback_reason": reason,
+            "provider_failure_class": "client_error",
         }
     advice, parse_reason = _parse_llm_replan_advice(response.text)
     if not advice:
@@ -3967,8 +4388,16 @@ def _llm_replan_advisor(
             "llm_planner_proposal": fallback,
             "fallback_to_rule_planner": True,
             "fallback_reason": parse_reason,
+            "provider_failure_class": "response_schema",
         }
     planner_decision = _llm_planner_decision_from_advice(advice, memory_context)
+    safety_gate = _llm_planner_safety_gate(
+        advice,
+        selected_action,
+        summary=summary,
+        planner_mode=planner_mode,
+        budget_context=budget_context,
+    )
     return {
         **base,
         "status": "pass",
@@ -3976,7 +4405,7 @@ def _llm_replan_advisor(
         "advice": advice,
         "planner_decision": planner_decision,
         "llm_planner_proposal": planner_decision,
-        "safety_gate": _llm_planner_safety_gate(advice, selected_action),
+        "safety_gate": safety_gate,
         "request_metadata": _safe_llm_metadata(response.metadata),
     }
 
@@ -4103,6 +4532,7 @@ def _rule_fallback_planner_proposal(
         required.append(expected_artifact)
     return {
         "selected_action": str(selected_action.get("id") or ""),
+        "arguments": _dict(selected_action.get("arguments")),
         "reason": (
             f"LLM planner unavailable ({reason}); using rule-selected action "
             "after controller policy and sandbox safety gates."
@@ -4110,6 +4540,9 @@ def _rule_fallback_planner_proposal(
         "confidence": _float(selected_action.get("confidence", 0.0)),
         "risk": str(selected_action.get("risk") or "medium"),
         "required_evidence": required,
+        "expected_outcome": str(verification.get("success_condition") or ""),
+        "fallback_action": str(selected_action.get("fallback_action") or ""),
+        "termination_condition": "verified success, terminal blocker, or exhausted budget",
         "next_plan": str(selected_action.get("next_plan") or ""),
         "memory_used": _list(memory_context.get("memory_used")),
         "proposal_source": "rule_fallback",
@@ -4154,10 +4587,20 @@ def _llm_replan_prompt(
     replan: dict[str, Any],
     termination: dict[str, Any],
     memory_context: dict[str, Any],
+    budget_context: dict[str, Any],
 ) -> str:
+    evidence_context = _planner_evidence_context(
+        summary,
+        readiness=readiness,
+        fault=fault,
+        memory_context=memory_context,
+        budget_context=budget_context,
+    )
     payload = {
         "objective": "advise_on_next_agent_replan_action",
+        "user_goal": evidence_context["user_goal"],
         "repo": summary.get("repo") or summary.get("repo_spec") or "",
+        "repository_profile": evidence_context["repository_profile"],
         "current_stage": readiness.get("current_stage") or "",
         "next_stage": readiness.get("next_stage") or "",
         "blocker": readiness.get("blocker") or "",
@@ -4165,28 +4608,43 @@ def _llm_replan_prompt(
             "mode": fault.get("mode") or "",
             "status": fault.get("status") or "",
             "top_function": fault.get("top_function") or "",
+            "top_k": evidence_context["top_k"],
+            "static_rule_signals": evidence_context["static_rule_signals"],
+            "program_graph_neighborhood": evidence_context[
+                "program_graph_neighborhood"
+            ],
         },
+        "pytest_evidence": evidence_context["pytest_evidence"],
+        "executed_actions": evidence_context["executed_actions"],
         "selected_action": {
             "id": selected_action.get("id") or "",
             "reason": selected_action.get("reason") or "",
             "risk": selected_action.get("risk") or "",
             "executable_now": bool(selected_action.get("executable_now", False)),
         },
+        "action_registry_candidates": _planner_action_registry_candidates(
+            selected_action
+        ),
         "verification": verification,
         "reflection": reflection,
         "rule_replan": replan,
         "termination": termination,
         "memory_context": memory_context,
+        "budget_context": budget_context,
         "observations": observations[:40],
         "response_schema": {
             "selected_action": "string action id; use same value as recommended_action when both are present",
             "recommended_action": "string",
+            "arguments": "object containing only Action Registry parameters",
             "reason": "string",
             "rationale": "string fallback for reason",
             "confidence": "number from 0 to 1",
             "risk": "low|medium|high",
             "blocker": "string",
             "required_evidence": ["string evidence needed before execution"],
+            "expected_outcome": "string describing verifiable post-action evidence",
+            "fallback_action": "registered action id used if verification fails",
+            "termination_condition": "string success, blocker, or budget stop condition",
             "next_plan": "string",
             "memory_used": ["string memory source or fact used for the decision"],
             "should_override_controller": "boolean",
@@ -4196,9 +4654,153 @@ def _llm_replan_prompt(
             "Do not override sandbox pytest as the success authority.",
             "Prefer blocker reporting when evidence is insufficient.",
             "Use memory_context when it contains failed patches, user constraints, or repair strategy preferences.",
+            "Select only actions listed in the Action Registry and never emit shell commands.",
+            "Respect remaining action, time, and LLM cost budgets.",
         ],
     }
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def _planner_evidence_context(
+    summary: dict[str, Any],
+    *,
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    memory_context: dict[str, Any],
+    budget_context: dict[str, Any],
+) -> dict[str, Any]:
+    invocation = _dict(summary.get("agent_invocation"))
+    session = _dict(summary.get("agent_session"))
+    structure = _dict(summary.get("repository_structure"))
+    repo_graph = _dict(structure.get("repo_graph"))
+    program_graph = _dict(repo_graph.get("program_graph"))
+    answers = _dict(summary.get("agent_answers"))
+    top_k = _list(fault.get("rankings")) or _list(
+        answers.get("top_suspicious_functions")
+    )
+    static_signals = _list(fault.get("static_signals")) or _list(
+        summary.get("static_rule_signals")
+    )
+    test_result = _dict(summary.get("repository_test_execution_result"))
+    traceback = str(
+        test_result.get("traceback")
+        or summary.get("planned_repository_test_failure_signal")
+        or summary.get("repository_test_failure_signal")
+        or ""
+    )
+    executed_actions = []
+    for item_value in _list(summary.get("agent_auto_actions"))[-20:]:
+        item = _dict(item_value)
+        executed_actions.append(
+            {
+                "action_id": str(item.get("action_id") or item.get("id") or ""),
+                "status": str(
+                    item.get("status")
+                    or item.get("verification_status")
+                    or item.get("after_status")
+                    or ""
+                ),
+                "blocker": str(item.get("blocker") or item.get("after_blocker") or ""),
+            }
+        )
+    return {
+        "user_goal": str(
+            session.get("user_goal")
+            or invocation.get("user_goal")
+            or summary.get("user_goal")
+            or "analyze, localize, and safely repair the repository"
+        ),
+        "repository_profile": {
+            "layout": str(structure.get("layout") or ""),
+            "function_count": _int(structure.get("function_count", 0)),
+            "class_count": _int(structure.get("class_count", 0)),
+            "loc": _int(structure.get("loc", 0)),
+            "python_file_count": _int(
+                structure.get("python_file_count")
+                or summary.get("source_file_count")
+                or 0
+            ),
+        },
+        "top_k": [_dict(item) for item in top_k[:10]],
+        "static_rule_signals": [_dict(item) for item in static_signals[:20]],
+        "program_graph_neighborhood": {
+            "available": bool(program_graph.get("available", False)),
+            "node_count": _int(program_graph.get("node_count", 0)),
+            "edge_count": _int(program_graph.get("edge_count", 0)),
+            "top_function_nodes": [
+                _dict(item) for item in _list(repo_graph.get("top_function_nodes"))[:10]
+            ],
+        },
+        "pytest_evidence": {
+            "status": str(
+                test_result.get("status")
+                or summary.get("planned_repository_test_result_status")
+                or ""
+            ),
+            "command": str(
+                test_result.get("command")
+                or summary.get("planned_repository_test_command")
+                or ""
+            ),
+            "passed": _int(
+                test_result.get("passed")
+                or summary.get("planned_repository_test_result_passed")
+                or 0
+            ),
+            "failed": _int(
+                test_result.get("failed")
+                or summary.get("planned_repository_test_result_failed")
+                or 0
+            ),
+            "failure_category": str(
+                test_result.get("failure_category")
+                or summary.get("planned_repository_test_failure_category")
+                or ""
+            ),
+            "traceback_tail": traceback[-4000:],
+        },
+        "current_blocker": str(readiness.get("blocker") or ""),
+        "executed_actions": executed_actions,
+        "failed_patch_fingerprints": _list(
+            _dict(memory_context.get("repair_memory")).get(
+                "failed_patch_fingerprints"
+            )
+        )[:10],
+        "user_constraints": _list(
+            _dict(memory_context.get("repair_memory")).get("constraints")
+        )[:20],
+        "budget_context": budget_context,
+    }
+
+
+def _planner_action_registry_candidates(
+    selected_action: dict[str, Any],
+) -> list[dict[str, Any]]:
+    selected_id = str(selected_action.get("id") or "")
+    registry = build_agent_action_registry()
+    candidates = []
+    for policy_value in _list(registry.get("execution_policies")):
+        policy = _dict(policy_value)
+        action_id = str(policy.get("action_id") or "")
+        if not action_id:
+            continue
+        if not policy.get("auto_executable") and action_id != selected_id:
+            continue
+        spec = action_spec_for(action_id)
+        candidates.append(
+            {
+                "action_id": action_id,
+                "canonical_action_id": str(policy.get("canonical_action_id") or ""),
+                "phase": str(spec.get("phase") or ""),
+                "tool": str(spec.get("tool") or ""),
+                "risk": str(policy.get("risk") or ""),
+                "requires_confirmation": bool(policy.get("requires_confirmation")),
+                "allowed_argument_keys": _list(
+                    policy.get("allowed_argument_keys")
+                ),
+            }
+        )
+    return candidates
 
 
 def _parse_llm_replan_advice(text: str) -> tuple[dict[str, Any], str]:
@@ -4213,11 +4815,56 @@ def _parse_llm_replan_advice(text: str) -> tuple[dict[str, Any], str]:
     ).strip()
     next_plan = str(payload.get("next_plan") or "").strip()
     rationale = str(payload.get("reason") or payload.get("rationale") or "").strip()
-    if not action or not next_plan:
+    required_fields = {
+        "arguments",
+        "confidence",
+        "risk",
+        "required_evidence",
+        "expected_outcome",
+        "fallback_action",
+        "termination_condition",
+        "memory_used",
+        "next_plan",
+    }
+    if (
+        not action
+        or not rationale
+        or not next_plan
+        or not required_fields.issubset(payload)
+    ):
         return {}, "missing_required_replan_fields"
-    risk = str(payload.get("risk") or "medium").strip().lower()
+    arguments = payload.get("arguments")
+    if not isinstance(arguments, dict):
+        return {}, "invalid_replan_arguments"
+    confidence_value = payload.get("confidence")
+    if (
+        isinstance(confidence_value, bool)
+        or not isinstance(confidence_value, (int, float))
+        or not 0.0 <= float(confidence_value) <= 1.0
+    ):
+        return {}, "invalid_replan_confidence"
+    risk_value = payload.get("risk")
+    if not isinstance(risk_value, str):
+        return {}, "invalid_replan_risk"
+    risk = risk_value.strip().lower()
     if risk not in {"low", "medium", "high"}:
-        risk = "medium"
+        return {}, "invalid_replan_risk"
+    if not isinstance(payload.get("required_evidence"), list):
+        return {}, "invalid_replan_required_evidence"
+    if not isinstance(payload.get("memory_used"), list):
+        return {}, "invalid_replan_memory_used"
+    expected_outcome = payload.get("expected_outcome")
+    fallback_action = payload.get("fallback_action")
+    termination_condition = payload.get("termination_condition")
+    if not isinstance(expected_outcome, str) or not expected_outcome.strip():
+        return {}, "invalid_replan_expected_outcome"
+    if not isinstance(fallback_action, str):
+        return {}, "invalid_replan_fallback_action"
+    if (
+        not isinstance(termination_condition, str)
+        or not termination_condition.strip()
+    ):
+        return {}, "invalid_replan_termination_condition"
     required_evidence = [
         str(item)
         for item in _list(payload.get("required_evidence"))
@@ -4232,12 +4879,16 @@ def _parse_llm_replan_advice(text: str) -> tuple[dict[str, Any], str]:
         {
             "recommended_action": action,
             "selected_action": action,
+            "arguments": arguments,
             "rationale": rationale,
             "reason": rationale,
-            "confidence": max(0.0, min(1.0, _float(payload.get("confidence", 0.0)))),
+            "confidence": float(confidence_value),
             "risk": risk,
             "blocker": str(payload.get("blocker") or "").strip(),
             "required_evidence": required_evidence,
+            "expected_outcome": expected_outcome.strip(),
+            "fallback_action": fallback_action.strip(),
+            "termination_condition": termination_condition.strip(),
             "memory_used": memory_used,
             "next_plan": next_plan,
             "should_override_controller": bool(
@@ -4262,6 +4913,7 @@ def _llm_planner_decision_from_advice(
     ] or _list(memory_context.get("memory_used"))
     return {
         "selected_action": action,
+        "arguments": _dict(advice.get("arguments")),
         "reason": str(advice.get("reason") or advice.get("rationale") or ""),
         "confidence": max(0.0, min(1.0, _float(advice.get("confidence", 0.0)))),
         "risk": str(advice.get("risk") or "medium"),
@@ -4270,6 +4922,9 @@ def _llm_planner_decision_from_advice(
             for item in _list(advice.get("required_evidence"))
             if str(item or "").strip()
         ],
+        "expected_outcome": str(advice.get("expected_outcome") or ""),
+        "fallback_action": str(advice.get("fallback_action") or ""),
+        "termination_condition": str(advice.get("termination_condition") or ""),
         "next_plan": str(advice.get("next_plan") or ""),
         "memory_used": memory_used,
         "proposal_source": "llm",
@@ -4279,7 +4934,13 @@ def _llm_planner_decision_from_advice(
 def _llm_planner_safety_gate(
     advice: dict[str, Any],
     selected_action: dict[str, Any],
+    *,
+    summary: dict[str, Any] | None = None,
+    planner_mode: str = "hybrid",
+    budget_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    summary = _dict(summary)
+    budget_context = _dict(budget_context)
     recommended = str(
         advice.get("selected_action") or advice.get("recommended_action") or ""
     )
@@ -4288,6 +4949,12 @@ def _llm_planner_safety_gate(
     controller_canonical = canonical_action_id(controller_action)
     recommended_registered = bool(action_spec_for(recommended))
     controller_registered = bool(action_spec_for(controller_action))
+    recommended_policy = action_execution_policy(recommended)
+    normalized_arguments, argument_errors = validate_action_arguments(
+        recommended,
+        advice.get("arguments", {}),
+    )
+    confidence = max(0.0, min(1.0, _float(advice.get("confidence", 0.0))))
     action_match = bool(
         recommended
         and controller_action
@@ -4297,18 +4964,82 @@ def _llm_planner_safety_gate(
         )
     )
     override_requested = bool(advice.get("should_override_controller", False))
+    exact_action_change = bool(recommended and recommended != controller_action)
+    confidence_threshold = (
+        0.75 if planner_mode == "hybrid" and exact_action_change else 0.65
+    )
+    transition_allowed = _planner_transition_allowed(
+        recommended,
+        selected_action,
+    )
+    repeated_state_action = _planner_repeated_state_action(summary, recommended)
+    fallback_action = str(advice.get("fallback_action") or "")
+    fallback_registered = not fallback_action or bool(action_spec_for(fallback_action))
+    blocked_reasons = []
+    if not recommended_registered:
+        blocked_reasons.append("action_not_registered")
+    if argument_errors:
+        blocked_reasons.append("invalid_action_arguments")
+    if confidence < confidence_threshold:
+        blocked_reasons.append("planner_confidence_below_threshold")
+    if not fallback_registered:
+        blocked_reasons.append("fallback_action_not_registered")
+    if budget_context.get("exhausted"):
+        blocked_reasons.append("planner_budget_exhausted")
+    if repeated_state_action and exact_action_change:
+        blocked_reasons.append("repeated_action_in_unchanged_failure_state")
+    if exact_action_change and not transition_allowed:
+        blocked_reasons.append("unsafe_action_transition")
+    if exact_action_change and not recommended_policy.get("auto_executable"):
+        blocked_reasons.append("action_has_no_auto_executor")
+    requires_confirmation = bool(recommended_policy.get("requires_confirmation"))
+    if exact_action_change and requires_confirmation:
+        blocked_reasons.append("high_risk_action_requires_confirmation")
+    can_adopt_override = bool(
+        planner_mode in {"llm", "hybrid"}
+        and exact_action_change
+        and not blocked_reasons
+    )
     if not recommended:
         status = "not_requested"
         reason = "llm_planner_not_available"
     elif not recommended_registered:
         status = "blocked"
         reason = "llm_recommended_action_not_registered"
-    elif action_match:
+    elif argument_errors:
+        status = "blocked"
+        reason = "llm_recommended_arguments_rejected"
+    elif confidence < confidence_threshold:
+        status = "blocked"
+        reason = "llm_planner_confidence_below_threshold"
+    elif budget_context.get("exhausted"):
+        status = "blocked"
+        reason = "planner_budget_exhausted"
+    elif repeated_state_action and exact_action_change:
+        status = "blocked"
+        reason = "repeated_action_in_unchanged_failure_state"
+    elif not fallback_registered:
+        status = "blocked"
+        reason = "fallback_action_not_registered"
+    elif exact_action_change and not transition_allowed:
+        status = "blocked"
+        reason = "unsafe_action_transition"
+    elif requires_confirmation and exact_action_change:
+        status = "requires_confirmation"
+        reason = "high_risk_action_requires_confirmation"
+    elif exact_action_change and not recommended_policy.get("auto_executable"):
+        status = "blocked"
+        reason = "action_has_no_auto_executor"
+    elif action_match and not exact_action_change:
         status = "pass"
         reason = "llm_recommendation_matches_controller_policy"
+    elif can_adopt_override:
+        status = "pass"
+        reason = "safe_registered_llm_alternative_adopted"
     else:
         status = "advisory_only"
         reason = "controller_policy_retains_rule_selected_action"
+    adopted_action = recommended if can_adopt_override else controller_action
     return {
         "status": status,
         "reason": reason,
@@ -4319,11 +5050,127 @@ def _llm_planner_safety_gate(
         "controller_canonical_action": controller_canonical,
         "controller_registered": controller_registered,
         "controller_action_match": action_match,
-        "override_requested": override_requested,
-        "override_allowed": False,
-        "adopted_action": controller_action,
+        "exact_action_change": exact_action_change,
+        "transition_allowed": transition_allowed,
+        "override_requested": bool(override_requested or exact_action_change),
+        "override_allowed": can_adopt_override,
+        "adopted_action": adopted_action,
+        "planner_mode": planner_mode,
+        "confidence": confidence,
+        "confidence_threshold": confidence_threshold,
+        "normalized_arguments": normalized_arguments,
+        "argument_errors": argument_errors,
+        "policy_risk": str(recommended_policy.get("risk") or ""),
+        "model_claimed_risk": str(advice.get("risk") or ""),
+        "requires_confirmation": requires_confirmation,
+        "auto_executable": bool(recommended_policy.get("auto_executable")),
+        "fallback_action": fallback_action,
+        "fallback_registered": fallback_registered,
+        "repeated_state_action": repeated_state_action,
+        "budget_exhausted": bool(budget_context.get("exhausted")),
+        "blocked_reasons": blocked_reasons,
         "authority": "rules_and_sandbox_gate_decide",
     }
+
+
+def _planner_transition_allowed(
+    recommended_action: str,
+    selected_action: dict[str, Any],
+) -> bool:
+    controller_action = str(selected_action.get("id") or "")
+    if not recommended_action or not controller_action:
+        return False
+    if canonical_action_id(recommended_action) == canonical_action_id(controller_action):
+        return True
+    recommended_spec = action_spec_for(recommended_action)
+    controller_spec = action_spec_for(controller_action)
+    return bool(
+        recommended_spec
+        and controller_spec
+        and str(recommended_spec.get("phase") or "")
+        == str(controller_spec.get("phase") or "")
+        and str(recommended_spec.get("tool") or "")
+        == str(controller_spec.get("tool") or "")
+        and str(recommended_spec.get("module") or "")
+        == str(controller_spec.get("module") or "")
+    )
+
+
+def _planner_repeated_state_action(
+    summary: dict[str, Any],
+    action_id: str,
+) -> bool:
+    if not action_id:
+        return False
+    readiness = _dict(summary.get("analysis_readiness"))
+    stage = str(readiness.get("current_stage") or "")
+    blocker = str(readiness.get("blocker") or "")
+    canonical = canonical_action_id(action_id)
+    current_fingerprint = _planner_state_fingerprint(summary)
+    for item_value in reversed(_list(summary.get("agent_auto_trace"))[-20:]):
+        item = _dict(item_value)
+        previous_action = str(
+            item.get("plan_selected_action")
+            or item.get("selected_action")
+            or item.get("action_id")
+            or ""
+        )
+        if canonical_action_id(previous_action) != canonical:
+            continue
+        previous_fingerprint = str(
+            item.get("observe_state_fingerprint")
+            or item.get("planner_state_fingerprint")
+            or ""
+        )
+        if previous_fingerprint:
+            return previous_fingerprint == current_fingerprint
+        previous_stage = str(item.get("observe_stage") or "")
+        previous_blocker = str(item.get("observe_blocker") or "")
+        if previous_stage == stage and previous_blocker == blocker:
+            return True
+    return False
+
+
+def _planner_state_fingerprint(summary: dict[str, Any]) -> str:
+    readiness = _dict(summary.get("analysis_readiness"))
+    fault = _dict(summary.get("fault_localization"))
+    test_result = _dict(summary.get("repository_test_execution_result"))
+    memory_context = _llm_planner_memory_context(summary)
+    state = {
+        "stage": str(readiness.get("current_stage") or ""),
+        "blocker": str(readiness.get("blocker") or ""),
+        "dynamic_evidence_level": str(
+            readiness.get("dynamic_evidence_level") or ""
+        ),
+        "fault_mode": str(fault.get("mode") or ""),
+        "fault_status": str(fault.get("status") or ""),
+        "top_function": str(fault.get("top_function") or ""),
+        "test_status": str(
+            test_result.get("status")
+            or summary.get("planned_repository_test_result_status")
+            or ""
+        ),
+        "test_failure_category": str(
+            test_result.get("failure_category")
+            or summary.get("planned_repository_test_failure_category")
+            or ""
+        ),
+        "patch_validation_status": str(
+            summary.get("repository_test_patch_validation_status") or ""
+        ),
+        "failed_patch_fingerprints": _list(
+            _dict(memory_context.get("repair_memory")).get(
+                "failed_patch_fingerprints"
+            )
+        )[:10],
+    }
+    encoded = json.dumps(
+        state,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
 
 
 def _safe_llm_metadata(metadata: dict[str, Any]) -> dict[str, Any]:

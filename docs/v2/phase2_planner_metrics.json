@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "phase": "phase2_llm_planner_and_agent_controller",
+  "status": "pass",
+  "controlled_evaluation": {
+    "dataset": "datasets/planner_evaluation/v2_planner_controlled_cases.json",
+    "case_count": 14,
+    "run_count": 42,
+    "planner_modes": [
+      "rule",
+      "llm",
+      "hybrid"
+    ],
+    "strategies": {
+      "rule": {
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 0,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 0.503,
+        "llm_total_tokens": 0,
+        "llm_estimated_cost_usd": 0.0,
+        "safety_gate_rejection_count": 0,
+        "fallback_count": 0
+      },
+      "llm": {
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 2,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 1.0013,
+        "llm_total_tokens": 1560,
+        "llm_estimated_cost_usd": 0.0156,
+        "safety_gate_rejection_count": 8,
+        "fallback_count": 11
+      },
+      "hybrid": {
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 2,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 0.9884,
+        "llm_total_tokens": 1560,
+        "llm_estimated_cost_usd": 0.0156,
+        "safety_gate_rejection_count": 9,
+        "fallback_count": 12
+      }
+    }
+  },
+  "regression": {
+    "v1_baseline_passed_tests": 1127,
+    "phase2_passed_tests": 1163,
+    "phase2_failed_tests": 0,
+    "full_suite_duration_seconds": 602.53,
+    "status": "pass"
+  },
+  "acceptance_gates": {
+    "complete_planner_decision_trace": "pass",
+    "selected_action_traces_to_observation_and_reason": "pass",
+    "all_model_actions_use_action_registry": "pass",
+    "structured_output_schema_validation": "pass",
+    "action_argument_allowlist_validation": "pass",
+    "risk_and_confirmation_gate": "pass",
+    "action_time_and_cost_budget_gate": "pass",
+    "budget_preflight_skips_llm_call": "pass",
+    "single_non_rule_planner_build_per_summary": "pass",
+    "provider_and_response_error_classification": "pass",
+    "rule_fallback_on_planner_failure": "pass",
+    "unchanged_observation_repeat_guard": "pass",
+    "hybrid_has_no_controlled_regression": "pass"
+  },
+  "limitations": [
+    "The controlled task-completion metric means that the expected safe planning outcome was selected; it is not a repository repair-success rate.",
+    "The planning responses are deterministic offline fixtures, so the token and cost values validate accounting rather than live-provider pricing or model quality.",
+    "Repository repair success remains governed by patch safety checks and sandbox test evidence, not by the planner evaluation."
+  ],
+  "reproduction": {
+    "planner_evaluation": "python -m code_intelligence_agent.evaluation.planner_strategy_evaluation datasets/planner_evaluation/v2_planner_controlled_cases.json outputs/phase2_planner_eval --format markdown --require-pass",
+    "planner_tests": "python -m pytest -q tests/test_agent_controller.py tests/test_planner_strategy_evaluation.py tests/test_github_repo_intelligence.py",
+    "full_regression": "python -m pytest -q"
+  }
+}

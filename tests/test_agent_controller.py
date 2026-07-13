@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from code_intelligence_agent.agents.action_registry import REQUIRED_ACTION_IDS
+from code_intelligence_agent.agents.action_registry import (
+    REQUIRED_ACTION_IDS,
+    action_execution_policy,
+    validate_action_arguments,
+)
 from code_intelligence_agent.agents.llm_client import StaticLLMClient
 from code_intelligence_agent.agents.controller import (
     build_agent_controller_plan,
@@ -25,6 +29,36 @@ def _repair_ready_summary() -> dict:
             "mode": "dynamic",
             "status": "pass",
             "top_function": "fix_me",
+        },
+    }
+
+
+def _llm_patch_planning_summary() -> dict:
+    return {
+        "repo": "example/project",
+        "repo_spec": "example/project",
+        "repository_patch_generation_mode": "llm",
+        "analysis_readiness": {
+            "current_stage": "phase2_dynamic_fault_localization",
+            "next_stage": "phase3_patch_validation",
+            "blocker": "",
+            "can_attempt_patch_repair": True,
+        },
+        "fault_localization": {
+            "mode": "dynamic",
+            "status": "pass",
+            "top_function": "pkg.core.load_user",
+            "rankings": [
+                {
+                    "function": "pkg.core.load_user",
+                    "final_score": 0.91,
+                }
+            ],
+        },
+        "repository_llm_patch_generation_audit": {
+            "status": "ready",
+            "provider": "test",
+            "model": "planner-test",
         },
     }
 
@@ -106,8 +140,13 @@ def test_agent_controller_llm_replan_advisor_records_static_advice():
                 "rationale": "Patch validation is ready, so quantify search behavior.",
                 "confidence": 0.91,
                 "risk": "low",
+                "arguments": {},
                 "blocker": "",
                 "required_evidence": ["repository_test_patch_validation.json"],
+                "expected_outcome": "Search and ablation evidence is recorded.",
+                "fallback_action": "generate_final_agent_report",
+                "termination_condition": "Stop after evaluation artifacts are written.",
+                "memory_used": [],
                 "next_plan": "Run Phase 4 search metrics and ablation.",
                 "should_override_controller": False,
             }
@@ -151,7 +190,7 @@ def test_agent_controller_llm_replan_advisor_records_static_advice():
     assert "Run Phase 4 search metrics and ablation." in markdown
 
 
-def test_agent_controller_llm_planner_override_is_advisory_only():
+def test_agent_controller_blocks_unsafe_llm_planner_transition():
     client = StaticLLMClient(
         json.dumps(
             {
@@ -159,7 +198,12 @@ def test_agent_controller_llm_planner_override_is_advisory_only():
                 "reason": "The model wants to rerun tests before evaluation.",
                 "confidence": 0.77,
                 "risk": "medium",
+                "arguments": {},
                 "required_evidence": ["repository_test_execution_result.json"],
+                "expected_outcome": "Fresh repository test evidence is recorded.",
+                "fallback_action": "generate_final_agent_report",
+                "termination_condition": "Stop after tests or a terminal blocker.",
+                "memory_used": [],
                 "next_plan": "Rerun repository tests before phase 4.",
                 "should_override_controller": True,
             }
@@ -178,9 +222,9 @@ def test_agent_controller_llm_planner_override_is_advisory_only():
     assert advisor["planner_decision"]["selected_action"] == (
         "run_repository_tests_with_checkout"
     )
-    assert advisor["safety_gate"]["status"] == "advisory_only"
+    assert advisor["safety_gate"]["status"] == "blocked"
     assert advisor["safety_gate"]["reason"] == (
-        "controller_policy_retains_rule_selected_action"
+        "unsafe_action_transition"
     )
     assert advisor["safety_gate"]["override_requested"] is True
     assert advisor["safety_gate"]["override_allowed"] is False
@@ -256,7 +300,11 @@ def test_agent_controller_llm_planner_prompt_uses_memory_context():
                 "reason": "Memory shows a failed patch was already tried.",
                 "confidence": 0.86,
                 "risk": "low",
+                "arguments": {},
                 "required_evidence": ["repository_test_patch_validation.json"],
+                "expected_outcome": "Evaluation is recorded without retrying the failed patch.",
+                "fallback_action": "generate_final_agent_report",
+                "termination_condition": "Stop after evaluation artifacts are written.",
                 "memory_used": [
                     "repair_memory",
                     "repair_strategy_preferences",
@@ -323,6 +371,354 @@ def test_agent_controller_llm_planner_prompt_uses_memory_context():
     ]
     assert advisor["llm_planner_proposal"] == advisor["planner_decision"]
     assert advisor["safety_gate"]["status"] == "pass"
+
+
+def test_agent_controller_rejects_incomplete_planner_schema_and_falls_back():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "generate_hybrid_patch_candidates",
+                "reason": "Try a hybrid candidate.",
+                "next_plan": "Generate candidates.",
+            }
+        )
+    )
+
+    controller = build_agent_controller_plan(
+        _llm_patch_planning_summary(),
+        llm_replan_client=client,
+        planner_mode="hybrid",
+    )
+
+    advisor = controller["llm_replan_advisor"]
+    assert controller["selected_action"]["id"] == "generate_llm_patch_candidates"
+    assert advisor["status"] == "error"
+    assert advisor["reason"] == "missing_required_replan_fields"
+    assert advisor["provider_failure_class"] == "response_schema"
+    assert advisor["fallback_to_rule_planner"] is True
+    assert controller["planner_metrics"]["fallback_count"] == 1
+
+
+def test_hybrid_planner_adopts_safe_registered_llm_alternative():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "generate_hybrid_patch_candidates",
+                "arguments": {
+                    "candidate_limit": 3,
+                    "strategy": "combine rule and model candidates",
+                },
+                "reason": "Hybrid generation keeps a deterministic fallback.",
+                "confidence": 0.93,
+                "risk": "medium",
+                "required_evidence": ["repository_test_fault_localization.json"],
+                "expected_outcome": "At least one AST-valid patch candidate.",
+                "fallback_action": "generate_llm_patch_candidates",
+                "termination_condition": "Stop after verified repair or exhausted budget.",
+                "memory_used": ["repo_memory"],
+                "next_plan": "Generate candidates, then validate in the sandbox.",
+            }
+        )
+    )
+
+    controller = build_agent_controller_plan(
+        _llm_patch_planning_summary(),
+        llm_replan_client=client,
+        planner_mode="hybrid",
+    )
+
+    assert controller["rule_selected_action"]["id"] == "generate_llm_patch_candidates"
+    assert controller["selected_action"]["id"] == "generate_hybrid_patch_candidates"
+    assert controller["selected_action"]["proposal_source"] == "llm"
+    assert controller["selected_action"]["arguments"] == {
+        "candidate_limit": 3,
+        "strategy": "combine rule and model candidates",
+    }
+    assert controller["planner_resolution"]["adopted_source"] == "llm"
+    assert controller["planner_resolution"]["disagreement"] is True
+    gate = controller["llm_replan_advisor"]["safety_gate"]
+    assert gate["status"] == "pass"
+    assert gate["reason"] == "safe_registered_llm_alternative_adopted"
+    assert gate["override_allowed"] is True
+    assert gate["adopted_action"] == "generate_hybrid_patch_candidates"
+
+
+def test_hybrid_planner_uses_stricter_disagreement_threshold_than_llm_mode():
+    response = json.dumps(
+        {
+            "selected_action": "generate_hybrid_patch_candidates",
+            "arguments": {},
+            "reason": "Try a registered alternative with moderate confidence.",
+            "confidence": 0.7,
+            "risk": "medium",
+            "required_evidence": ["repository_test_fault_localization.json"],
+            "expected_outcome": "Generate a distinct patch candidate.",
+            "fallback_action": "generate_llm_patch_candidates",
+            "termination_condition": "Stop on verified success or budget exhaustion.",
+            "memory_used": [],
+            "next_plan": "Generate and validate one candidate batch.",
+        }
+    )
+
+    llm_controller = build_agent_controller_plan(
+        _llm_patch_planning_summary(),
+        llm_replan_client=StaticLLMClient(response),
+        planner_mode="llm",
+    )
+    hybrid_controller = build_agent_controller_plan(
+        _llm_patch_planning_summary(),
+        llm_replan_client=StaticLLMClient(response),
+        planner_mode="hybrid",
+    )
+
+    llm_gate = llm_controller["llm_replan_advisor"]["safety_gate"]
+    hybrid_gate = hybrid_controller["llm_replan_advisor"]["safety_gate"]
+    assert llm_controller["selected_action"]["id"] == (
+        "generate_hybrid_patch_candidates"
+    )
+    assert llm_gate["confidence_threshold"] == 0.65
+    assert hybrid_controller["selected_action"]["id"] == (
+        "generate_llm_patch_candidates"
+    )
+    assert hybrid_gate["confidence_threshold"] == 0.75
+    assert hybrid_gate["reason"] == "llm_planner_confidence_below_threshold"
+    assert hybrid_controller["planner_metrics"]["fallback_count"] == 1
+
+
+def test_planner_high_risk_action_requires_confirmation_and_keeps_rule_action():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "prepare_repository_test_environment",
+                "arguments": {"timeout_seconds": 120},
+                "reason": "Install or repair the repository test environment.",
+                "confidence": 0.9,
+                "risk": "low",
+                "required_evidence": ["repository_test_environment.json"],
+                "expected_outcome": "A runnable test environment.",
+                "fallback_action": "emit_blocker_report",
+                "termination_condition": "Stop if external dependencies remain unavailable.",
+                "memory_used": [],
+                "next_plan": "Prepare the environment, then rerun tests.",
+            }
+        )
+    )
+
+    summary = {
+        "repo": "example/project",
+        "repo_spec": "example/project",
+        "analysis_readiness": {
+            "current_stage": "phase2_static_graph_fault_localization",
+            "next_stage": "phase3_repository_test_execution",
+            "blocker": "test_execution_failed",
+            "dynamic_evidence_level": "collection_failure",
+            "planned_repository_test_result_status": "fail",
+            "planned_repository_test_failure_category": "collection_failure",
+            "planned_repository_test_result_errors": 1,
+        },
+        "fault_localization": {
+            "mode": "static_fallback",
+            "status": "pass",
+            "top_function": "pkg.core.load_user",
+        },
+    }
+
+    controller = build_agent_controller_plan(
+        summary,
+        llm_replan_client=client,
+        planner_mode="hybrid",
+    )
+
+    gate = controller["llm_replan_advisor"]["safety_gate"]
+    assert controller["selected_action"]["id"] == "diagnose_test_execution_failure"
+    assert gate["status"] == "requires_confirmation"
+    assert gate["policy_risk"] == "high"
+    assert gate["model_claimed_risk"] == "low"
+    assert gate["requires_confirmation"] is True
+    assert gate["override_allowed"] is False
+
+
+def test_planner_budget_and_repeated_state_prevent_unbounded_action_choice():
+    response = json.dumps(
+        {
+            "selected_action": "generate_hybrid_patch_candidates",
+            "arguments": {},
+            "reason": "Try hybrid candidates.",
+            "confidence": 0.9,
+            "risk": "medium",
+            "required_evidence": [],
+            "expected_outcome": "New candidates.",
+            "fallback_action": "generate_llm_patch_candidates",
+            "termination_condition": "Stop on budget exhaustion.",
+            "memory_used": [],
+            "next_plan": "Generate candidates.",
+        }
+    )
+    budget_summary = _llm_patch_planning_summary()
+    budget_summary["agent_invocation"] = {
+        "auto_controller_max_actions": 1,
+        "planner_mode": "hybrid",
+    }
+    budget_summary["agent_auto_action_count"] = 1
+    budget_client = StaticLLMClient(response)
+    budget_controller = build_agent_controller_plan(
+        budget_summary,
+        llm_replan_client=budget_client,
+    )
+
+    repeated_summary = _llm_patch_planning_summary()
+    repeated_summary["agent_auto_trace"] = [
+        {
+            "observe_stage": "phase2_dynamic_fault_localization",
+            "observe_blocker": "",
+            "plan_selected_action": "generate_hybrid_patch_candidates",
+        }
+    ]
+    repeated_controller = build_agent_controller_plan(
+        repeated_summary,
+        llm_replan_client=StaticLLMClient(response),
+        planner_mode="hybrid",
+    )
+
+    budget_gate = budget_controller["llm_replan_advisor"]["safety_gate"]
+    repeated_gate = repeated_controller["llm_replan_advisor"]["safety_gate"]
+    assert budget_gate["status"] == "blocked"
+    assert budget_gate["reason"] == "planner_budget_exhausted"
+    assert budget_client.prompts == []
+    assert budget_controller["planner_metrics"]["llm_called"] is False
+    assert budget_controller["planner_resolution"]["adopted_source"] == "rule"
+    assert repeated_gate["status"] == "blocked"
+    assert repeated_gate["reason"] == "repeated_action_in_unchanged_failure_state"
+    assert repeated_controller["selected_action"]["id"] == "generate_llm_patch_candidates"
+
+
+def test_planner_allows_same_action_after_observation_state_changes():
+    response = json.dumps(
+        {
+            "selected_action": "generate_hybrid_patch_candidates",
+            "arguments": {},
+            "reason": "New evidence supports trying the action again.",
+            "confidence": 0.9,
+            "risk": "medium",
+            "required_evidence": ["repository_test_execution_result.json"],
+            "expected_outcome": "A candidate grounded in the new failure evidence.",
+            "fallback_action": "generate_llm_patch_candidates",
+            "termination_condition": "Stop on verified success or exhausted budget.",
+            "memory_used": [],
+            "next_plan": "Generate candidates from the updated observation.",
+        }
+    )
+    summary = _llm_patch_planning_summary()
+    summary["agent_auto_trace"] = [
+        {
+            "observe_stage": "phase2_dynamic_fault_localization",
+            "observe_blocker": "",
+            "observe_state_fingerprint": "different-observation",
+            "plan_selected_action": "generate_hybrid_patch_candidates",
+        }
+    ]
+
+    controller = build_agent_controller_plan(
+        summary,
+        llm_replan_client=StaticLLMClient(response),
+        planner_mode="hybrid",
+    )
+
+    gate = controller["llm_replan_advisor"]["safety_gate"]
+    assert gate["repeated_state_action"] is False
+    assert gate["status"] == "pass"
+    assert controller["selected_action"]["id"] == "generate_hybrid_patch_candidates"
+    assert len(controller["planner_state_fingerprint"]) == 16
+
+
+def test_action_registry_validates_planner_arguments_and_risk_policy():
+    policy = action_execution_policy("prepare_repository_test_environment")
+    valid, valid_errors = validate_action_arguments(
+        "generate_hybrid_patch_candidates",
+        {"candidate_limit": 4, "strategy": "minimal diff"},
+    )
+    invalid, invalid_errors = validate_action_arguments(
+        "generate_hybrid_patch_candidates",
+        {"candidate_limit": 1000, "shell": "rm -rf"},
+    )
+
+    assert policy["registered"] is True
+    assert policy["risk"] == "high"
+    assert policy["requires_confirmation"] is True
+    assert valid == {"candidate_limit": 4, "strategy": "minimal diff"}
+    assert valid_errors == []
+    assert invalid == {}
+    assert "unknown_argument_keys" in invalid_errors
+    assert "invalid_candidate_limit" in invalid_errors
+
+
+def test_planner_prompt_contains_required_evidence_and_budget_inputs():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "generate_llm_patch_candidates",
+                "arguments": {},
+                "reason": "Use the current dynamic localization evidence.",
+                "confidence": 0.9,
+                "risk": "medium",
+                "required_evidence": ["fault_localization.json"],
+                "expected_outcome": "Patch candidates are generated.",
+                "fallback_action": "generate_hybrid_patch_candidates",
+                "termination_condition": "Stop after sandbox success.",
+                "memory_used": ["repo_memory"],
+                "next_plan": "Generate and validate candidates.",
+            }
+        )
+    )
+    summary = _llm_patch_planning_summary()
+    summary["agent_invocation"] = {
+        "planner_mode": "hybrid",
+        "auto_controller_max_actions": 4,
+        "agent_time_budget_seconds": 600,
+        "agent_llm_cost_budget_usd": 1.5,
+        "user_goal": "repair the failing repository test",
+    }
+    summary["repository_structure"] = {
+        "layout": "src_layout",
+        "function_count": 10,
+        "repo_graph": {
+            "program_graph": {"available": True, "node_count": 20, "edge_count": 30},
+            "top_function_nodes": [{"function": "pkg.core.load_user", "degree": 5}],
+        },
+    }
+    summary["planned_repository_test_result_status"] = "fail"
+    summary["planned_repository_test_failure_signal"] = "AssertionError: missing user"
+
+    build_agent_controller_plan(summary, llm_replan_client=client)
+
+    prompt = json.loads(client.prompts[0])
+    assert prompt["user_goal"] == "repair the failing repository test"
+    assert prompt["repository_profile"]["layout"] == "src_layout"
+    assert prompt["fault_localization"]["top_k"][0]["function"] == "pkg.core.load_user"
+    assert prompt["fault_localization"]["program_graph_neighborhood"]["available"] is True
+    assert prompt["pytest_evidence"]["status"] == "fail"
+    assert "AssertionError" in prompt["pytest_evidence"]["traceback_tail"]
+    assert prompt["budget_context"]["remaining_actions"] == 4
+    assert prompt["budget_context"]["remaining_time_seconds"] == 600
+    assert prompt["budget_context"]["remaining_llm_cost_usd"] == 1.5
+    assert any(
+        item["action_id"] == "generate_hybrid_patch_candidates"
+        for item in prompt["action_registry_candidates"]
+    )
+    assert set(prompt["response_schema"]).issuperset(
+        {
+            "selected_action",
+            "arguments",
+            "reason",
+            "confidence",
+            "risk",
+            "required_evidence",
+            "expected_outcome",
+            "fallback_action",
+            "termination_condition",
+            "memory_used",
+        }
+    )
 
 
 def test_agent_controller_embeds_action_registry_and_policy_trace():

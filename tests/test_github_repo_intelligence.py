@@ -52,6 +52,7 @@ def test_github_repo_intelligence_defaults_to_static_analysis_summary():
         assert summary["agent_invocation"]["agent_mode"] is False
         assert summary["agent_invocation"]["auto_controller_actions"] is False
         assert summary["agent_invocation"]["auto_controller_max_actions"] == 2
+        assert summary["agent_invocation"]["planner_mode"] == "rule"
         assert report.summary["benchmark_cases"] == 0
         assert summary["discovery_source"] == "github-tree:example/project@main"
         assert summary["discovery_cache_fallback"] is False
@@ -391,6 +392,60 @@ def test_github_repo_intelligence_defaults_to_static_analysis_summary():
         assert "Can Repair:" in markdown
         assert "Audit Artifacts:" in markdown
         assert "top function is mean" in markdown
+
+
+def test_summary_builds_one_non_rule_planner_and_reuses_controller_snapshot(
+    monkeypatch,
+):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        raw_source = _write_average_mean(root)
+        report = run_github_repo_intelligence(
+            "example/project",
+            root / "repo_intelligence",
+            recipes=["missing_len_zero_guard"],
+            max_sources=5,
+            max_candidates=5,
+            opener=_FakeOpener(_repo_payloads(raw_source)),
+        )
+        invocation = dict(report.summary.get("agent_invocation") or {})
+        invocation.update(
+            {
+                "effective_execution_profile": "agent-auto",
+                "agent_mode": True,
+                "auto_controller_actions": True,
+                "planner_mode": "hybrid",
+            }
+        )
+        report.summary["agent_invocation"] = invocation
+        report.summary["planner_mode"] = "hybrid"
+
+        original = intelligence_module.build_agent_controller_plan
+        planner_modes = []
+
+        def recording_controller(*args, **kwargs):
+            planner_modes.append(kwargs.get("planner_mode"))
+            kwargs["enable_llm_replan"] = False
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(
+            intelligence_module,
+            "build_agent_controller_plan",
+            recording_controller,
+        )
+
+        summary = github_repo_intelligence_summary(report)
+
+        assert planner_modes == ["rule", None]
+        report.summary["_agent_controller_snapshot"] = summary["agent_controller"]
+        planner_modes.clear()
+
+        cached_summary = github_repo_intelligence_summary(report)
+
+        assert planner_modes == ["rule"]
+        assert cached_summary["agent_controller"]["selected_action"] == (
+            summary["agent_controller"]["selected_action"]
+        )
 
 
 def test_static_fault_localization_prefers_application_code_over_automation():
@@ -5527,6 +5582,14 @@ def test_github_repo_intelligence_parser_accepts_phase3_execution_options():
             "11",
             "--repository-checkout-depth",
             "2",
+            "--planner-mode",
+            "hybrid",
+            "--agent-time-budget-seconds",
+            "600",
+            "--agent-llm-cost-budget-usd",
+            "1.25",
+            "--user-goal",
+            "repair the failing test",
         ]
     )
 
@@ -5548,6 +5611,10 @@ def test_github_repo_intelligence_parser_accepts_phase3_execution_options():
     assert args.checkout_repository_tests is True
     assert args.repository_checkout_timeout == 11
     assert args.repository_checkout_depth == 2
+    assert args.planner_mode == "hybrid"
+    assert args.agent_time_budget_seconds == 600
+    assert args.agent_llm_cost_budget_usd == 1.25
+    assert args.user_goal == "repair the failing test"
 
     checkout_args = build_arg_parser().parse_args(
         ["example/project", "out", "--execution-profile", "checkout"]
@@ -5567,6 +5634,34 @@ def test_github_repo_intelligence_parser_accepts_phase3_execution_options():
     assert agent_auto_args.execution_profile == "agent-auto"
     assert agent_auto_args.auto_controller_actions is False
     assert agent_auto_args.auto_controller_max_actions == 3
+
+
+def test_auto_controller_applies_validated_planner_arguments_to_rerun_kwargs():
+    updated = intelligence_module._apply_planner_action_arguments(
+        {
+            "include": None,
+            "repository_test_timeout": 20,
+            "repository_test_patch_validation_limit": 5,
+        },
+        {
+            "scope": "src/pkg",
+            "timeout_seconds": 90,
+            "top_k": 8,
+            "candidate_limit": 3,
+            "reflection_rounds": 2,
+            "reflection_width": 4,
+            "ref": "main",
+        },
+    )
+
+    assert updated["include"] == ["src/pkg"]
+    assert updated["repository_test_timeout"] == 90
+    assert updated["max_candidates"] == 8
+    assert updated["repository_llm_patch_candidate_limit"] == 3
+    assert updated["repository_test_patch_validation_limit"] == 3
+    assert updated["repository_test_reflection_rounds"] == 2
+    assert updated["repository_test_reflection_width"] == 4
+    assert updated["ref"] == "main"
 
 
 def test_github_repo_intelligence_parser_allows_default_output_dir():
@@ -5717,6 +5812,7 @@ def test_github_repo_intelligence_cli_agent_auto_profile(monkeypatch, capsys):
         assert captured["auto_controller_actions"] is True
         assert captured["auto_controller_max_actions"] == 2
         assert captured["execution_profile"] == "agent-auto"
+        assert captured["planner_mode"] == "hybrid"
         assert captured["agent_shortcut"] is False
         assert captured["checkout_repository_tests"] is False
         assert captured["repository_test_timeout"] == 30
@@ -5779,6 +5875,7 @@ def test_github_repo_intelligence_cli_agent_shortcut(monkeypatch, capsys):
         assert captured["agent_shortcut"] is True
         assert captured["auto_controller_actions"] is True
         assert captured["auto_controller_max_actions"] == 4
+        assert captured["planner_mode"] == "hybrid"
         assert captured["repository_test_timeout"] == 30
         assert captured["source_cache_dir"] == str(output_dir / "source_cache")
 
