@@ -16,7 +16,10 @@ from code_intelligence_agent.search.refinement_context import annotate_refinemen
 from code_intelligence_agent.search.scoring import PatchScoreWeights, score_patch
 from code_intelligence_agent.tools.patch_validation import (
     allow_signature_change_for_rules,
-    validate_function_patch,
+)
+from code_intelligence_agent.tools.patch_safety import (
+    PatchSafetyPolicy,
+    apply_patch_safety_gate,
 )
 from code_intelligence_agent.tools.sandbox import Sandbox
 
@@ -120,7 +123,10 @@ class RepairLoop:
         ]
         round_index = 0
         while round_index < self.max_rounds and round_index < len(queue):
-            candidate = _with_safety_gate_metadata(queue[round_index])
+            candidate = _with_safety_gate_metadata(
+                queue[round_index],
+                repository_root=repo_path,
+            )
             if _candidate_blocked_by_safety(candidate):
                 execution_result = _safety_blocked_execution_result(candidate)
             else:
@@ -286,7 +292,11 @@ def _with_repair_child_metadata(
     )
 
 
-def _with_safety_gate_metadata(candidate: PatchCandidate) -> PatchCandidate:
+def _with_safety_gate_metadata(
+    candidate: PatchCandidate,
+    *,
+    repository_root: str | Path | None = None,
+) -> PatchCandidate:
     existing_safety = candidate.metadata.get("safety_gate")
     if (
         isinstance(existing_safety, dict)
@@ -297,25 +307,14 @@ def _with_safety_gate_metadata(candidate: PatchCandidate) -> PatchCandidate:
     rule_ids = [candidate.rule_id]
     if isinstance(static_rule_ids, list):
         rule_ids.extend(str(item) for item in static_rule_ids)
-    validation = validate_function_patch(
-        candidate.old_source,
-        candidate.new_source,
-        allow_signature_change=allow_signature_change_for_rules(rule_ids),
-    )
-    safety_gate = {
-        **validation.to_dict(),
-        "status": "pass" if validation.valid else "blocked",
-        "minimal_diff": validation.changed_lines > 0
-        and validation.changed_lines <= 80
-        and validation.line_change_ratio <= 3.0,
-        "source": "repair_loop_reflection_candidate_safety_gate",
-    }
-    return replace(
+    return apply_patch_safety_gate(
         candidate,
-        metadata={
-            **candidate.metadata,
-            "safety_gate": safety_gate,
-        },
+        repository_root=repository_root,
+        policy=PatchSafetyPolicy(
+            allow_signature_change=allow_signature_change_for_rules(rule_ids),
+            authorized_files=(candidate.relative_file_path,),
+        ),
+        source="repair_loop_reflection_candidate_safety_gate",
     )
 
 

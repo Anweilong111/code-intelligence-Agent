@@ -16,6 +16,24 @@ from code_intelligence_agent.search.confidence_calibration import (
 from code_intelligence_agent.tools.diff_utils import render_unified_diff
 
 
+SUPPORTED_RULE_IDS = frozenset(
+    {
+        "always_true_len_check",
+        "possible_index_overrun",
+        "broad_exception_pass",
+        "mutable_default_arg",
+        "inplace_api_return_value",
+        "stringified_numeric_value",
+        "missing_len_zero_guard",
+        "enumerate_start_zero_counter",
+        "inverted_empty_guard",
+        "identity_comparison_literal",
+        "iterator_double_consumption",
+        "dict_missing_key_guard",
+    }
+)
+
+
 class PatchGenerator:
     def generate(
         self,

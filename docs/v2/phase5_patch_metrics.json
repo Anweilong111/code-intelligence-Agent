@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_phase5_patch_strategy_controlled",
+  "status": "pass",
+  "reason": "all_controlled_patch_expectations_met",
+  "case_count": 3,
+  "run_count": 9,
+  "strategies": {
+    "rule": {
+      "run_count": 3,
+      "candidate_generation_success_rate": 0.3333,
+      "candidate_count": 2,
+      "ast_valid_patch_rate": 1.0,
+      "safety_gate_pass_rate": 1.0,
+      "targeted_test_pass_rate": 0.3333,
+      "regression_safe_patch_rate": 0.3333,
+      "verified_repair_rate": 0.3333,
+      "reflection_recovery_rate": 0.0,
+      "attribution_consistency_rate": 1.0,
+      "generator_wins": {
+        "rule": 1
+      },
+      "average_runtime_ms": 853.626
+    },
+    "llm": {
+      "run_count": 3,
+      "candidate_generation_success_rate": 1.0,
+      "candidate_count": 3,
+      "ast_valid_patch_rate": 1.0,
+      "safety_gate_pass_rate": 1.0,
+      "targeted_test_pass_rate": 1.0,
+      "regression_safe_patch_rate": 1.0,
+      "verified_repair_rate": 1.0,
+      "reflection_recovery_rate": 0.3333,
+      "attribution_consistency_rate": 1.0,
+      "generator_wins": {
+        "llm": 3
+      },
+      "average_runtime_ms": 2223.142
+    },
+    "hybrid": {
+      "run_count": 3,
+      "candidate_generation_success_rate": 1.0,
+      "candidate_count": 5,
+      "ast_valid_patch_rate": 1.0,
+      "safety_gate_pass_rate": 1.0,
+      "targeted_test_pass_rate": 1.0,
+      "regression_safe_patch_rate": 1.0,
+      "verified_repair_rate": 1.0,
+      "reflection_recovery_rate": 0.3333,
+      "attribution_consistency_rate": 1.0,
+      "generator_wins": {
+        "llm": 2,
+        "rule": 1
+      },
+      "average_runtime_ms": 2442.9003
+    }
+  },
+  "runs": [
+    {
+      "case": "deterministic_index_overrun",
+      "category": "rule_supported",
+      "patch_mode": "rule",
+      "status": "pass",
+      "reason": "patch_validation_success",
+      "candidate_count": 2,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 2,
+      "safety_pass_candidate_count": 2,
+      "generator_counts": {
+        "rule": 2,
+        "llm": 0
+      },
+      "generation_strategy": "rule_only",
+      "generation_order": [
+        "rule"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "sample.py::shift_left::possible_index_overrun::shrink_range_upper_bound::ev_evidence_d05986ff021a",
+      "best_rule_id": "possible_index_overrun",
+      "best_generator": "rule_based",
+      "best_generator_family": "rule",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2539.2764
+    },
+    {
+      "case": "deterministic_index_overrun",
+      "category": "rule_supported",
+      "patch_mode": "llm",
+      "status": "pass",
+      "reason": "patch_validation_success",
+      "candidate_count": 1,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 1,
+      "safety_pass_candidate_count": 1,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 1
+      },
+      "generation_strategy": "llm_only",
+      "generation_order": [
+        "llm"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "sample.py::shift_left::llm::0",
+      "best_rule_id": "llm_patch",
+      "best_generator": "llm",
+      "best_generator_family": "llm",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2021.3319
+    },
+    {
+      "case": "deterministic_index_overrun",
+      "category": "rule_supported",
+      "patch_mode": "hybrid",
+      "status": "pass",
+      "reason": "patch_validation_success",
+      "candidate_count": 3,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 3,
+      "safety_pass_candidate_count": 3,
+      "generator_counts": {
+        "rule": 2,
+        "llm": 1
+      },
+      "generation_strategy": "adaptive_rule_first",
+      "generation_order": [
+        "rule",
+        "llm"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "sample.py::shift_left::possible_index_overrun::shrink_range_upper_bound::ev_evidence_d05986ff021a",
+      "best_rule_id": "possible_index_overrun",
+      "best_generator": "rule_based",
+      "best_generator_family": "rule",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2943.8302
+    },
+    {
+      "case": "semantic_none_normalization",
+      "category": "llm_semantic_direct",
+      "patch_mode": "rule",
+      "status": "skipped",
+      "reason": "patch_candidates_not_ready",
+      "candidate_count": 0,
+      "candidate_generated": false,
+      "ast_valid_candidate_count": 0,
+      "safety_pass_candidate_count": 0,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 0
+      },
+      "generation_strategy": "rule_only",
+      "generation_order": [
+        "rule"
+      ],
+      "targeted_test_passed": false,
+      "full_regression_status": "skipped",
+      "verified_repair": false,
+      "verification_claim": "validation_not_run",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "",
+      "best_rule_id": "",
+      "best_generator": "",
+      "best_generator_family": "",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": false,
+        "targeted_test_passed": false,
+        "verified_repair": false,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 10.8721
+    },
+    {
+      "case": "semantic_none_normalization",
+      "category": "llm_semantic_direct",
+      "patch_mode": "llm",
+      "status": "pass",
+      "reason": "patch_validation_success",
+      "candidate_count": 1,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 1,
+      "safety_pass_candidate_count": 1,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 1
+      },
+      "generation_strategy": "llm_only",
+      "generation_order": [
+        "llm"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "sample.py::normalize::llm::0",
+      "best_rule_id": "llm_patch",
+      "best_generator": "llm",
+      "best_generator_family": "llm",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2013.737
+    },
+    {
+      "case": "semantic_none_normalization",
+      "category": "llm_semantic_direct",
+      "patch_mode": "hybrid",
+      "status": "pass",
+      "reason": "patch_validation_success",
+      "candidate_count": 1,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 1,
+      "safety_pass_candidate_count": 1,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 1
+      },
+      "generation_strategy": "adaptive_llm_first",
+      "generation_order": [
+        "llm",
+        "rule"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "sample.py::normalize::llm::0",
+      "best_rule_id": "llm_patch",
+      "best_generator": "llm",
+      "best_generator_family": "llm",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2053.35
+    },
+    {
+      "case": "semantic_parse_port_reflection",
+      "category": "llm_reflection",
+      "patch_mode": "rule",
+      "status": "skipped",
+      "reason": "patch_candidates_not_ready",
+      "candidate_count": 0,
+      "candidate_generated": false,
+      "ast_valid_candidate_count": 0,
+      "safety_pass_candidate_count": 0,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 0
+      },
+      "generation_strategy": "rule_only",
+      "generation_order": [
+        "rule"
+      ],
+      "targeted_test_passed": false,
+      "full_regression_status": "skipped",
+      "verified_repair": false,
+      "verification_claim": "validation_not_run",
+      "reflection_recovered": false,
+      "reflection_candidate_count": 0,
+      "best_candidate_id": "",
+      "best_rule_id": "",
+      "best_generator": "",
+      "best_generator_family": "",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": false,
+        "targeted_test_passed": false,
+        "verified_repair": false,
+        "reflection_recovered": false
+      },
+      "expectation_matched": true,
+      "runtime_ms": 10.7295
+    },
+    {
+      "case": "semantic_parse_port_reflection",
+      "category": "llm_reflection",
+      "patch_mode": "llm",
+      "status": "pass",
+      "reason": "patch_validation_reflection_success",
+      "candidate_count": 1,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 1,
+      "safety_pass_candidate_count": 1,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 1
+      },
+      "generation_strategy": "llm_only",
+      "generation_order": [
+        "llm"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": true,
+      "reflection_candidate_count": 1,
+      "best_candidate_id": "sample.py::parse_port::llm_refine::1",
+      "best_rule_id": "llm_reflection_patch",
+      "best_generator": "llm_reflection",
+      "best_generator_family": "llm",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": true
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2634.3571
+    },
+    {
+      "case": "semantic_parse_port_reflection",
+      "category": "llm_reflection",
+      "patch_mode": "hybrid",
+      "status": "pass",
+      "reason": "patch_validation_reflection_success",
+      "candidate_count": 1,
+      "candidate_generated": true,
+      "ast_valid_candidate_count": 1,
+      "safety_pass_candidate_count": 1,
+      "generator_counts": {
+        "rule": 0,
+        "llm": 1
+      },
+      "generation_strategy": "adaptive_llm_first",
+      "generation_order": [
+        "llm",
+        "rule"
+      ],
+      "targeted_test_passed": true,
+      "full_regression_status": "pass",
+      "verified_repair": true,
+      "verification_claim": "verified_repair",
+      "reflection_recovered": true,
+      "reflection_candidate_count": 1,
+      "best_candidate_id": "sample.py::parse_port::llm_refine::1",
+      "best_rule_id": "llm_reflection_patch",
+      "best_generator": "llm_reflection",
+      "best_generator_family": "llm",
+      "attribution_consistent": true,
+      "expected": {
+        "candidate_generated": true,
+        "targeted_test_passed": true,
+        "verified_repair": true,
+        "reflection_recovered": true
+      },
+      "expectation_matched": true,
+      "runtime_ms": 2331.5206
+    }
+  ],
+  "success_authority": "sandbox_targeted_and_full_regression_tests",
+  "attribution_policy": "winning generator comes from candidate metadata; rule success is never credited to LLM",
+  "limitations": [
+    "The LLM responses in this Phase 5 suite are deterministic offline fixtures.",
+    "The suite validates orchestration, attribution, safety, reflection, and sandbox contracts; it does not measure live-model repair quality.",
+    "The three controlled cases are contract tests, not a real-world GitHub repair-rate estimate."
+  ]
+}

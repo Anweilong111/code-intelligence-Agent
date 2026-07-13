@@ -24,9 +24,10 @@ from code_intelligence_agent.search.patch_judge import (
 from code_intelligence_agent.search.refinement_context import annotate_refinement_context
 from code_intelligence_agent.search.scoring import PatchScoreWeights, score_patch
 from code_intelligence_agent.tools.sandbox import Sandbox
-from code_intelligence_agent.tools.patch_validation import (
-    allow_signature_change_for_rules,
-    validate_function_patch,
+from code_intelligence_agent.tools.patch_validation import allow_signature_change_for_rules
+from code_intelligence_agent.tools.patch_safety import (
+    PatchSafetyPolicy,
+    apply_patch_safety_gate,
 )
 
 
@@ -142,6 +143,7 @@ class BeamPatchSearch:
                                 parent_id=node.candidate.id,
                                 child_index=child_index,
                                 sibling_count=len(refined_candidates),
+                                repository_root=repo_path,
                             ),
                             depth=node.depth + 1,
                             parent_id=node.candidate.id,
@@ -364,6 +366,7 @@ def _with_child_metadata(
     parent_id: str,
     child_index: int,
     sibling_count: int,
+    repository_root: str | Path | None = None,
 ) -> PatchCandidate:
     child = replace(
         candidate,
@@ -374,10 +377,17 @@ def _with_child_metadata(
             "beam_sibling_count": sibling_count,
         },
     )
-    return _with_reflection_safety_gate_metadata(child)
+    return _with_reflection_safety_gate_metadata(
+        child,
+        repository_root=repository_root,
+    )
 
 
-def _with_reflection_safety_gate_metadata(candidate: PatchCandidate) -> PatchCandidate:
+def _with_reflection_safety_gate_metadata(
+    candidate: PatchCandidate,
+    *,
+    repository_root: str | Path | None = None,
+) -> PatchCandidate:
     existing_safety = candidate.metadata.get("safety_gate")
     if (
         isinstance(existing_safety, dict)
@@ -388,27 +398,14 @@ def _with_reflection_safety_gate_metadata(candidate: PatchCandidate) -> PatchCan
     rule_ids = [candidate.rule_id]
     if isinstance(static_rule_ids, list):
         rule_ids.extend(str(item) for item in static_rule_ids)
-    validation = validate_function_patch(
-        candidate.old_source,
-        candidate.new_source,
-        allow_signature_change=allow_signature_change_for_rules(rule_ids),
-    )
-    safety_gate = {
-        **validation.to_dict(),
-        "status": "pass" if validation.valid else "blocked",
-        "minimal_diff": not (
-            "patch_too_large" in validation.reasons
-            or "patch_change_ratio_too_large" in validation.reasons
-        ),
-        "source": "beam_reflection_candidate_safety_gate",
-    }
-    return replace(
+    return apply_patch_safety_gate(
         candidate,
-        metadata={
-            **candidate.metadata,
-            "validation": validation.to_dict(),
-            "safety_gate": safety_gate,
-        },
+        repository_root=repository_root,
+        policy=PatchSafetyPolicy(
+            allow_signature_change=allow_signature_change_for_rules(rule_ids),
+            authorized_files=(candidate.relative_file_path,),
+        ),
+        source="beam_reflection_candidate_safety_gate",
     )
 
 

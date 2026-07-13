@@ -62,6 +62,11 @@ class LLMPatchGenerator:
             )
             prompt_payload = _json_prompt_payload(prompt)
             prompt_context_audit = _prompt_context_audit(prompt_payload)
+            prompt_provenance = _prompt_provenance(
+                prompt,
+                prompt_payload,
+                kind="patch_generation",
+            )
             response = self.client.complete(prompt)
             fixed_sources = parse_fixed_sources(response.text)
             response_parse = _response_parse_audit(response.text, fixed_sources)
@@ -74,6 +79,7 @@ class LLMPatchGenerator:
                 "requested_candidate_count": requested_count,
                 "parsed_candidate_count": len(fixed_sources),
                 "prompt_context_audit": prompt_context_audit,
+                "prompt_provenance": prompt_provenance,
                 "response_parse": response_parse,
                 "llm_metadata": response.metadata,
                 "accepted_candidate_count": 0,
@@ -131,6 +137,7 @@ class LLMPatchGenerator:
                             "constraint": "top_k_suspicious_minimal_diff",
                             "static_rule_ids": rule_ids,
                             "prompt_context_audit": prompt_context_audit,
+                            "prompt_provenance": prompt_provenance,
                             "response_parse": response_parse,
                             "validation": validation.to_dict(),
                             "llm_metadata": response.metadata,
@@ -181,6 +188,11 @@ class LLMPatchGenerator:
         )
         prompt_payload = _json_prompt_payload(prompt)
         prompt_context_audit = _reflection_prompt_context_audit(prompt_payload)
+        prompt_provenance = _prompt_provenance(
+            prompt,
+            prompt_payload,
+            kind="patch_reflection",
+        )
         response = self.client.complete(prompt)
         fixed_sources = parse_fixed_sources(response.text)
         response_parse = _response_parse_audit(response.text, fixed_sources)
@@ -192,6 +204,7 @@ class LLMPatchGenerator:
             "requested_candidate_count": limit,
             "parsed_candidate_count": len(fixed_sources),
             "prompt_context_audit": prompt_context_audit,
+            "prompt_provenance": prompt_provenance,
             "response_parse": response_parse,
             "llm_metadata": response.metadata,
             "accepted_candidate_count": 0,
@@ -270,6 +283,7 @@ class LLMPatchGenerator:
                         ),
                         "reflection_prompt_context_audit": prompt_context_audit,
                         "prompt_context_audit": prompt_context_audit,
+                        "prompt_provenance": prompt_provenance,
                         "response_parse": response_parse,
                         "source_fingerprint": diversity.source_fingerprint,
                         "edit_fingerprint": diversity.edit_fingerprint,
@@ -616,6 +630,22 @@ def _json_prompt_payload(prompt: str) -> dict:
         return _dict(json.loads(prompt))
     except json.JSONDecodeError:
         return {}
+
+
+def _prompt_provenance(
+    prompt: str,
+    payload: dict,
+    *,
+    kind: str,
+) -> dict:
+    return {
+        "kind": kind,
+        "contract_version": "patch_prompt_v2",
+        "fingerprint": stable_source_fingerprint(prompt),
+        "character_count": len(prompt),
+        "top_level_fields": sorted(str(key) for key in payload),
+        "raw_prompt_persisted": False,
+    }
 
 
 def _top_k_context(

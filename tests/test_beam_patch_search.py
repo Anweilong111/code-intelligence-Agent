@@ -14,6 +14,7 @@ from code_intelligence_agent.core.repo_parser import RepoParser
 from code_intelligence_agent.search.beam_patch_search import BeamPatchSearch
 from code_intelligence_agent.search.patch_search import PatchSearch
 from code_intelligence_agent.search.scoring import PatchScoreWeights
+from code_intelligence_agent.tools.diff_utils import render_unified_diff
 from code_intelligence_agent.tools.sandbox import Sandbox
 
 
@@ -279,17 +280,20 @@ def _candidate(
     variant_rank: int = 0,
     rule_id: str = "test_rule",
 ) -> PatchCandidate:
+    old_source = "def f():\n    return 1\n"
+    new_source = "def f():\n    return 2\n"
+    relative_file_path = f"{candidate_id}.py"
     return PatchCandidate(
         id=candidate_id,
-        target_file=f"{candidate_id}.py",
-        relative_file_path=f"{candidate_id}.py",
+        target_file=relative_file_path,
+        relative_file_path=relative_file_path,
         target_function_id=function_id,
         target_function_name=function_id,
         rule_id=rule_id,
         description="test candidate",
-        old_source="def f():\n    return 1\n",
-        new_source="def f():\n    return 2\n",
-        diff=f"--- a/{candidate_id}.py\n+++ b/{candidate_id}.py\n-    return 1\n+    return 2\n",
+        old_source=old_source,
+        new_source=new_source,
+        diff=render_unified_diff(old_source, new_source, relative_file_path),
         metadata={"variant": candidate_id, "variant_rank": variant_rank},
     )
 

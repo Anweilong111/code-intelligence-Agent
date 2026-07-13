@@ -9014,7 +9014,17 @@ def _repository_test_regression_validation_command(
     evidence = _dict(dynamic_evidence)
     plan = _dict(execution_plan)
     selected = _dict(evidence.get("selected_execution"))
-    commands: list[str] = []
+    full_plan_commands = [
+        str(candidate.get("command") or "")
+        for candidate_value in _list(plan.get("candidate_commands"))
+        if (candidate := _dict(candidate_value))
+        and str(candidate.get("level") or "") == "full"
+        and str(candidate.get("runner") or "") == "pytest"
+    ]
+    commands: list[str] = [
+        *full_plan_commands,
+        str(plan.get("recommended_test_command") or ""),
+    ]
     if bool(evidence.get("usable_for_regression_validation", False)):
         commands.extend(
             [
@@ -9059,7 +9069,8 @@ def _pytest_args_from_python_module_command(command: str) -> list[str]:
         return []
     if args[1] != "-m" or args[2] != "pytest":
         return []
-    return [arg for arg in args[3:] if arg not in {"-q", "--quiet"}]
+    pytest_args = [arg for arg in args[3:] if arg not in {"-q", "--quiet"}]
+    return pytest_args or ["."]
 
 
 def _retry_runner_allowed(

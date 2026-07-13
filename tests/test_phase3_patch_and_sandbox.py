@@ -15,7 +15,10 @@ from code_intelligence_agent.core.program_graph import ProgramGraph, build_progr
 from code_intelligence_agent.core.repo_parser import RepoParser
 from code_intelligence_agent.search.execution_feedback import analyze_execution_feedback
 from code_intelligence_agent.search.failure_taxonomy import classify_execution_result
-from code_intelligence_agent.tools.diff_utils import apply_patch_candidate
+from code_intelligence_agent.tools.diff_utils import (
+    apply_patch_candidate,
+    render_unified_diff,
+)
 from code_intelligence_agent.tools.sandbox import Sandbox
 
 
@@ -1199,6 +1202,7 @@ class BatchRepairLoopRefiner:
 
 
 def _repair_loop_candidate(candidate_id: str, new_source: str) -> PatchCandidate:
+    old_source = "def f():\n    return -1\n"
     return PatchCandidate(
         id=candidate_id,
         target_file="sample.py",
@@ -1207,14 +1211,9 @@ def _repair_loop_candidate(candidate_id: str, new_source: str) -> PatchCandidate
         target_function_name="f",
         rule_id="test_rule",
         description="test repair-loop candidate",
-        old_source="def f():\n    return -1\n",
+        old_source=old_source,
         new_source=new_source,
-        diff=(
-            "--- a/sample.py\n"
-            "+++ b/sample.py\n"
-            "-    return -1\n"
-            f"+    return {candidate_id!r}\n"
-        ),
+        diff=render_unified_diff(old_source, new_source, "sample.py"),
         metadata={"variant": candidate_id},
     )
 

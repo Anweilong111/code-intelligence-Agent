@@ -467,6 +467,37 @@ python -m code_intelligence_agent.evaluation.localization_split_evaluation `
 `docs/v2/phase4_evidence_localization.md`；机器可读验收记录位于
 `docs/v2/phase4_localization_metrics.json`。
 
+### V2 自适应补丁生成与严格验证
+
+Phase 5 不再把 Hybrid 固定为 rule-first。系统根据 Top-k 中可修复规则、
+static/semantic/traceback evidence、LLM 可用性和候选预算选择
+`adaptive_rule_first`、`adaptive_llm_first` 或 `adaptive_rule_fallback`，并记录
+每个 generator 的计划预算、实际预算、产出数量和候选 provenance。
+
+Rule、LLM 和 reflection 候选统一经过 AST/scope/signature、授权文件、测试保护、
+敏感文件、危险 API、依赖授权、diff 完整性、失败指纹和 semantic diff 安全门。
+验证层依次覆盖 syntax、import、targeted tests、full repository regression 和受支持的
+boundary probe。只有目标测试和完整回归都通过时才输出 `verified_repair`；只通过目标
+测试时仅输出 `repository_test_candidate.patch` 和
+`targeted_candidate_unverified`。LLM Judge 始终是非权威风险信号。
+
+离线复现 Rule / LLM / Hybrid 补丁策略契约：
+
+```powershell
+python -m code_intelligence_agent.evaluation.patch_strategy_evaluation `
+  datasets/patch_evaluation/v2_patch_strategy_controlled_cases.json `
+  outputs/v2_phase5_patch_strategy `
+  --format markdown `
+  --require-pass
+```
+
+当前受控集包含 3 个缺陷、9 次独立运行，覆盖规则直接修复、LLM 语义直接修复和
+LLM reflection 修复；所有获胜候选的 generator attribution 一致。该评估使用离线
+确定性 LLM fixture，只证明编排、安全、反思、归因和 sandbox contract，不代表 live
+模型质量或真实 GitHub 修复率。完整设计与实验边界位于
+`docs/v2/phase5_patch_generation_and_validation.md`，机器可读结果位于
+`docs/v2/phase5_patch_metrics.json`。
+
 分析一个公开 GitHub 仓库：
 
 Repair strategy memory:

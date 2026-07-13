@@ -30,9 +30,13 @@ from code_intelligence_agent.search.candidate_diversity import stable_source_fin
 from code_intelligence_agent.search.patch_search import PatchSearch
 from code_intelligence_agent.search.patch_judge import PatchJudge, build_patch_judge
 from code_intelligence_agent.tools.sandbox import Sandbox
+from code_intelligence_agent.tools.boundary_probe import run_boundary_probe
 from code_intelligence_agent.tools.patch_validation import (
     allow_signature_change_for_rules,
-    validate_function_patch,
+)
+from code_intelligence_agent.tools.patch_safety import (
+    PatchSafetyPolicy,
+    apply_patch_safety_gate,
 )
 from code_intelligence_agent.evaluation.repository_test_reflection_trace import (
     build_repository_test_reflection_trace,
@@ -257,6 +261,20 @@ def build_repository_test_patch_validation(
     )
     regression_status = str(regression_validation.get("status") or "")
     regression_failed = regression_status == "fail"
+    layered_validation = _build_layered_validation(
+        root,
+        best_result,
+        best_success=best_success,
+        regression_validation=regression_validation,
+        patch_judge_enabled=bool(search_metadata.get("patch_judge_enabled", False)),
+        timeout=timeout,
+    )
+    verified_repair = bool(layered_validation.get("verified_repair", False))
+    verification_claim = _verification_claim(
+        best_success=best_success,
+        regression_status=regression_status,
+        verified_repair=verified_repair,
+    )
     status = "pass" if success_rows else "fail"
     reason = _validation_reason(
         success_count=len(success_rows),
@@ -284,7 +302,15 @@ def build_repository_test_patch_validation(
         "depth0_executed_count": len(result_rows) - len(reflection_rows),
         "success_count": len(success_rows),
         "failed_count": len(result_rows) - len(success_rows),
-        "repair_ready": bool(best_success and not regression_failed),
+        "candidate_patch": best_success,
+        "verified_repair": verified_repair,
+        "verification_claim": verification_claim,
+        "verification_policy": "v2_strict_layered_validation",
+        "layered_validation": layered_validation,
+        "success_authority": "sandbox_targeted_and_regression_tests",
+        "targeted_candidate_ready": bool(best_success and not regression_failed),
+        "repair_ready": verified_repair,
+        "repair_ready_semantics": "strict_verified_repair",
         "repair_validation_scope": _repair_validation_scope(
             best_success=best_success,
             regression_status=regression_status,
@@ -385,6 +411,9 @@ def render_repository_test_patch_validation_markdown(payload: dict[str, Any]) ->
         f"- Validation Limit: {_int(payload.get('validation_limit', 0))}",
         f"- Executed Candidates: {_int(payload.get('executed_count', 0))}",
         f"- Successful Candidates: {_int(payload.get('success_count', 0))}",
+        f"- Candidate Patch: {str(bool(payload.get('candidate_patch', False))).lower()}",
+        f"- Verified Repair: {str(bool(payload.get('verified_repair', False))).lower()}",
+        f"- Verification Claim: `{_markdown_cell(payload.get('verification_claim') or 'none')}`",
         f"- Repair Ready: {str(bool(payload.get('repair_ready', False))).lower()}",
         f"- Repair Validation Scope: `{_markdown_cell(payload.get('repair_validation_scope') or 'none')}`",
         f"- Regression Ready: {str(bool(payload.get('regression_ready', False))).lower()}",
@@ -451,6 +480,31 @@ def render_repository_test_patch_validation_markdown(payload: dict[str, Any]) ->
         )
     if not _list(payload.get("results")):
         lines.append("| 0 | 0 | none | none | none | none | false | none | 0.0000 | 0 | 0 |")
+    layered = _dict(payload.get("layered_validation"))
+    layers = _dict(layered.get("layers"))
+    lines.extend(
+        [
+            "",
+            "## Layered Validation",
+            "",
+            f"- Policy: `{_markdown_cell(layered.get('policy') or 'none')}`",
+            f"- Verified Repair: {str(bool(layered.get('verified_repair', False))).lower()}",
+            "",
+            "| Layer | Status | Authority | Reason |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for name, item_value in layers.items():
+        item = _dict(item_value)
+        lines.append(
+            "| "
+            f"`{_markdown_cell(name)}` | "
+            f"`{_markdown_cell(item.get('status') or 'none')}` | "
+            f"`{_markdown_cell(item.get('authority') or 'none')}` | "
+            f"`{_markdown_cell(item.get('reason') or 'none')}` |"
+        )
+    if not layers:
+        lines.append("| none | none | none | none |")
     lines.extend(["", "## Failure Type Counts", ""])
     counts = _dict(payload.get("failure_type_counts"))
     for failure_type, count in sorted(counts.items()):
@@ -613,10 +667,14 @@ def write_repository_test_patch_validation_artifacts(
     )
     best_patch = _dict(payload.get("best_patch"))
     patch_diff = str(best_patch.get("diff") or "")
-    if bool(payload.get("repair_ready", False)) and patch_diff:
+    if bool(payload.get("verified_repair", False)) and patch_diff:
         patch_path = root / "repository_test_repair.patch"
         patch_path.write_text(patch_diff, encoding="utf-8")
         paths["repository_test_repair_patch"] = str(patch_path)
+    elif bool(payload.get("candidate_patch", False)) and patch_diff:
+        patch_path = root / "repository_test_candidate.patch"
+        patch_path.write_text(patch_diff, encoding="utf-8")
+        paths["repository_test_candidate_patch"] = str(patch_path)
     return paths
 
 
@@ -882,6 +940,7 @@ def _run_regression_reflection(
         )
         refined = _with_reflection_safety_gate_metadata(
             refined,
+            repository_root=repository_root,
             source="regression_reflection_candidate_safety_gate",
         )
         if _candidate_blocked_by_safety(refined):
@@ -967,6 +1026,7 @@ def _with_regression_reflection_metadata(
 def _with_reflection_safety_gate_metadata(
     candidate: PatchCandidate,
     *,
+    repository_root: str | Path | None = None,
     source: str,
 ) -> PatchCandidate:
     existing_safety = candidate.metadata.get("safety_gate")
@@ -976,27 +1036,14 @@ def _with_reflection_safety_gate_metadata(
     rule_ids = [candidate.rule_id]
     if isinstance(static_rule_ids, list):
         rule_ids.extend(str(item) for item in static_rule_ids)
-    validation = validate_function_patch(
-        candidate.old_source,
-        candidate.new_source,
-        allow_signature_change=allow_signature_change_for_rules(rule_ids),
-    )
-    safety_gate = {
-        **validation.to_dict(),
-        "status": "pass" if validation.valid else "blocked",
-        "minimal_diff": not (
-            "patch_too_large" in validation.reasons
-            or "patch_change_ratio_too_large" in validation.reasons
-        ),
-        "source": source,
-    }
-    return replace(
+    return apply_patch_safety_gate(
         candidate,
-        metadata={
-            **candidate.metadata,
-            "validation": validation.to_dict(),
-            "safety_gate": safety_gate,
-        },
+        repository_root=repository_root,
+        policy=PatchSafetyPolicy(
+            allow_signature_change=allow_signature_change_for_rules(rule_ids),
+            authorized_files=(candidate.relative_file_path,),
+        ),
+        source=source,
     )
 
 
@@ -1068,6 +1115,16 @@ def _best_patch_summary(result: Any | None) -> dict[str, Any]:
             getattr(candidate, "target_function_name", "")
         ),
         "rule_id": str(getattr(candidate, "rule_id", "")),
+        "generator": str(
+            metadata.get("generator")
+            or _generator_from_rule_id(getattr(candidate, "rule_id", ""))
+        ),
+        "generator_family": _generator_family(
+            metadata.get("generator"),
+            getattr(candidate, "rule_id", ""),
+        ),
+        "generation_strategy": str(metadata.get("generation_strategy") or ""),
+        "prompt_provenance": _dict(metadata.get("prompt_provenance")),
         "variant": str(metadata.get("variant") or ""),
         "description": str(getattr(candidate, "description", "")),
         "depth": _int(getattr(result, "depth", 0)),
@@ -1081,6 +1138,222 @@ def _best_patch_summary(result: Any | None) -> dict[str, Any]:
         "diff": str(getattr(candidate, "diff", "")),
         "apply_strategy": "replace_old_source_once",
     }
+
+
+def _build_layered_validation(
+    repository_root: Path,
+    best_result: Any | None,
+    *,
+    best_success: bool,
+    regression_validation: dict[str, Any],
+    patch_judge_enabled: bool,
+    timeout: int,
+) -> dict[str, Any]:
+    candidate = getattr(best_result, "candidate", None)
+    execution = getattr(best_result, "execution_result", None)
+    metadata = _dict(getattr(candidate, "metadata", {}))
+    safety = _dict(metadata.get("safety_gate"))
+    semantic = _dict(
+        metadata.get("semantic_validation")
+        or safety.get("semantic_validation")
+    )
+    syntax_pass = bool(safety.get("ast_valid", False))
+    safety_pass = str(safety.get("status") or "") == "pass"
+    semantic_status = str(semantic.get("status") or "missing")
+    import_validation = _validate_candidate_import_layer(
+        repository_root,
+        candidate,
+        enabled=best_success,
+        timeout=timeout,
+    )
+    boundary_probe = (
+        run_boundary_probe(candidate).to_dict()
+        if best_success and candidate is not None
+        else {
+            "status": "not_run",
+            "reason": "no_targeted_test_passing_candidate",
+        }
+    )
+    regression_status = str(regression_validation.get("status") or "skipped")
+    import_status = str(import_validation.get("status") or "skipped")
+    verified_repair = bool(
+        best_success
+        and syntax_pass
+        and safety_pass
+        and semantic_status in {"pass", "warning"}
+        and import_status in {"pass", "baseline_failed_unchanged"}
+        and str(boundary_probe.get("status") or "") != "fail"
+        and regression_status == "pass"
+    )
+    layers = {
+        "syntax_validation": {
+            "status": "pass" if syntax_pass else "fail",
+            "authority": "python_ast",
+            "reason": "candidate_ast_parseable" if syntax_pass else "invalid_ast",
+        },
+        "safety_gate": {
+            "status": "pass" if safety_pass else "fail",
+            "authority": "unified_patch_safety_gate_v2",
+            "reason": (
+                "all_required_safety_checks_passed"
+                if safety_pass
+                else ",".join(str(item) for item in _list(safety.get("reasons")))
+                or "safety_evidence_missing"
+            ),
+        },
+        "semantic_diff": {
+            "status": semantic_status,
+            "authority": "semantic_patch_validator_v2",
+            "reason": _semantic_layer_reason(semantic),
+            "risk_score": _float(semantic.get("risk_score", 0.0)),
+        },
+        "import_validation": import_validation,
+        "targeted_tests": {
+            "status": "pass" if best_success else "fail",
+            "authority": "sandbox_pytest",
+            "reason": (
+                "targeted_failing_test_passed"
+                if best_success
+                else "no_targeted_test_passing_candidate"
+            ),
+            "passed": _int(getattr(execution, "passed", 0)),
+            "failed": _int(getattr(execution, "failed", 0)),
+        },
+        "full_repository_tests": {
+            "status": regression_status,
+            "authority": "sandbox_pytest",
+            "reason": str(regression_validation.get("reason") or "not_run"),
+            "passed": _int(regression_validation.get("passed", 0)),
+            "failed": _int(regression_validation.get("failed", 0)),
+        },
+        "mutation_or_boundary": {
+            **boundary_probe,
+            "authority": "generated_boundary_probe_subprocess",
+        },
+        "llm_judge_risk_review": {
+            "status": "advisory" if patch_judge_enabled else "disabled",
+            "authority": "non_authoritative",
+            "reason": (
+                "llm_judge_cannot_decide_repair_success"
+                if patch_judge_enabled
+                else "patch_judge_not_enabled"
+            ),
+        },
+    }
+    return {
+        "policy": "v2_strict_layered_validation",
+        "verified_repair": verified_repair,
+        "required_for_verified_repair": [
+            "syntax_validation",
+            "safety_gate",
+            "semantic_diff_not_blocked",
+            "import_validation_not_regressed",
+            "targeted_tests",
+            "full_repository_tests",
+        ],
+        "layers": layers,
+    }
+
+
+def _validate_candidate_import_layer(
+    repository_root: Path,
+    candidate: PatchCandidate | None,
+    *,
+    enabled: bool,
+    timeout: int,
+) -> dict[str, Any]:
+    if not enabled or candidate is None:
+        return {
+            "status": "skipped",
+            "authority": "modulefinder_subprocess",
+            "reason": "no_targeted_test_passing_candidate",
+        }
+    sandbox = Sandbox(timeout=timeout)
+    baseline = sandbox.validate_candidate_imports(
+        repository_root,
+        candidate,
+        apply_patch=False,
+    )
+    patched = sandbox.validate_candidate_imports(
+        repository_root,
+        candidate,
+        apply_patch=True,
+    )
+    if patched.success:
+        status = "pass"
+        reason = "patched_target_imports_resolve"
+    elif not baseline.success and _import_result_signature(
+        baseline
+    ) == _import_result_signature(patched):
+        status = "baseline_failed_unchanged"
+        reason = "import_failure_preexisting_and_unchanged"
+    else:
+        status = "fail"
+        reason = "patch_introduced_or_changed_import_failure"
+    return {
+        "status": status,
+        "authority": "modulefinder_subprocess",
+        "reason": reason,
+        "baseline_success": baseline.success,
+        "patched_success": patched.success,
+        "baseline_returncode": baseline.returncode,
+        "patched_returncode": patched.returncode,
+        "baseline_timeout": baseline.timeout,
+        "patched_timeout": patched.timeout,
+        "baseline_stdout_preview": _preview(baseline.stdout, 500),
+        "patched_stdout_preview": _preview(patched.stdout, 500),
+        "baseline_stderr_preview": _preview(baseline.stderr, 500),
+        "patched_stderr_preview": _preview(patched.stderr, 500),
+    }
+
+
+def _import_result_signature(result: ExecutionResult) -> tuple[Any, ...]:
+    payload = _last_json_object(result.stdout)
+    return (
+        result.timeout,
+        str(payload.get("status") or ""),
+        tuple(str(item) for item in _list(payload.get("bad_modules"))),
+        str(payload.get("error_type") or ""),
+        _normalize_failure_line(str(payload.get("message") or result.stderr or "")),
+    )
+
+
+def _last_json_object(value: str) -> dict[str, Any]:
+    for line in reversed(str(value or "").splitlines()):
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    return {}
+
+
+def _semantic_layer_reason(semantic: dict[str, Any]) -> str:
+    blocked = [str(item) for item in _list(semantic.get("blocked_reasons"))]
+    warnings = [str(item) for item in _list(semantic.get("warnings"))]
+    if blocked:
+        return ",".join(blocked)
+    if warnings:
+        return ",".join(warnings)
+    return "semantic_diff_checks_passed" if semantic else "semantic_evidence_missing"
+
+
+def _verification_claim(
+    *,
+    best_success: bool,
+    regression_status: str,
+    verified_repair: bool,
+) -> str:
+    if verified_repair:
+        return "verified_repair"
+    if not best_success:
+        return "no_passing_candidate"
+    if regression_status == "fail":
+        return "candidate_rejected_by_regression"
+    if regression_status == "baseline_failed_unchanged":
+        return "targeted_candidate_with_baseline_caveat"
+    return "targeted_candidate_unverified"
 
 
 def _validate_best_patch_regression(
@@ -1253,6 +1526,10 @@ def _validation_result_to_dict(result) -> dict[str, Any]:
         "relative_file_path": candidate.relative_file_path,
         "rule_id": candidate.rule_id,
         "generator": str(metadata.get("generator") or _generator_from_rule_id(candidate.rule_id)),
+        "generator_family": _generator_family(
+            metadata.get("generator"),
+            candidate.rule_id,
+        ),
         "variant": str(metadata.get("variant") or ""),
         "description": str(getattr(candidate, "description", "") or ""),
         "depth": depth,
@@ -1403,6 +1680,8 @@ def _candidate_success_summary(row: dict[str, Any]) -> dict[str, Any]:
         "target_function_name": row.get("target_function_name", ""),
         "relative_file_path": row.get("relative_file_path", ""),
         "rule_id": row.get("rule_id", ""),
+        "generator": row.get("generator", ""),
+        "generator_family": row.get("generator_family", ""),
         "variant": row.get("variant", ""),
         "depth": _int(row.get("depth", 0)),
         "parent_candidate_id": row.get("parent_candidate_id", ""),
@@ -1419,6 +1698,15 @@ def _generator_from_rule_id(rule_id: Any) -> str:
     if "hybrid" in text:
         return "hybrid"
     return "rule"
+
+
+def _generator_family(generator: Any, rule_id: Any) -> str:
+    value = str(generator or "").lower()
+    if value.startswith("llm"):
+        return "llm"
+    if value.startswith("rule"):
+        return "rule"
+    return _generator_from_rule_id(rule_id)
 
 
 def _fingerprint(value: Any) -> str:
@@ -1515,7 +1803,20 @@ def _skipped(
         "depth0_executed_count": 0,
         "success_count": 0,
         "failed_count": 0,
+        "candidate_patch": False,
+        "verified_repair": False,
+        "verification_claim": "validation_not_run",
+        "verification_policy": "v2_strict_layered_validation",
+        "layered_validation": {
+            "policy": "v2_strict_layered_validation",
+            "verified_repair": False,
+            "required_for_verified_repair": [],
+            "layers": {},
+        },
+        "success_authority": "sandbox_targeted_and_regression_tests",
+        "targeted_candidate_ready": False,
         "repair_ready": False,
+        "repair_ready_semantics": "strict_verified_repair",
         "repair_validation_scope": "none",
         "regression_ready": False,
         "regression_validation": _regression_validation_skipped(

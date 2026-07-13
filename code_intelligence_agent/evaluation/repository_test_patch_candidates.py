@@ -17,6 +17,10 @@ from code_intelligence_agent.agents.llm_client import (
     llm_config_audit,
 )
 from code_intelligence_agent.agents.llm_patch_generator import LLMPatchGenerator
+from code_intelligence_agent.agents.patch_generation_policy import (
+    PatchGenerationPlan,
+    plan_patch_generation,
+)
 from code_intelligence_agent.agents.patch_generator import PatchGenerator
 from code_intelligence_agent.agents.patch_generator_factory import build_patch_generator
 from code_intelligence_agent.core.call_graph import build_call_graph
@@ -32,7 +36,10 @@ from code_intelligence_agent.evaluation.repository_test_fault_localization impor
 )
 from code_intelligence_agent.tools.patch_validation import (
     allow_signature_change_for_rules,
-    validate_function_patch,
+)
+from code_intelligence_agent.tools.patch_safety import (
+    PatchSafetyPolicy,
+    apply_patch_safety_gate,
 )
 
 
@@ -118,7 +125,11 @@ def build_repository_test_patch_candidates(
         candidate_variant_allowlist=variant_allowlist,
         repair_context=repair_context,
     )
-    candidates = _apply_candidate_safety_gates(generation["candidates"])
+    candidates = _apply_candidate_safety_gates(
+        generation["candidates"],
+        repository_root=root,
+        repair_context=repair_context,
+    )
     safety_gate = _candidate_safety_gate_summary(candidates)
     validation_command = str(localization.get("recommended_validation_command") or "")
     validation_args, validation_args_source = _recommended_pytest_args(
@@ -135,14 +146,16 @@ def build_repository_test_patch_candidates(
         "status": status,
         "reason": reason,
         "message": (
-            "Repository test fault localization was converted into Phase 3 "
-            "patch candidates."
+            "Repository test fault localization was converted into Phase 5 "
+            "adaptive patch candidates."
         ),
         "repository_root": str(root),
         "analysis_scope": analysis_scope,
         "candidate_limit": candidate_limit,
         "candidate_count": len(candidates),
         "patch_generation_mode": mode,
+        "generation_plan": generation["generation_plan"],
+        "generation_trace": generation["generation_trace"],
         "generator_counts": generation["generator_counts"],
         "candidate_variant_filter": generation["candidate_variant_filter"],
         "llm_generation_status": generation["llm_generation_status"],
@@ -250,80 +263,119 @@ def _generate_candidates(
     generation_errors: list[dict[str, str]] = []
     generator_counts = {"rule": 0, "llm": 0}
     llm_audit = llm_config_audit("patch_generation", enabled=mode in {"llm", "hybrid"})
+    llm_available = bool(llm_generator is not None or llm_audit.api_key_present)
+    plan = plan_patch_generation(
+        mode=mode,
+        ranked=ranked,
+        candidate_limit=candidate_limit,
+        llm_candidate_limit=llm_candidate_limit,
+        llm_available=llm_available,
+    )
     llm_status = "disabled" if mode == "rule" else "not_run"
     llm_reason = "patch_generation_mode_rule" if mode == "rule" else ""
     llm_generation_audit: list[dict[str, Any]] = []
-
-    if mode in {"rule", "hybrid"} and candidate_limit > 0:
-        try:
-            rule_candidates = (rule_generator or PatchGenerator()).generate(
-                root,
-                functions,
-                ranked,
-                limit=candidate_limit,
-            )
-            candidates.extend(rule_candidates)
-            generator_counts["rule"] = len(rule_candidates)
-        except Exception as exc:  # pragma: no cover - defensive artifact path
-            generation_errors.append(
-                {
-                    "source": "rule",
-                    "type": type(exc).__name__,
-                    "message": str(exc),
-                }
-            )
-
-    if mode in {"llm", "hybrid"}:
-        remaining = (
-            candidate_limit
-            if mode == "llm"
-            else max(0, candidate_limit - len(candidates))
-        )
-        if llm_candidate_limit is not None:
-            remaining = min(remaining, max(0, _int(llm_candidate_limit)))
-        if remaining <= 0:
-            llm_status = "skipped"
-            llm_reason = "candidate_limit_exhausted"
-        elif not llm_audit.api_key_present and llm_generator is None:
-            llm_status = "blocked"
-            llm_reason = "missing_llm_api_key"
-        else:
+    generation_trace: list[dict[str, Any]] = []
+    carry_budget = 0
+    for order_index, source in enumerate(plan.generation_order):
+        planned_budget = max(0, _int(plan.generator_budgets.get(source, 0)))
+        available_budget = max(0, candidate_limit - len(candidates))
+        effective_budget = min(available_budget, planned_budget + carry_budget)
+        carry_budget = 0
+        before_count = len(candidates)
+        trace = {
+            "order_index": order_index,
+            "generator": source,
+            "planned_budget": planned_budget,
+            "effective_budget": effective_budget,
+            "produced_count": 0,
+            "status": "skipped",
+            "reason": "zero_budget" if effective_budget <= 0 else "not_run",
+        }
+        if source == "rule" and effective_budget > 0:
             try:
-                active_llm_generator = llm_generator or build_patch_generator("llm")
-                llm_candidates = active_llm_generator.generate(
+                generated = (rule_generator or PatchGenerator()).generate(
                     root,
                     functions,
                     ranked,
-                    limit=remaining,
-                    repair_context=repair_context,
+                    limit=effective_budget,
                 )
-                llm_generation_audit = list(
-                    getattr(active_llm_generator, "last_generation_audit", [])
+                candidates.extend(generated)
+                trace["status"] = "pass" if generated else "warning"
+                trace["reason"] = (
+                    "rule_patch_candidates_generated"
+                    if generated
+                    else "no_rule_patch_candidates_generated"
                 )
-                candidates.extend(llm_candidates)
-                generator_counts["llm"] = len(llm_candidates)
-                llm_status = "pass" if llm_candidates else "warning"
-                llm_reason = (
-                    "llm_patch_candidates_generated"
-                    if llm_candidates
-                    else "no_llm_patch_candidates_generated"
+            except Exception as exc:  # pragma: no cover - defensive artifact path
+                trace["status"] = "error"
+                trace["reason"] = type(exc).__name__
+                generation_errors.append(
+                    {
+                        "source": "rule",
+                        "type": type(exc).__name__,
+                        "message": str(exc),
+                    }
                 )
-            except Exception as exc:
-                llm_status = "error"
-                llm_reason = (
-                    exc.reason
-                    if isinstance(exc, LLMRequestError)
-                    else type(exc).__name__
-                )
-                error = {
-                    "source": "llm",
-                    "type": type(exc).__name__,
-                    "message": str(exc),
-                }
-                if isinstance(exc, LLMRequestError):
-                    error["reason"] = exc.reason
-                    error["llm_request_metadata"] = exc.metadata
-                generation_errors.append(error)
+        elif source == "llm":
+            if mode == "rule":
+                trace["reason"] = "patch_generation_mode_rule"
+            elif not llm_available:
+                llm_status = "blocked"
+                llm_reason = "missing_llm_api_key"
+                trace["status"] = "blocked"
+                trace["reason"] = llm_reason
+            elif effective_budget <= 0:
+                llm_status = "skipped"
+                llm_reason = "generation_plan_llm_budget_zero"
+                trace["reason"] = llm_reason
+            else:
+                try:
+                    active_llm_generator = llm_generator or build_patch_generator("llm")
+                    generated = active_llm_generator.generate(
+                        root,
+                        functions,
+                        ranked,
+                        limit=effective_budget,
+                        repair_context=repair_context,
+                    )
+                    llm_generation_audit = list(
+                        getattr(active_llm_generator, "last_generation_audit", [])
+                    )
+                    candidates.extend(generated)
+                    llm_status = "pass" if generated else "warning"
+                    llm_reason = (
+                        "llm_patch_candidates_generated"
+                        if generated
+                        else "no_llm_patch_candidates_generated"
+                    )
+                    trace["status"] = llm_status
+                    trace["reason"] = llm_reason
+                except Exception as exc:
+                    llm_status = "error"
+                    llm_reason = (
+                        exc.reason
+                        if isinstance(exc, LLMRequestError)
+                        else type(exc).__name__
+                    )
+                    trace["status"] = "error"
+                    trace["reason"] = llm_reason
+                    error = {
+                        "source": "llm",
+                        "type": type(exc).__name__,
+                        "message": str(exc),
+                    }
+                    if isinstance(exc, LLMRequestError):
+                        error["reason"] = exc.reason
+                        error["llm_request_metadata"] = exc.metadata
+                    generation_errors.append(error)
+        produced_count = len(candidates) - before_count
+        trace["produced_count"] = produced_count
+        carry_budget = max(0, effective_budget - produced_count)
+        generation_trace.append(trace)
+
+    if mode in {"llm", "hybrid"} and not llm_available and llm_status == "not_run":
+        llm_status = "blocked"
+        llm_reason = "missing_llm_api_key"
 
     candidates = _dedupe_candidates(candidates)
     variant_filter = _candidate_variant_filter_summary(
@@ -334,9 +386,17 @@ def _generate_candidates(
         candidates,
         allowlist=candidate_variant_allowlist,
     )[: max(0, candidate_limit)]
+    candidates = _annotate_generation_provenance(
+        candidates,
+        plan=plan,
+        ranked=ranked,
+        generation_trace=generation_trace,
+    )
     generator_counts = _candidate_generator_counts(candidates)
     return {
         "candidates": candidates,
+        "generation_plan": plan.to_dict(),
+        "generation_trace": generation_trace,
         "generator_counts": generator_counts,
         "candidate_variant_filter": variant_filter,
         "llm_generation_status": llm_status,
@@ -353,40 +413,43 @@ def _generate_candidates(
 
 def _apply_candidate_safety_gates(
     candidates: list[PatchCandidate],
+    *,
+    repository_root: str | Path | None = None,
+    repair_context: dict[str, Any] | None = None,
 ) -> list[PatchCandidate]:
+    context = _dict(repair_context)
     gated: list[PatchCandidate] = []
     for candidate in candidates:
-        validation = validate_function_patch(
-            candidate.old_source,
-            candidate.new_source,
-            allow_signature_change=allow_signature_change_for_rules(
-                [
-                    candidate.rule_id,
-                    *[
-                        str(item)
-                        for item in _list(
-                            candidate.metadata.get("static_rule_ids")
-                        )
-                    ],
-                ]
-            ),
-        )
-        metadata = {
-            **candidate.metadata,
-            "validation": validation.to_dict(),
-            "safety_gate": {
-                "status": "pass" if validation.valid else "blocked",
-                "ast_valid": validation.ast_valid,
-                "scope_limited": validation.scope_limited,
-                "minimal_diff": not (
-                    "patch_too_large" in validation.reasons
-                    or "patch_change_ratio_too_large" in validation.reasons
+        rule_ids = [
+            candidate.rule_id,
+            *[
+                str(item)
+                for item in _list(candidate.metadata.get("static_rule_ids"))
+            ],
+        ]
+        gated.append(
+            apply_patch_safety_gate(
+                candidate,
+                repository_root=repository_root,
+                policy=PatchSafetyPolicy(
+                    allow_signature_change=allow_signature_change_for_rules(rule_ids),
+                    authorized_files=(candidate.relative_file_path,),
                 ),
-                "signature_change_allowed": validation.signature_change_allowed,
-                "reasons": validation.reasons,
-            },
-        }
-        gated.append(replace(candidate, metadata=metadata))
+                failed_diff_fingerprints=[
+                    str(item)
+                    for item in _list(
+                        context.get("previous_failed_patch_fingerprints")
+                    )
+                ],
+                failed_source_fingerprints=[
+                    str(item)
+                    for item in _list(
+                        context.get("avoid_fixed_source_fingerprints")
+                    )
+                ],
+                source="repository_patch_candidate_safety_gate_v2",
+            )
+        )
     return gated
 
 
@@ -396,6 +459,7 @@ def _candidate_safety_gate_summary(
     passed = 0
     blocked = 0
     reason_counts: dict[str, int] = {}
+    warning_counts: dict[str, int] = {}
     for candidate in candidates:
         safety = _dict(candidate.metadata.get("safety_gate"))
         if safety.get("status") == "pass":
@@ -405,6 +469,9 @@ def _candidate_safety_gate_summary(
         for reason in _list(safety.get("reasons")):
             reason_text = str(reason or "unknown")
             reason_counts[reason_text] = reason_counts.get(reason_text, 0) + 1
+        for warning in _list(safety.get("warnings")):
+            warning_text = str(warning or "unknown")
+            warning_counts[warning_text] = warning_counts.get(warning_text, 0) + 1
     return {
         "status": "pass" if blocked == 0 else "blocked",
         "candidate_count": len(candidates),
@@ -412,13 +479,79 @@ def _candidate_safety_gate_summary(
         "blocked_count": blocked,
         "all_candidates_safe": blocked == 0,
         "reason_counts": dict(sorted(reason_counts.items())),
+        "warning_counts": dict(sorted(warning_counts.items())),
         "required_checks": [
             "ast_valid",
             "scope_limited",
             "signature_guard",
             "minimal_diff",
+            "authorized_path",
+            "test_file_guard",
+            "sensitive_file_guard",
+            "dangerous_api_guard",
+            "dependency_guard",
+            "unified_diff_integrity",
+            "failed_patch_deduplication",
+            "semantic_overfit_guard",
         ],
     }
+
+
+def _annotate_generation_provenance(
+    candidates: list[PatchCandidate],
+    *,
+    plan: PatchGenerationPlan,
+    ranked: list[FaultLocalizationResult],
+    generation_trace: list[dict[str, Any]],
+) -> list[PatchCandidate]:
+    targets = {item.function_id: item for item in ranked}
+    budgets = {
+        str(item.get("generator")): _int(item.get("effective_budget", 0))
+        for item in generation_trace
+    }
+    annotated = []
+    for candidate in candidates:
+        generator = str(candidate.metadata.get("generator") or "rule_based")
+        source = "llm" if generator.startswith("llm") else "rule"
+        target = targets.get(candidate.target_function_id)
+        localization_basis = {
+            "function_id": candidate.target_function_id,
+            "rank": target.rank if target is not None else 0,
+            "score": target.score if target is not None else 0.0,
+            "reason": target.reason if target is not None else "",
+            "rule_ids": (
+                [finding.rule_id for finding in target.findings]
+                if target is not None
+                else []
+            ),
+        }
+        annotated.append(
+            replace(
+                candidate,
+                metadata={
+                    **candidate.metadata,
+                    "prompt_provenance": _dict(
+                        candidate.metadata.get("prompt_provenance")
+                    )
+                    or {
+                        "kind": "deterministic_rule",
+                        "contract_version": "rule_rewrite_v1",
+                        "fingerprint": str(
+                            candidate.metadata.get(
+                                "finding_evidence_fingerprint",
+                                "",
+                            )
+                        ),
+                        "raw_prompt_persisted": False,
+                    },
+                    "generation_strategy": plan.strategy,
+                    "generation_plan_reason": plan.reason,
+                    "generator_budget": budgets.get(source, 0),
+                    "localization_basis": localization_basis,
+                },
+            )
+        )
+    return annotated
 
 
 def _dedupe_candidates(
@@ -529,6 +662,7 @@ def _normalize_patch_generation_mode(mode: str) -> str:
 
 def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) -> str:
     analysis_scope = _dict(payload.get("analysis_scope"))
+    generation_plan = _dict(payload.get("generation_plan"))
     generator_counts = _dict(payload.get("generator_counts"))
     variant_filter = _dict(payload.get("candidate_variant_filter"))
     safety_gate = _dict(payload.get("safety_gate"))
@@ -548,6 +682,19 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
         ),
         f"- Candidate Count: {_int(payload.get('candidate_count', 0))}",
         f"- Patch Generation Mode: `{_markdown_cell(payload.get('patch_generation_mode') or 'rule')}`",
+        (
+            "- Generation Strategy: "
+            f"`{_markdown_cell(generation_plan.get('strategy') or 'none')}` "
+            f"({_markdown_cell(generation_plan.get('reason') or 'none')})"
+        ),
+        (
+            "- Generation Order: "
+            f"`{_markdown_cell(_format_list(_list(generation_plan.get('generation_order'))))}`"
+        ),
+        (
+            "- Generator Budgets: "
+            f"`{_markdown_cell(_format_counts(_dict(generation_plan.get('generator_budgets'))))}`"
+        ),
         (
             "- Generator Counts: "
             f"rule={_int(generator_counts.get('rule', 0))}, "
@@ -645,6 +792,30 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
         )
     if not _list(payload.get("candidates")):
         lines.append("| 0 | none | none | none | none | none | none | 0.0000 |")
+    generation_trace = _list(payload.get("generation_trace"))
+    lines.extend(
+        [
+            "",
+            "## Generation Trace",
+            "",
+            "| Order | Generator | Planned | Effective | Produced | Status | Reason |",
+            "| ---: | --- | ---: | ---: | ---: | --- | --- |",
+        ]
+    )
+    for item_value in generation_trace:
+        item = _dict(item_value)
+        lines.append(
+            "| "
+            f"{_int(item.get('order_index', 0)) + 1} | "
+            f"`{_markdown_cell(item.get('generator') or 'none')}` | "
+            f"{_int(item.get('planned_budget', 0))} | "
+            f"{_int(item.get('effective_budget', 0))} | "
+            f"{_int(item.get('produced_count', 0))} | "
+            f"`{_markdown_cell(item.get('status') or 'none')}` | "
+            f"`{_markdown_cell(item.get('reason') or 'none')}` |"
+        )
+    if not generation_trace:
+        lines.append("| 0 | none | 0 | 0 | 0 | none | none |")
     lines.extend(["", "## Safety Gate", ""])
     lines.append(f"- Status: `{_markdown_cell(safety_gate.get('status') or 'unknown')}`")
     lines.append(f"- All Candidates Safe: {str(bool(safety_gate.get('all_candidates_safe', False))).lower()}")
@@ -656,6 +827,13 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
         lines.append("| --- | ---: |")
         for reason, count in sorted(reason_counts.items()):
             lines.append(f"| `{_markdown_cell(reason)}` | {_int(count)} |")
+    warning_counts = _dict(safety_gate.get("warning_counts"))
+    if warning_counts:
+        lines.append("")
+        lines.append(
+            "- Semantic Warnings: "
+            f"`{_markdown_cell(_format_counts(warning_counts))}`"
+        )
     lines.extend(["", "## Candidate Rule Counts", ""])
     rule_counts = _dict(payload.get("candidate_rule_counts"))
     for rule, count in sorted(rule_counts.items()):
@@ -1064,6 +1242,17 @@ def _skipped(
         "candidate_limit": 0,
         "candidate_count": 0,
         "patch_generation_mode": mode,
+        "generation_plan": {
+            "mode": mode,
+            "strategy": "not_run",
+            "generation_order": [],
+            "candidate_budget": 0,
+            "generator_budgets": {"rule": 0, "llm": 0},
+            "reason": reason,
+            "llm_available": False,
+            "evidence": {},
+        },
+        "generation_trace": [],
         "generator_counts": {"rule": 0, "llm": 0},
         "candidate_variant_filter": _candidate_variant_filter_summary(
             [],
@@ -1155,6 +1344,11 @@ def _read_json(path: str | Path) -> Any:
 
 def _format_list(values: list[Any]) -> str:
     rows = [str(value) for value in values if str(value)]
+    return ", ".join(rows) if rows else "none"
+
+
+def _format_counts(values: dict[str, Any]) -> str:
+    rows = [f"{key}={_int(value)}" for key, value in sorted(values.items())]
     return ", ".join(rows) if rows else "none"
 
 

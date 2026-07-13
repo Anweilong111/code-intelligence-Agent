@@ -4,6 +4,7 @@ import json
 from code_intelligence_agent.agents.evidence_memory import build_evidence_memory
 from code_intelligence_agent.agents.llm_client import LLMRequestError, StaticLLMClient
 from code_intelligence_agent.agents.llm_patch_generator import LLMPatchGenerator
+from code_intelligence_agent.core.repo_parser import RepoParser
 from code_intelligence_agent.evaluation.repository_test_fault_localization import (
     build_repository_test_fault_localization,
 )
@@ -152,7 +153,10 @@ def test_repository_test_patch_candidates_derives_pytest_args_from_unittest_node
     ]
     assert payload["recommended_pytest_args_source"] == "dynamic_evidence_nodeids"
     assert validation["status"] == "pass"
-    assert validation["repair_ready"] is True
+    assert validation["candidate_patch"] is True
+    assert validation["verified_repair"] is False
+    assert validation["verification_claim"] == "targeted_candidate_unverified"
+    assert validation["repair_ready"] is False
     assert validation["recommended_pytest_args"] == [
         "tests/test_sample.py::TestShift::test_shift_left_short"
     ]
@@ -240,6 +244,70 @@ def test_repository_test_patch_candidates_hybrid_adds_llm_candidates(
     assert "llm=1" in markdown
     assert "LLM Telemetry: requests=1" in markdown
     assert "LLM Generation Audit" in markdown
+
+
+def test_repository_test_patch_candidates_hybrid_executes_llm_first_without_rule(
+    tmp_path,
+    monkeypatch,
+):
+    for name in _LLM_API_KEY_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    source_path = tmp_path / "sample.py"
+    source_path.write_text(
+        "def normalize(value):\n    return value.strip()\n",
+        encoding="utf-8",
+    )
+    function = RepoParser().parse(tmp_path).functions[0]
+    localization = {
+        "status": "pass",
+        "top_function": "normalize",
+        "top_score": 0.92,
+        "dynamic_evidence_level": "failing_tests",
+        "recommended_validation_command": (
+            "python -m pytest -q tests/test_sample.py::test_none"
+        ),
+        "rankings": [
+            {
+                "function_id": function.id,
+                "function_name": function.name,
+                "file_path": function.file_path,
+                "start_line": function.start_line,
+                "end_line": function.end_line,
+                "score": 0.92,
+                "rank": 1,
+                "signals": {"semantic": 0.92, "static": 0.0},
+                "reason": "traceback and semantic evidence",
+            }
+        ],
+    }
+    fixed_source = (
+        "def normalize(value):\n"
+        "    if value is None:\n"
+        "        return \"\"\n"
+        "    return value.strip()\n"
+    )
+    llm = LLMPatchGenerator(StaticLLMClient(json.dumps({"fixed_source": fixed_source})))
+
+    payload = build_repository_test_patch_candidates(
+        localization,
+        repository_root=tmp_path,
+        candidate_limit=2,
+        patch_generation_mode="hybrid",
+        llm_generator=llm,
+    )
+
+    assert payload["status"] == "pass"
+    assert payload["generation_plan"]["strategy"] == "adaptive_llm_first"
+    assert payload["generation_plan"]["generation_order"] == ["llm", "rule"]
+    assert payload["generation_plan"]["reason"] == (
+        "no_supported_rule_for_top_ranked_evidence"
+    )
+    assert payload["generation_trace"][0]["generator"] == "llm"
+    assert payload["generation_trace"][0]["produced_count"] == 1
+    assert payload["generator_counts"] == {"rule": 0, "llm": 1}
+    candidate = payload["candidates"][0]
+    assert candidate["metadata"]["generation_strategy"] == "adaptive_llm_first"
+    assert candidate["metadata"]["prompt_provenance"]["raw_prompt_persisted"] is False
 
 
 def test_repository_test_patch_candidates_llm_reads_session_patch_memory(

@@ -124,6 +124,11 @@ def test_repository_test_patch_validation_executes_candidates(tmp_path):
     assert payload["executed_count"] == 2
     assert payload["depth0_executed_count"] == 2
     assert payload["success_count"] == 1
+    assert payload["verified_repair"] is True
+    assert payload["verification_claim"] == "verified_repair"
+    assert payload["layered_validation"]["layers"]["import_validation"][
+        "status"
+    ] == "pass"
     assert payload["repair_ready"] is True
     assert payload["repair_validation_scope"] == "narrow_and_regression"
     assert payload["regression_ready"] is True
@@ -213,7 +218,11 @@ def test_repository_test_patch_validation_refines_failed_candidate(tmp_path):
     assert payload["executed_count"] == 2
     assert payload["depth0_executed_count"] == 1
     assert payload["success_count"] == 1
-    assert payload["repair_ready"] is True
+    assert payload["candidate_patch"] is True
+    assert payload["targeted_candidate_ready"] is True
+    assert payload["verified_repair"] is False
+    assert payload["verification_claim"] == "targeted_candidate_unverified"
+    assert payload["repair_ready"] is False
     assert payload["reflection_enabled"] is True
     assert payload["reflection_candidate_count"] == 1
     assert payload["successful_reflection_candidate_count"] == 1
@@ -702,7 +711,10 @@ def test_repository_test_patch_validation_preserves_parameterized_nodeid(tmp_pat
     assert payload["status"] == "pass"
     assert payload["reason"] == "patch_validation_success"
     assert payload["recommended_pytest_args"] == ["--maxfail=1", nodeid]
-    assert payload["repair_ready"] is True
+    assert payload["candidate_patch"] is True
+    assert payload["verified_repair"] is False
+    assert payload["verification_claim"] == "targeted_candidate_unverified"
+    assert payload["repair_ready"] is False
     assert payload["best_patch"]["relative_file_path"] == "sample.py"
     assert payload["results"][0]["success"] is True
     assert payload["results"][0]["passed"] == 1
@@ -808,7 +820,12 @@ def test_repository_test_patch_validation_allows_unchanged_baseline_failure(
 
     assert payload["status"] == "pass"
     assert payload["best_candidate_success"] is True
-    assert payload["repair_ready"] is True
+    assert payload["candidate_patch"] is True
+    assert payload["verified_repair"] is False
+    assert payload["verification_claim"] == (
+        "targeted_candidate_with_baseline_caveat"
+    )
+    assert payload["repair_ready"] is False
     assert payload["repair_validation_scope"] == (
         "narrow_and_unchanged_regression_baseline"
     )
@@ -838,7 +855,8 @@ def test_repository_test_patch_validation_allows_unchanged_baseline_failure(
     assert payload["regression_validation"]["baseline_failed_unchanged"] is True
     assert payload["regression_reflection_candidate_count"] == 0
     assert payload["successful_regression_reflection_candidate_count"] == 0
-    assert "repository_test_repair_patch" in paths
+    assert "repository_test_repair_patch" not in paths
+    assert "repository_test_candidate_patch" in paths
 
 
 def test_repository_test_patch_validation_reflects_regression_failure(tmp_path):

@@ -15,6 +15,9 @@ from code_intelligence_agent.tools.diff_utils import (
 )
 
 _PYTEST_BOOTSTRAP = Path(__file__).with_name("pytest_bootstrap.py")
+_IMPORT_VALIDATION_BOOTSTRAP = Path(__file__).with_name(
+    "import_validation_bootstrap.py"
+)
 
 
 class Sandbox:
@@ -98,6 +101,66 @@ class Sandbox:
             except (FileNotFoundError, ValueError) as exc:
                 return _patch_apply_error(str(exc))
             return self.run_tests(sandbox_repo, test_args=test_args)
+
+    def validate_candidate_imports(
+        self,
+        repo_path: str | Path,
+        candidate: PatchCandidate,
+        *,
+        apply_patch: bool,
+    ) -> ExecutionResult:
+        source_repo = Path(repo_path)
+        with tempfile.TemporaryDirectory(prefix="cia_import_validation_") as tmp_dir:
+            sandbox_repo = Path(tmp_dir) / "repo"
+            _copy_repo(source_repo, sandbox_repo)
+            if apply_patch:
+                try:
+                    apply_patch_candidate(sandbox_repo, candidate)
+                except (FileNotFoundError, ValueError) as exc:
+                    return _patch_apply_error(str(exc))
+            command = [
+                sys.executable,
+                str(_IMPORT_VALIDATION_BOOTSTRAP),
+                str(sandbox_repo),
+                candidate.relative_file_path,
+            ]
+            env = os.environ.copy()
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            try:
+                completed = subprocess.run(
+                    command,
+                    cwd=tempfile.gettempdir(),
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout,
+                    check=False,
+                    env=env,
+                )
+                return ExecutionResult(
+                    success=completed.returncode == 0,
+                    returncode=completed.returncode,
+                    stdout=completed.stdout,
+                    stderr=completed.stderr,
+                    traceback=_extract_traceback(
+                        completed.stdout + "\n" + completed.stderr
+                    ),
+                    passed=0,
+                    failed=0,
+                    timeout=False,
+                    command=command,
+                )
+            except subprocess.TimeoutExpired as exc:
+                return ExecutionResult(
+                    success=False,
+                    returncode=-1,
+                    stdout=exc.stdout or "",
+                    stderr=exc.stderr or "",
+                    traceback="",
+                    passed=0,
+                    failed=0,
+                    timeout=True,
+                    command=command,
+                )
 
 
 def _copy_repo(source: Path, target: Path) -> None:

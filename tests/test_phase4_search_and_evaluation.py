@@ -91,6 +91,7 @@ from code_intelligence_agent.search.beam_search import BeamNode, BeamSearch
 from code_intelligence_agent.search.patch_judge import PatchJudgment
 from code_intelligence_agent.search.patch_search import PatchSearch
 from code_intelligence_agent.search.scoring import PatchScoreWeights, diff_size
+from code_intelligence_agent.tools.diff_utils import render_unified_diff
 from code_intelligence_agent.tools.sandbox import Sandbox
 
 
@@ -551,11 +552,10 @@ def _diversity_pressure_candidate(
         description="diversity pressure candidate",
         old_source=function.source,
         new_source=new_source,
-        diff=(
-            f"--- a/{Path(function.file_path).name}\n"
-            f"+++ b/{Path(function.file_path).name}\n"
-            "-    return value + 1\n"
-            f"+    return {replacement}\n"
+        diff=render_unified_diff(
+            function.source,
+            new_source,
+            Path(function.file_path).name,
         ),
         metadata={
             "variant": variant,
@@ -584,11 +584,10 @@ def _candidate_deduplication_pressure_candidate(
         description="candidate deduplication pressure candidate",
         old_source=function.source,
         new_source=new_source,
-        diff=(
-            f"--- a/{Path(function.file_path).name}\n"
-            f"+++ b/{Path(function.file_path).name}\n"
-            "-    return value + 1\n"
-            f"+    return {replacement}\n"
+        diff=render_unified_diff(
+            function.source,
+            new_source,
+            Path(function.file_path).name,
         ),
         metadata={
             "variant": "dedupe_pressure",

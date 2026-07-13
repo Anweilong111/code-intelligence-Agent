@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_phase5_patch_strategy_controlled",
+  "cases": [
+    {
+      "name": "deterministic_index_overrun",
+      "category": "rule_supported",
+      "target_function": "shift_left",
+      "failing_nodeid": "tests/test_sample.py::test_shift_left_empty",
+      "signals": {"static": 1.0, "traceback": 0.9},
+      "files": {
+        "sample.py": "def shift_left(values):\n    shifted = []\n    for index in range(len(values)):\n        shifted.append(values[index + 1])\n    return shifted\n",
+        "tests/test_sample.py": "from sample import shift_left\n\ndef test_shift_left_empty():\n    assert shift_left([]) == []\n\ndef test_shift_left_values():\n    assert shift_left([1, 2, 3]) == [2, 3]\n"
+      },
+      "llm_initial_source": "def shift_left(values):\n    shifted = []\n    for index in range(len(values) - 1):\n        shifted.append(values[index + 1])\n    return shifted\n",
+      "regression_pytest_args": ["tests"],
+      "expectations": {
+        "rule": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": false},
+        "llm": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": false},
+        "hybrid": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": false}
+      }
+    },
+    {
+      "name": "semantic_none_normalization",
+      "category": "llm_semantic_direct",
+      "target_function": "normalize",
+      "failing_nodeid": "tests/test_sample.py::test_normalize_none",
+      "signals": {"static": 0.0, "semantic": 0.95, "traceback": 0.9},
+      "files": {
+        "sample.py": "def normalize(value):\n    return value.strip()\n",
+        "tests/test_sample.py": "from sample import normalize\n\ndef test_normalize_none():\n    assert normalize(None) == \"\"\n\ndef test_normalize_text():\n    assert normalize(\" value \" ) == \"value\"\n"
+      },
+      "llm_initial_source": "def normalize(value):\n    if value is None:\n        return \"\"\n    return value.strip()\n",
+      "regression_pytest_args": ["tests"],
+      "expectations": {
+        "rule": {"candidate_generated": false, "targeted_test_passed": false, "verified_repair": false, "reflection_recovered": false},
+        "llm": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": false},
+        "hybrid": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": false}
+      }
+    },
+    {
+      "name": "semantic_parse_port_reflection",
+      "category": "llm_reflection",
+      "target_function": "parse_port",
+      "failing_nodeid": "tests/test_sample.py::test_parse_port_invalid",
+      "signals": {"static": 0.0, "semantic": 0.96, "traceback": 0.9},
+      "files": {
+        "sample.py": "def parse_port(value):\n    return int(value)\n",
+        "tests/test_sample.py": "from sample import parse_port\n\ndef test_parse_port_invalid():\n    assert parse_port(\"invalid\") is None\n\ndef test_parse_port_valid():\n    assert parse_port(\"8080\") == 8080\n"
+      },
+      "llm_initial_source": "def parse_port(value):\n    if value is None:\n        return None\n    return int(value)\n",
+      "llm_reflection_source": "def parse_port(value):\n    try:\n        return int(value)\n    except (TypeError, ValueError):\n        return None\n",
+      "regression_pytest_args": ["tests"],
+      "reflection_rounds": 1,
+      "expectations": {
+        "rule": {"candidate_generated": false, "targeted_test_passed": false, "verified_repair": false, "reflection_recovered": false},
+        "llm": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": true},
+        "hybrid": {"candidate_generated": true, "targeted_test_passed": true, "verified_repair": true, "reflection_recovered": true}
+      }
+    }
+  ]
+}

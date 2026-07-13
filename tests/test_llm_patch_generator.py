@@ -85,6 +85,12 @@ def test_llm_patch_generator_builds_candidate_from_fake_client():
         assert candidates[0].metadata["suspicious_rank"] == 1
         assert candidates[0].metadata["suspicious_top_k"] == 5
         assert candidates[0].metadata["constraint"] == "top_k_suspicious_minimal_diff"
+        provenance = candidates[0].metadata["prompt_provenance"]
+        assert provenance["kind"] == "patch_generation"
+        assert provenance["contract_version"] == "patch_prompt_v2"
+        assert provenance["fingerprint"]
+        assert provenance["character_count"] == len(client.prompts[0])
+        assert provenance["raw_prompt_persisted"] is False
         assert candidates[0].metadata["validation"]["valid"] is True
         assert candidates[0].metadata["validation"]["scope_limited"] is True
         assert "possible_index_overrun" in client.prompts[0]
@@ -481,6 +487,11 @@ def test_llm_reflection_can_generate_multiple_refined_candidates():
         assert candidates[0].metadata["reflection_prompt_context_audit"][
             "status"
         ] == "pass"
+        provenance = candidates[0].metadata["prompt_provenance"]
+        assert provenance["kind"] == "patch_reflection"
+        assert provenance["contract_version"] == "patch_prompt_v2"
+        assert provenance["fingerprint"]
+        assert provenance["raw_prompt_persisted"] is False
         assert candidates[0].metadata["failed_source_fingerprints"]
         assert candidates[0].metadata["source_fingerprint"] not in (
             candidates[0].metadata["failed_source_fingerprints"]

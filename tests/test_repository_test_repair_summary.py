@@ -105,6 +105,37 @@ def test_repository_test_repair_summary_blocks_regression_failed_patch():
     assert "Do not promote" in payload["next_actions"][0]
 
 
+def test_repository_test_repair_summary_keeps_target_only_patch_unverified():
+    payload = build_repository_test_repair_summary(
+        {
+            "status": "pass",
+            "reason": "patch_validation_success",
+            "success_count": 1,
+            "candidate_patch": True,
+            "verified_repair": False,
+            "verification_claim": "targeted_candidate_unverified",
+            "repair_ready": False,
+            "repair_validation_scope": "narrow_only",
+            "regression_validation": {
+                "status": "skipped",
+                "reason": "regression_test_args_missing",
+            },
+        },
+        output_paths={
+            "repository_test_candidate_patch": "out/repository_test_candidate.patch"
+        },
+    )
+
+    assert payload["status"] == "warning"
+    assert payload["reason"] == "targeted_candidate_unverified"
+    assert payload["candidate_patch"] is True
+    assert payload["verified_repair"] is False
+    assert payload["repair_ready"] is False
+    assert payload["patch_path_present"] is False
+    assert payload["candidate_patch_path_present"] is True
+    assert "full regression validation" in " ".join(payload["next_actions"]).lower()
+
+
 def test_repository_test_repair_summary_skips_without_patch_validation():
     payload = build_repository_test_repair_summary(None)
 

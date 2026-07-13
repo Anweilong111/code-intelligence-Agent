@@ -99,6 +99,10 @@ def test_repository_test_regression_validation_command_prefers_passing_execution
     ]
 
 
+def test_repository_test_regression_validation_maps_bare_pytest_to_repo_root():
+    assert _pytest_args_from_python_module_command("python -m pytest -q") == ["."]
+
+
 def test_onboarding_from_discovery_writes_benchmark_artifacts():
     with tempfile.TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
@@ -808,28 +812,33 @@ def test_onboarding_uses_failure_overlay_when_repository_tests_pass():
         assert report.repository_test_patch_validation is not None
         assert report.repository_test_patch_validation["status"] == "pass"
         assert report.repository_test_patch_validation["success_count"] >= 1
+        assert report.repository_test_patch_validation["verified_repair"] is True
+        assert report.repository_test_patch_validation["verification_claim"] == (
+            "verified_repair"
+        )
         assert report.repository_test_patch_validation["repair_ready"] is True
-        assert report.repository_test_patch_validation["regression_ready"] is False
+        assert report.repository_test_patch_validation["regression_ready"] is True
         assert report.repository_test_patch_validation[
             "repair_validation_scope"
-        ] == "narrow_only"
+        ] == "narrow_and_regression"
         assert report.repository_test_patch_validation["regression_validation"][
             "status"
-        ] == "skipped"
+        ] == "pass"
         assert report.repository_test_patch_validation["best_patch"][
             "relative_file_path"
         ] == "sample.py"
         assert report.repository_test_repair_summary is not None
         assert report.repository_test_repair_summary["status"] == "pass"
-        assert report.repository_test_repair_summary["reason"] == "repair_ready"
+        assert report.repository_test_repair_summary["reason"] == "verified_repair"
         assert (
             report.repository_test_repair_summary["conclusion"]
-            == "ready_for_review"
+            == "verified_repair_ready_for_review"
         )
+        assert report.repository_test_repair_summary["verified_repair"] is True
         assert report.repository_test_repair_summary["repair_ready"] is True
         assert (
             report.repository_test_repair_summary["repair_validation_scope"]
-            == "narrow_only"
+            == "narrow_and_regression"
         )
         assert (
             report.repository_test_repair_summary["best_patch"][
@@ -950,14 +959,14 @@ def test_onboarding_uses_failure_overlay_when_repository_tests_pass():
         )
         assert (
             run_config["repository_test_patch_validation"]["regression_ready"]
-            is False
+            is True
         )
         assert run_config["repository_test_patch_validation"][
             "repair_validation_scope"
-        ] == "narrow_only"
+        ] == "narrow_and_regression"
         assert run_config["repository_test_patch_validation"][
             "regression_validation_status"
-        ] == "skipped"
+        ] == "pass"
         assert run_config["repository_test_patch_validation"][
             "best_patch_relative_file_path"
         ] == "sample.py"
@@ -968,13 +977,13 @@ def test_onboarding_uses_failure_overlay_when_repository_tests_pass():
         assert run_config["repository_test_repair_summary"]["status"] == "pass"
         assert (
             run_config["repository_test_repair_summary"]["conclusion"]
-            == "ready_for_review"
+            == "verified_repair_ready_for_review"
         )
         assert (
             run_config["repository_test_repair_summary"][
                 "repair_validation_scope"
             ]
-            == "narrow_only"
+            == "narrow_and_regression"
         )
         assert (
             run_config["repository_test_repair_summary"]["patch_path_present"]

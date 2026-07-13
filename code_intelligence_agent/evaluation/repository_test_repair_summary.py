@@ -20,22 +20,45 @@ def build_repository_test_repair_summary(
     evidence = _dict(dynamic_evidence)
     best_patch = _dict(validation.get("best_patch"))
     regression = _dict(validation.get("regression_validation"))
-    repair_ready = bool(validation.get("repair_ready", False))
+    strict_contract = "verified_repair" in validation
+    verified_repair = bool(
+        validation.get("verified_repair", False)
+        if strict_contract
+        else validation.get("repair_ready", False)
+    )
+    candidate_patch = bool(
+        validation.get(
+            "candidate_patch",
+            _int(validation.get("success_count", 0)) > 0,
+        )
+    )
+    repair_ready = verified_repair
     validation_scope = str(validation.get("repair_validation_scope") or "none")
     status, reason, conclusion = _summary_status(
         validation,
         repair_ready=repair_ready,
+        candidate_patch=candidate_patch,
+        strict_contract=strict_contract,
         validation_scope=validation_scope,
     )
     patch_path = str(paths.get("repository_test_repair_patch") or "")
+    candidate_patch_path = str(paths.get("repository_test_candidate_patch") or "")
     return {
         "status": status,
         "reason": reason,
         "conclusion": conclusion,
+        "candidate_patch": candidate_patch,
+        "verified_repair": verified_repair,
+        "verification_claim": str(
+            validation.get("verification_claim")
+            or ("verified_repair" if verified_repair else "unverified_candidate")
+        ),
         "repair_ready": repair_ready,
         "repair_validation_scope": validation_scope,
         "patch_path": patch_path,
         "patch_path_present": bool(patch_path),
+        "candidate_patch_path": candidate_patch_path,
+        "candidate_patch_path_present": bool(candidate_patch_path),
         "patch_validation_status": str(validation.get("status") or ""),
         "patch_validation_reason": str(validation.get("reason") or ""),
         "patch_validation_success_count": _int(validation.get("success_count", 0)),
@@ -58,8 +81,10 @@ def build_repository_test_repair_summary(
         "regression_validation": _regression_summary(regression),
         "next_actions": _next_actions(
             repair_ready=repair_ready,
+            candidate_patch=candidate_patch,
             validation_scope=validation_scope,
             patch_path=patch_path,
+            candidate_patch_path=candidate_patch_path,
             validation=validation,
             regression=regression,
         ),
@@ -75,12 +100,19 @@ def render_repository_test_repair_summary_markdown(payload: dict[str, Any]) -> s
         f"- Status: `{_markdown_cell(payload.get('status') or '')}`",
         f"- Reason: `{_markdown_cell(payload.get('reason') or '')}`",
         f"- Conclusion: `{_markdown_cell(payload.get('conclusion') or '')}`",
+        f"- Candidate Patch: {str(bool(payload.get('candidate_patch', False))).lower()}",
+        f"- Verified Repair: {str(bool(payload.get('verified_repair', False))).lower()}",
+        f"- Verification Claim: `{_markdown_cell(payload.get('verification_claim') or 'none')}`",
         f"- Repair Ready: {str(bool(payload.get('repair_ready', False))).lower()}",
         (
             "- Validation Scope: "
             f"`{_markdown_cell(payload.get('repair_validation_scope') or 'none')}`"
         ),
         f"- Patch Path: `{_markdown_cell(payload.get('patch_path') or 'none')}`",
+        (
+            "- Candidate Patch Path: "
+            f"`{_markdown_cell(payload.get('candidate_patch_path') or 'none')}`"
+        ),
         (
             "- Recommended Validation Command: "
             f"`{_markdown_cell(payload.get('recommended_validation_command') or 'none')}`"
@@ -157,17 +189,27 @@ def _summary_status(
     validation: dict[str, Any],
     *,
     repair_ready: bool,
+    candidate_patch: bool,
+    strict_contract: bool,
     validation_scope: str,
 ) -> tuple[str, str, str]:
     if not validation:
         return "skipped", "patch_validation_missing", "not_ready"
     if repair_ready:
+        if strict_contract:
+            return "pass", "verified_repair", "verified_repair_ready_for_review"
         return "pass", "repair_ready", "ready_for_review"
     if (
         _int(validation.get("success_count", 0)) > 0
         and validation_scope == "regression_failed"
     ):
         return "fail", "regression_validation_failed", "not_ready"
+    if strict_contract and candidate_patch:
+        return (
+            "warning",
+            str(validation.get("verification_claim") or "candidate_unverified"),
+            "candidate_patch_requires_additional_verification",
+        )
     validation_status = str(validation.get("status") or "")
     validation_reason = str(validation.get("reason") or "")
     if validation_status == "skipped":
@@ -216,8 +258,10 @@ def _regression_summary(regression: dict[str, Any]) -> dict[str, Any]:
 def _next_actions(
     *,
     repair_ready: bool,
+    candidate_patch: bool,
     validation_scope: str,
     patch_path: str,
+    candidate_patch_path: str,
     validation: dict[str, Any],
     regression: dict[str, Any],
 ) -> list[str]:
@@ -227,6 +271,14 @@ def _next_actions(
             actions.append(f"Patch artifact: {patch_path}")
         if validation_scope == "narrow_only":
             actions.append("Run broader repository regression tests before merge.")
+        return actions
+    if candidate_patch and validation_scope != "regression_failed":
+        actions = [
+            "Do not claim a verified repair until full regression validation passes.",
+            "Run the broader repository tests and review semantic validation warnings.",
+        ]
+        if candidate_patch_path:
+            actions.append(f"Unverified candidate artifact: {candidate_patch_path}")
         return actions
     if validation_scope == "regression_failed":
         return [
