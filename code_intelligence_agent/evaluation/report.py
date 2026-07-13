@@ -138,8 +138,8 @@ def render_weight_search_markdown(
     top_n: int = 10,
 ) -> str:
     lines = [
-        "| Rank | Profile | Pareto | Dominates | Dominated By | Robust Score | Validation Score | Source Groups | Min Group Cases | Top-1 Gap | MAP Gap | Top-1 | Top-3 | MRR | MAP | nDCG@3 | Mean EXAM Score | SBFL | Graph | Static | Semantic | LLM | Risk |",
-        "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Rank | Profile | Pareto | Dominates | Dominated By | Robust Score | Validation Score | Source Groups | Min Group Cases | Top-1 Gap | MAP Gap | Top-1 | Top-3 | Top-5 | MRR | MAP | nDCG@3 | Mean EXAM Score | Latency ms | SBFL | Graph | Static | Test Failure | Traceback | Semantic | LLM | Complexity | History | Risk |",
+        "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for rank, result in enumerate(results[:top_n], start=1):
         weights = result.coverage_weights
@@ -158,15 +158,21 @@ def render_weight_search_markdown(
             f"{result.max_map_gap:.3f} | "
             f"{result.top1:.3f} | "
             f"{result.top3:.3f} | "
+            f"{result.top5:.3f} | "
             f"{result.mrr:.3f} | "
             f"{result.map:.3f} | "
             f"{result.ndcg_at_3:.3f} | "
             f"{result.mean_exam_score:.3f} | "
+            f"{result.mean_localization_latency_ms:.3f} | "
             f"{weights.sbfl:.2f} | "
             f"{weights.graph:.2f} | "
             f"{weights.static:.2f} | "
+            f"{weights.test_failure:.2f} | "
+            f"{weights.traceback:.2f} | "
             f"{weights.semantic:.2f} | "
             f"{weights.llm:.2f} | "
+            f"{weights.complexity:.2f} | "
+            f"{weights.change_history:.2f} | "
             f"{weights.risk:.2f} |"
         )
     if results:

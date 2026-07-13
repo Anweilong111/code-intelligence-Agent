@@ -184,6 +184,7 @@ class TestExecutionSummary:
     branch_coverage: dict[str, dict[str, set[str]]] = field(default_factory=dict)
     path_coverage: dict[str, dict[str, set[str]]] = field(default_factory=dict)
     traceback_function_ids: set[str] = field(default_factory=set)
+    dynamic_traceback_function_ids: set[str] = field(default_factory=set)
     test_names: dict[str, str] = field(default_factory=dict)
     failure_messages: dict[str, str] = field(default_factory=dict)
     dynamic_evidence_test_ids: set[str] = field(default_factory=set)

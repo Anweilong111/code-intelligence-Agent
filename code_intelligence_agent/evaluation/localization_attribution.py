@@ -11,7 +11,18 @@ from code_intelligence_agent.core.fault_localizer import (
 )
 
 
-CORE_COMPONENTS = ("sbfl", "graph", "static", "semantic", "llm", "risk")
+CORE_COMPONENTS = (
+    "sbfl",
+    "graph",
+    "static",
+    "test_failure",
+    "traceback",
+    "semantic",
+    "llm",
+    "complexity",
+    "change_history",
+    "risk",
+)
 FRAGILE_MARGIN_THRESHOLD = 0.02
 
 
@@ -203,6 +214,14 @@ def _component_contributions(
     signals: dict[str, Any],
     weights: ScoreWeights,
 ) -> dict[str, float]:
+    if any(f"contribution_{component}" in signals for component in CORE_COMPONENTS):
+        return {
+            component: round(
+                _float(signals.get(f"contribution_{component}", 0.0)),
+                4,
+            )
+            for component in CORE_COMPONENTS
+        }
     risk_signal = _float(signals.get("risk", signals.get("patch_risk", 0.0)))
     return {
         "sbfl": round(weights.sbfl * _float(signals.get("sbfl", 0.0)), 4),
@@ -213,6 +232,23 @@ def _component_contributions(
             4,
         ),
         "llm": round(weights.llm * _float(signals.get("llm", 0.0)), 4),
+        "test_failure": round(
+            weights.test_failure * _float(signals.get("test_failure", 0.0)),
+            4,
+        ),
+        "traceback": round(
+            weights.traceback * _float(signals.get("traceback", 0.0)),
+            4,
+        ),
+        "complexity": round(
+            weights.complexity * _float(signals.get("complexity", 0.0)),
+            4,
+        ),
+        "change_history": round(
+            weights.change_history
+            * _float(signals.get("change_history", 0.0)),
+            4,
+        ),
         "risk": round(-weights.risk * risk_signal, 4),
     }
 

@@ -171,6 +171,8 @@ def test_coverage_runner_maps_pytest_execution_to_functions():
         assert by_name["helper"].id not in result.covered_function_ids
         assert by_name["test_buggy"].id in summary.failed_tests
         assert by_name["test_clean"].id in summary.passed_tests
+        assert summary.dynamic_evidence_test_ids == {by_name["test_buggy"].id}
+        assert summary.dynamic_traceback_function_ids == set()
         assert by_name["buggy"].id in summary.coverage[by_name["test_buggy"].id]
         assert (
             summary.line_coverage[by_name["test_buggy"].id][by_name["buggy"].id]

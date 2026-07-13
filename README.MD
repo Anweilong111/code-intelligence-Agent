@@ -11,7 +11,7 @@
 - 面向真实 Python GitHub 仓库，而不是只跑玩具样例。
 - 核心控制器是 `AgentController`，每次运行都会输出 action registry、policy trace 和决策链。
 - 结构建模覆盖 AST、Call Graph、Program Graph、静态规则信号和测试证据。
-- 缺陷定位输出函数级 Top-k suspicious ranking，并融合 `StaticRuleScore`、`GraphScore`、`DynamicEvidenceScore`、`SBFLScore` 和 `FinalScore`。
+- 缺陷定位输出函数级 Top-k suspicious ranking，并显式融合 `StaticRuleScore`、`GraphScore`、`TestFailureScore`、`StackTraceScore`、`SBFLScore`、`SemanticScore`、`LLMScore`、`ComplexityScore`、`ChangeHistoryScore` 和风险惩罚；每项都保留权重与贡献分解。
 - LLM patch/reflection 只作为候选生成与语义修复组件，所有候选都必须经过 JSON parse、AST/scope/signature/safety gate、patch apply 和 sandbox pytest。
 - LLM judge 可以参与候选排序和风险判断，但最终成功标准始终是 `sandbox_pytest_decides_success`。
 - 缺少 key、测试、依赖、oracle 或安全条件时，系统输出 blocker 和下一步动作，不伪造修复成功。
@@ -421,6 +421,51 @@ python -m code_intelligence_agent.evaluation.memory_ablation_evaluation ^
 过期 commit 证据；它不代表 live LLM 推理质量或真实 GitHub 仓库修复成功率。
 Phase 3 的验收证据位于 `docs/v2/phase3_memory_metrics.json` 和
 `docs/v2/phase3_evidence_memory.md`。
+
+### V2 证据融合缺陷定位
+
+`evidence_v2` 将 V1 的混合 graph score 拆成可独立审计和消融的信号。最终分数为：
+
+```text
+FinalScore = clamp(
+    w_sbfl * SBFLScore
+  + w_graph * GraphScore
+  + w_static * StaticRuleScore
+  + w_semantic * SemanticScore
+  + w_llm * effective_LLMScore
+  + w_test * TestFailureScore
+  + w_traceback * StackTraceScore
+  + w_complexity * ComplexityScore
+  + w_history * ChangeHistoryScore
+  - w_risk * RiskScore
+)
+```
+
+`TestFailureScore` 只接受真实执行后记录的 failing test ID，`StackTraceScore`
+只接受动态解析的生产代码 stack frame；缺失证据时两项严格为零。图传播默认最多三跳、
+每跳按 `0.5` 衰减。LLM 定位信号必须有静态、SBFL、真实失败、真实 traceback 或
+语义证据支撑，且加权贡献上限为 `0.10`，不能覆盖程序证据。每个 Top-k 函数都输出
+`contribution_*`、`weight_*`、可用性标记和 FinalScore 重建值。
+
+权重只在 15 个 CPython validation case 上选择；profile 冻结后，在 10 个
+TheAlgorithms test case 和 10 个 Click/Pluggy blind case 上评估。当前三段的
+V2 Top-1/Top-3/Top-5/MRR/MAP 均为 `1.0000`，与 V1 持平，non-regression gate
+通过。当前 mutation benchmark 刻意采用规则可检测缺陷，因此 rule-only 同样为
+`1.0000`；该结果不能用于宣称 fusion 优于 rule-only。本轮也未配置 live LLM
+localization scorer，LLM-only 行不能解释为模型能力。
+
+复现独立 split、权重冻结、V1 对照和消融：
+
+```powershell
+python -m code_intelligence_agent.evaluation.localization_split_evaluation `
+  datasets/localization_v2/split_protocol.json `
+  outputs/v2_phase4_localization `
+  --require-non-regression
+```
+
+完整公式、Git history 计算、指标和实验边界位于
+`docs/v2/phase4_evidence_localization.md`；机器可读验收记录位于
+`docs/v2/phase4_localization_metrics.json`。
 
 分析一个公开 GitHub 仓库：
 

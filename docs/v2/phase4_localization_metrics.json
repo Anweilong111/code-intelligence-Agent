@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "phase": "phase4_evidence_fused_fault_localization",
+  "status": "pass",
+  "implementation": {
+    "fusion_profile": "evidence_v2",
+    "score_components": [
+      "sbfl",
+      "graph",
+      "static",
+      "semantic",
+      "llm",
+      "test_failure",
+      "traceback",
+      "complexity",
+      "change_history",
+      "risk_penalty"
+    ],
+    "contribution_decomposition": true,
+    "dynamic_test_evidence_requires_executed_failure": true,
+    "stacktrace_requires_dynamic_frames": true,
+    "graph_propagation": {
+      "maximum_depth": 3,
+      "decay": 0.5
+    },
+    "llm_policy": {
+      "requires_program_evidence": true,
+      "maximum_weighted_contribution": 0.1,
+      "configured_for_recorded_evaluation": false
+    },
+    "git_history": {
+      "method": "bounded_git_blame_line_porcelain",
+      "default_max_files": 200,
+      "command_timeout_seconds": 5.0,
+      "recency_half_life_days": 180.0
+    },
+    "selected_coverage_weights": {
+      "sbfl": 0.22,
+      "graph": 0.18,
+      "static": 0.15,
+      "semantic": 0.05,
+      "llm": 0.05,
+      "risk": 0.05,
+      "test_failure": 0.15,
+      "traceback": 0.1,
+      "complexity": 0.05,
+      "change_history": 0.05
+    },
+    "selected_static_only_weights": {
+      "sbfl": 0.0,
+      "graph": 0.25,
+      "static": 0.45,
+      "semantic": 0.1,
+      "llm": 0.05,
+      "risk": 0.05,
+      "test_failure": 0.0,
+      "traceback": 0.0,
+      "complexity": 0.1,
+      "change_history": 0.05
+    }
+  },
+  "evaluation": {
+    "protocol": "datasets/localization_v2/split_protocol.json",
+    "selection_scope": "validation_only",
+    "candidate_profile_count": 4,
+    "selected_profile": "evidence_v2_default",
+    "non_regression_passed": true,
+    "splits": {
+      "validation": {
+        "source_groups": ["python/cpython"],
+        "case_count": 15,
+        "v1": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0},
+        "v2": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0, "mean_localization_latency_ms": 115.6527}
+      },
+      "test": {
+        "source_groups": ["TheAlgorithms/Python"],
+        "case_count": 10,
+        "v1": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0},
+        "v2": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0, "mean_localization_latency_ms": 2.325}
+      },
+      "blind": {
+        "source_groups": ["pallets/click", "pytest-dev/pluggy"],
+        "case_count": 10,
+        "v1": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0},
+        "v2": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0, "mean_localization_latency_ms": 16.0943}
+      }
+    },
+    "ablation_scope": ["test", "blind"],
+    "ablation_case_count": 20,
+    "ablations": {
+      "rule_only": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0},
+      "fusion": {"top1": 1.0, "top3": 1.0, "top5": 1.0, "mrr": 1.0, "map": 1.0},
+      "graph_only": {"top1": 0.65, "top3": 0.9, "top5": 0.95, "mrr": 0.7656, "map": 0.7572},
+      "dynamic_only": {"top1": 0.45, "top3": 0.8, "top5": 0.95, "mrr": 0.6517, "map": 0.635},
+      "llm_only": {"top1": 0.2, "top3": 0.6, "top5": 0.7, "mrr": 0.4529, "map": 0.4517}
+    },
+    "interpretation": "The mutation benchmark is rule-detectable, so it demonstrates evidence contracts and non-regression rather than fusion superiority. No live LLM scorer was configured."
+  },
+  "regression": {
+    "focused_passed_tests": 127,
+    "focused_failed_tests": 0,
+    "focused_duration_seconds": 89.7,
+    "full_suite_passed_tests": 1183,
+    "full_suite_failed_tests": 0,
+    "full_suite_duration_seconds": 649.0,
+    "full_suite_status": "pass"
+  },
+  "acceptance_gates": {
+    "per_function_score_decomposition": "pass",
+    "dynamic_evidence_not_fabricated": "pass",
+    "bounded_decayed_graph_propagation": "pass",
+    "llm_is_additive_and_program_evidence_gated": "pass",
+    "git_history_optional_and_auditable": "pass",
+    "validation_only_weight_selection": "pass",
+    "repository_disjoint_test_and_blind_splits": "pass",
+    "v1_non_regression": "pass",
+    "full_regression": "pass"
+  },
+  "reproduction": {
+    "split_evaluation": "python -m code_intelligence_agent.evaluation.localization_split_evaluation datasets/localization_v2/split_protocol.json outputs/v2_phase4_localization --require-non-regression",
+    "target_tests": "python -m pytest -q tests/test_evidence_v2_localization.py tests/test_localization_split_evaluation.py tests/test_repository_test_fault_localization.py tests/test_coverage_runner.py",
+    "full_regression": "python -m pytest -q"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": "2.0",
+  "description": "Repository-disjoint protocol for Evidence V2 localization weight selection, test evaluation, and blind evaluation.",
+  "source_template": "../github_cases/mutation_templates.example.json",
+  "splits": {
+    "validation": {
+      "source_groups": [
+        "python/cpython"
+      ],
+      "max_cases": 15
+    },
+    "test": {
+      "source_groups": [
+        "TheAlgorithms/Python"
+      ],
+      "max_cases": 10
+    },
+    "blind": {
+      "source_groups": [
+        "pallets/click",
+        "pytest-dev/pluggy"
+      ],
+      "max_cases": 10
+    }
+  }
+}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Iterable
@@ -7,6 +8,8 @@ from typing import Iterable
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
 from code_intelligence_agent.core.call_graph import build_call_graph
 from code_intelligence_agent.core.fault_localizer import (
+    DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
+    DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS,
     FaultLocalizationConfig,
     FaultLocalizer,
     ScoreWeights,
@@ -76,10 +79,12 @@ class WeightSearchResult:
     max_map_gap: float
     top1: float
     top3: float
+    top5: float
     mrr: float
     map: float
     ndcg_at_3: float
     mean_exam_score: float
+    mean_localization_latency_ms: float
     case_count: int
     pareto_optimal: bool = True
     dominates_count: int = 0
@@ -98,6 +103,7 @@ class _PreparedCase:
     ground_truth: set[str]
     has_coverage: bool
     source_group: str
+    localization_latency_ms: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -110,6 +116,7 @@ class _EvaluatedRun:
 class _LocalizationMetrics:
     top1: float
     top3: float
+    top5: float
     mrr: float
     map: float
     ndcg_at_3: float
@@ -193,12 +200,15 @@ class WeightSearchRunner:
                 functions_by_name=functions_by_name,
                 ground_truth_ids=ground_truth_ids,
             )
+        started = time.perf_counter()
         ranked = self.localizer.rank(program_graph, findings, test_summary)
+        localization_latency_ms = (time.perf_counter() - started) * 1000.0
         return _PreparedCase(
             ranked=ranked,
             ground_truth=set(case.buggy_functions),
             has_coverage=test_summary.has_coverage(),
             source_group=_source_group(case),
+            localization_latency_ms=round(localization_latency_ms, 4),
         )
 
 
@@ -233,6 +243,94 @@ def generate_weight_grid() -> list[WeightProfile]:
     return profiles
 
 
+def generate_evidence_v2_weight_profiles() -> list[WeightProfile]:
+    static_weights = DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS
+    return [
+        WeightProfile(
+            "evidence_v2_default",
+            DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
+            static_weights,
+        ),
+        WeightProfile(
+            "evidence_v2_dynamic_heavy",
+            ScoreWeights(
+                sbfl=0.28,
+                graph=0.12,
+                static=0.12,
+                semantic=0.04,
+                llm=0.04,
+                risk=0.05,
+                test_failure=0.20,
+                traceback=0.12,
+                complexity=0.04,
+                change_history=0.04,
+            ),
+            static_weights,
+        ),
+        WeightProfile(
+            "evidence_v2_program_heavy",
+            ScoreWeights(
+                sbfl=0.18,
+                graph=0.24,
+                static=0.22,
+                semantic=0.05,
+                llm=0.04,
+                risk=0.05,
+                test_failure=0.10,
+                traceback=0.07,
+                complexity=0.06,
+                change_history=0.04,
+            ),
+            static_weights,
+        ),
+        WeightProfile(
+            "evidence_v2_balanced_low_prior",
+            ScoreWeights(
+                sbfl=0.24,
+                graph=0.18,
+                static=0.16,
+                semantic=0.04,
+                llm=0.04,
+                risk=0.05,
+                test_failure=0.16,
+                traceback=0.10,
+                complexity=0.04,
+                change_history=0.04,
+            ),
+            static_weights,
+        ),
+    ]
+
+
+def evidence_v2_ablation_profiles(
+    fusion_profile: WeightProfile | None = None,
+) -> list[WeightProfile]:
+    zero = ScoreWeights(
+        sbfl=0.0,
+        graph=0.0,
+        static=0.0,
+        semantic=0.0,
+        llm=0.0,
+        risk=0.0,
+    )
+    return [
+        WeightProfile("rule_only", replace(zero, static=1.0), replace(zero, static=1.0)),
+        WeightProfile("graph_only", replace(zero, graph=1.0), replace(zero, graph=1.0)),
+        WeightProfile(
+            "dynamic_only",
+            replace(zero, sbfl=0.45, test_failure=0.35, traceback=0.20),
+            zero,
+        ),
+        WeightProfile("llm_only", replace(zero, llm=1.0), replace(zero, llm=1.0)),
+        fusion_profile
+        or WeightProfile(
+            "fusion",
+            DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
+            DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS,
+        ),
+    ]
+
+
 def rerank_with_weights(
     ranked: list[FaultLocalizationResult],
     weights: ScoreWeights,
@@ -240,19 +338,20 @@ def rerank_with_weights(
     scored = [
         (
             score_with_weights(item.signals, weights),
-            index,
+            item.function_name,
+            item.file_path,
             item,
         )
-        for index, item in enumerate(ranked)
+        for item in ranked
     ]
-    scored.sort(key=lambda item: (-item[0], item[1]))
+    scored.sort(key=lambda item: (-item[0], item[1], item[2]))
     return [
         replace(
             item,
             score=round(score, 4),
             rank=index + 1,
         )
-        for index, (score, _, item) in enumerate(scored)
+        for index, (score, _, _, item) in enumerate(scored)
     ]
 
 
@@ -349,10 +448,15 @@ def _evaluate_profile(
         max_map_gap=robustness["max_map_gap"],
         top1=metrics.top1,
         top3=metrics.top3,
+        top5=metrics.top5,
         mrr=metrics.mrr,
         map=metrics.map,
         ndcg_at_3=metrics.ndcg_at_3,
         mean_exam_score=metrics.mean_exam_score,
+        mean_localization_latency_ms=round(
+            _average([case.localization_latency_ms for case in cases]),
+            4,
+        ),
         case_count=len(cases),
     )
 
@@ -360,6 +464,7 @@ def _evaluate_profile(
 def _localization_metrics(runs: list[LocalizationRun]) -> _LocalizationMetrics:
     top1 = top_k_accuracy(runs, 1)
     top3 = top_k_accuracy(runs, 3)
+    top5 = top_k_accuracy(runs, 5)
     mrr = mean_reciprocal_rank(runs)
     map_score = mean_average_precision(runs)
     ndcg_at_3 = mean_ndcg(runs, 3)
@@ -375,6 +480,7 @@ def _localization_metrics(runs: list[LocalizationRun]) -> _LocalizationMetrics:
     return _LocalizationMetrics(
         top1=round(top1, 4),
         top3=round(top3, 4),
+        top5=round(top5, 4),
         mrr=round(mrr, 4),
         map=round(map_score, 4),
         ndcg_at_3=round(ndcg_at_3, 4),
@@ -465,6 +571,7 @@ def _metrics_dict(runs: list[LocalizationRun]) -> dict[str, float | int]:
         "case_count": len(runs),
         "top1": metrics.top1,
         "top3": metrics.top3,
+        "top5": metrics.top5,
         "mrr": metrics.mrr,
         "map": metrics.map,
         "ndcg_at_3": metrics.ndcg_at_3,
@@ -513,7 +620,9 @@ def _profile_name(weights: ScoreWeights) -> str:
     return (
         f"s{_pct(weights.sbfl)}_g{_pct(weights.graph)}_"
         f"r{_pct(weights.static)}_m{_pct(weights.semantic)}_"
-        f"l{_pct(weights.llm)}_p{_pct(weights.risk)}"
+        f"l{_pct(weights.llm)}_p{_pct(weights.risk)}_"
+        f"t{_pct(weights.test_failure)}_x{_pct(weights.traceback)}_"
+        f"c{_pct(weights.complexity)}_h{_pct(weights.change_history)}"
     )
 
 
@@ -533,8 +642,16 @@ def _weights_key(weights: ScoreWeights) -> tuple[float, ...]:
         weights.semantic,
         weights.llm,
         weights.risk,
+        weights.test_failure,
+        weights.traceback,
+        weights.complexity,
+        weights.change_history,
     )
 
 
 def _pct(value: float) -> str:
     return f"{int(round(value * 100)):02d}"
+
+
+def _average(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0

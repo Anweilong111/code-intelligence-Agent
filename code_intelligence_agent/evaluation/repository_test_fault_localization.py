@@ -6,7 +6,14 @@ from typing import Any
 
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
 from code_intelligence_agent.core.call_graph import build_call_graph
-from code_intelligence_agent.core.fault_localizer import FaultLocalizer
+from code_intelligence_agent.core.fault_localizer import (
+    FaultLocalizer,
+    evidence_v2_localization_config,
+)
+from code_intelligence_agent.core.git_change_history import (
+    GitChangeHistoryAnalyzer,
+    GitChangeHistoryResult,
+)
 from code_intelligence_agent.core.models import RepoParseResult, TestExecutionSummary
 from code_intelligence_agent.core.program_graph import ProgramGraph, build_program_graph
 from code_intelligence_agent.core.repo_parser import RepoParser
@@ -21,6 +28,7 @@ def build_repository_test_fault_localization(
     parser: RepoParser | None = None,
     detector: RuleBasedBugDetector | None = None,
     localizer: FaultLocalizer | None = None,
+    history_analyzer: GitChangeHistoryAnalyzer | None = None,
 ) -> dict[str, Any]:
     evidence = _dict(dynamic_evidence)
     if not evidence:
@@ -64,11 +72,24 @@ def build_repository_test_fault_localization(
         program_graph,
         evidence,
     )
-    ranked = (localizer or FaultLocalizer()).rank(
+    selected_localizer = localizer or FaultLocalizer(
+        evidence_v2_localization_config()
+    )
+    history = (history_analyzer or GitChangeHistoryAnalyzer()).analyze(
+        root,
+        parsed.functions,
+    )
+    ranked = selected_localizer.rank(
         program_graph,
         findings,
         summary,
         top_k=top_k,
+        change_history_scores=history.scores,
+    )
+    active_weights = (
+        selected_localizer.config.coverage_weights
+        if summary.has_coverage()
+        else selected_localizer.config.static_only_weights
     )
     status = "pass" if ranked else "warning"
     reason = (
@@ -96,6 +117,25 @@ def build_repository_test_fault_localization(
         "parsed_function_count": len(parsed.functions),
         "parsed_test_count": len(parsed.tests),
         "static_finding_count": len(findings),
+        "scoring_profile": selected_localizer.config.fusion_profile,
+        "score_formula": (
+            "clamp(sum(weight_i * normalized_signal_i) - "
+            "weight_risk * patch_risk, 0, 1)"
+        ),
+        "score_weights": active_weights.to_dict(),
+        "score_components": [
+            "static",
+            "graph",
+            "test_failure",
+            "traceback",
+            "sbfl",
+            "semantic",
+            "llm",
+            "complexity",
+            "change_history",
+            "risk",
+        ],
+        "git_change_history": _history_payload(history, ranked),
         **summary_metadata,
         "ranking_count": len(ranked),
         "top_function": ranked[0].function_name if ranked else "",
@@ -210,6 +250,7 @@ def dynamic_evidence_to_test_summary(
         failed_tests=failed_ids,
         coverage=coverage,
         traceback_function_ids=traceback_function_ids,
+        dynamic_traceback_function_ids=traceback_function_ids,
         test_names=test_names,
         failure_messages=failure_messages,
         dynamic_evidence_test_ids=dynamic_test_ids,
@@ -252,6 +293,8 @@ def render_repository_test_fault_localization_markdown(
             f"`{_markdown_cell(_format_list(_list(analysis_scope.get('existing_files'))))}`"
         ),
         f"- Dynamic Evidence Level: `{_markdown_cell(payload.get('dynamic_evidence_level') or 'none')}`",
+        f"- Scoring Profile: `{_markdown_cell(payload.get('scoring_profile') or 'none')}`",
+        f"- Score Formula: `{_markdown_cell(payload.get('score_formula') or 'none')}`",
         (
             "- Recommended Validation Command: "
             f"`{_markdown_cell(payload.get('recommended_validation_command') or 'none')}`"
@@ -274,8 +317,8 @@ def render_repository_test_fault_localization_markdown(
         "",
         "## Rankings",
         "",
-        "| Rank | Function | File | Score | Dynamic Evidence | Static | Graph | SBFL |",
-        "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+        "| Rank | Function | File | Score | Test Failure | Traceback | Static | Graph | SBFL | Complexity | History |",
+        "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for item in _list(payload.get("rankings")):
         row = _dict(item)
@@ -286,13 +329,64 @@ def render_repository_test_fault_localization_markdown(
             f"`{_markdown_cell(row.get('function_name', ''))}` | "
             f"`{_markdown_cell(row.get('file_path', ''))}` | "
             f"{_float(row.get('score', 0.0)):.4f} | "
-            f"{_float(signals.get('dynamic_test_evidence', 0.0)):.4f} | "
+            f"{_float(signals.get('test_failure', signals.get('dynamic_test_evidence', 0.0))):.4f} | "
+            f"{_float(signals.get('traceback', 0.0)):.4f} | "
             f"{_float(signals.get('static', 0.0)):.4f} | "
             f"{_float(signals.get('graph', 0.0)):.4f} | "
-            f"{_float(signals.get('sbfl', 0.0)):.4f} |"
+            f"{_float(signals.get('sbfl', 0.0)):.4f} | "
+            f"{_float(signals.get('complexity', 0.0)):.4f} | "
+            f"{_float(signals.get('change_history', 0.0)):.4f} |"
         )
     if not _list(payload.get("rankings")):
-        lines.append("| 0 | none | none | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |")
+        lines.append(
+            "| 0 | none | none | 0.0000 | 0.0000 | 0.0000 | 0.0000 | "
+            "0.0000 | 0.0000 | 0.0000 | 0.0000 |"
+        )
+    lines.extend(
+        [
+            "",
+            "## FinalScore Contribution Decomposition",
+            "",
+            "| Rank | Function | Static | Graph | Test Failure | Traceback | SBFL | Semantic | LLM | Complexity | History | Risk | Clamp |",
+            "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for item in _list(payload.get("rankings")):
+        row = _dict(item)
+        signals = _dict(row.get("signals"))
+        lines.append(
+            "| "
+            f"{_int(row.get('rank', 0))} | "
+            f"`{_markdown_cell(row.get('function_name', ''))}` | "
+            f"{_float(signals.get('contribution_static', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_graph', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_test_failure', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_traceback', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_sbfl', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_semantic', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_llm', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_complexity', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_change_history', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_risk', 0.0)):.4f} | "
+            f"{_float(signals.get('contribution_clamp_adjustment', 0.0)):.4f} |"
+        )
+    if not _list(payload.get("rankings")):
+        lines.append(
+            "| 0 | none | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | "
+            "0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |"
+        )
+    history = _dict(payload.get("git_change_history"))
+    lines.extend(
+        [
+            "",
+            "## Git Change History Evidence",
+            "",
+            f"- Status: `{_markdown_cell(history.get('status') or 'none')}`",
+            f"- Reason: `{_markdown_cell(history.get('reason') or 'none')}`",
+            f"- Commit: `{_markdown_cell(history.get('commit') or 'none')}`",
+            f"- Scored Functions: {_int(history.get('scored_function_count', 0))}",
+        ]
+    )
     lines.extend(["", "## Matched Failing Tests", ""])
     for item in _list(payload.get("matched_failing_tests")):
         row = _dict(item)
@@ -357,6 +451,22 @@ def write_repository_test_fault_localization_artifacts(
         "repository_test_fault_localization_json": str(json_path),
         "repository_test_fault_localization_markdown": str(markdown_path),
     }
+
+
+def _history_payload(
+    history: GitChangeHistoryResult,
+    ranked: list[Any],
+) -> dict[str, Any]:
+    payload = history.to_dict()
+    payload.pop("scores", None)
+    all_evidence = _dict(payload.pop("function_evidence", {}))
+    payload["scored_function_count"] = len(history.scores)
+    payload["ranked_function_evidence"] = {
+        item.function_id: all_evidence[item.function_id]
+        for item in ranked
+        if item.function_id in all_evidence
+    }
+    return payload
 
 
 def _match_test_function(

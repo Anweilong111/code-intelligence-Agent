@@ -33,11 +33,16 @@ def test_repository_test_fault_localization_ranks_function_from_failing_nodeid(t
     assert payload["unmatched_failed_test_count"] == 0
     assert payload["ranking_count"] >= 1
     assert payload["top_function"] == "pick"
+    assert payload["scoring_profile"] == "evidence_v2"
+    assert payload["rankings"][0]["signals"]["test_failure"] == 1.0
+    assert payload["rankings"][0]["signals"]["contribution_test_failure"] > 0.0
     assert payload["rankings"][0]["signals"]["dynamic_test_evidence"] == 1.0
     assert payload["rankings"][0]["signals"]["test_coverage"] == 1.0
     assert payload["public_api_evidence"]["trigger_expression"] == "pick([1])"
     assert payload["overlay_case_context"]["function_name"] == "pick"
     assert "Repository Test Fault Localization" in markdown
+    assert "FinalScore Contribution Decomposition" in markdown
+    assert "Git Change History Evidence" in markdown
     assert "Public API Evidence" in markdown
     assert "direct_function: pick([1]) -> pick" in markdown
     assert "pick" in markdown
@@ -185,6 +190,8 @@ def test_repository_test_fault_localization_uses_traceback_frame_without_nodeid(
     assert payload["ranking_count"] >= 1
     assert payload["top_function"] == "pick"
     assert payload["rankings"][0]["signals"]["traceback_hit"] == 1.0
+    assert payload["rankings"][0]["signals"]["traceback"] == 1.0
+    assert payload["rankings"][0]["signals"]["traceback_available"] == 1.0
     assert payload["rankings"][0]["signals"]["test_coverage"] == 1.0
     assert payload["rankings"][0]["signals"]["dynamic_test_evidence"] == 1.0
     assert "Matched Traceback Frames" in markdown

@@ -141,6 +141,7 @@ class CoverageRunner:
             branch_coverage=branch_coverage,
             path_coverage=path_coverage,
             traceback_function_ids=traceback_function_ids,
+            dynamic_evidence_test_ids=failed_ids,
             test_names=test_names,
             failure_messages=failure_messages,
         )

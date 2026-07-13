@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ast
 import math
 import re
+import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,6 +25,10 @@ class ScoreWeights:
     semantic: float = 0.10
     llm: float = 0.15
     risk: float = 0.05
+    test_failure: float = 0.0
+    traceback: float = 0.0
+    complexity: float = 0.0
+    change_history: float = 0.0
 
     def to_dict(self) -> dict[str, float]:
         return {
@@ -32,6 +38,10 @@ class ScoreWeights:
             "semantic": self.semantic,
             "llm": self.llm,
             "risk": self.risk,
+            "test_failure": self.test_failure,
+            "traceback": self.traceback,
+            "complexity": self.complexity,
+            "change_history": self.change_history,
         }
 
 
@@ -45,9 +55,38 @@ DEFAULT_STATIC_ONLY_WEIGHTS = ScoreWeights(
     risk=0.0,
 )
 
+LEGACY_V1_FUSION = "legacy_v1"
+EVIDENCE_V2_FUSION = "evidence_v2"
+
+DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS = ScoreWeights(
+    sbfl=0.22,
+    graph=0.18,
+    static=0.15,
+    semantic=0.05,
+    llm=0.05,
+    risk=0.05,
+    test_failure=0.15,
+    traceback=0.10,
+    complexity=0.05,
+    change_history=0.05,
+)
+DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS = ScoreWeights(
+    sbfl=0.0,
+    graph=0.25,
+    static=0.45,
+    semantic=0.10,
+    llm=0.05,
+    risk=0.05,
+    test_failure=0.0,
+    traceback=0.0,
+    complexity=0.10,
+    change_history=0.05,
+)
+
 
 @dataclass(frozen=True)
 class FaultLocalizationConfig:
+    fusion_profile: str = LEGACY_V1_FUSION
     use_line_coverage: bool = True
     use_branch_coverage: bool = True
     use_path_coverage: bool = True
@@ -58,11 +97,26 @@ class FaultLocalizationConfig:
     use_module_dependency: bool = True
     use_async_calls: bool = True
     use_dynamic_test_evidence: bool = True
+    use_stacktrace_score: bool = True
+    use_complexity_score: bool = True
+    use_change_history_score: bool = True
     use_semantic_similarity: bool = True
     use_llm_score: bool = True
+    graph_propagation_max_depth: int = 3
+    graph_propagation_decay: float = 0.5
+    llm_requires_program_evidence: bool = True
+    max_llm_contribution: float = 0.10
     coverage_weights: ScoreWeights = field(default_factory=ScoreWeights)
     static_only_weights: ScoreWeights = field(
         default_factory=lambda: DEFAULT_STATIC_ONLY_WEIGHTS
+    )
+
+
+def evidence_v2_localization_config() -> FaultLocalizationConfig:
+    return FaultLocalizationConfig(
+        fusion_profile=EVIDENCE_V2_FUSION,
+        coverage_weights=DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
+        static_only_weights=DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS,
     )
 
 
@@ -93,6 +147,7 @@ class FaultLocalizer:
         findings: list[BugFinding],
         test_summary: TestExecutionSummary | None = None,
         top_k: int | None = None,
+        change_history_scores: dict[str, float] | None = None,
     ) -> list[FaultLocalizationResult]:
         test_summary = test_summary or TestExecutionSummary()
         findings_by_function: dict[str, list[BugFinding]] = defaultdict(list)
@@ -173,6 +228,19 @@ class FaultLocalizer:
             test_summary=test_summary,
             candidate_function_ids=list(candidate_functions),
         )
+        raw_complexities = {
+            function_id: _cyclomatic_complexity(function.source)
+            for function_id, function in candidate_functions.items()
+        }
+        max_complexity_excess = max(
+            (max(0, value - 1) for value in raw_complexities.values()),
+            default=0,
+        )
+        history_scores = {
+            function_id: _clamp(score)
+            for function_id, score in (change_history_scores or {}).items()
+            if function_id in candidate_functions
+        }
 
         results: list[FaultLocalizationResult] = []
         for function_id, function in candidate_functions.items():
@@ -199,6 +267,25 @@ class FaultLocalizer:
             )
             graph_score = graph_signals["graph"]
             patch_risk = graph_signals["patch_risk"]
+            test_failure_score = graph_signals["dynamic_test_evidence"]
+            stacktrace_score = self._stacktrace_score(
+                function_id=function_id,
+                program_graph=program_graph,
+                test_summary=test_summary,
+            )
+            complexity_score = (
+                _normalized_complexity(
+                    raw_complexities.get(function_id, 1),
+                    max_complexity_excess=max_complexity_excess,
+                )
+                if self.config.use_complexity_score
+                else 0.0
+            )
+            change_history_score = (
+                history_scores.get(function_id, 0.0)
+                if self.config.use_change_history_score
+                else 0.0
+            )
             semantic_score = (
                 _semantic_similarity(
                     function=function,
@@ -208,30 +295,63 @@ class FaultLocalizer:
                 if self.config.use_semantic_similarity
                 else 0.0
             )
-            llm_score = llm_scores.get(function_id, 0.0)
+            raw_llm_score = llm_scores.get(function_id, 0.0)
             weights = (
                 self.config.coverage_weights
                 if test_summary.has_coverage()
                 else self.config.static_only_weights
             )
+            if self.config.fusion_profile == EVIDENCE_V2_FUSION:
+                graph_score = graph_signals["structural_graph"]
+                llm_score = self._effective_llm_score(
+                    raw_llm_score=raw_llm_score,
+                    weights=weights,
+                    program_evidence=(
+                        sbfl_score,
+                        static_score,
+                        test_failure_score,
+                        stacktrace_score,
+                        semantic_score,
+                    ),
+                )
+            else:
+                llm_score = raw_llm_score
+                test_failure_score = 0.0
+                stacktrace_score = 0.0
+                complexity_score = 0.0
+                change_history_score = 0.0
+            score_signals = {
+                "sbfl": sbfl_score,
+                "graph": graph_score,
+                "static": static_score,
+                "semantic": semantic_score,
+                "llm": llm_score,
+                "risk": patch_risk,
+                "test_failure": test_failure_score,
+                "traceback": stacktrace_score,
+                "complexity": complexity_score,
+                "change_history": change_history_score,
+            }
             final_score = score_with_weights(
-                {
-                    "sbfl": sbfl_score,
-                    "graph": graph_score,
-                    "static": static_score,
-                    "semantic": semantic_score,
-                    "llm": llm_score,
-                    "risk": patch_risk,
-                },
+                score_signals,
                 weights,
             )
+            contributions = score_contributions(score_signals, weights)
+            contribution_sum = sum(contributions.values())
             signals = {
                 "sbfl": round(sbfl_score, 4),
                 "graph": round(graph_score, 4),
                 "static": round(static_score, 4),
                 "semantic": round(semantic_score, 4),
                 "llm": round(llm_score, 4),
+                "llm_raw": round(raw_llm_score, 4),
                 "risk": round(patch_risk, 4),
+                "test_failure": round(test_failure_score, 4),
+                "traceback": round(stacktrace_score, 4),
+                "complexity": round(complexity_score, 4),
+                "complexity_raw": float(raw_complexities.get(function_id, 1)),
+                "change_history": round(change_history_score, 4),
+                "structural_graph": round(graph_signals["structural_graph"], 4),
                 "traceback_hit": round(graph_signals["traceback_hit"], 4),
                 "test_coverage": round(graph_signals["test_coverage"], 4),
                 "line_coverage": round(graph_signals["line_coverage"], 4),
@@ -251,7 +371,29 @@ class FaultLocalizer:
                 ),
                 "centrality": round(graph_signals["centrality"], 4),
                 "patch_risk": round(graph_signals["patch_risk"], 4),
+                "test_failure_available": float(
+                    bool(test_summary.dynamic_evidence_test_ids)
+                ),
+                "traceback_available": float(
+                    bool(
+                        test_summary.dynamic_traceback_function_ids
+                        if self.config.fusion_profile == EVIDENCE_V2_FUSION
+                        else test_summary.traceback_function_ids
+                    )
+                ),
+                "coverage_available": float(test_summary.has_coverage()),
+                "llm_available": float(function_id in llm_scores),
+                "change_history_available": float(function_id in history_scores),
+                "score_reconstruction": round(_clamp(contribution_sum), 6),
+                "contribution_clamp_adjustment": round(
+                    final_score - contribution_sum,
+                    6,
+                ),
             }
+            for component, contribution in contributions.items():
+                signals[f"contribution_{component}"] = round(contribution, 6)
+            for component, weight in weights.to_dict().items():
+                signals[f"weight_{component}"] = round(weight, 6)
             results.append(
                 FaultLocalizationResult(
                     function_id=function.id,
@@ -286,6 +428,24 @@ class FaultLocalizer:
         if top_k is not None:
             return ranked[:top_k]
         return ranked
+
+    def _effective_llm_score(
+        self,
+        *,
+        raw_llm_score: float,
+        weights: ScoreWeights,
+        program_evidence: tuple[float, ...],
+    ) -> float:
+        if raw_llm_score <= 0.0:
+            return 0.0
+        if self.config.llm_requires_program_evidence and not any(
+            value > 0.0 for value in program_evidence
+        ):
+            return 0.0
+        if weights.llm <= 0.0:
+            return 0.0
+        contribution_cap = max(0.0, self.config.max_llm_contribution)
+        return min(raw_llm_score, contribution_cap / weights.llm)
 
     def _llm_scores(
         self,
@@ -422,8 +582,18 @@ class FaultLocalizer:
             + 0.12 * static_score
             - 0.10 * patch_risk
         )
+        structural_graph = _clamp(
+            0.18 * effective_data_dependency
+            + 0.18 * effective_control_flow
+            + 0.14 * centrality
+            + 0.14 * effective_pagerank
+            + 0.16 * effective_caller_impact
+            + 0.10 * effective_module_dependency
+            + 0.10 * effective_async_call
+        )
         return {
             "graph": graph,
+            "structural_graph": structural_graph,
             "traceback_hit": traceback_hit,
             "test_coverage": test_coverage,
             "line_coverage": line_coverage,
@@ -462,10 +632,51 @@ class FaultLocalizer:
                 test_id,
                 function_id,
                 edge_types={"calls", "tested_by"},
+                max_depth=self.config.graph_propagation_max_depth,
             )
             if distance is not None:
-                scores.append(1 / (1 + distance))
+                scores.append(self._propagated_score(distance))
         return max(scores, default=0.0)
+
+    def _stacktrace_score(
+        self,
+        *,
+        function_id: str,
+        program_graph: ProgramGraph,
+        test_summary: TestExecutionSummary,
+    ) -> float:
+        if not self.config.use_stacktrace_score:
+            return 0.0
+        traceback_ids = test_summary.dynamic_traceback_function_ids
+        if function_id in traceback_ids:
+            return 1.0
+        scores = []
+        for trace_function_id in traceback_ids:
+            distances = [
+                program_graph.shortest_path_distance(
+                    trace_function_id,
+                    function_id,
+                    edge_types={"calls", "awaits"},
+                    max_depth=self.config.graph_propagation_max_depth,
+                ),
+                program_graph.shortest_path_distance(
+                    function_id,
+                    trace_function_id,
+                    edge_types={"calls", "awaits"},
+                    max_depth=self.config.graph_propagation_max_depth,
+                ),
+            ]
+            valid_distances = [distance for distance in distances if distance is not None]
+            if valid_distances:
+                scores.append(self._propagated_score(min(valid_distances)))
+        return max(scores, default=0.0)
+
+    def _propagated_score(self, distance: int) -> float:
+        if distance < 0 or distance > self.config.graph_propagation_max_depth:
+            return 0.0
+        if self.config.fusion_profile == LEGACY_V1_FUSION:
+            return 1 / (1 + distance)
+        return _clamp(self.config.graph_propagation_decay) ** max(0, distance - 1)
 
     def _proximity_to_failing_tests(
         self,
@@ -479,9 +690,17 @@ class FaultLocalizer:
                 test_id,
                 function_id,
                 edge_types={"calls", "tested_by"},
+                max_depth=(
+                    self.config.graph_propagation_max_depth
+                    if self.config.fusion_profile == EVIDENCE_V2_FUSION
+                    else 8
+                ),
             )
             if distance is not None:
-                scores.append(1 / (1 + distance))
+                if self.config.fusion_profile == EVIDENCE_V2_FUSION:
+                    scores.append(self._propagated_score(distance))
+                else:
+                    scores.append(1 / (1 + distance))
         return max(scores, default=0.0)
 
 
@@ -560,17 +779,28 @@ def path_ochiai(function_id: str, summary: TestExecutionSummary) -> float:
 
 
 def score_with_weights(signals: dict[str, float], weights: ScoreWeights) -> float:
-    return _clamp(
-        weights.sbfl * signals.get("sbfl", 0.0)
-        + weights.graph * signals.get("graph", 0.0)
-        + weights.static * signals.get("static", 0.0)
-        + weights.semantic * signals.get("semantic", 0.0)
-        + weights.llm * signals.get("llm", 0.0)
-        - weights.risk * signals.get(
-            "risk",
-            signals.get("patch_risk", 0.0),
-        )
-    )
+    return _clamp(sum(score_contributions(signals, weights).values()))
+
+
+def score_contributions(
+    signals: dict[str, float],
+    weights: ScoreWeights,
+) -> dict[str, float]:
+    return {
+        "sbfl": weights.sbfl * signals.get("sbfl", 0.0),
+        "graph": weights.graph * signals.get("graph", 0.0),
+        "static": weights.static * signals.get("static", 0.0),
+        "semantic": weights.semantic * signals.get("semantic", 0.0),
+        "llm": weights.llm * signals.get("llm", 0.0),
+        "test_failure": weights.test_failure
+        * signals.get("test_failure", 0.0),
+        "traceback": weights.traceback * signals.get("traceback", 0.0),
+        "complexity": weights.complexity * signals.get("complexity", 0.0),
+        "change_history": weights.change_history
+        * signals.get("change_history", 0.0),
+        "risk": -weights.risk
+        * signals.get("risk", signals.get("patch_risk", 0.0)),
+    }
 
 
 def _combine_confidence(confidences) -> float:
@@ -578,6 +808,45 @@ def _combine_confidence(confidences) -> float:
     for confidence in confidences:
         score = 1 - (1 - score) * (1 - confidence)
     return score
+
+
+def _cyclomatic_complexity(source: str) -> int:
+    try:
+        tree = ast.parse(textwrap.dedent(source))
+    except (IndentationError, SyntaxError, ValueError):
+        return 1
+    complexity = 1
+    for node in ast.walk(tree):
+        if isinstance(
+            node,
+            (
+                ast.If,
+                ast.For,
+                ast.AsyncFor,
+                ast.While,
+                ast.IfExp,
+                ast.comprehension,
+            ),
+        ):
+            complexity += 1
+        elif isinstance(node, ast.BoolOp):
+            complexity += max(0, len(node.values) - 1)
+        elif isinstance(node, ast.Try):
+            complexity += len(node.handlers) + int(bool(node.orelse))
+        elif hasattr(ast, "Match") and isinstance(node, ast.Match):
+            complexity += len(node.cases)
+    return complexity
+
+
+def _normalized_complexity(
+    raw_complexity: int,
+    *,
+    max_complexity_excess: int,
+) -> float:
+    excess = max(0, raw_complexity - 1)
+    if excess == 0 or max_complexity_excess <= 0:
+        return 0.0
+    return _clamp(math.log1p(excess) / math.log1p(max_complexity_excess))
 
 
 def _covered_statement_lines(
@@ -1011,6 +1280,10 @@ def _reason(signals: dict[str, float], findings: list[BugFinding]) -> str:
         return f"Static rules matched: {rule_ids}."
     if signals["sbfl"] > 0:
         return "Covered by failing tests according to SBFL."
+    if signals.get("traceback", 0.0) > 0:
+        return "Matched or is near a real stack-trace frame."
+    if signals.get("test_failure", 0.0) > 0:
+        return "Linked to real failing-test evidence with bounded graph propagation."
     if signals["llm"] > 0:
         return "Suspicious according to LLM fault-localization scoring."
     if signals.get("dynamic_test_evidence", 0.0) > 0:
