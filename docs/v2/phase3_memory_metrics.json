@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "phase": "phase3_evidence_layered_memory",
+  "status": "pass",
+  "implementation": {
+    "memory_layers": [
+      "working_memory",
+      "session_memory",
+      "repo_memory",
+      "repair_memory",
+      "cross_repo_pattern_memory"
+    ],
+    "record_schema_required_fields": [
+      "memory_id",
+      "layer",
+      "kind",
+      "source",
+      "created_at",
+      "repo",
+      "repository_ref",
+      "evidence_path",
+      "confidence",
+      "validation",
+      "version_scope",
+      "status"
+    ],
+    "retrieval_algorithm": "structured_relevance_v1",
+    "retrieval_top_k_default": 8,
+    "structured_filters": [
+      "status",
+      "expiry",
+      "session_id",
+      "repository",
+      "repository_ref"
+    ],
+    "score_components": {
+      "confidence_weight": 0.35,
+      "query_token_overlap_weight": 0.35,
+      "layer_prior": {
+        "working_memory": 0.18,
+        "session_memory": 0.17,
+        "repair_memory": 0.16,
+        "repo_memory": 0.14,
+        "cross_repo_pattern_memory": 0.1
+      },
+      "task_type_boost_max": 0.22,
+      "traceable_evidence_boost": 0.03,
+      "score_cap": 1.5
+    },
+    "conversation_compaction": {
+      "trigger_retained_turns": 40,
+      "retained_recent_turns": 24,
+      "summary_fields": [
+        "compacted_turn_count",
+        "intent_counts",
+        "action_counts",
+        "first_compacted_at",
+        "last_compacted_at",
+        "last_compacted_intent",
+        "last_compacted_action"
+      ]
+    },
+    "cross_repo_promotion_policy": "sandbox_verified_only",
+    "vector_database_dependency": false,
+    "user_management_commands": [
+      "memory-show",
+      "memory-delete",
+      "memory-reset"
+    ]
+  },
+  "controlled_ablation": {
+    "dataset": "datasets/memory_evaluation/v2_memory_ablation_cases.json",
+    "case_count": 8,
+    "run_count": 16,
+    "without_memory": {
+      "task_completion_rate": 0.125,
+      "expected_memory_recall": 0.0,
+      "constraint_preservation_rate": 0.0,
+      "failed_patch_avoidance_rate": 0.0,
+      "repeated_failed_patch_rate": 1.0,
+      "stale_memory_reuse_rate": 0.0,
+      "average_retrieved_record_count": 0.0,
+      "average_prompt_chars": 2.0,
+      "average_runtime_ms": 0.013575
+    },
+    "with_memory": {
+      "task_completion_rate": 1.0,
+      "expected_memory_recall": 1.0,
+      "constraint_preservation_rate": 1.0,
+      "failed_patch_avoidance_rate": 1.0,
+      "repeated_failed_patch_rate": 0.0,
+      "stale_memory_reuse_rate": 0.0,
+      "average_retrieved_record_count": 1.0,
+      "average_prompt_chars": 710.125,
+      "average_runtime_ms": 0.105825
+    },
+    "interpretation": "Controlled structured-retrieval and policy-hint utility only; not live-LLM or real-repository repair success."
+  },
+  "regression": {
+    "v1_baseline_passed_tests": 1127,
+    "phase2_passed_tests": 1163,
+    "phase3_passed_tests": 1177,
+    "phase3_failed_tests": 0,
+    "full_suite_duration_seconds": 608.16,
+    "status": "pass"
+  },
+  "acceptance_gates": {
+    "historical_session_restoration": "pass",
+    "user_constraints_survive_resume_and_compaction": "pass",
+    "failed_patch_fingerprint_deduplication": "pass",
+    "planner_reports_retrieved_memory_ids_and_reasons": "pass",
+    "repository_commit_change_filters_stale_memory": "pass",
+    "expired_memory_is_filtered": "pass",
+    "cross_repo_success_requires_sandbox_verification": "pass",
+    "memory_management_cli": "pass",
+    "with_without_memory_ablation": "pass",
+    "full_regression": "pass"
+  },
+  "reproduction": {
+    "ablation": "python -m code_intelligence_agent.evaluation.memory_ablation_evaluation datasets/memory_evaluation/v2_memory_ablation_cases.json outputs/phase3_memory_ablation --format markdown --require-pass",
+    "target_tests": "python -m pytest -q tests/test_evidence_memory.py tests/test_memory_ablation_evaluation.py tests/test_agent_session_memory.py tests/test_agent_controller.py tests/test_repository_test_patch_candidates.py",
+    "full_regression": "python -m pytest -q"
+  }
+}

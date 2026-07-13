@@ -89,7 +89,18 @@ def _should_route_to_repo_agent(argv: list[str]) -> bool:
 
 
 def _should_route_to_session_agent(argv: list[str]) -> bool:
-    return bool(argv and argv[0] in {"chat", "chat-ui", "resume"})
+    return bool(
+        argv
+        and argv[0]
+        in {
+            "chat",
+            "chat-ui",
+            "resume",
+            "memory-show",
+            "memory-delete",
+            "memory-reset",
+        }
+    )
 
 
 def _repo_agent_argv(argv: list[str]) -> list[str]:

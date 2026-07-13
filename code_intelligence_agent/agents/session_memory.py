@@ -13,6 +13,14 @@ from code_intelligence_agent.agents.action_registry import (
     action_spec_for,
     canonical_action_id,
 )
+from code_intelligence_agent.agents.evidence_memory import (
+    MEMORY_LAYERS,
+    build_evidence_memory,
+    compact_turn_history,
+    promote_verified_repair_patterns,
+    retrieve_evidence_memories,
+    total_turn_count,
+)
 from code_intelligence_agent.agents.intent_parser import (
     INTENT_ASK_FOR_CLARIFICATION,
     INTENT_CHANGE_CONSTRAINTS,
@@ -33,9 +41,12 @@ from code_intelligence_agent.agents.intent_router import route_user_intent
 from code_intelligence_agent.agents.llm_client import LLMClient
 
 
-SESSION_SCHEMA_VERSION = 1
+SESSION_SCHEMA_VERSION = 2
 SESSION_FILE = "agent_session.json"
 MEMORY_FILE = "agent_memory.json"
+EVIDENCE_MEMORY_FILE = "agent_evidence_memory.json"
+EVIDENCE_RETRIEVAL_FILE = "agent_memory_retrieval.json"
+CROSS_REPO_PATTERN_FILE = "cross_repo_pattern_memory.json"
 SESSION_REPORT_FILE = "agent_session_report.md"
 AGENT_MEMORY_REPORT_JSON_FILE = "agent_memory_report.json"
 AGENT_MEMORY_REPORT_FILE = "agent_memory_report.md"
@@ -122,8 +133,8 @@ class AgentSessionStore:
             memory,
             _analysis_turn(summary, raw_argv=raw_argv),
         )
-        session["turn_count"] = len(_list(memory.get("turns")))
-        memory["memory_layers"] = _memory_layers_from_memory(memory, session=session)
+        memory = self._refresh_evidence_memory(session, memory)
+        session["turn_count"] = total_turn_count(memory)
         self._write_session_bundle(session, memory)
         summary["agent_session"] = _session_public_summary(session, memory)
         return summary["agent_session"]
@@ -140,6 +151,7 @@ class AgentSessionStore:
         loaded = self.load(session_ref)
         session = _dict(loaded["session"])
         memory = _dict(loaded["memory"])
+        memory = self._refresh_evidence_memory(session, memory, query=message)
         intent = route_user_intent(
             message,
             context=_intent_router_context(session, memory),
@@ -158,8 +170,8 @@ class AgentSessionStore:
         session["status"] = str(memory.get("current_status") or session.get("status") or "")
         session["current_state"] = _current_state_from_memory(memory)
         session["updated_at"] = _now()
-        session["turn_count"] = len(_list(memory.get("turns")))
-        memory["memory_layers"] = _memory_layers_from_memory(memory, session=session)
+        memory = self._refresh_evidence_memory(session, memory, query=message)
+        session["turn_count"] = total_turn_count(memory)
         self._write_session_bundle(session, memory)
         return {
             "status": "pass",
@@ -175,6 +187,11 @@ class AgentSessionStore:
         loaded = self.load(session_ref)
         session = _dict(loaded["session"])
         memory = _dict(loaded["memory"])
+        memory = self._refresh_evidence_memory(
+            session,
+            memory,
+            query="resume current session status constraints blocker and next action",
+        )
         intent = {
             "intent": INTENT_INSPECT_STATUS,
             "message": "resume session",
@@ -199,8 +216,8 @@ class AgentSessionStore:
         )
         memory = self._append_turn(session, memory, turn)
         session["updated_at"] = _now()
-        session["turn_count"] = len(_list(memory.get("turns")))
-        memory["memory_layers"] = _memory_layers_from_memory(memory, session=session)
+        memory = self._refresh_evidence_memory(session, memory)
+        session["turn_count"] = total_turn_count(memory)
         self._write_session_bundle(session, memory)
         return {
             "status": "pass",
@@ -220,6 +237,178 @@ class AgentSessionStore:
             memory_path = session_path.with_name(MEMORY_FILE)
         memory = _dict(_read_json(memory_path))
         return {"session": session, "memory": memory}
+
+    def inspect_memory(
+        self,
+        session_ref: str,
+        *,
+        query: str = "",
+        layer: str = "",
+        top_k: int = 8,
+    ) -> dict[str, Any]:
+        loaded = self.load(session_ref)
+        session = _dict(loaded["session"])
+        memory = self._refresh_evidence_memory(
+            session,
+            _dict(loaded["memory"]),
+            query=query or _default_memory_query(_dict(loaded["memory"]), session),
+        )
+        evidence = _dict(memory.get("evidence_memory"))
+        if layer:
+            evidence = {
+                **evidence,
+                "records": [
+                    item
+                    for item in _list(evidence.get("records"))
+                    if _dict(item).get("layer") == layer
+                ],
+            }
+        retrieval = retrieve_evidence_memories(
+            evidence,
+            query or _default_memory_query(memory, session),
+            repo=str(session.get("repo") or session.get("repo_spec") or ""),
+            repository_ref=str(session.get("repository_ref") or ""),
+            session_id=str(session.get("session_id") or ""),
+            top_k=top_k,
+        )
+        return {
+            "status": "pass",
+            "reason": "evidence_memory_inspected",
+            "session": _session_public_summary(session, memory),
+            "memory_report": build_agent_memory_report_from_memory(
+                memory,
+                session=session,
+            ),
+            "retrieval": retrieval,
+        }
+
+    def delete_memory(
+        self,
+        session_ref: str,
+        memory_id: str,
+    ) -> dict[str, Any]:
+        loaded = self.load(session_ref)
+        session = _dict(loaded["session"])
+        memory = self._refresh_evidence_memory(session, _dict(loaded["memory"]))
+        records = [
+            _dict(item) for item in _list(_dict(memory.get("evidence_memory")).get("records"))
+        ]
+        target = next(
+            (item for item in records if str(item.get("memory_id") or "") == memory_id),
+            None,
+        )
+        if target is None:
+            return {
+                "status": "not_found",
+                "reason": "memory_id_not_found",
+                "memory_id": memory_id,
+                "session": _session_public_summary(session, memory),
+            }
+        memory["deleted_memory_ids"] = _unique_strings(
+            [*_list(memory.get("deleted_memory_ids")), memory_id]
+        )
+        memory["evidence_memory"] = {
+            **_dict(memory.get("evidence_memory")),
+            "deleted_memory_ids": _list(memory.get("deleted_memory_ids")),
+            "records": [
+                item
+                for item in records
+                if str(item.get("memory_id") or "") != memory_id
+            ],
+        }
+        memory = self._refresh_evidence_memory(session, memory)
+        self._write_session_bundle(session, memory)
+        return {
+            "status": "pass",
+            "reason": "memory_record_deleted",
+            "memory_id": memory_id,
+            "deleted_layer": str(target.get("layer") or ""),
+            "deleted_kind": str(target.get("kind") or ""),
+            "session": _session_public_summary(session, memory),
+        }
+
+    def reset_memory(
+        self,
+        session_ref: str,
+        *,
+        scope: str = "session",
+    ) -> dict[str, Any]:
+        if scope not in {"session", "repair", "all"}:
+            raise ValueError(f"Unsupported memory reset scope: {scope}")
+        loaded = self.load(session_ref)
+        session = _dict(loaded["session"])
+        memory = self._refresh_evidence_memory(session, _dict(loaded["memory"]))
+        records = [
+            _dict(item) for item in _list(_dict(memory.get("evidence_memory")).get("records"))
+        ]
+        reset_layers = {
+            "session": {"working_memory", "session_memory"},
+            "repair": {"repair_memory"},
+            "all": {
+                "working_memory",
+                "session_memory",
+                "repo_memory",
+                "repair_memory",
+            },
+        }[scope]
+        tombstones = [
+            str(item.get("memory_id") or "")
+            for item in records
+            if str(item.get("layer") or "") in reset_layers
+        ]
+        memory["deleted_memory_ids"] = _unique_strings(
+            [*_list(memory.get("deleted_memory_ids")), *tombstones]
+        )
+        if scope in {"session", "all"}:
+            for key in (
+                "turns",
+                "user_intent_history",
+                "constraints",
+                "repair_strategy_preferences",
+            ):
+                memory[key] = []
+            for key in (
+                "active_scope",
+                "active_function",
+                "conversation_summary",
+                "conversation_compaction",
+            ):
+                memory.pop(key, None)
+            memory["execution_stopped"] = False
+        if scope in {"repair", "all"}:
+            memory["patch_attempt_history"] = []
+            memory["reflection_trace"] = {}
+            memory["blocker_evolution"] = []
+        if scope == "all":
+            for key, empty in (
+                ("repo_profile", {}),
+                ("graph_memory", {}),
+                ("topk_suspicious_functions", []),
+                ("test_results", {}),
+                ("agent_controller_history", {}),
+                ("execution_trace", {}),
+            ):
+                memory[key] = empty
+        memory["evidence_memory"] = {
+            **_dict(memory.get("evidence_memory")),
+            "deleted_memory_ids": _list(memory.get("deleted_memory_ids")),
+            "records": [
+                item
+                for item in records
+                if str(item.get("memory_id") or "") not in tombstones
+            ],
+        }
+        memory = self._refresh_evidence_memory(session, memory)
+        session["turn_count"] = total_turn_count(memory)
+        session["updated_at"] = _now()
+        self._write_session_bundle(session, memory)
+        return {
+            "status": "pass",
+            "reason": "memory_scope_reset",
+            "scope": scope,
+            "deleted_record_count": len(tombstones),
+            "session": _session_public_summary(session, memory),
+        }
 
     def resolve_session_path(self, session_ref: str) -> Path:
         ref_path = Path(session_ref)
@@ -245,10 +434,64 @@ class AgentSessionStore:
     ) -> dict[str, Any]:
         turns = _list(memory.get("turns"))
         turns.append(_redact(turn))
-        memory["turns"] = turns
-        memory["turn_count"] = len(turns)
+        retained, summary, compaction = compact_turn_history(
+            turns,
+            _dict(memory.get("conversation_summary")),
+        )
+        memory["turns"] = retained
+        memory["conversation_summary"] = summary
+        memory["conversation_compaction"] = compaction
+        memory["turn_count"] = total_turn_count(memory)
         memory["updated_at"] = _now()
         memory["session_id"] = session.get("session_id")
+        return memory
+
+    def _refresh_evidence_memory(
+        self,
+        session: dict[str, Any],
+        memory: dict[str, Any],
+        *,
+        query: str | dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        cross_repo_payload = _dict(_read_json(self.root / CROSS_REPO_PATTERN_FILE))
+        cross_repo_records = _list(cross_repo_payload.get("records"))
+        evidence = build_evidence_memory(
+            memory,
+            session,
+            existing=_dict(memory.get("evidence_memory")),
+            cross_repo_records=cross_repo_records,
+        )
+        promoted = promote_verified_repair_patterns(
+            evidence,
+            existing_records=cross_repo_records,
+        )
+        if promoted != cross_repo_records:
+            _write_json(
+                self.root / CROSS_REPO_PATTERN_FILE,
+                {
+                    "schema_version": 1,
+                    "updated_at": _now(),
+                    "record_count": len(promoted),
+                    "records": promoted,
+                },
+            )
+            evidence = build_evidence_memory(
+                memory,
+                session,
+                existing=evidence,
+                cross_repo_records=promoted,
+            )
+        memory["evidence_memory"] = evidence
+        retrieval_query = query or _default_memory_query(memory, session)
+        memory["latest_memory_retrieval"] = retrieve_evidence_memories(
+            evidence,
+            retrieval_query,
+            repo=str(session.get("repo") or session.get("repo_spec") or ""),
+            repository_ref=str(session.get("repository_ref") or ""),
+            session_id=str(session.get("session_id") or ""),
+            top_k=8,
+        )
+        memory["memory_layers"] = _memory_layers_from_memory(memory, session=session)
         return memory
 
     def _write_session_bundle(
@@ -266,11 +509,18 @@ class AgentSessionStore:
         session["agent_memory_report_path"] = str(session_dir / AGENT_MEMORY_REPORT_FILE)
         session["agent_decision_report_json"] = str(session_dir / AGENT_DECISION_REPORT_JSON_FILE)
         session["agent_decision_report_path"] = str(session_dir / AGENT_DECISION_REPORT_FILE)
+        session["evidence_memory_path"] = str(session_dir / EVIDENCE_MEMORY_FILE)
+        session["memory_retrieval_path"] = str(session_dir / EVIDENCE_RETRIEVAL_FILE)
         report = render_session_report(session, memory)
         memory_report = build_agent_memory_report_from_memory(memory, session=session)
         decision_report = build_agent_decision_report_from_memory(memory, session=session)
         _write_json(session_dir / SESSION_FILE, session)
         _write_json(session_dir / MEMORY_FILE, memory)
+        _write_json(session_dir / EVIDENCE_MEMORY_FILE, _dict(memory.get("evidence_memory")))
+        _write_json(
+            session_dir / EVIDENCE_RETRIEVAL_FILE,
+            _dict(memory.get("latest_memory_retrieval")),
+        )
         (session_dir / SESSION_REPORT_FILE).write_text(report, encoding="utf-8")
         _write_json(session_dir / AGENT_MEMORY_REPORT_JSON_FILE, memory_report)
         (session_dir / AGENT_MEMORY_REPORT_FILE).write_text(
@@ -303,8 +553,22 @@ class AgentSessionStore:
             output_session["agent_decision_report_path"] = str(
                 output_dir / AGENT_DECISION_REPORT_FILE
             )
+            output_session["evidence_memory_path"] = str(
+                output_dir / EVIDENCE_MEMORY_FILE
+            )
+            output_session["memory_retrieval_path"] = str(
+                output_dir / EVIDENCE_RETRIEVAL_FILE
+            )
             _write_json(output_dir / SESSION_FILE, output_session)
             _write_json(output_dir / MEMORY_FILE, memory)
+            _write_json(
+                output_dir / EVIDENCE_MEMORY_FILE,
+                _dict(memory.get("evidence_memory")),
+            )
+            _write_json(
+                output_dir / EVIDENCE_RETRIEVAL_FILE,
+                _dict(memory.get("latest_memory_retrieval")),
+            )
             (output_dir / SESSION_REPORT_FILE).write_text(report, encoding="utf-8")
             _write_json(output_dir / AGENT_MEMORY_REPORT_JSON_FILE, memory_report)
             (output_dir / AGENT_MEMORY_REPORT_FILE).write_text(
@@ -334,6 +598,8 @@ class AgentSessionStore:
             "agent_memory_report_path": str(session_dir / AGENT_MEMORY_REPORT_FILE),
             "agent_decision_report_json": str(session_dir / AGENT_DECISION_REPORT_JSON_FILE),
             "agent_decision_report_path": str(session_dir / AGENT_DECISION_REPORT_FILE),
+            "evidence_memory_path": str(session_dir / EVIDENCE_MEMORY_FILE),
+            "memory_retrieval_path": str(session_dir / EVIDENCE_RETRIEVAL_FILE),
         }
         index = {
             "schema_version": SESSION_SCHEMA_VERSION,
@@ -401,6 +667,40 @@ def resume_session(
     memory_root: str | Path | None = None,
 ) -> dict[str, Any]:
     return AgentSessionStore(memory_root).resume(session_ref)
+
+
+def inspect_session_memory(
+    session_ref: str,
+    *,
+    memory_root: str | Path | None = None,
+    query: str = "",
+    layer: str = "",
+    top_k: int = 8,
+) -> dict[str, Any]:
+    return AgentSessionStore(memory_root).inspect_memory(
+        session_ref,
+        query=query,
+        layer=layer,
+        top_k=top_k,
+    )
+
+
+def delete_session_memory(
+    session_ref: str,
+    memory_id: str,
+    *,
+    memory_root: str | Path | None = None,
+) -> dict[str, Any]:
+    return AgentSessionStore(memory_root).delete_memory(session_ref, memory_id)
+
+
+def reset_session_memory(
+    session_ref: str,
+    *,
+    memory_root: str | Path | None = None,
+    scope: str = "session",
+) -> dict[str, Any]:
+    return AgentSessionStore(memory_root).reset_memory(session_ref, scope=scope)
 
 
 def render_session_report(session: dict[str, Any], memory: dict[str, Any]) -> str:
@@ -536,6 +836,11 @@ def build_agent_memory_report_from_summary(summary: dict[str, Any]) -> dict[str,
         "repository_ref": str(summary.get("repository_ref") or ""),
         "output_dir": str(summary.get("output_dir") or ""),
         "status": str(summary.get("status") or ""),
+        "user_goal": str(
+            _dict(summary.get("agent_invocation")).get("user_goal")
+            or summary.get("user_goal")
+            or ""
+        ),
         "turn_count": _int(_dict(summary.get("agent_session")).get("turn_count", 0)),
         "run_config": _dict(summary.get("agent_invocation")),
         "report_paths": _report_paths_from_summary(summary),
@@ -561,8 +866,30 @@ def build_agent_memory_report_from_summary(summary: dict[str, Any]) -> dict[str,
         "turn_count": _int(session.get("turn_count", 0)),
         "current_status": str(summary.get("status") or ""),
     }
+    external_memory = _compatible_external_memory(summary, session=session)
+    if external_memory:
+        memory = _merge_external_memory(memory, external_memory)
+    cross_repo_records = _list(
+        _dict(
+            _read_json(default_memory_root() / CROSS_REPO_PATTERN_FILE)
+        ).get("records")
+    )
+    memory["evidence_memory"] = build_evidence_memory(
+        memory,
+        session,
+        existing=_dict(external_memory.get("evidence_memory")),
+        cross_repo_records=cross_repo_records,
+    )
+    memory["latest_memory_retrieval"] = retrieve_evidence_memories(
+        _dict(memory.get("evidence_memory")),
+        _default_memory_query(memory, session),
+        repo=str(session.get("repo") or session.get("repo_spec") or ""),
+        repository_ref=str(session.get("repository_ref") or ""),
+        session_id=str(session.get("session_id") or ""),
+        top_k=8,
+    )
     memory["memory_layers"] = _memory_layers_from_memory(memory, session=session)
-    return build_agent_memory_report_from_memory(memory, session=session)
+    return _redact(build_agent_memory_report_from_memory(memory, session=session))
 
 
 def build_agent_memory_report_from_memory(
@@ -574,12 +901,7 @@ def build_agent_memory_report_from_memory(
         memory,
         session=session,
     )
-    layer_names = [
-        "session_memory",
-        "repo_memory",
-        "repair_memory",
-        "long_term_pattern_memory",
-    ]
+    layer_names = list(MEMORY_LAYERS)
     layer_statuses = {
         name: str(_dict(layers.get(name)).get("status") or "missing")
         for name in layer_names
@@ -600,17 +922,28 @@ def build_agent_memory_report_from_memory(
         "layer_statuses": layer_statuses,
         "memory_layers": layers,
         "reuse_contract": _memory_reuse_contract(layers),
+        "evidence_memory": _evidence_memory_summary(
+            _dict(memory.get("evidence_memory"))
+        ),
+        "retrieval": _dict(memory.get("latest_memory_retrieval")),
+        "conversation_compaction": {
+            **_dict(memory.get("conversation_compaction")),
+            "summary": _dict(memory.get("conversation_summary")),
+        },
     }
 
 
 def render_agent_memory_report(payload: dict[str, Any]) -> str:
     payload = _dict(payload)
     layers = _dict(payload.get("memory_layers"))
+    working_layer = _dict(layers.get("working_memory"))
     session_layer = _dict(layers.get("session_memory"))
     repo_layer = _dict(layers.get("repo_memory"))
     repair_layer = _dict(layers.get("repair_memory"))
-    pattern_layer = _dict(layers.get("long_term_pattern_memory"))
+    pattern_layer = _dict(layers.get("cross_repo_pattern_memory"))
     reuse = _dict(payload.get("reuse_contract"))
+    evidence = _dict(payload.get("evidence_memory"))
+    retrieval = _dict(payload.get("retrieval"))
     lines = [
         "# Agent Memory Report",
         "",
@@ -624,6 +957,11 @@ def render_agent_memory_report(payload: dict[str, Any]) -> str:
         "",
         "| Layer | Status | Key Evidence |",
         "| --- | --- | --- |",
+        _memory_layer_row(
+            "Working Memory",
+            working_layer,
+            f"stage={working_layer.get('current_stage') or 'none'}, action={working_layer.get('latest_action') or 'none'}",
+        ),
         _memory_layer_row(
             "Session Memory",
             session_layer,
@@ -640,10 +978,18 @@ def render_agent_memory_report(payload: dict[str, Any]) -> str:
             f"failed_patches={repair_layer.get('failed_patch_count', 0)}, successful_patches={repair_layer.get('successful_patch_count', 0)}, strategies={len(_list(repair_layer.get('strategy_preferences')))}",
         ),
         _memory_layer_row(
-            "Long-term Pattern Memory",
+            "Cross-repo Pattern Memory",
             pattern_layer,
-            f"patterns={pattern_layer.get('pattern_count', 0)}, blockers={len(_list(pattern_layer.get('blocker_patterns')))}",
+            f"verified_patterns={pattern_layer.get('pattern_count', 0)}, source_repositories={pattern_layer.get('source_repository_count', 0)}",
         ),
+        "",
+        "## Evidence Retrieval",
+        "",
+        f"- Algorithm: `{_md(evidence.get('retrieval_algorithm') or retrieval.get('algorithm') or 'none')}`",
+        f"- Active Records: {_int(evidence.get('active_record_count', 0))}",
+        f"- Stale Records: {_int(evidence.get('stale_record_count', 0))}",
+        f"- Selected: {_int(retrieval.get('selected_count', 0))}/{_int(retrieval.get('candidate_count', 0))}",
+        f"- Selected IDs: {_md(', '.join(_list(retrieval.get('selected_memory_ids'))) or 'none')}",
         "",
         "## Reuse Contract",
         "",
@@ -682,7 +1028,7 @@ def render_agent_memory_report(payload: dict[str, Any]) -> str:
             "| --- | ---: | --- |",
         ]
     )
-    patterns = _list(pattern_layer.get("bug_patterns"))
+    patterns = _list(pattern_layer.get("verified_patterns"))
     if patterns:
         for item_value in patterns:
             item = _dict(item_value)
@@ -829,7 +1175,12 @@ def _memory_from_summary(
         "constraints": constraints,
         "repair_strategy_preferences": repair_strategy_preferences,
         "turns": turns,
-        "turn_count": len(turns),
+        "conversation_summary": _dict(existing_memory.get("conversation_summary")),
+        "conversation_compaction": _dict(existing_memory.get("conversation_compaction")),
+        "evidence_memory": _dict(existing_memory.get("evidence_memory")),
+        "latest_memory_retrieval": _dict(existing_memory.get("latest_memory_retrieval")),
+        "deleted_memory_ids": _list(existing_memory.get("deleted_memory_ids")),
+        "turn_count": total_turn_count(existing_memory) if existing_memory else len(turns),
         "current_status": str(summary.get("status") or ""),
         "created_at": existing_memory.get("created_at") or session.get("created_at"),
         "updated_at": _now(),
@@ -858,19 +1209,59 @@ def _memory_layers_from_memory(
     ]
     intents = [_dict(item) for item in _list(memory.get("user_intent_history"))]
     topk = [_dict(item) for item in _list(memory.get("topk_suspicious_functions"))]
-    latest_blocker = blockers[-1] if blockers else {}
     latest_failure_category = (
         str(tests.get("failure_category") or "")
         or str(_dict(failed_patches[-1]).get("failure_type") or "")
         if failed_patches
         else str(tests.get("failure_category") or "")
     )
-    return {
+    evidence_memory = _dict(memory.get("evidence_memory"))
+    evidence_records = [_dict(item) for item in _list(evidence_memory.get("records"))]
+    working_records = [
+        item
+        for item in evidence_records
+        if item.get("layer") == "working_memory" and item.get("status") == "active"
+    ]
+    cross_repo_records = [
+        item
+        for item in evidence_records
+        if item.get("layer") == "cross_repo_pattern_memory"
+        and item.get("status") == "active"
+        and _dict(item.get("validation")).get("status") == "verified"
+        and _dict(item.get("validation")).get("authority") == "sandbox_pytest"
+    ]
+    working_state = _dict(_dict(working_records[-1]).get("content")) if working_records else {}
+    cross_repo_layer = _cross_repo_pattern_layer(cross_repo_records)
+    layers = {
         "schema_version": 1,
+        "working_memory": {
+            "status": "ready",
+            "record_count": len(working_records),
+            "current_stage": str(
+                _dict(session.get("current_state")).get("current_stage")
+                or _dict(working_state.get("current_state")).get("current_stage")
+                or ""
+            ),
+            "latest_intent": str(working_state.get("latest_intent") or ""),
+            "latest_action": str(working_state.get("latest_action") or ""),
+            "latest_verification": str(working_state.get("latest_verification") or ""),
+            "latest_replan": str(working_state.get("latest_replan") or ""),
+            "retrieved_memory_ids": _list(
+                _dict(memory.get("latest_memory_retrieval")).get(
+                    "selected_memory_ids"
+                )
+            ),
+        },
         "session_memory": {
             "status": "ready",
             "session_id": str(session.get("session_id") or memory.get("session_id") or ""),
-            "turn_count": len(_list(memory.get("turns"))),
+            "turn_count": total_turn_count(memory),
+            "retained_turn_count": len(_list(memory.get("turns"))),
+            "compacted_turn_count": _int(
+                _dict(memory.get("conversation_summary")).get(
+                    "compacted_turn_count"
+                )
+            ),
             "current_status": str(memory.get("current_status") or session.get("status") or ""),
             "active_scope": str(memory.get("active_scope") or ""),
             "execution_stopped": bool(memory.get("execution_stopped")),
@@ -921,78 +1312,61 @@ def _memory_layers_from_memory(
             "user_constraints": constraints,
             "strategy_preferences": repair_strategy_preferences,
         },
-        "long_term_pattern_memory": _long_term_pattern_memory(
-            memory=memory,
-            blockers=blockers,
-            failed_patches=failed_patches,
-            successful_patches=successful_patches,
-            latest_blocker=latest_blocker,
-            latest_failure_category=latest_failure_category,
-        ),
+        "cross_repo_pattern_memory": cross_repo_layer,
     }
+    # Preserve the V1 report key while making verified cross-repo memory the
+    # only source of long-term repair patterns.
+    layers["long_term_pattern_memory"] = cross_repo_layer
+    return layers
 
 
-def _long_term_pattern_memory(
-    *,
-    memory: dict[str, Any],
-    blockers: list[dict[str, Any]],
-    failed_patches: list[dict[str, Any]],
-    successful_patches: list[dict[str, Any]],
-    latest_blocker: dict[str, Any],
-    latest_failure_category: str,
+def _cross_repo_pattern_layer(
+    records: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    topk = [_dict(item) for item in _list(memory.get("topk_suspicious_functions"))]
-    pattern_counts: dict[str, int] = {}
-    pattern_evidence: dict[str, str] = {}
-    if latest_failure_category:
-        _increment_count(pattern_counts, f"failure:{latest_failure_category}")
-        pattern_evidence[f"failure:{latest_failure_category}"] = "latest test or patch failure category"
-    for item in failed_patches:
-        failure_type = str(item.get("failure_type") or "")
-        if failure_type:
-            key = f"patch_failure:{failure_type}"
-            _increment_count(pattern_counts, key)
-            pattern_evidence[key] = "failed patch validation history"
-    for item in topk:
-        why = str(item.get("why") or "")
-        if "missing key" in why.lower() or "keyerror" in why.lower():
-            key = "bug_pattern:missing_key_guard"
-            _increment_count(pattern_counts, key)
-            pattern_evidence[key] = "Top-k explanation or failure signal mentions missing key"
-    blocker = str(latest_blocker.get("blocker") or "")
-    if blocker:
-        key = f"blocker:{blocker}"
-        _increment_count(pattern_counts, key)
-        pattern_evidence[key] = "latest blocker evolution record"
-    patterns = [
-        {
-            "pattern": key,
-            "count": count,
-            "evidence": pattern_evidence.get(key, ""),
-        }
-        for key, count in sorted(pattern_counts.items())
-    ]
+    source_repositories = {
+        str(source.get("repo") or "")
+        for record in records
+        for source in [_dict(item) for item in _list(record.get("source_versions"))]
+        if str(source.get("repo") or "")
+    }
+    patterns = []
+    for record in records[:20]:
+        content = _dict(record.get("content"))
+        patterns.append(
+            {
+                "memory_id": str(record.get("memory_id") or ""),
+                "pattern": ":".join(
+                    item
+                    for item in [
+                        str(content.get("failure_type") or ""),
+                        str(content.get("target_shape") or ""),
+                        str(content.get("generator") or ""),
+                    ]
+                    if item
+                )
+                or "verified_repair_pattern",
+                "count": _int(record.get("evidence_count", 1)),
+                "evidence": str(record.get("evidence_path") or ""),
+                "confidence": _float(record.get("confidence", 0.0)),
+            }
+        )
     return {
         "status": "ready",
+        "promotion_policy": "sandbox_verified_only",
         "pattern_count": len(patterns),
+        "source_repository_count": len(source_repositories),
+        "verified_patterns": patterns,
         "bug_patterns": patterns,
-        "blocker_patterns": [
-            str(item.get("blocker") or "")
-            for item in blockers
-            if str(item.get("blocker") or "")
-        ][-10:],
-        "failure_type_counts": _count_values(
-            str(item.get("failure_type") or "")
-            for item in failed_patches
-            if str(item.get("failure_type") or "")
+        "strategy_hints": _unique_strings(
+            str(_dict(record.get("content")).get("generator") or "")
+            for record in records
         ),
-        "strategy_hints": _strategy_hints(successful_patches, failed_patches),
         "reuse_policy": {
-            "scope": "persistent_session_memory",
-            "used_by_patch_generation": True,
-            "used_by_reflection": True,
-            "used_by_replan": True,
-            "do_not_repeat_failed_patch_fingerprints": bool(failed_patches),
+            "scope": "cross_repository",
+            "used_by_patch_generation": bool(patterns),
+            "used_by_reflection": bool(patterns),
+            "used_by_replan": bool(patterns),
+            "requires_sandbox_verification": True,
         },
     }
 
@@ -1001,7 +1375,7 @@ def _memory_reuse_contract(layers: dict[str, Any]) -> dict[str, Any]:
     session_layer = _dict(layers.get("session_memory"))
     repair_layer = _dict(layers.get("repair_memory"))
     repo_layer = _dict(layers.get("repo_memory"))
-    pattern_layer = _dict(layers.get("long_term_pattern_memory"))
+    pattern_layer = _dict(layers.get("cross_repo_pattern_memory"))
     failed_count = _int(repair_layer.get("failed_patch_count", 0))
     constraints = _list(session_layer.get("constraints"))
     strategy_preferences = _list(repair_layer.get("strategy_preferences"))
@@ -1121,12 +1495,7 @@ def _agent_decision_report(
         "decision_timeline": decision_timeline,
         "memory_layer_statuses": {
             key: str(_dict(memory_layers.get(key)).get("status") or "missing")
-            for key in (
-                "session_memory",
-                "repo_memory",
-                "repair_memory",
-                "long_term_pattern_memory",
-            )
+            for key in MEMORY_LAYERS
         },
         "actions": actions,
     }
@@ -1871,6 +2240,7 @@ def _explicit_execution_resume(intent: dict[str, Any]) -> bool:
 
 
 def _memory_usage_evidence(memory: dict[str, Any]) -> dict[str, Any]:
+    retrieval = _dict(memory.get("latest_memory_retrieval"))
     return {
         "repo_profile_loaded": bool(memory.get("repo_profile")),
         "topk_loaded": len(_list(memory.get("topk_suspicious_functions"))),
@@ -1882,7 +2252,21 @@ def _memory_usage_evidence(memory: dict[str, Any]) -> dict[str, Any]:
         ),
         "constraint_count": len(_list(memory.get("constraints"))),
         "execution_stopped": bool(memory.get("execution_stopped")),
-        "prior_turn_count": len(_list(memory.get("turns"))),
+        "prior_turn_count": total_turn_count(memory),
+        "retained_turn_count": len(_list(memory.get("turns"))),
+        "compacted_turn_count": _int(
+            _dict(memory.get("conversation_summary")).get("compacted_turn_count")
+        ),
+        "retrieval_status": str(retrieval.get("status") or "missing"),
+        "retrieved_memory_count": _int(retrieval.get("selected_count", 0)),
+        "retrieved_memory_ids": _list(retrieval.get("selected_memory_ids")),
+        "retrieved_memory_layers": _list(retrieval.get("selected_layers")),
+        "stale_memory_discard_count": _int(
+            _dict(retrieval.get("discarded_counts")).get(
+                "stale_repository_version",
+                0,
+            )
+        ),
     }
 
 
@@ -1898,7 +2282,7 @@ def _session_public_summary(
         "repository_ref": session.get("repository_ref", ""),
         "output_dir": session.get("output_dir", ""),
         "status": session.get("status", ""),
-        "turn_count": len(_list(memory.get("turns"))),
+        "turn_count": total_turn_count(memory),
         "memory_path": session.get("memory_path", ""),
         "session_path": session.get("session_path", ""),
         "session_report_path": session.get("session_report_path", ""),
@@ -1906,6 +2290,8 @@ def _session_public_summary(
         "agent_memory_report_path": session.get("agent_memory_report_path", ""),
         "agent_decision_report_json": session.get("agent_decision_report_json", ""),
         "agent_decision_report_path": session.get("agent_decision_report_path", ""),
+        "evidence_memory_path": session.get("evidence_memory_path", ""),
+        "memory_retrieval_path": session.get("memory_retrieval_path", ""),
         "memory_usage_evidence": _memory_usage_evidence(memory),
     }
 
@@ -2325,10 +2711,26 @@ def _patch_attempts_from_summary(summary: dict[str, Any]) -> list[dict[str, Any]
                         or validation_result.get("failure_type")
                         or ""
                     ),
+                    "generator": str(
+                        candidate.get("generator")
+                        or _dict(candidate.get("metadata")).get("generator")
+                        or item.get("generator")
+                        or ""
+                    ),
+                    "strategy": str(
+                        candidate.get("strategy")
+                        or item.get("strategy")
+                        or ""
+                    ),
                     "passed": bool(
                         item.get("passed", item.get("success", validation_result.get("success", False)))
                     ),
                     "diff_fingerprint": _fingerprint(diff),
+                    "fixed_source_fingerprint": str(
+                        candidate.get("fixed_source_fingerprint")
+                        or item.get("fixed_source_fingerprint")
+                        or ""
+                    ),
                     "diff": _truncate(diff, 3000),
                 }
             )
@@ -2471,41 +2873,6 @@ def _successful_repair_strategies(
     return _unique_strings(str(item) for item in strategies)[:10]
 
 
-def _strategy_hints(
-    successful_patches: list[dict[str, Any]],
-    failed_patches: list[dict[str, Any]],
-) -> list[str]:
-    hints = []
-    if failed_patches:
-        hints.append("avoid_failed_diff_fingerprints")
-    if successful_patches:
-        hints.append("prefer_successful_strategy_shapes")
-    failure_types = _count_values(
-        str(item.get("failure_type") or "")
-        for item in failed_patches
-        if str(item.get("failure_type") or "")
-    )
-    if "assertion_failure" in failure_types:
-        hints.append("preserve_expected_assertion_semantics")
-    if "timeout" in failure_types:
-        hints.append("narrow_test_timeout_scope")
-    return _unique_strings(hints)
-
-
-def _count_values(values: Any) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    for value in values:
-        text = str(value or "")
-        if not text:
-            continue
-        _increment_count(counts, text)
-    return dict(sorted(counts.items()))
-
-
-def _increment_count(counts: dict[str, int], key: str) -> None:
-    counts[key] = counts.get(key, 0) + 1
-
-
 def _unique_strings(values: Any) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
@@ -2516,6 +2883,124 @@ def _unique_strings(values: Any) -> list[str]:
         seen.add(text)
         result.append(text)
     return result
+
+
+def _compatible_external_memory(
+    summary: dict[str, Any],
+    *,
+    session: dict[str, Any],
+) -> dict[str, Any]:
+    path = str(os.environ.get("CIA_AGENT_PATCH_MEMORY") or "").strip()
+    if not path:
+        return {}
+    external = _dict(_read_json(path))
+    if not external:
+        return {}
+    external_repo = str(_dict(external.get("repo_profile")).get("repo") or "")
+    current_repo = str(session.get("repo") or session.get("repo_spec") or "")
+    if external_repo and current_repo and external_repo != current_repo:
+        return {}
+    return external
+
+
+def _merge_external_memory(
+    memory: dict[str, Any],
+    external: dict[str, Any],
+) -> dict[str, Any]:
+    merged = dict(memory)
+    current_ref = str(_dict(memory.get("repo_profile")).get("repository_ref") or "")
+    external_ref = str(_dict(external.get("repo_profile")).get("repository_ref") or "")
+    same_version = not current_ref or not external_ref or current_ref == external_ref
+    merged["constraints"] = _unique_strings(
+        [*_list(external.get("constraints")), *_list(memory.get("constraints"))]
+    )
+    merged["repair_strategy_preferences"] = _unique_strings(
+        [
+            *_list(external.get("repair_strategy_preferences")),
+            *_list(memory.get("repair_strategy_preferences")),
+        ]
+    )
+    merged["active_scope"] = str(
+        memory.get("active_scope") or external.get("active_scope") or ""
+    )
+    merged["conversation_summary"] = _dict(
+        external.get("conversation_summary")
+    )
+    merged["evidence_memory"] = _dict(external.get("evidence_memory"))
+    merged["deleted_memory_ids"] = _list(external.get("deleted_memory_ids"))
+    if same_version:
+        merged["patch_attempt_history"] = _merge_patch_attempts(
+            _list(external.get("patch_attempt_history")),
+            _list(memory.get("patch_attempt_history")),
+        )
+        merged["blocker_evolution"] = _merge_blockers(
+            _list(external.get("blocker_evolution")),
+            _list(memory.get("blocker_evolution")),
+        )
+    return merged
+
+
+def _default_memory_query(
+    memory: dict[str, Any],
+    session: dict[str, Any],
+) -> dict[str, Any]:
+    tests = _dict(memory.get("test_results"))
+    blockers = _list(memory.get("blocker_evolution"))
+    topk = _list(memory.get("topk_suspicious_functions"))
+    latest_turn = _dict(_list(memory.get("turns"))[-1]) if _list(memory.get("turns")) else {}
+    return {
+        "user_goal": str(session.get("user_goal") or memory.get("user_goal") or ""),
+        "current_state": _dict(session.get("current_state")),
+        "latest_intent": str(latest_turn.get("intent") or ""),
+        "failure_category": str(tests.get("failure_category") or ""),
+        "failure_signal": str(tests.get("failure_signal") or ""),
+        "blocker": str(_dict(blockers[-1]).get("blocker") or "") if blockers else "",
+        "top_function": str(_dict(topk[0]).get("function") or "") if topk else "",
+        "constraints": _list(memory.get("constraints")),
+        "repair_strategy_preferences": _list(
+            memory.get("repair_strategy_preferences")
+        ),
+    }
+
+
+def _evidence_memory_summary(evidence: dict[str, Any]) -> dict[str, Any]:
+    records = [_dict(item) for item in _list(evidence.get("records"))]
+    return {
+        "schema_version": _int(evidence.get("schema_version", 0)),
+        "retrieval_algorithm": str(evidence.get("retrieval_algorithm") or ""),
+        "record_count": _int(evidence.get("record_count", len(records))),
+        "active_record_count": _int(
+            evidence.get(
+                "active_record_count",
+                sum(1 for item in records if item.get("status") == "active"),
+            )
+        ),
+        "stale_record_count": _int(
+            evidence.get(
+                "stale_record_count",
+                sum(1 for item in records if item.get("status") == "stale"),
+            )
+        ),
+        "layers": sorted(
+            {
+                str(item.get("layer") or "")
+                for item in records
+                if str(item.get("layer") or "")
+            }
+        ),
+        "required_record_fields": [
+            "memory_id",
+            "layer",
+            "kind",
+            "source",
+            "created_at",
+            "repo",
+            "repository_ref",
+            "evidence_path",
+            "confidence",
+            "validation",
+        ],
+    }
 
 
 def _read_json(path: str | Path) -> Any:

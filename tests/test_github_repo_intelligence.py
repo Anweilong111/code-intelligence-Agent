@@ -6593,7 +6593,7 @@ def test_github_repo_intelligence_cli_writes_json_summary(capsys):
         assert saved["agent_memory_report_json"].endswith("agent_memory_report.json")
         assert saved["agent_memory_report_markdown"].endswith("agent_memory_report.md")
         assert saved["agent_memory_report"]["status"] == "pass"
-        assert saved["agent_memory_report"]["ready_layer_count"] == 4
+        assert saved["agent_memory_report"]["ready_layer_count"] == 5
         assert json.loads(
             (output_dir / "agent_memory_report.json").read_text(encoding="utf-8")
         ) == saved["agent_memory_report"]

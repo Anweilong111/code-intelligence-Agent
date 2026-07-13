@@ -7,6 +7,9 @@ from typing import Any
 
 from code_intelligence_agent.agents.session_memory import (
     chat_with_session,
+    delete_session_memory,
+    inspect_session_memory,
+    reset_session_memory,
     resume_session,
 )
 
@@ -27,6 +30,36 @@ def main(argv: list[str] | None = None) -> None:
         return
     elif args.command == "resume":
         result = resume_session(args.session, memory_root=args.memory_root)
+    elif args.command == "memory-show":
+        result = inspect_session_memory(
+            args.session,
+            memory_root=args.memory_root,
+            query=args.query,
+            layer=args.layer,
+            top_k=args.top_k,
+        )
+        print(_render_memory_result(result, fmt=args.format))
+        return
+    elif args.command == "memory-delete":
+        if not args.yes:
+            parser.error("memory-delete requires --yes")
+        result = delete_session_memory(
+            args.session,
+            args.memory_id,
+            memory_root=args.memory_root,
+        )
+        print(_render_memory_result(result, fmt=args.format))
+        return
+    elif args.command == "memory-reset":
+        if not args.yes:
+            parser.error("memory-reset requires --yes")
+        result = reset_session_memory(
+            args.session,
+            memory_root=args.memory_root,
+            scope=args.scope,
+        )
+        print(_render_memory_result(result, fmt=args.format))
+        return
     else:
         parser.error(f"Unsupported session command: {args.command}")
         return
@@ -63,6 +96,44 @@ def build_arg_parser() -> argparse.ArgumentParser:
     resume.add_argument("--session", required=True, help="Session id, session dir, or session json.")
     resume.add_argument("--memory-root", help="Override local Agent memory root.")
     resume.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    memory_show = subparsers.add_parser(
+        "memory-show",
+        help="Inspect traceable Top-k memory records for a session.",
+    )
+    memory_show.add_argument("--session", required=True)
+    memory_show.add_argument("--memory-root")
+    memory_show.add_argument("--query", default="")
+    memory_show.add_argument("--layer", choices=[
+        "",
+        "working_memory",
+        "session_memory",
+        "repo_memory",
+        "repair_memory",
+        "cross_repo_pattern_memory",
+    ], default="")
+    memory_show.add_argument("--top-k", type=int, default=8)
+    memory_show.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    memory_delete = subparsers.add_parser(
+        "memory-delete",
+        help="Delete one traceable memory record from a session.",
+    )
+    memory_delete.add_argument("--session", required=True)
+    memory_delete.add_argument("--memory-id", required=True)
+    memory_delete.add_argument("--memory-root")
+    memory_delete.add_argument("--yes", action="store_true")
+    memory_delete.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    memory_reset = subparsers.add_parser(
+        "memory-reset",
+        help="Reset session, repair, or all repository-scoped memory.",
+    )
+    memory_reset.add_argument("--session", required=True)
+    memory_reset.add_argument("--scope", choices=["session", "repair", "all"], default="session")
+    memory_reset.add_argument("--memory-root")
+    memory_reset.add_argument("--yes", action="store_true")
+    memory_reset.add_argument("--format", choices=["json", "markdown"], default="markdown")
     return parser
 
 
@@ -191,6 +262,43 @@ def _render_result(result: dict[str, Any], *, fmt: str) -> str:
             lines.append(f"- `{_md(key)}` = `{_md(value)}`")
         lines.append("")
     return "\n".join(lines)
+
+
+def _render_memory_result(result: dict[str, Any], *, fmt: str) -> str:
+    if fmt == "json":
+        return json.dumps(result, indent=2, ensure_ascii=False)
+    retrieval = _dict(result.get("retrieval"))
+    lines = [
+        "# Agent Memory Operation",
+        "",
+        f"- Status: `{_md(result.get('status'))}`",
+        f"- Reason: `{_md(result.get('reason'))}`",
+    ]
+    if result.get("scope"):
+        lines.append(f"- Scope: `{_md(result.get('scope'))}`")
+    if result.get("memory_id"):
+        lines.append(f"- Memory ID: `{_md(result.get('memory_id'))}`")
+    if retrieval:
+        lines.extend(
+            [
+                f"- Algorithm: `{_md(retrieval.get('algorithm'))}`",
+                f"- Selected: {_int(retrieval.get('selected_count', 0))}/{_int(retrieval.get('candidate_count', 0))}",
+                "",
+                "| Memory ID | Layer | Kind | Score | Source | Evidence |",
+                "| --- | --- | --- | ---: | --- | --- |",
+            ]
+        )
+        for item_value in retrieval.get("records", []):
+            item = _dict(item_value)
+            lines.append(
+                "| "
+                f"`{_md(item.get('memory_id'))}` | "
+                f"`{_md(item.get('layer'))}` | "
+                f"`{_md(item.get('kind'))}` | "
+                f"{float(item.get('retrieval_score') or 0.0):.4f} | "
+                f"{_md(item.get('source'))} | {_md(item.get('evidence_path'))} |"
+            )
+    return "\n".join(lines) + "\n"
 
 
 def _dict(value: Any) -> dict[str, Any]:

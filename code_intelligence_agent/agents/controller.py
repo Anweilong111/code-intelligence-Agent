@@ -22,6 +22,7 @@ from code_intelligence_agent.agents.action_registry import (
     render_agent_policy_trace_markdown,
     validate_action_arguments,
 )
+from code_intelligence_agent.agents.evidence_memory import memory_policy_hints
 
 
 AGENT_LOOP = ["observe", "plan", "act", "verify", "reflect", "replan"]
@@ -4427,6 +4428,24 @@ def _llm_planner_memory_context(summary: dict[str, Any]) -> dict[str, Any]:
     session_layer = _dict(layers.get("session_memory"))
     repo_layer = _dict(layers.get("repo_memory"))
     repair_layer = _dict(layers.get("repair_memory"))
+    retrieval = _dict(memory_report.get("retrieval"))
+    retrieved_memories = []
+    for item_value in _list(retrieval.get("records"))[:8]:
+        item = _dict(item_value)
+        retrieved_memories.append(
+            {
+                "memory_id": str(item.get("memory_id") or ""),
+                "layer": str(item.get("layer") or ""),
+                "kind": str(item.get("kind") or ""),
+                "summary": str(item.get("summary") or ""),
+                "content": _dict(item.get("content")),
+                "source": str(item.get("source") or ""),
+                "evidence_path": str(item.get("evidence_path") or ""),
+                "confidence": _float(item.get("confidence", 0.0)),
+                "retrieval_score": _float(item.get("retrieval_score", 0.0)),
+                "retrieval_reason": _list(item.get("retrieval_reason")),
+            }
+        )
     agent_session = _dict(summary.get("agent_session"))
     patch_attempts = _list(summary.get("patch_attempt_history"))
     failed_patch_count = _int(
@@ -4480,6 +4499,9 @@ def _llm_planner_memory_context(summary: dict[str, Any]) -> dict[str, Any]:
         memory_used.append("repair_strategy_preferences")
     if failed_fingerprints:
         memory_used.append("failed_patch_fingerprints")
+    if retrieved_memories:
+        memory_used.append("evidence_memory_top_k")
+    policy_hints = memory_policy_hints({"records": retrieved_memories})
     return {
         "available": bool(
             agent_session
@@ -4489,9 +4511,22 @@ def _llm_planner_memory_context(summary: dict[str, Any]) -> dict[str, Any]:
             or constraints
             or strategy_preferences
             or failed_fingerprints
+            or retrieved_memories
         ),
         "sources": memory_used,
         "memory_used": memory_used,
+        "retrieval": {
+            "status": str(retrieval.get("status") or "missing"),
+            "algorithm": str(retrieval.get("algorithm") or ""),
+            "candidate_count": _int(retrieval.get("candidate_count", 0)),
+            "selected_count": len(retrieved_memories),
+            "selected_memory_ids": [
+                item["memory_id"] for item in retrieved_memories
+            ],
+            "discarded_counts": _dict(retrieval.get("discarded_counts")),
+        },
+        "retrieved_memories": retrieved_memories,
+        "policy_hints": policy_hints,
         "session_memory": {
             "session_id": str(agent_session.get("session_id") or session_layer.get("session_id") or ""),
             "turn_count": _int(agent_session.get("turn_count") or session_layer.get("turn_count") or 0),

@@ -324,6 +324,28 @@ def test_agent_controller_llm_planner_prompt_uses_memory_context():
         "turn_count": 3,
     }
     summary["agent_memory_report"] = {
+        "retrieval": {
+            "status": "pass",
+            "algorithm": "structured_relevance_v1",
+            "candidate_count": 5,
+            "selected_count": 1,
+            "selected_memory_ids": ["mem_failed_patch"],
+            "discarded_counts": {"stale_repository_version": 1},
+            "records": [
+                {
+                    "memory_id": "mem_failed_patch",
+                    "layer": "repair_memory",
+                    "kind": "patch_attempt",
+                    "summary": "failed assertion patch",
+                    "content": {"diff_fingerprint": "diff-fp-1"},
+                    "source": "patch_validation",
+                    "evidence_path": "outputs/patch_validation.json",
+                    "confidence": 0.92,
+                    "retrieval_score": 1.1,
+                    "retrieval_reason": ["repair_context_match"],
+                }
+            ],
+        },
         "memory_layers": {
             "session_memory": {
                 "session_id": "example-session",
@@ -362,6 +384,13 @@ def test_agent_controller_llm_planner_prompt_uses_memory_context():
     assert memory["repair_memory"]["repair_strategy_preferences"] == [
         "prefer guard clause"
     ]
+    assert memory["retrieval"]["algorithm"] == "structured_relevance_v1"
+    assert memory["retrieval"]["selected_memory_ids"] == ["mem_failed_patch"]
+    assert memory["retrieved_memories"][0]["evidence_path"] == (
+        "outputs/patch_validation.json"
+    )
+    assert "evidence_memory_top_k" in memory["memory_used"]
+    assert memory["policy_hints"]["failed_patch_fingerprints"] == ["diff-fp-1"]
     assert prompt["response_schema"]["memory_used"] == [
         "string memory source or fact used for the decision"
     ]

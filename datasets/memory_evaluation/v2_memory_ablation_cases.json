@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_evidence_memory_controlled_cases",
+  "cases": [
+    {
+      "id": "preserve_public_api_constraint",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "repair failure", "constraints": ["do not modify public API"]},
+      "top_k": 3,
+      "expected_memory_ids": ["mem_constraint_api"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"constraints": ["do not modify public API"]},
+      "records": [
+        {
+          "memory_id": "mem_constraint_api",
+          "layer": "session_memory",
+          "kind": "user_constraint",
+          "status": "active",
+          "source": "user_input",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "sessions/session-1/agent_memory.json",
+          "confidence": 1.0,
+          "version_scope": "session",
+          "validation": {"status": "explicit", "authority": "user"},
+          "content": {"constraint": "do not modify public API"}
+        }
+      ]
+    },
+    {
+      "id": "avoid_failed_patch_fingerprint",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "generate another repair patch", "failure": "assertion failure"},
+      "top_k": 3,
+      "expected_memory_ids": ["mem_failed_patch_1"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"failed_patch_fingerprints": ["diff-fp-1"]},
+      "records": [
+        {
+          "memory_id": "mem_failed_patch_1",
+          "layer": "repair_memory",
+          "kind": "patch_attempt",
+          "status": "active",
+          "source": "patch_validation",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "outputs/patch_validation.json",
+          "confidence": 0.95,
+          "version_scope": "repo_commit",
+          "validation": {"status": "failed", "authority": "sandbox_pytest"},
+          "content": {"failure_type": "assertion_failure", "diff_fingerprint": "diff-fp-1", "sandbox_verified": false}
+        }
+      ]
+    },
+    {
+      "id": "reuse_explicit_repair_strategy",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "plan patch generation", "strategy": "prefer guard clause"},
+      "top_k": 3,
+      "expected_memory_ids": ["mem_strategy_guard"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"repair_strategy_preferences": ["prefer guard clause"]},
+      "records": [
+        {
+          "memory_id": "mem_strategy_guard",
+          "layer": "session_memory",
+          "kind": "repair_strategy_preference",
+          "status": "active",
+          "source": "user_input",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "sessions/session-1/agent_memory.json",
+          "confidence": 1.0,
+          "version_scope": "session",
+          "validation": {"status": "explicit", "authority": "user"},
+          "content": {"strategy": "prefer guard clause"}
+        }
+      ]
+    },
+    {
+      "id": "reuse_repository_test_command",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "rerun pytest tests", "stage": "dynamic diagnosis"},
+      "top_k": 3,
+      "expected_memory_ids": ["mem_test_command"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"test_commands": ["python -m pytest tests"]},
+      "records": [
+        {
+          "memory_id": "mem_test_command",
+          "layer": "repo_memory",
+          "kind": "test_environment_and_result",
+          "status": "active",
+          "source": "repository_test_diagnosis",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "outputs/test_plan.json",
+          "confidence": 0.98,
+          "version_scope": "repo_commit",
+          "validation": {"status": "fail", "authority": "sandbox_pytest"},
+          "content": {"command": "python -m pytest tests", "status": "fail"}
+        }
+      ]
+    },
+    {
+      "id": "reuse_current_blocker",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "plan next action", "blocker": "missing dependency"},
+      "top_k": 3,
+      "expected_memory_ids": ["mem_blocker_dependency"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"blockers": ["missing_dependency"]},
+      "records": [
+        {
+          "memory_id": "mem_blocker_dependency",
+          "layer": "working_memory",
+          "kind": "latest_blocker",
+          "status": "active",
+          "source": "test_environment_doctor",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "outputs/test_doctor.json",
+          "confidence": 0.95,
+          "version_scope": "repo_commit",
+          "validation": {"status": "observed", "authority": "agent_artifact"},
+          "content": {"blocker": "missing_dependency", "next_action": "diagnose dependency"}
+        }
+      ]
+    },
+    {
+      "id": "reuse_verified_cross_repo_pattern",
+      "repo": "new/project",
+      "repository_ref": "new123",
+      "session_id": "session-new",
+      "query": {"goal": "repair missing key failure with hybrid strategy"},
+      "top_k": 3,
+      "expected_memory_ids": ["pattern_missing_key"],
+      "expected_excluded_ids": [],
+      "expected_hints": {},
+      "records": [
+        {
+          "memory_id": "pattern_missing_key",
+          "layer": "cross_repo_pattern_memory",
+          "kind": "verified_repair_pattern",
+          "status": "active",
+          "source": "sandbox_verified_repair_promotion",
+          "repo": "source/project",
+          "repository_ref": "source123",
+          "session_id": "source-session",
+          "evidence_path": "source-output/patch_validation.json",
+          "confidence": 1.0,
+          "version_scope": "global",
+          "validation": {"status": "verified", "authority": "sandbox_pytest"},
+          "content": {"failure_type": "missing_key", "target_shape": "load_user", "generator": "hybrid", "repair_outcome": "sandbox_verified"}
+        }
+      ]
+    },
+    {
+      "id": "reject_stale_repository_version",
+      "repo": "example/project",
+      "repository_ref": "new456",
+      "session_id": "session-new-ref",
+      "query": {"goal": "repair current checkout"},
+      "top_k": 3,
+      "expected_memory_ids": [],
+      "expected_excluded_ids": ["mem_old_ref_patch"],
+      "expected_hints": {},
+      "records": [
+        {
+          "memory_id": "mem_old_ref_patch",
+          "layer": "repair_memory",
+          "kind": "patch_attempt",
+          "status": "active",
+          "source": "patch_validation",
+          "repo": "example/project",
+          "repository_ref": "old123",
+          "session_id": "session-old-ref",
+          "evidence_path": "old-output/patch_validation.json",
+          "confidence": 0.95,
+          "version_scope": "repo_commit",
+          "validation": {"status": "failed", "authority": "sandbox_pytest"},
+          "content": {"diff_fingerprint": "old-diff", "sandbox_verified": false}
+        }
+      ]
+    },
+    {
+      "id": "combined_constraint_and_patch_history",
+      "repo": "example/project",
+      "repository_ref": "abc123",
+      "session_id": "session-1",
+      "query": {"goal": "repair without changing public API or repeating failed patch"},
+      "top_k": 4,
+      "expected_memory_ids": ["mem_constraint_combined", "mem_failed_patch_combined"],
+      "expected_excluded_ids": [],
+      "expected_hints": {"constraints": ["preserve public signature"], "failed_patch_fingerprints": ["diff-combined"]},
+      "records": [
+        {
+          "memory_id": "mem_constraint_combined",
+          "layer": "session_memory",
+          "kind": "user_constraint",
+          "status": "active",
+          "source": "user_input",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "sessions/session-1/agent_memory.json",
+          "confidence": 1.0,
+          "version_scope": "session",
+          "validation": {"status": "explicit", "authority": "user"},
+          "content": {"constraint": "preserve public signature"}
+        },
+        {
+          "memory_id": "mem_failed_patch_combined",
+          "layer": "repair_memory",
+          "kind": "patch_attempt",
+          "status": "active",
+          "source": "patch_validation",
+          "repo": "example/project",
+          "repository_ref": "abc123",
+          "session_id": "session-1",
+          "evidence_path": "outputs/patch_validation.json",
+          "confidence": 0.95,
+          "version_scope": "repo_commit",
+          "validation": {"status": "failed", "authority": "sandbox_pytest"},
+          "content": {"failure_type": "assertion_failure", "diff_fingerprint": "diff-combined", "sandbox_verified": false}
+        }
+      ]
+    }
+  ]
+}

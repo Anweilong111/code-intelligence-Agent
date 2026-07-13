@@ -87,7 +87,7 @@ flowchart TD
 | `agent_action_registry.json/md` | 可执行 action 列表与条件 |
 | `agent_policy_trace.json/md` | 当前状态到 selected action 的映射过程 |
 | `agent_execution_trace.json/md` | 每个 Agent action 的 planned / executed / skipped / blocked / failed / verified 状态、命令、returncode、证据文件和下一步决策 |
-| `agent_memory_report.json/md` | 分层记忆报告，覆盖 Session / Repo / Repair / Long-term Pattern Memory 以及 patch/reflection/replan 复用证据 |
+| `agent_memory_report.json/md` | 五层证据记忆报告，覆盖 Working / Session / Repo / Repair / Cross-repo Pattern Memory、Top-k 检索轨迹以及 patch/reflection/replan 复用证据 |
 | `agent_decision_report.json/md` | Agent 决策报告，汇总规则 selected action、LLM planner decision、安全门控、执行状态和下一步计划 |
 | `repository_profile.json/md` | 仓库画像、layout profile、配置文件、依赖与 runner 信号 |
 | `repository_structure.json/md` | 源码、模块、函数、类和结构摘要 |
@@ -101,7 +101,9 @@ flowchart TD
 | `repository_test_patch_validation.json/md` | sandbox 验证结果、失败类型和成功补丁 |
 | `reflection_trace.json/md` | 失败补丁到 refined candidate 的反思轨迹 |
 | `agent_session.json` | 当前 Agent 会话元数据，包括 session_id、repo、ref、输出目录、运行配置和当前状态 |
-| `agent_memory.json` | 持久化记忆，包括仓库画像、Top-k、测试结果、blocker、补丁尝试、用户意图和每轮决策轨迹 |
+| `agent_memory.json` | 持久化记忆，包括仓库画像、Top-k、测试结果、blocker、补丁尝试、用户意图、压缩摘要和每轮决策轨迹 |
+| `agent_evidence_memory.json` | 统一证据记忆条目，每条包含 source、time、repo/ref、evidence path、confidence、validation authority 和失效状态 |
+| `agent_memory_retrieval.json` | 当前任务检索出的 Top-k 记忆、相关度分解、使用原因及被过滤的过期/跨版本记录 |
 | `agent_session_report.md` | 多轮会话审计报告，包括 session timeline、memory usage evidence、intent history、patch history 和 blocker evolution |
 
 ## P6 验证结果
@@ -291,7 +293,8 @@ python -m code_intelligence_agent agent pypa/sampleproject --format markdown
 多轮会话与记忆系统：
 
 每次 GitHub repo Agent 分析都会自动生成 `agent_session.json`、
-`agent_memory.json` 和 `agent_session_report.md`。本地还会维护
+`agent_memory.json`、`agent_evidence_memory.json`、
+`agent_memory_retrieval.json` 和 `agent_session_report.md`。本地还会维护
 `.code_intelligence_agent/sessions/index.json`，用于通过 `session_id`
 恢复历史会话；该目录已加入 `.gitignore`，不会作为发布内容上传。
 
@@ -364,6 +367,60 @@ python -m code_intelligence_agent chat-ui ^
 当用户选择继续修复时，chat 输出会给出 `CIA_AGENT_PATCH_MEMORY` 环境变量；
 hybrid/LLM patch generation 会读取该 `agent_memory.json`，把失败补丁指纹、
 patch attempt history 和用户约束写入 LLM repair context，避免重复生成同类失败补丁。
+
+V2 记忆不是把完整历史直接拼进 Prompt。系统先把状态规范化为五层证据条目：
+
+- `Working Memory`：当前 observation、阶段、action、verify 和 replan。
+- `Session Memory`：用户目标、显式约束、作用域、策略偏好和压缩后的对话摘要。
+- `Repo Memory`：当前 commit 的仓库画像、Program Graph、Top-k、测试命令和动态结果。
+- `Repair Memory`：补丁指纹、sandbox 结果、失败类型和 reflection 证据。
+- `Cross-repo Pattern Memory`：只接收经过 sandbox pytest 验证成功的通用修复模式。
+
+每轮 Planner 和 hybrid/LLM patch generation 都会运行
+`structured_relevance_v1`：先按 session/repo/commit/status/expiry 做结构化过滤，
+再使用 confidence、关键词重合、layer prior、任务类型和 evidence 可追溯性计算相关度，
+只注入 Top-k 记录。commit 不匹配的 Repo/Repair Memory 会作为
+`stale_repository_version` 被过滤；失败补丁指纹仍作为完整安全去重集合保留。
+当保留的原始 turn 超过 40 条时，系统将旧 turn 聚合为 intent/action 计数摘要，
+保留最近 24 条；用户约束独立持久化，不因压缩丢失。当前实现先使用结构化检索，
+没有为了展示而引入向量数据库。
+
+查看、删除或重置记忆：
+
+```bash
+python -m code_intelligence_agent memory-show ^
+  --session <session_id> ^
+  --query "本轮修复使用了哪些约束和失败补丁" ^
+  --top-k 8 ^
+  --format markdown
+
+python -m code_intelligence_agent memory-delete ^
+  --session <session_id> ^
+  --memory-id <memory_id> ^
+  --yes ^
+  --format json
+
+python -m code_intelligence_agent memory-reset ^
+  --session <session_id> ^
+  --scope session ^
+  --yes ^
+  --format json
+```
+
+复现 With Memory / Without Memory 受控消融：
+
+```bash
+python -m code_intelligence_agent.evaluation.memory_ablation_evaluation ^
+  datasets/memory_evaluation/v2_memory_ablation_cases.json ^
+  outputs/phase3_memory_ablation ^
+  --format markdown ^
+  --require-pass
+```
+
+消融报告衡量结构化检索和 policy hints 是否保留约束、规避已知失败补丁并拒绝
+过期 commit 证据；它不代表 live LLM 推理质量或真实 GitHub 仓库修复成功率。
+Phase 3 的验收证据位于 `docs/v2/phase3_memory_metrics.json` 和
+`docs/v2/phase3_evidence_memory.md`。
 
 分析一个公开 GitHub 仓库：
 

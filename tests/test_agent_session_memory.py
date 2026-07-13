@@ -13,6 +13,9 @@ from code_intelligence_agent.agents.session_memory import (
     LOOP,
     chat_with_session,
     create_or_update_session_from_summary,
+    delete_session_memory,
+    inspect_session_memory,
+    reset_session_memory,
     resume_session,
 )
 from code_intelligence_agent.evaluation import github_repo_intelligence
@@ -56,6 +59,8 @@ def test_session_memory_persists_compact_redacted_repo_state(tmp_path):
     assert Path(session["agent_memory_report_path"]).exists()
     assert Path(session["agent_decision_report_json"]).exists()
     assert Path(session["agent_decision_report_path"]).exists()
+    assert Path(session["evidence_memory_path"]).exists()
+    assert Path(session["memory_retrieval_path"]).exists()
     memory_text = Path(session["memory_path"]).read_text(encoding="utf-8")
     assert fake_secret not in memory_text
     assert "source_cache" not in memory_text
@@ -82,7 +87,12 @@ def test_session_memory_persists_compact_redacted_repo_state(tmp_path):
         encoding="utf-8"
     )
     assert memory_report["status"] == "pass"
-    assert memory_report["ready_layer_count"] == 4
+    assert memory_report["ready_layer_count"] == 5
+    assert memory_report["layer_count"] == 5
+    assert memory_report["retrieval"]["selected_memory_ids"]
+    assert memory_report["evidence_memory"]["retrieval_algorithm"] == (
+        "structured_relevance_v1"
+    )
     assert decision_report["selected_action"]["id"] == "run_llm_patch_reflection_loop"
     assert "LLM Recommended Action" in decision_report_text
     assert "Controller Final Action" in decision_report_text
@@ -518,6 +528,70 @@ def test_top_level_cli_supports_chat_and_resume(tmp_path, capsys):
     assert resume_payload["decision"]["action_id"] == "resume_session_from_memory"
 
 
+def test_top_level_cli_supports_memory_show_delete_and_reset(tmp_path, capsys):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+
+    cli_module.main(
+        [
+            "memory-show",
+            "--session",
+            session["session_id"],
+            "--memory-root",
+            str(memory_root),
+            "--query",
+            "failed patch",
+            "--top-k",
+            "10",
+            "--format",
+            "json",
+        ]
+    )
+    shown = json.loads(capsys.readouterr().out)
+    memory_id = shown["retrieval"]["selected_memory_ids"][0]
+    assert shown["retrieval"]["algorithm"] == "structured_relevance_v1"
+
+    cli_module.main(
+        [
+            "memory-delete",
+            "--session",
+            session["session_id"],
+            "--memory-root",
+            str(memory_root),
+            "--memory-id",
+            memory_id,
+            "--yes",
+            "--format",
+            "json",
+        ]
+    )
+    deleted = json.loads(capsys.readouterr().out)
+    assert deleted["status"] == "pass"
+
+    cli_module.main(
+        [
+            "memory-reset",
+            "--session",
+            session["session_id"],
+            "--memory-root",
+            str(memory_root),
+            "--scope",
+            "repair",
+            "--yes",
+            "--format",
+            "json",
+        ]
+    )
+    reset = json.loads(capsys.readouterr().out)
+    assert reset["status"] == "pass"
+    assert reset["scope"] == "repair"
+
+
 def test_top_level_cli_supports_terminal_chat_ui_loop(
     tmp_path,
     monkeypatch,
@@ -670,6 +744,154 @@ def test_repo_intelligence_cli_auto_creates_agent_session(
     assert Path(payload["agent_session"]["memory_path"]).exists()
     assert len(writes) == 2
     assert "agent_session" in writes[-1]
+
+
+def test_session_memory_can_be_inspected_deleted_and_reset(tmp_path):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+    chat_with_session(
+        session["session_id"],
+        "不要修改公共 API",
+        memory_root=memory_root,
+        llm_intent_enabled=False,
+    )
+
+    inspected = inspect_session_memory(
+        session["session_id"],
+        memory_root=memory_root,
+        query="用户约束 public API",
+        layer="session_memory",
+        top_k=10,
+    )
+    constraint = next(
+        item
+        for item in inspected["retrieval"]["records"]
+        if item["kind"] == "user_constraint"
+    )
+    deleted = delete_session_memory(
+        session["session_id"],
+        constraint["memory_id"],
+        memory_root=memory_root,
+    )
+    after_delete = inspect_session_memory(
+        session["session_id"],
+        memory_root=memory_root,
+        query="用户约束 public API",
+        top_k=20,
+    )
+
+    assert deleted["status"] == "pass"
+    assert constraint["memory_id"] not in after_delete["retrieval"][
+        "selected_memory_ids"
+    ]
+    reset = reset_session_memory(
+        session["session_id"],
+        memory_root=memory_root,
+        scope="session",
+    )
+    loaded = json.loads(Path(reset["session"]["memory_path"]).read_text(encoding="utf-8"))
+    assert reset["status"] == "pass"
+    assert loaded["constraints"] == []
+    assert loaded["turns"] == []
+    assert reset["session"]["turn_count"] == 0
+
+
+def test_session_store_compacts_long_conversation_without_losing_constraints(tmp_path):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+    chat_with_session(
+        session["session_id"],
+        "不要修改公共 API",
+        memory_root=memory_root,
+        llm_intent_enabled=False,
+    )
+    for _ in range(42):
+        chat_with_session(
+            session["session_id"],
+            "查看当前状态",
+            memory_root=memory_root,
+            llm_intent_enabled=False,
+        )
+
+    resumed = resume_session(session["session_id"], memory_root=memory_root)
+    memory = json.loads(Path(resumed["session"]["memory_path"]).read_text(encoding="utf-8"))
+
+    assert resumed["session"]["turn_count"] == 45
+    assert len(memory["turns"]) < resumed["session"]["turn_count"]
+    assert memory["conversation_summary"]["compacted_turn_count"] > 0
+    assert memory["constraints"] == ["不要修改公共 API"]
+    assert resumed["memory_usage_evidence"]["compacted_turn_count"] > 0
+
+
+def test_cross_repo_patterns_only_persist_sandbox_verified_repairs(tmp_path):
+    first = _sample_summary(tmp_path)
+    validation_path = Path(first["repository_test_patch_validation_json"])
+    validation_path.write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "candidate": {
+                            "candidate_id": "patch_verified",
+                            "function_name": "pkg.core.load_user",
+                            "generator": "hybrid",
+                            "diff": "--- a/pkg/core.py\n+++ b/pkg/core.py\n@@\n- old\n+ new\n",
+                        },
+                        "validation": {"status": "pass"},
+                        "status": "pass",
+                        "success": True,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    memory_root = tmp_path / "memory"
+    first_session = create_or_update_session_from_summary(
+        first,
+        memory_root=memory_root,
+    )
+    first_memory = json.loads(
+        Path(first_session["memory_path"]).read_text(encoding="utf-8")
+    )
+
+    assert first_memory["memory_layers"]["cross_repo_pattern_memory"][
+        "pattern_count"
+    ] == 1
+    pattern_store = json.loads(
+        (memory_root / "cross_repo_pattern_memory.json").read_text(encoding="utf-8")
+    )
+    assert pattern_store["record_count"] == 1
+    assert pattern_store["records"][0]["validation"]["authority"] == "sandbox_pytest"
+
+    second_root = tmp_path / "second-analysis"
+    second_root.mkdir()
+    second = dict(first)
+    second["repo"] = "another/project"
+    second["repo_spec"] = "https://github.com/another/project"
+    second["repository_ref"] = "def456"
+    second["output_dir"] = str(second_root)
+    second["repository_test_patch_validation_json"] = ""
+    second_session = create_or_update_session_from_summary(
+        second,
+        memory_root=memory_root,
+    )
+    second_memory = json.loads(
+        Path(second_session["memory_path"]).read_text(encoding="utf-8")
+    )
+    assert second_memory["memory_layers"]["cross_repo_pattern_memory"][
+        "pattern_count"
+    ] == 1
 
 
 def _sample_summary(tmp_path: Path) -> dict:

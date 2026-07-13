@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 
+from code_intelligence_agent.agents.evidence_memory import build_evidence_memory
 from code_intelligence_agent.agents.llm_client import LLMRequestError, StaticLLMClient
 from code_intelligence_agent.agents.llm_patch_generator import LLMPatchGenerator
 from code_intelligence_agent.evaluation.repository_test_fault_localization import (
@@ -254,24 +255,35 @@ def test_repository_test_patch_candidates_llm_reads_session_patch_memory(
         top_k=3,
     )
     memory_path = tmp_path / "agent_memory.json"
-    memory_path.write_text(
-        json.dumps(
+    memory_payload = {
+        "session_id": "patch-memory-session",
+        "repo_profile": {
+            "repo": "sample/project",
+            "repository_ref": "abc123",
+        },
+        "patch_attempt_history": [
             {
-                "patch_attempt_history": [
-                    {
-                        "candidate_id": "bad_patch_1",
-                        "target_function": "sample.shift_left",
-                        "failure_type": "assertion_failure",
-                        "sandbox_status": "fail",
-                        "passed": False,
-                        "diff_fingerprint": "failed-diff-fp",
-                    }
-                ],
-                "constraints": ["不要修改公共 API"],
+                "candidate_id": "bad_patch_1",
+                "target_function": "sample.shift_left",
+                "status": "fail",
+                "failure_type": "assertion_failure",
+                "sandbox_status": "fail",
+                "passed": False,
+                "diff_fingerprint": "failed-diff-fp",
             }
-        ),
-        encoding="utf-8",
+        ],
+        "constraints": ["不要修改公共 API"],
+    }
+    memory_payload["evidence_memory"] = build_evidence_memory(
+        memory_payload,
+        {
+            "session_id": "patch-memory-session",
+            "repo": "sample/project",
+            "repository_ref": "abc123",
+            "memory_path": str(memory_path),
+        },
     )
+    memory_path.write_text(json.dumps(memory_payload), encoding="utf-8")
     monkeypatch.setenv("CIA_AGENT_PATCH_MEMORY", str(memory_path))
     monkeypatch.setenv("CIA_AGENT_REPAIR_STRATEGY", "prefer guard clause")
     fixed_source = (
@@ -308,6 +320,13 @@ def test_repository_test_patch_candidates_llm_reads_session_patch_memory(
         ][0]["candidate_id"]
         == "bad_patch_1"
     )
+    retrieval = prompt_payload["dynamic_oracle"]["session_patch_memory"][
+        "evidence_retrieval"
+    ]
+    assert retrieval["status"] == "pass"
+    assert retrieval["algorithm"] == "structured_relevance_v1"
+    assert retrieval["selected_memory_ids"]
+    assert retrieval["policy_hints"]["constraints"] == ["不要修改公共 API"]
     assert "User constraint: 不要修改公共 API" in prompt_payload["constraints"]
     assert any(
         "session_patch_memory" in constraint

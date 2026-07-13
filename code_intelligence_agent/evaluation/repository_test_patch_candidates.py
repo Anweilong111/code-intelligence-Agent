@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
+from code_intelligence_agent.agents.evidence_memory import (
+    memory_policy_hints,
+    retrieve_evidence_memories,
+)
 from code_intelligence_agent.agents.llm_client import (
     LLMRequestError,
     llm_config_audit,
@@ -802,6 +806,24 @@ def _session_patch_memory_from_env() -> dict[str, Any]:
     if not path:
         return {}
     payload = _dict(_read_json(path))
+    evidence_memory = _dict(payload.get("evidence_memory"))
+    repo_profile = _dict(payload.get("repo_profile"))
+    retrieval = retrieve_evidence_memories(
+        evidence_memory,
+        {
+            "goal": "generate a non-repeated repair patch",
+            "required_evidence": [
+                "failed patch fingerprints",
+                "user constraints",
+                "repair strategy preferences",
+                "verified cross-repo repair patterns",
+            ],
+        },
+        repo=str(repo_profile.get("repo") or ""),
+        repository_ref=str(repo_profile.get("repository_ref") or ""),
+        session_id=str(payload.get("session_id") or ""),
+        top_k=8,
+    ) if evidence_memory else {}
     layers = _dict(payload.get("memory_layers"))
     repair_memory = _dict(layers.get("repair_memory"))
     repo_memory = _dict(layers.get("repo_memory"))
@@ -858,6 +880,7 @@ def _session_patch_memory_from_env() -> dict[str, Any]:
         for item in patch_attempts
         if str(item.get("fixed_source_fingerprint") or "")
     ] + layer_source_fingerprints
+    policy_hints = memory_policy_hints(retrieval)
     return {
         "source": "CIA_AGENT_PATCH_MEMORY",
         "memory_path": path,
@@ -882,6 +905,32 @@ def _session_patch_memory_from_env() -> dict[str, Any]:
         "latest_failure_category": str(
             repair_memory.get("latest_failure_category") or ""
         ),
+        "evidence_retrieval": {
+            "status": str(retrieval.get("status") or "missing"),
+            "algorithm": str(retrieval.get("algorithm") or ""),
+            "candidate_count": _int(retrieval.get("candidate_count", 0)),
+            "selected_count": _int(retrieval.get("selected_count", 0)),
+            "selected_memory_ids": _list(
+                retrieval.get("selected_memory_ids")
+            ),
+            "records": [
+                {
+                    "memory_id": str(_dict(item).get("memory_id") or ""),
+                    "layer": str(_dict(item).get("layer") or ""),
+                    "kind": str(_dict(item).get("kind") or ""),
+                    "summary": str(_dict(item).get("summary") or ""),
+                    "source": str(_dict(item).get("source") or ""),
+                    "evidence_path": str(
+                        _dict(item).get("evidence_path") or ""
+                    ),
+                    "retrieval_score": _float(
+                        _dict(item).get("retrieval_score", 0.0)
+                    ),
+                }
+                for item in _list(retrieval.get("records"))
+            ],
+            "policy_hints": policy_hints,
+        },
         "failed_patch_summaries": [
             {
                 "candidate_id": str(item.get("candidate_id") or ""),
