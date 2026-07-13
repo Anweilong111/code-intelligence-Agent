@@ -26,6 +26,10 @@ REQUIRED_ACTION_IDS = [
 
 
 ACTION_ALIASES = {
+    "rerun_repository_tests_from_session": "run_repository_tests",
+    "narrow_repository_scope": "discover_repository_structure",
+    "change_repair_strategy": "generate_hybrid_patch_candidates",
+    "continue_repair_with_patch_memory": "generate_hybrid_patch_candidates",
     "retry_repository_checkout_or_use_cache": "clone_or_load_repository",
     "retry_with_github_token_or_cache": "clone_or_load_repository",
     "adjust_source_filters": "discover_repository_structure",
@@ -106,7 +110,7 @@ ACTION_SPECS = [
         blocker_type="source_import_blocker",
         retry_policy="relax include/exclude/target-prefix filters before blocker",
         next_possible_actions=["discover_tests", "localize_fault", "emit_blocker_report"],
-        aliases=["adjust_source_filters"],
+        aliases=["adjust_source_filters", "narrow_repository_scope"],
     ),
     AgentActionSpec(
         action_id="discover_tests",
@@ -149,6 +153,7 @@ ACTION_SPECS = [
         retry_policy="narrow timeout/test scope or diagnose environment before blocker",
         next_possible_actions=["localize_fault", "diagnose_environment", "emit_blocker_report"],
         aliases=[
+            "rerun_repository_tests_from_session",
             "run_repository_tests_with_checkout",
             "collect_dynamic_failure_evidence",
             "convert_passing_tests_to_regression_guard",
@@ -270,7 +275,11 @@ ACTION_SPECS = [
         blocker_type="hybrid_patch_blocker",
         retry_policy="keep rule fallback distinct from LLM blocker; do not count rule patch as LLM success",
         next_possible_actions=["validate_patch_in_sandbox", "run_llm_patch_reflection_loop", "emit_blocker_report"],
-        aliases=["regenerate_safe_patch_candidates"],
+        aliases=[
+            "regenerate_safe_patch_candidates",
+            "change_repair_strategy",
+            "continue_repair_with_patch_memory",
+        ],
     ),
     AgentActionSpec(
         action_id="validate_patch_in_sandbox",

@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "name": "code_intelligence_agent_v2_intent_routing",
+  "description": "Bilingual natural-language routing regression set with aliases, constraints, ambiguity, multi-intent requests, and irrelevant turns.",
+  "utterance_count": 112,
+  "groups": [
+    {
+      "expected_intent": "inspect_status",
+      "category": "direct_and_alias",
+      "messages": [
+        "查看当前状态",
+        "当前进度是什么",
+        "告诉我项目进度",
+        "我想看当前状态",
+        "show status",
+        "inspect status",
+        "what is the current status",
+        "show me the progress"
+      ]
+    },
+    {
+      "expected_intent": "explain_failure",
+      "category": "direct_and_alias",
+      "messages": [
+        "解释上一次失败原因",
+        "为什么测试失败了",
+        "这个报错的原因是什么",
+        "解释当前 blocker",
+        "explain the latest failure",
+        "why did the tests fail",
+        "explain this error",
+        "what is the reason for the blocker"
+      ]
+    },
+    {
+      "expected_intent": "continue_repair",
+      "category": "direct_and_alias",
+      "messages": [
+        "继续修复 Top-1 函数",
+        "继续修复",
+        "生成补丁",
+        "修复 Top-1",
+        "continue repair",
+        "generate patch",
+        "repair top-1",
+        "fix top-1"
+      ]
+    },
+    {
+      "expected_intent": "rerun_tests",
+      "category": "direct_and_alias",
+      "messages": [
+        "重新运行 pytest",
+        "重跑测试",
+        "重新运行测试",
+        "重跑 pytest",
+        "rerun tests",
+        "rerun pytest",
+        "run tests again",
+        "run pytest again"
+      ]
+    },
+    {
+      "expected_intent": "narrow_scope",
+      "category": "argument_extraction",
+      "messages": [
+        "只分析 tests 目录",
+        "只看 pkg/core.py 文件",
+        "限定到 src/package 目录",
+        "scope: tests/unit",
+        "only tests",
+        "only src/module.py",
+        "include lib/package",
+        "scope app/core.py"
+      ]
+    },
+    {
+      "expected_intent": "change_constraints",
+      "category": "negation_and_constraints",
+      "messages": [
+        "不要修改公共 API",
+        "不能新增依赖",
+        "避免改动测试文件",
+        "禁止修改数据库结构",
+        "do not change the public API",
+        "don't add dependencies",
+        "avoid editing tests",
+        "do not modify database schemas"
+      ]
+    },
+    {
+      "expected_intent": "change_repair_strategy",
+      "category": "argument_extraction",
+      "messages": [
+        "换一种修复方案",
+        "换个补丁策略",
+        "另一种修复 strategy",
+        "方案：最小差异修复",
+        "use alternative repair strategy",
+        "try a different patch strategy",
+        "another repair approach",
+        "strategy: minimal patch"
+      ]
+    },
+    {
+      "expected_intent": "generate_report",
+      "category": "direct_and_alias",
+      "messages": [
+        "生成最终报告",
+        "生成报告",
+        "导出报告",
+        "请输出最终报告",
+        "generate report",
+        "generate the final report",
+        "export report",
+        "please create a final report"
+      ]
+    },
+    {
+      "expected_intent": "inspect_function",
+      "category": "argument_extraction",
+      "messages": [
+        "查看函数 pkg.core.load_user",
+        "检查函数 app.service.run",
+        "分析函数 parser.parse_item",
+        "函数详情 core.main",
+        "inspect function pkg.core.load_user",
+        "show function app.service.run",
+        "analyze function parser.parse_item",
+        "inspect function core.main"
+      ]
+    },
+    {
+      "expected_intent": "explain_localization",
+      "category": "direct_and_alias",
+      "messages": [
+        "解释定位结果",
+        "为什么这个函数可疑",
+        "解释定位得分",
+        "为什么它排在第一",
+        "explain localization",
+        "why is this function suspicious",
+        "explain the ranking score",
+        "why suspicious"
+      ]
+    },
+    {
+      "expected_intent": "compare_patch_candidates",
+      "category": "direct_and_alias",
+      "messages": [
+        "比较补丁候选",
+        "对比补丁",
+        "比较候选",
+        "帮我比较补丁",
+        "compare patches",
+        "compare candidates",
+        "compare patch candidates",
+        "please compare patches"
+      ]
+    },
+    {
+      "expected_intent": "rollback_last_action",
+      "category": "high_risk",
+      "messages": [
+        "回滚上一步",
+        "撤销上一步",
+        "撤销刚才的操作",
+        "请回滚",
+        "rollback",
+        "rollback last action",
+        "undo last action",
+        "please rollback"
+      ]
+    },
+    {
+      "expected_intent": "stop_execution",
+      "category": "control",
+      "messages": [
+        "停止执行",
+        "终止执行",
+        "取消执行",
+        "现在停止执行",
+        "stop execution",
+        "cancel execution",
+        "abort",
+        "please stop execution"
+      ]
+    },
+    {
+      "expected_intent": "ask_for_clarification",
+      "category": "ambiguous_multi_intent_irrelevant",
+      "messages": [
+        "",
+        "你好",
+        "帮我看看",
+        "你觉得呢",
+        "继续",
+        "分析并处理一下",
+        "重新运行 pytest 并生成报告",
+        "解释失败原因并生成最终报告"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "phase": "phase1_llm_natural_language_task_routing",
+  "status": "pass",
+  "dataset": {
+    "path": "datasets/intent_routing/v2_intent_routing_112.json",
+    "utterance_count": 112,
+    "supported_intent_count": 14,
+    "covered_intent_count": 14,
+    "languages": [
+      "zh",
+      "en"
+    ],
+    "covered_categories": [
+      "aliases",
+      "negation",
+      "ambiguity",
+      "multi_intent",
+      "irrelevant",
+      "high_risk"
+    ]
+  },
+  "rule_fallback_evaluation": {
+    "correct": 112,
+    "total": 112,
+    "accuracy": 1.0,
+    "required_minimum": 0.9,
+    "status": "pass"
+  },
+  "new_module_coverage": {
+    "module": "code_intelligence_agent.agents.intent_router",
+    "method": "python_stdlib_trace_line_coverage",
+    "line_coverage": 0.97,
+    "required_minimum": 0.85,
+    "status": "pass"
+  },
+  "regression": {
+    "v1_baseline_passed_tests": 1127,
+    "phase1_passed_tests": 1150,
+    "phase1_failed_tests": 0,
+    "full_suite_duration_seconds": 588.92,
+    "status": "pass"
+  },
+  "acceptance_gates": {
+    "llm_function_calling_and_schema_validation": "pass",
+    "rule_fallback_on_missing_or_failed_llm": "pass",
+    "low_confidence_requests_clarification": "pass",
+    "all_chat_execution_actions_use_action_registry": "pass",
+    "unrecognized_input_does_not_execute": "pass",
+    "ten_turn_terminal_chat": "pass",
+    "session_resume_preserves_constraints_and_execution_state": "pass",
+    "raw_api_key_scan": "pass"
+  },
+  "reproduction": {
+    "intent_tests": "python -m pytest tests/test_agent_intent_router.py tests/test_intent_routing_dataset.py tests/test_agent_session_memory.py -q",
+    "coverage": "python -m trace --count --missing --summary --coverdir outputs/phase1_trace_coverage --ignore-dir $env:CONDA_PREFIX\\Lib --module pytest tests/test_agent_intent_router.py tests/test_intent_routing_dataset.py tests/test_agent_session_memory.py -q",
+    "release_hygiene": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs/phase1_release_hygiene --require-pass"
+  }
+}

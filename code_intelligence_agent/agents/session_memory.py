@@ -9,17 +9,28 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from code_intelligence_agent.agents.action_registry import (
+    action_spec_for,
+    canonical_action_id,
+)
 from code_intelligence_agent.agents.intent_parser import (
+    INTENT_ASK_FOR_CLARIFICATION,
     INTENT_CHANGE_CONSTRAINTS,
     INTENT_CHANGE_REPAIR_STRATEGY,
+    INTENT_COMPARE_PATCH_CANDIDATES,
     INTENT_CONTINUE_REPAIR,
     INTENT_EXPLAIN_FAILURE,
+    INTENT_EXPLAIN_LOCALIZATION,
     INTENT_GENERATE_REPORT,
+    INTENT_INSPECT_FUNCTION,
     INTENT_INSPECT_STATUS,
     INTENT_NARROW_SCOPE,
     INTENT_RERUN_TESTS,
-    parse_user_intent,
+    INTENT_ROLLBACK_LAST_ACTION,
+    INTENT_STOP_EXECUTION,
 )
+from code_intelligence_agent.agents.intent_router import route_user_intent
+from code_intelligence_agent.agents.llm_client import LLMClient
 
 
 SESSION_SCHEMA_VERSION = 1
@@ -123,11 +134,18 @@ class AgentSessionStore:
         message: str,
         *,
         execute: bool = False,
+        intent_client: LLMClient | None = None,
+        llm_intent_enabled: bool | None = None,
     ) -> dict[str, Any]:
         loaded = self.load(session_ref)
         session = _dict(loaded["session"])
         memory = _dict(loaded["memory"])
-        intent = parse_user_intent(message)
+        intent = route_user_intent(
+            message,
+            context=_intent_router_context(session, memory),
+            client=intent_client,
+            llm_enabled=llm_intent_enabled,
+        )
         decision = _decision_for_intent(session, memory, intent, execute=execute)
         turn = _conversation_turn(
             session=session,
@@ -160,9 +178,15 @@ class AgentSessionStore:
         intent = {
             "intent": INTENT_INSPECT_STATUS,
             "message": "resume session",
+            "arguments": {},
             "scope": "",
             "constraints": [],
+            "strategy": "",
+            "function": "",
             "confidence": 1.0,
+            "reason": "explicit resume command",
+            "required_context": ["session_memory"],
+            "source": "explicit_command",
         }
         decision = _decision_for_intent(session, memory, intent, execute=False)
         decision["action_id"] = "resume_session_from_memory"
@@ -359,11 +383,15 @@ def chat_with_session(
     *,
     memory_root: str | Path | None = None,
     execute: bool = False,
+    intent_client: LLMClient | None = None,
+    llm_intent_enabled: bool | None = None,
 ) -> dict[str, Any]:
     return AgentSessionStore(memory_root).chat(
         session_ref,
         message,
         execute=execute,
+        intent_client=intent_client,
+        llm_intent_enabled=llm_intent_enabled,
     )
 
 
@@ -845,6 +873,7 @@ def _memory_layers_from_memory(
             "turn_count": len(_list(memory.get("turns"))),
             "current_status": str(memory.get("current_status") or session.get("status") or ""),
             "active_scope": str(memory.get("active_scope") or ""),
+            "execution_stopped": bool(memory.get("execution_stopped")),
             "constraints": constraints,
             "repair_strategy_preferences": repair_strategy_preferences,
             "intent_count": len(intents),
@@ -1193,7 +1222,8 @@ def _conversation_turn(
             "evidence": (
                 f"intent={intent.get('intent')}; "
                 f"action={decision.get('action_id')}; "
-                f"confidence={intent.get('confidence')}"
+                f"confidence={intent.get('confidence')}; "
+                f"source={intent.get('source') or 'unknown'}"
             ),
         },
         "act": {
@@ -1219,6 +1249,8 @@ def _conversation_turn(
         "source": "chat",
         "created_at": _now(),
         "intent": str(intent.get("intent") or ""),
+        "intent_source": str(intent.get("source") or "unknown"),
+        "intent_router_audit": _redact(_dict(intent.get("router_audit"))),
         "message": str(intent.get("message") or ""),
         "loop": loop,
         "decision": decision,
@@ -1234,6 +1266,19 @@ def _decision_for_intent(
     execute: bool,
 ) -> dict[str, Any]:
     intent_name = str(intent.get("intent") or INTENT_INSPECT_STATUS)
+    executable_intents = {
+        INTENT_RERUN_TESTS,
+        INTENT_NARROW_SCOPE,
+        INTENT_CHANGE_REPAIR_STRATEGY,
+        INTENT_CONTINUE_REPAIR,
+    }
+    if (
+        execute
+        and bool(memory.get("execution_stopped"))
+        and intent_name in executable_intents
+        and not _explicit_execution_resume(intent)
+    ):
+        return _execution_stopped_decision(intent_name)
     if intent_name == INTENT_EXPLAIN_FAILURE:
         return _explain_failure_decision(memory)
     if intent_name == INTENT_RERUN_TESTS:
@@ -1248,7 +1293,234 @@ def _decision_for_intent(
         return _generate_report_decision(session)
     if intent_name == INTENT_CONTINUE_REPAIR:
         return _continue_repair_decision(session, memory, execute=execute)
-    return _inspect_status_decision(memory)
+    if intent_name == INTENT_INSPECT_FUNCTION:
+        return _inspect_function_decision(memory, intent)
+    if intent_name == INTENT_EXPLAIN_LOCALIZATION:
+        return _explain_localization_decision(memory, intent)
+    if intent_name == INTENT_COMPARE_PATCH_CANDIDATES:
+        return _compare_patch_candidates_decision(memory, intent)
+    if intent_name == INTENT_ROLLBACK_LAST_ACTION:
+        return _rollback_last_action_decision(memory)
+    if intent_name == INTENT_STOP_EXECUTION:
+        return _stop_execution_decision()
+    if intent_name == INTENT_ASK_FOR_CLARIFICATION:
+        return _ask_for_clarification_decision(intent)
+    if intent_name == INTENT_INSPECT_STATUS:
+        return _inspect_status_decision(memory)
+    return _ask_for_clarification_decision(
+        {
+            **intent,
+            "reason": f"unsupported intent: {intent_name}",
+        }
+    )
+
+
+def _inspect_function_decision(
+    memory: dict[str, Any],
+    intent: dict[str, Any],
+) -> dict[str, Any]:
+    requested = str(intent.get("function") or "").strip()
+    topk = [_dict(item) for item in _list(memory.get("topk_suspicious_functions"))]
+    match = next(
+        (
+            item
+            for item in topk
+            if str(item.get("function") or "") == requested
+            or str(item.get("function") or "").endswith(f".{requested}")
+        ),
+        {},
+    )
+    if not match:
+        known = ", ".join(
+            str(item.get("function") or "") for item in topk[:5] if item.get("function")
+        )
+        return {
+            "action_id": "inspect_function_from_memory",
+            "answer": (
+                f"Function {requested or '<missing>'} is not present in the stored Top-k. "
+                f"Known functions: {known or 'none'}."
+            ),
+            "executed": False,
+            "reflection": "No matching function-level evidence was found in session memory.",
+            "next_action": "clarify_function_or_refresh_localization",
+            "replan_reason": "Function inspection requires an exact stored function target.",
+        }
+    answer = (
+        f"Function {match.get('function')} is in {match.get('file') or 'an unknown file'}; "
+        f"FinalScore={_float(match.get('final_score', 0.0)):.4f}; "
+        f"evidence={match.get('why') or 'no explanation stored'}."
+    )
+    return {
+        "action_id": "inspect_function_from_memory",
+        "answer": answer,
+        "executed": False,
+        "function": requested,
+        "evidence": match,
+        "reflection": "Function evidence was read from persisted Top-k memory.",
+        "next_action": "explain_localization_or_continue_repair",
+        "replan_reason": "User requested function-level inspection before another action.",
+    }
+
+
+def _explain_localization_decision(
+    memory: dict[str, Any],
+    intent: dict[str, Any],
+) -> dict[str, Any]:
+    requested = str(intent.get("function") or "").strip()
+    topk = [_dict(item) for item in _list(memory.get("topk_suspicious_functions"))]
+    selected = [
+        item
+        for item in topk
+        if not requested
+        or str(item.get("function") or "") == requested
+        or str(item.get("function") or "").endswith(f".{requested}")
+    ][:5]
+    if not selected:
+        return {
+            "action_id": "explain_localization_from_memory",
+            "answer": "No matching localization evidence is stored for that function.",
+            "executed": False,
+            "reflection": "Stored Top-k evidence could not satisfy the requested target.",
+            "next_action": "clarify_function_or_refresh_localization",
+            "replan_reason": "Localization explanation needs a stored ranking entry.",
+        }
+    rows = []
+    for rank, item in enumerate(selected, start=1):
+        rows.append(
+            f"#{rank} {item.get('function')}: FinalScore="
+            f"{_float(item.get('final_score', 0.0)):.4f}; "
+            f"reason={item.get('why') or 'score breakdown unavailable'}"
+        )
+    return {
+        "action_id": "explain_localization_from_memory",
+        "answer": "Localization evidence: " + " | ".join(rows),
+        "executed": False,
+        "evidence": selected,
+        "reflection": "Explained the persisted Top-k ranking without recomputing it.",
+        "next_action": "inspect_function_or_continue_repair",
+        "replan_reason": "User requested ranking evidence before repair.",
+    }
+
+
+def _compare_patch_candidates_decision(
+    memory: dict[str, Any],
+    intent: dict[str, Any],
+) -> dict[str, Any]:
+    attempts = [_dict(item) for item in _list(memory.get("patch_attempt_history"))]
+    candidate_ids = {
+        str(item) for item in _list(intent.get("candidate_ids")) if str(item).strip()
+    }
+    if candidate_ids:
+        attempts = [
+            item
+            for item in attempts
+            if str(item.get("candidate_id") or item.get("id") or "") in candidate_ids
+        ]
+    if not attempts:
+        return {
+            "action_id": "compare_patch_candidates_from_memory",
+            "answer": "No matching patch candidates are stored in this session.",
+            "executed": False,
+            "reflection": "Patch comparison requires at least one persisted candidate.",
+            "next_action": "generate_patch_candidates",
+            "replan_reason": "No candidate evidence was available for comparison.",
+        }
+    summaries = []
+    for index, item in enumerate(attempts[:10], start=1):
+        candidate_id = str(item.get("candidate_id") or item.get("id") or f"candidate_{index}")
+        status = str(
+            item.get("status")
+            or item.get("sandbox_status")
+            or _dict(item.get("validation")).get("status")
+            or "unknown"
+        )
+        target = str(item.get("target_function") or item.get("function_name") or "unknown")
+        summaries.append(f"{candidate_id}: target={target}, status={status}")
+    return {
+        "action_id": "compare_patch_candidates_from_memory",
+        "answer": "Patch comparison: " + " | ".join(summaries),
+        "executed": False,
+        "candidate_count": len(attempts),
+        "reflection": "Compared persisted validation outcomes; no patch was applied.",
+        "next_action": "select_candidate_or_generate_alternative",
+        "replan_reason": "Candidate evidence should be compared before validation or retry.",
+    }
+
+
+def _rollback_last_action_decision(memory: dict[str, Any]) -> dict[str, Any]:
+    reversible = [
+        _dict(turn)
+        for turn in reversed(_list(memory.get("turns")))
+        if _dict(_dict(turn).get("decision")).get("rollback_artifact")
+    ]
+    if not reversible:
+        return {
+            "action_id": "rollback_last_action",
+            "answer": (
+                "Rollback was not executed because this session has no verified "
+                "rollback artifact. Repository changes must not be guessed or reversed blindly."
+            ),
+            "executed": False,
+            "requires_confirmation": True,
+            "blocked": True,
+            "reflection": "No reversible transaction was recorded.",
+            "next_action": "inspect_git_diff_and_request_confirmation",
+            "replan_reason": "Rollback is destructive and requires an auditable restore point.",
+        }
+    return {
+        "action_id": "rollback_last_action",
+        "answer": "A rollback artifact exists, but explicit confirmation is required before use.",
+        "executed": False,
+        "requires_confirmation": True,
+        "rollback_artifact": _dict(reversible[0].get("decision")).get("rollback_artifact"),
+        "reflection": "Rollback remains prepared but unexecuted.",
+        "next_action": "confirm_rollback_artifact",
+        "replan_reason": "Destructive state restoration requires confirmation.",
+    }
+
+
+def _stop_execution_decision() -> dict[str, Any]:
+    return {
+        "action_id": "stop_execution",
+        "answer": "Execution is stopped for this session. Read-only inspection remains available.",
+        "executed": False,
+        "execution_stopped": True,
+        "reflection": "The stop request was persisted without launching another command.",
+        "next_action": "wait_for_explicit_execution_request",
+        "replan_reason": "User requested that executable actions stop.",
+    }
+
+
+def _execution_stopped_decision(intent_name: str) -> dict[str, Any]:
+    return {
+        "action_id": "execution_stopped_gate",
+        "answer": (
+            "This session is in stopped-execution state, so the requested command "
+            "was not started. Ask to resume execution explicitly before retrying it."
+        ),
+        "requested_intent": intent_name,
+        "executed": False,
+        "blocked": True,
+        "reflection": "The persisted stop flag prevented process execution.",
+        "next_action": "await_explicit_execution_resume",
+        "replan_reason": "Execution remains stopped by a prior user request.",
+    }
+
+
+def _ask_for_clarification_decision(intent: dict[str, Any]) -> dict[str, Any]:
+    reason = str(intent.get("reason") or "the requested action is ambiguous")
+    return {
+        "action_id": "ask_for_clarification",
+        "answer": (
+            "I need one specific next action before continuing. "
+            f"Reason: {reason}. Examples: inspect status, explain localization, "
+            "rerun tests, continue repair, or generate report."
+        ),
+        "executed": False,
+        "reflection": "No action was executed because the intent was ambiguous or incomplete.",
+        "next_action": "await_clarified_user_intent",
+        "replan_reason": reason,
+    }
 
 
 def _explain_failure_decision(memory: dict[str, Any]) -> dict[str, Any]:
@@ -1281,21 +1553,30 @@ def _rerun_tests_decision(
     *,
     execute: bool,
 ) -> dict[str, Any]:
+    action_id = "rerun_repository_tests_from_session"
     test_result = _dict(memory.get("test_results"))
     command = str(test_result.get("command") or "python -m pytest")
     cwd = str(test_result.get("execution_cwd") or session.get("output_dir") or "")
+    registry_gate = _action_registry_gate(action_id, command=command)
     execution_result: dict[str, Any] = {}
     answer = f"Prepared repository test rerun: {command}"
     if execute:
         timeout = max(10, _int(_dict(session.get("run_config")).get("repository_test_timeout", 60)))
-        execution_result = _execute_command(command, cwd=cwd, timeout=timeout)
+        execution_result = _execute_registered_command(
+            action_id,
+            command,
+            cwd=cwd,
+            timeout=timeout,
+        )
         answer = (
             f"Executed repository test rerun: {command}; "
             f"status={execution_result.get('status')}; "
             f"returncode={execution_result.get('returncode')}."
         )
     return {
-        "action_id": "rerun_repository_tests_from_session",
+        "action_id": action_id,
+        "canonical_action_id": registry_gate.get("canonical_action_id", ""),
+        "action_registry_gate": registry_gate,
         "answer": answer,
         "command": command,
         "working_dir": cwd,
@@ -1314,22 +1595,31 @@ def _narrow_scope_decision(
     *,
     execute: bool = False,
 ) -> dict[str, Any]:
+    action_id = "narrow_repository_scope"
     scope = str(intent.get("scope") or "")
     command = _base_agent_command(session)
     if scope:
         command = f"{command} --include {scope}"
+    registry_gate = _action_registry_gate(action_id, command=command)
     execution_result: dict[str, Any] = {}
     answer = f"Prepared scoped analysis for {scope or 'requested scope'}."
     if execute:
         timeout = max(60, _int(_dict(session.get("run_config")).get("repository_test_timeout", 60)))
-        execution_result = _execute_command(command, cwd="", timeout=timeout)
+        execution_result = _execute_registered_command(
+            action_id,
+            command,
+            cwd="",
+            timeout=timeout,
+        )
         answer = (
             f"Executed scoped analysis for {scope or 'requested scope'}; "
             f"status={execution_result.get('status')}; "
             f"returncode={execution_result.get('returncode')}."
         )
     return {
-        "action_id": "narrow_repository_scope",
+        "action_id": action_id,
+        "canonical_action_id": registry_gate.get("canonical_action_id", ""),
+        "action_registry_gate": registry_gate,
         "answer": answer,
         "command": command,
         "executed": bool(execute),
@@ -1365,6 +1655,7 @@ def _change_repair_strategy_decision(
     *,
     execute: bool,
 ) -> dict[str, Any]:
+    action_id = "change_repair_strategy"
     strategy = str(intent.get("strategy") or "use an alternative repair strategy")
     memory_path = str(session.get("memory_path") or "")
     command = (
@@ -1375,6 +1666,7 @@ def _change_repair_strategy_decision(
         "CIA_AGENT_PATCH_MEMORY": memory_path,
         "CIA_AGENT_REPAIR_STRATEGY": strategy,
     }
+    registry_gate = _action_registry_gate(action_id, command=command)
     execution_result: dict[str, Any] = {}
     answer = (
         f"Prepared alternative repair strategy: {strategy}. "
@@ -1386,7 +1678,8 @@ def _change_repair_strategy_decision(
             60,
             _int(_dict(session.get("run_config")).get("repository_test_timeout", 60)) * 5,
         )
-        execution_result = _execute_command(
+        execution_result = _execute_registered_command(
+            action_id,
             command,
             cwd="",
             timeout=timeout,
@@ -1398,7 +1691,9 @@ def _change_repair_strategy_decision(
             f"returncode={execution_result.get('returncode')}."
         )
     return {
-        "action_id": "change_repair_strategy",
+        "action_id": action_id,
+        "canonical_action_id": registry_gate.get("canonical_action_id", ""),
+        "action_registry_gate": registry_gate,
         "answer": answer,
         "command": command,
         "environment": environment,
@@ -1428,6 +1723,7 @@ def _continue_repair_decision(
     *,
     execute: bool,
 ) -> dict[str, Any]:
+    action_id = "continue_repair_with_patch_memory"
     topk = _list(memory.get("topk_suspicious_functions"))
     target = _dict(topk[0]).get("function") if topk else "top-ranked function"
     memory_path = str(session.get("memory_path") or "")
@@ -1439,6 +1735,7 @@ def _continue_repair_decision(
     environment = {
         "CIA_AGENT_PATCH_MEMORY": memory_path,
     }
+    registry_gate = _action_registry_gate(action_id, command=command)
     execution_result: dict[str, Any] = {}
     answer = (
         f"Prepared repair continuation for {target}; "
@@ -1447,7 +1744,8 @@ def _continue_repair_decision(
     )
     if execute:
         timeout = max(60, _int(_dict(session.get("run_config")).get("repository_test_timeout", 60)) * 5)
-        execution_result = _execute_command(
+        execution_result = _execute_registered_command(
+            action_id,
             command,
             cwd="",
             timeout=timeout,
@@ -1459,7 +1757,9 @@ def _continue_repair_decision(
             f"returncode={execution_result.get('returncode')}."
         )
     return {
-        "action_id": "continue_repair_with_patch_memory",
+        "action_id": action_id,
+        "canonical_action_id": registry_gate.get("canonical_action_id", ""),
+        "action_registry_gate": registry_gate,
         "answer": answer,
         "command": command,
         "environment": environment,
@@ -1492,10 +1792,13 @@ def _resume_answer(session: dict[str, Any], memory: dict[str, Any]) -> str:
     profile = _dict(memory.get("repo_profile"))
     topk = _list(memory.get("topk_suspicious_functions"))
     test_result = _dict(memory.get("test_results"))
+    constraints = [str(item) for item in _list(memory.get("constraints"))]
     return (
         f"Resumed session {session.get('session_id')} for {session.get('repo')}. "
         f"Status={profile.get('status') or session.get('status')}; "
-        f"topk={len(topk)}; tests={test_result.get('status') or 'unknown'}."
+        f"topk={len(topk)}; tests={test_result.get('status') or 'unknown'}; "
+        f"constraints={len(constraints)}; "
+        f"execution_stopped={str(bool(memory.get('execution_stopped'))).lower()}."
     )
 
 
@@ -1517,6 +1820,54 @@ def _apply_intent_to_memory(memory: dict[str, Any], intent: dict[str, Any]) -> N
         if strategy and strategy not in preferences:
             preferences.append(strategy)
         memory["repair_strategy_preferences"] = preferences
+    if intent.get("intent") == INTENT_INSPECT_FUNCTION and intent.get("function"):
+        memory["active_function"] = str(intent.get("function") or "")
+    if intent.get("intent") == INTENT_STOP_EXECUTION:
+        memory["execution_stopped"] = True
+    elif _explicit_execution_resume(intent):
+        memory["execution_stopped"] = False
+
+
+def _intent_router_context(
+    session: dict[str, Any],
+    memory: dict[str, Any],
+) -> dict[str, Any]:
+    blockers = _list(memory.get("blocker_evolution"))
+    latest_blocker = _dict(blockers[-1]) if blockers else {}
+    topk = [_dict(item) for item in _list(memory.get("topk_suspicious_functions"))]
+    history = [_dict(item) for item in _list(memory.get("user_intent_history"))]
+    return {
+        "repo": str(session.get("repo") or session.get("repo_spec") or ""),
+        "current_status": str(
+            memory.get("current_status")
+            or _dict(memory.get("repo_profile")).get("status")
+            or session.get("status")
+            or ""
+        ),
+        "active_scope": str(memory.get("active_scope") or ""),
+        "latest_blocker": str(latest_blocker.get("blocker") or ""),
+        "test_status": str(_dict(memory.get("test_results")).get("status") or ""),
+        "topk_functions": [
+            str(item.get("function") or "") for item in topk[:10] if item.get("function")
+        ],
+        "constraints": [str(item) for item in _list(memory.get("constraints"))[:10]],
+        "repair_strategy_preferences": [
+            str(item)
+            for item in _list(memory.get("repair_strategy_preferences"))[:10]
+        ],
+        "recent_intents": [
+            str(item.get("intent") or "") for item in history[-10:] if item.get("intent")
+        ],
+        "execution_stopped": bool(memory.get("execution_stopped")),
+    }
+
+
+def _explicit_execution_resume(intent: dict[str, Any]) -> bool:
+    message = str(intent.get("message") or "").lower()
+    return any(
+        phrase in message
+        for phrase in ["恢复执行", "继续执行", "resume execution", "resume running"]
+    )
 
 
 def _memory_usage_evidence(memory: dict[str, Any]) -> dict[str, Any]:
@@ -1529,6 +1880,8 @@ def _memory_usage_evidence(memory: dict[str, Any]) -> dict[str, Any]:
         "repair_strategy_preference_loaded": len(
             _list(memory.get("repair_strategy_preferences"))
         ),
+        "constraint_count": len(_list(memory.get("constraints"))),
+        "execution_stopped": bool(memory.get("execution_stopped")),
         "prior_turn_count": len(_list(memory.get("turns"))),
     }
 
@@ -1729,6 +2082,102 @@ def _test_results_from_summary(summary: dict[str, Any]) -> dict[str, Any]:
         "failure_category": summary.get("planned_repository_test_failure_category", ""),
         "failure_signal": summary.get("planned_repository_test_failure_signal", ""),
     }
+
+
+def _action_registry_gate(
+    action_id: str,
+    *,
+    command: str = "",
+) -> dict[str, Any]:
+    canonical = canonical_action_id(action_id)
+    spec = action_spec_for(action_id)
+    registered = bool(spec)
+    command_safe, command_reason = _command_safety_check(canonical, command)
+    passed = registered and command_safe
+    return {
+        "status": "pass" if passed else "blocked",
+        "requested_action_id": action_id,
+        "canonical_action_id": canonical,
+        "registered": registered,
+        "command_safe": command_safe,
+        "command_safety_reason": command_reason,
+        "tool": str(spec.get("tool") or ""),
+        "module": str(spec.get("module") or ""),
+        "blocker": (
+            ""
+            if passed
+            else "unregistered_action"
+            if not registered
+            else "unsafe_or_mismatched_command"
+        ),
+    }
+
+
+def _execute_registered_command(
+    action_id: str,
+    command: str,
+    *,
+    cwd: str,
+    timeout: int,
+    env: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    gate = _action_registry_gate(action_id, command=command)
+    if gate["status"] != "pass":
+        return {
+            "status": "blocked",
+            "returncode": -1,
+            "timeout": timeout,
+            "stdout_tail": "",
+            "stderr_tail": "Action Registry rejected an unregistered action.",
+            "action_registry_gate": gate,
+        }
+    result = _execute_command(command, cwd=cwd, timeout=timeout, env=env)
+    result["action_registry_gate"] = gate
+    return result
+
+
+def _command_safety_check(canonical_action: str, command: str) -> tuple[bool, str]:
+    normalized = " ".join(str(command or "").strip().split())
+    if not normalized:
+        return False, "missing_command"
+    if re.search(r"[\r\n;&|<>`]", str(command)):
+        return False, "shell_control_character"
+    lowered = normalized.lower()
+    if canonical_action == "run_repository_tests":
+        parts = lowered.split()
+        runner = parts[0] if parts else ""
+        direct_runner = runner in {
+            "python",
+            "python.exe",
+            "python3",
+            "py",
+            "pytest",
+            "pytest.exe",
+            "tox",
+            "tox.exe",
+            "nox",
+            "nox.exe",
+        }
+        managed_runner = len(parts) >= 2 and parts[:2] in [
+            ["uv", "run"],
+            ["poetry", "run"],
+        ]
+        return (
+            (True, "registered_test_runner_prefix")
+            if direct_runner or managed_runner
+            else (False, "unexpected_test_runner_prefix")
+        )
+    if canonical_action in {
+        "discover_repository_structure",
+        "generate_hybrid_patch_candidates",
+    }:
+        expected = "python -m code_intelligence_agent agent "
+        return (
+            (True, "registered_agent_entrypoint")
+            if lowered.startswith(expected)
+            else (False, "unexpected_agent_entrypoint")
+        )
+    return False, "action_has_no_session_command_policy"
 
 
 def _execute_command(

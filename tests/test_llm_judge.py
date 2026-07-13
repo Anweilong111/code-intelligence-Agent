@@ -245,6 +245,80 @@ def test_openai_compatible_client_raises_structured_request_error(monkeypatch):
         raise AssertionError("Expected LLMRequestError")
 
 
+def test_openai_compatible_client_supports_function_calling(monkeypatch):
+    requests = []
+    response_body = {
+        "id": "chatcmpl-tool-test",
+        "choices": [
+            {
+                "message": {
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "call_route_1",
+                            "type": "function",
+                            "function": {
+                                "name": "route_agent_intent",
+                                "arguments": json.dumps(
+                                    {
+                                        "intent": "inspect_status",
+                                        "arguments": {},
+                                        "confidence": 0.95,
+                                        "reason": "explicit status request",
+                                        "required_context": [],
+                                    }
+                                ),
+                            },
+                        }
+                    ],
+                }
+            }
+        ],
+    }
+
+    def fake_urlopen(request, timeout):
+        requests.append((request, timeout))
+        return _FakeHTTPResponse(json.dumps(response_body))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        timeout=9,
+    )
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "route_agent_intent",
+                "parameters": {"type": "object"},
+            },
+        }
+    ]
+
+    response = client.complete_with_tools(
+        "route this request",
+        tools,
+        tool_choice={
+            "type": "function",
+            "function": {"name": "route_agent_intent"},
+        },
+    )
+
+    sent = json.loads(requests[0][0].data.decode("utf-8"))
+    assert sent["tools"] == tools
+    assert sent["tool_choice"]["function"]["name"] == "route_agent_intent"
+    assert requests[0][1] == 9
+    assert json.loads(response.text)["intent"] == "inspect_status"
+    assert response.metadata["tool_call"] == {
+        "id": "call_route_1",
+        "type": "function",
+        "name": "route_agent_intent",
+    }
+    assert "fake-key" not in json.dumps(response.metadata)
+
+
 def test_llm_config_audit_masks_keys_and_tracks_enabled_roles(monkeypatch):
     key = "fake-secret-value"
     monkeypatch.setenv("CIA_JUDGE_API_KEY", key)
@@ -291,6 +365,28 @@ def test_llm_config_audit_masks_keys_and_tracks_enabled_roles(monkeypatch):
     assert "deepseek-v4-pro" in markdown
     assert "sha256:" in markdown
     assert key not in markdown
+
+
+def test_intent_config_audit_falls_back_to_shared_llm_configuration(monkeypatch):
+    monkeypatch.delenv("CIA_INTENT_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("CIA_INTENT_LLM_MODEL", raising=False)
+    monkeypatch.delenv("CIA_INTENT_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("CIA_INTENT_LLM_API_KEY", raising=False)
+    monkeypatch.setenv("CIA_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("CIA_LLM_MODEL", "deepseek-chat")
+    monkeypatch.setenv("CIA_LLM_BASE_URL", "https://api.deepseek.com")
+    monkeypatch.setenv("CIA_LLM_API_KEY", "test-intent-shared-key")
+
+    audit = llm_config_audit("intent", enabled=True)
+
+    assert audit.provider == "deepseek"
+    assert audit.model == "deepseek-chat"
+    assert audit.model_source == "CIA_LLM_MODEL"
+    assert audit.base_url == DEEPSEEK_CHAT_COMPLETIONS_URL
+    assert audit.base_url_source == "CIA_LLM_BASE_URL"
+    assert audit.api_key_present is True
+    assert audit.api_key_source == "CIA_LLM_API_KEY"
+    assert "test-intent-shared-key" not in json.dumps(audit.to_dict())
 
 
 def test_patch_generation_audit_defaults_to_deepseek_without_key(monkeypatch):

@@ -339,12 +339,28 @@ python -m code_intelligence_agent resume ^
   --format markdown
 ```
 
+也可以直接进入终端连续聊天；输入 `exit` 退出，`:execute on` / `:execute off`
+只控制是否允许本轮启动命令：
+
+```bash
+python -m code_intelligence_agent chat-ui ^
+  --session <session_id> ^
+  --format markdown
+```
+
 当前多轮接口会在 `Observe` 阶段读取 session memory，在 `Plan` 阶段将用户输入解析成
-`continue_repair`、`explain_failure`、`rerun_tests`、`narrow_scope`、
-`generate_report` 或 `change_constraints`，在 `Act/Verify/Reflect/Replan`
-阶段记录本轮动作、记忆使用证据、下一步命令和 replan 原因。默认情况下
+`inspect_status`、`explain_failure`、`continue_repair`、`rerun_tests`、
+`narrow_scope`、`change_constraints`、`change_repair_strategy`、
+`generate_report`、`inspect_function`、`explain_localization`、
+`compare_patch_candidates`、`rollback_last_action`、`stop_execution` 或
+`ask_for_clarification`，在 `Act/Verify/Reflect/Replan` 阶段记录本轮动作、
+记忆使用证据、下一步命令和 replan 原因。默认情况下
 `chat` 只生成下一步动作和命令；显式传入 `--execute` 时，命令型动作会被执行，
 并把 return code、stdout/stderr 摘要写入本轮记忆。
+当意图 LLM 凭据可用时，`Plan` 使用强制 `route_agent_intent` Function Calling；
+模型只能返回 JSON Schema 允许的意图和参数。路径、函数名、置信度和字段白名单
+校验失败时，系统回退到规则解析；低于 `0.65` 或多意图输入会进入
+`ask_for_clarification`。命令型意图还必须映射到 Action Registry，未注册动作不会执行。
 当用户选择继续修复时，chat 输出会给出 `CIA_AGENT_PATCH_MEMORY` 环境变量；
 hybrid/LLM patch generation 会读取该 `agent_memory.json`，把失败补丁指纹、
 patch attempt history 和用户约束写入 LLM repair context，避免重复生成同类失败补丁。
@@ -417,9 +433,21 @@ set CIA_LLM_REPLAN_ENABLED=1
 set CIA_REPLAN_LLM_PROVIDER=deepseek
 set CIA_REPLAN_LLM_MODEL=deepseek-chat
 set CIA_REPLAN_LLM_API_KEY=<your_key>
+
+set CIA_INTENT_LLM_ENABLED=1
+set CIA_INTENT_LLM_PROVIDER=deepseek
+set CIA_INTENT_LLM_MODEL=deepseek-chat
+set CIA_INTENT_LLM_API_KEY=<your_key>
 ```
 
 `CIA_REPLAN_LLM_*` 用于可选的 LLM Planner / Replanner。LLM 会输出结构化 `planner_decision`：`selected_action`、`reason`、`confidence`、`risk`、`required_evidence` 和 `next_plan`；规则控制器仍保留最终安全门控，`safety_gate` 会记录 LLM 推荐 action 是否注册、是否匹配 controller action、是否请求 override，以及最终采用的规则 action。也可以使用 OpenAI-compatible 或 DashScope-compatible endpoint。报告只记录 provider、model、key presence 和短 fingerprint，不记录原始 key。
+
+`CIA_INTENT_LLM_*` 用于多轮聊天的 Function Calling 意图路由。未设置独立值时，
+provider/model/key/base URL 会回退到对应的 `CIA_LLM_*`；凭据存在时自动启用，
+设置 `CIA_INTENT_LLM_ENABLED=0` 可强制使用规则路由。可选超时变量为
+`CIA_INTENT_LLM_TIMEOUT`。意图路由数据集位于
+`datasets/intent_routing/v2_intent_routing_112.json`，覆盖 112 条中英输入、
+别名、否定约束、多意图和无关输入。
 
 Agent-auto planning behavior:
 

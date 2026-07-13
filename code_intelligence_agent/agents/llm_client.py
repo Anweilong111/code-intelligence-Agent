@@ -36,6 +36,12 @@ REPLAN_SYSTEM_PROMPT = (
     "only valid JSON with recommended_action, rationale, confidence, risk, "
     "blocker, next_plan, and should_override_controller fields."
 )
+INTENT_ROUTER_SYSTEM_PROMPT = (
+    "You route user requests for a code-intelligence Agent. Use only the "
+    "provided route_agent_intent tool. Never create shell commands, patches, "
+    "or unregistered actions. Ask for clarification when intent or arguments "
+    "are ambiguous."
+)
 
 
 @dataclass(frozen=True)
@@ -138,6 +144,26 @@ class OpenAICompatibleLLMClient:
         self.api_key_fingerprint = _api_key_fingerprint(self.api_key)
 
     def complete(self, prompt: str) -> LLMResponse:
+        return self._complete(prompt)
+
+    def complete_with_tools(
+        self,
+        prompt: str,
+        tools: list[dict[str, Any]],
+        *,
+        tool_choice: str | dict[str, Any] = "auto",
+    ) -> LLMResponse:
+        if not tools:
+            raise ValueError("tools must contain at least one function definition")
+        return self._complete(prompt, tools=tools, tool_choice=tool_choice)
+
+    def _complete(
+        self,
+        prompt: str,
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] = "auto",
+    ) -> LLMResponse:
         started_at = time.perf_counter()
         payload = {
             "model": self.model,
@@ -150,6 +176,9 @@ class OpenAICompatibleLLMClient:
             ],
             "temperature": 0,
         }
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = tool_choice
         data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
             self.base_url,
@@ -238,8 +267,25 @@ class OpenAICompatibleLLMClient:
                 "LLM provider returned a non-JSON chat-completions response.",
                 metadata,
             ) from exc
+        tool_call_metadata: dict[str, Any] = {}
         try:
-            text = str(body["choices"][0]["message"]["content"])
+            message = body["choices"][0]["message"]
+            tool_calls = message.get("tool_calls") if isinstance(message, dict) else None
+            if isinstance(tool_calls, list) and tool_calls:
+                tool_call = tool_calls[0]
+                function = (
+                    tool_call.get("function", {})
+                    if isinstance(tool_call, dict)
+                    else {}
+                )
+                text = str(function["arguments"])
+                tool_call_metadata = {
+                    "id": str(tool_call.get("id") or ""),
+                    "type": str(tool_call.get("type") or "function"),
+                    "name": str(function.get("name") or ""),
+                }
+            else:
+                text = str(message["content"])
         except (KeyError, IndexError, TypeError) as exc:
             metadata = self._request_metadata(
                 prompt=prompt,
@@ -262,6 +308,8 @@ class OpenAICompatibleLLMClient:
             elapsed_ms=_elapsed_ms(started_at),
             body=body,
         )
+        if tool_call_metadata:
+            metadata["tool_call"] = tool_call_metadata
         return LLMResponse(text=text, metadata=metadata)
 
     def _request_metadata(
@@ -382,6 +430,36 @@ def create_replan_client() -> OpenAICompatibleLLMClient:
     )
 
 
+def create_intent_client() -> OpenAICompatibleLLMClient:
+    """Build the natural-language intent router client."""
+
+    return OpenAICompatibleLLMClient(
+        provider=(
+            os.environ.get("CIA_INTENT_LLM_PROVIDER")
+            or os.environ.get("CIA_LLM_PROVIDER")
+            or "deepseek"
+        ),
+        api_key=(
+            os.environ.get("CIA_INTENT_LLM_API_KEY")
+            or os.environ.get("CIA_LLM_API_KEY")
+        ),
+        model=(
+            os.environ.get("CIA_INTENT_LLM_MODEL")
+            or os.environ.get("CIA_LLM_MODEL")
+        ),
+        base_url=(
+            os.environ.get("CIA_INTENT_LLM_BASE_URL")
+            or os.environ.get("CIA_LLM_BASE_URL")
+        ),
+        timeout_env="CIA_INTENT_LLM_TIMEOUT",
+        api_key_env="CIA_INTENT_LLM_API_KEY",
+        model_env="CIA_INTENT_LLM_MODEL",
+        base_url_env="CIA_INTENT_LLM_BASE_URL",
+        provider_env="CIA_INTENT_LLM_PROVIDER",
+        system_prompt=INTENT_ROUTER_SYSTEM_PROMPT,
+    )
+
+
 def create_alibaba_judge_client() -> OpenAICompatibleLLMClient:
     """Build an Alibaba/Qwen judge client from the shared judge env variables."""
 
@@ -427,14 +505,27 @@ def llm_config_audit(role: str, enabled: bool = True) -> LLMConfigAudit:
     model_env = profile["model_env"]
     base_url_env = profile["base_url_env"]
     api_key_env = profile["api_key_env"]
-    provider = _normalize_provider(
-        os.environ.get(provider_env) or profile["default_provider"]
+    provider_fallback_envs = profile.get("fallback_provider_envs", ())
+    model_fallback_envs = profile.get("fallback_model_envs", ())
+    base_url_fallback_envs = profile.get("fallback_base_url_envs", ())
+    provider_value, _ = _first_configured_env(
+        provider_env,
+        *provider_fallback_envs,
     )
-    model_value = os.environ.get(model_env)
+    provider = _normalize_provider(
+        provider_value or profile["default_provider"]
+    )
+    model_value, model_source = _first_configured_env(
+        model_env,
+        *model_fallback_envs,
+    )
     model = _normalize_model_for_provider(
         provider, model_value or _default_model_for_provider(provider)
     )
-    base_url_value = os.environ.get(base_url_env)
+    base_url_value, base_url_source = _first_configured_env(
+        base_url_env,
+        *base_url_fallback_envs,
+    )
     base_url = _normalize_chat_completions_url(
         base_url_value or _default_base_url_for_provider(provider)
     )
@@ -451,9 +542,9 @@ def llm_config_audit(role: str, enabled: bool = True) -> LLMConfigAudit:
         enabled=enabled,
         provider=provider,
         model=model,
-        model_source=model_env if model_value else "default",
+        model_source=model_source if model_value else "default",
         base_url=base_url,
-        base_url_source=base_url_env if base_url_value else "default",
+        base_url_source=base_url_source if base_url_value else "default",
         api_key_env=api_key_env,
         checked_api_key_envs=checked_envs,
         api_key_present=bool(key),
@@ -677,6 +768,14 @@ def _api_key_from_env(provider: str, primary_env: str) -> str | None:
     return key
 
 
+def _first_configured_env(*env_names: str) -> tuple[str | None, str]:
+    for env_name in env_names:
+        value = os.environ.get(env_name)
+        if value:
+            return value, env_name
+    return None, ""
+
+
 def _resolve_api_key_with_source(
     provider: str,
     primary_env: str,
@@ -755,6 +854,8 @@ def _llm_config_profile(role: str) -> dict:
         "replanning": "replan",
         "replan_advisor": "replan",
         "agent_replan": "replan",
+        "intent_router": "intent",
+        "task_router": "intent",
     }
     normalized = aliases.get(normalized, normalized)
     profiles = {
@@ -793,6 +894,18 @@ def _llm_config_profile(role: str) -> dict:
             "model_env": "CIA_REPLAN_LLM_MODEL",
             "base_url_env": "CIA_REPLAN_LLM_BASE_URL",
             "fallback_api_key_envs": ("CIA_LLM_API_KEY",),
+        },
+        "intent": {
+            "role": "intent",
+            "default_provider": "deepseek",
+            "provider_env": "CIA_INTENT_LLM_PROVIDER",
+            "api_key_env": "CIA_INTENT_LLM_API_KEY",
+            "model_env": "CIA_INTENT_LLM_MODEL",
+            "base_url_env": "CIA_INTENT_LLM_BASE_URL",
+            "fallback_api_key_envs": ("CIA_LLM_API_KEY",),
+            "fallback_provider_envs": ("CIA_LLM_PROVIDER",),
+            "fallback_model_envs": ("CIA_LLM_MODEL",),
+            "fallback_base_url_envs": ("CIA_LLM_BASE_URL",),
         },
     }
     if normalized not in profiles:

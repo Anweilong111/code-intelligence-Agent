@@ -8,6 +8,7 @@ import pytest
 
 from code_intelligence_agent import main as cli_module
 from code_intelligence_agent.agents.intent_parser import parse_user_intent
+from code_intelligence_agent.agents.llm_client import LLMResponse
 from code_intelligence_agent.agents.session_memory import (
     LOOP,
     chat_with_session,
@@ -136,6 +137,207 @@ def test_chat_records_three_turns_and_reads_existing_memory(tmp_path):
     assert list(latest_loop) == LOOP
     assert latest_loop["observe"]["status"] == "complete"
     assert latest_loop["replan"]["next_action"] == "generate_or_validate_next_patch"
+
+
+def test_chat_routes_llm_function_intent_into_real_session_decision(tmp_path):
+    class IntentClient:
+        def complete_with_tools(self, prompt, tools, *, tool_choice):
+            assert "pkg.core.load_user" in prompt
+            assert tools[0]["function"]["name"] == "route_agent_intent"
+            assert tool_choice["function"]["name"] == "route_agent_intent"
+            return LLMResponse(
+                text=json.dumps(
+                    {
+                        "intent": "inspect_function",
+                        "arguments": {"function": "pkg.core.load_user"},
+                        "confidence": 0.96,
+                        "reason": "explicit function inspection",
+                        "required_context": ["topk_suspicious_functions"],
+                    }
+                ),
+                metadata={
+                    "status": "pass",
+                    "provider": "test",
+                    "model": "intent-test",
+                    "tool_call": {
+                        "id": "call_1",
+                        "type": "function",
+                        "name": "route_agent_intent",
+                    },
+                },
+            )
+
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+
+    result = chat_with_session(
+        session["session_id"],
+        "请详细分析 pkg.core.load_user",
+        memory_root=memory_root,
+        intent_client=IntentClient(),
+    )
+
+    assert result["intent"]["source"] == "llm"
+    assert result["turn"]["intent_source"] == "llm"
+    assert result["intent"]["intent"] == "inspect_function"
+    assert result["decision"]["action_id"] == "inspect_function_from_memory"
+    assert "FinalScore=0.9100" in result["answer"]
+    memory = json.loads(Path(result["session"]["memory_path"]).read_text(encoding="utf-8"))
+    assert memory["active_function"] == "pkg.core.load_user"
+
+
+def test_stop_execution_persists_and_blocks_later_process_start(tmp_path):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+
+    stopped = chat_with_session(
+        session["session_id"],
+        "停止执行",
+        memory_root=memory_root,
+        llm_intent_enabled=False,
+    )
+    blocked = chat_with_session(
+        session["session_id"],
+        "重新运行 pytest",
+        memory_root=memory_root,
+        execute=True,
+        llm_intent_enabled=False,
+    )
+
+    assert stopped["decision"]["action_id"] == "stop_execution"
+    assert blocked["decision"]["action_id"] == "execution_stopped_gate"
+    assert blocked["decision"]["executed"] is False
+    assert blocked["decision"]["blocked"] is True
+    resumed = resume_session(session["session_id"], memory_root=memory_root)
+    assert "execution_stopped=true" in resumed["answer"]
+    assert resumed["turn"]["intent_source"] == "explicit_command"
+    assert resumed["memory_usage_evidence"]["execution_stopped"] is True
+
+
+def test_ten_turn_conversation_and_resume_preserve_session_constraints(tmp_path):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+    messages = [
+        "查看当前状态",
+        "解释上一次失败原因",
+        "查看函数 pkg.core.load_user",
+        "解释定位结果",
+        "比较补丁候选",
+        "不要修改公共 API",
+        "只分析 pkg 目录",
+        "use alternative repair strategy",
+        "生成最终报告",
+        "继续修复 Top-1 函数",
+    ]
+
+    result = None
+    for message in messages:
+        result = chat_with_session(
+            session["session_id"],
+            message,
+            memory_root=memory_root,
+            llm_intent_enabled=False,
+        )
+
+    assert result is not None
+    assert result["session"]["turn_count"] == 11
+    resumed = resume_session(session["session_id"], memory_root=memory_root)
+    memory = json.loads(Path(resumed["session"]["memory_path"]).read_text(encoding="utf-8"))
+    assert resumed["session"]["turn_count"] == 12
+    assert len(memory["user_intent_history"]) == 10
+    assert memory["constraints"] == ["不要修改公共 API"]
+    assert memory["active_scope"] == "pkg"
+    assert memory["repair_strategy_preferences"] == ["repair strategy"]
+    assert memory["turns"][-1]["decision"]["action_id"] == "resume_session_from_memory"
+
+
+def test_session_command_execution_is_gated_by_action_registry(tmp_path):
+    summary = _sample_summary(tmp_path)
+    plan = Path(summary["output_dir"]) / "repository_test_execution_plan.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "recommended_execution_command": "python -c \"print('registry-ok')\"",
+                "recommended_execution_cwd": str(tmp_path),
+            }
+        ),
+        encoding="utf-8",
+    )
+    summary["planned_repository_test_command"] = "python -c \"print('registry-ok')\""
+    summary["repository_test_execution_plan_json"] = str(plan)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+
+    result = chat_with_session(
+        session["session_id"],
+        "重新运行 pytest",
+        memory_root=memory_root,
+        execute=True,
+        llm_intent_enabled=False,
+    )
+
+    decision = result["decision"]
+    assert decision["canonical_action_id"] == "run_repository_tests"
+    assert decision["action_registry_gate"]["status"] == "pass"
+    assert decision["execution_result"]["action_registry_gate"]["registered"] is True
+
+
+def test_session_command_gate_rejects_shell_control_characters(tmp_path):
+    summary = _sample_summary(tmp_path)
+    plan = Path(summary["output_dir"]) / "repository_test_execution_plan.json"
+    plan.write_text(
+        json.dumps(
+            {
+                "recommended_execution_command": "python -m pytest & whoami",
+                "recommended_execution_cwd": str(tmp_path),
+            }
+        ),
+        encoding="utf-8",
+    )
+    summary["planned_repository_test_command"] = "python -m pytest & whoami"
+    summary["repository_test_execution_plan_json"] = str(plan)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+
+    result = chat_with_session(
+        session["session_id"],
+        "重新运行 pytest",
+        memory_root=memory_root,
+        execute=True,
+        llm_intent_enabled=False,
+    )
+
+    execution = result["decision"]["execution_result"]
+    assert execution["status"] == "blocked"
+    assert execution["action_registry_gate"]["registered"] is True
+    assert execution["action_registry_gate"]["command_safe"] is False
+    assert (
+        execution["action_registry_gate"]["command_safety_reason"]
+        == "shell_control_character"
+    )
 
 
 def test_chat_records_alternative_repair_strategy_in_layered_memory(tmp_path):
@@ -339,6 +541,7 @@ def test_top_level_cli_supports_terminal_chat_ui_loop(
         ]
     )
     monkeypatch.setattr("builtins.input", lambda prompt="": next(messages))
+    monkeypatch.setenv("CIA_INTENT_LLM_ENABLED", "0")
 
     cli_module.main(
         [
@@ -361,6 +564,57 @@ def test_top_level_cli_supports_terminal_chat_ui_loop(
     assert "[chat-ui] Execute Mode: off" in output
     assert "resume_session_from_memory" in output
     assert "[chat-ui] bye." in output
+
+
+def test_terminal_chat_ui_handles_ten_natural_language_turns(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    summary = _sample_summary(tmp_path)
+    memory_root = tmp_path / "memory"
+    session = create_or_update_session_from_summary(
+        summary,
+        raw_argv=["https://github.com/example/project", "--agent"],
+        memory_root=memory_root,
+    )
+    messages = iter(
+        [
+            "查看当前状态",
+            "解释上一次失败原因",
+            "查看函数 pkg.core.load_user",
+            "解释定位结果",
+            "比较补丁候选",
+            "不要修改公共 API",
+            "只分析 pkg 目录",
+            "use alternative repair strategy",
+            "生成最终报告",
+            "继续修复 Top-1 函数",
+            "exit",
+        ]
+    )
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(messages))
+    monkeypatch.setenv("CIA_INTENT_LLM_ENABLED", "0")
+
+    cli_module.main(
+        [
+            "chat-ui",
+            "--session",
+            session["session_id"],
+            "--memory-root",
+            str(memory_root),
+            "--format",
+            "markdown",
+        ]
+    )
+
+    output = capsys.readouterr().out
+    assert output.count("# Agent Session Turn") == 10
+    loaded = json.loads(Path(session["memory_path"]).read_text(encoding="utf-8"))
+    assert loaded["turn_count"] == 12
+    assert len(loaded["user_intent_history"]) == 10
+    assert all(turn.get("intent_source") for turn in loaded["turns"][1:])
+    assert loaded["constraints"] == ["不要修改公共 API"]
 
 
 def test_repo_intelligence_cli_auto_creates_agent_session(
