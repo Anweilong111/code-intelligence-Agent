@@ -1,22 +1,43 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
+from code_intelligence_agent.agents.llm_client import (
+    LLMClient,
+    LLMRequestError,
+    create_replan_client,
+    llm_config_audit,
+)
 from code_intelligence_agent.agents.action_registry import (
+    action_spec_for,
     build_agent_action_registry,
     build_agent_policy_trace,
+    canonical_action_id,
     render_agent_action_registry_markdown,
     render_agent_policy_trace_markdown,
 )
 
 
 AGENT_LOOP = ["observe", "plan", "act", "verify", "reflect", "replan"]
+ACTION_DECISION_REQUIRED_FIELDS = [
+    "why_selected",
+    "confidence",
+    "risk",
+    "input",
+    "output",
+    "blocker",
+    "next_plan",
+]
 
 
 def build_agent_controller_plan(
     intelligence_summary: dict[str, Any],
+    *,
+    llm_replan_client: LLMClient | None = None,
+    enable_llm_replan: bool | None = None,
 ) -> dict[str, Any]:
     readiness = _dict(intelligence_summary.get("analysis_readiness"))
     fault = _dict(intelligence_summary.get("fault_localization"))
@@ -33,6 +54,17 @@ def build_agent_controller_plan(
         _dict(intelligence_summary.get("agent_goal_readiness")),
     )
     termination = _termination(selected_action, readiness)
+    selected_action = _enrich_selected_action_decision(
+        summary=intelligence_summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        observations=observations,
+        verification=verification,
+        reflection=reflection,
+        replan=replan,
+        termination=termination,
+    )
     auto_controller = _auto_controller_summary(intelligence_summary)
     llm_repair_action_audit = _llm_repair_action_audit(
         intelligence_summary,
@@ -49,6 +81,30 @@ def build_agent_controller_plan(
         termination=termination,
         llm_repair_action_audit=llm_repair_action_audit,
         action_registry=action_registry,
+    )
+    llm_replan_advisor = _llm_replan_advisor(
+        intelligence_summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        observations=observations,
+        verification=verification,
+        reflection=reflection,
+        replan=replan,
+        termination=termination,
+        client=llm_replan_client,
+        enabled=enable_llm_replan,
+    )
+    action_decision_audit = _action_decision_audit(
+        intelligence_summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        observations=observations,
+        verification=verification,
+        reflection=reflection,
+        replan=replan,
+        termination=termination,
     )
     loop_iteration_audit = _loop_iteration_audit(
         intelligence_summary,
@@ -77,6 +133,8 @@ def build_agent_controller_plan(
         "termination": termination,
         "auto_controller": auto_controller,
         "llm_repair_action_audit": llm_repair_action_audit,
+        "llm_replan_advisor": llm_replan_advisor,
+        "action_decision_audit": action_decision_audit,
         "action_registry": action_registry,
         "policy_trace": policy_trace,
         "loop_iteration_audit": loop_iteration_audit,
@@ -115,8 +173,14 @@ def render_agent_controller_markdown(payload: dict[str, Any]) -> str:
         f"- Phase: `{_markdown_cell(selected.get('phase'))}`",
         f"- Tool: `{_markdown_cell(selected.get('tool'))}`",
         f"- Risk: `{_markdown_cell(selected.get('risk'))}`",
+        f"- Confidence: `{_markdown_cell(selected.get('confidence'))}`",
+        f"- Confidence Reason: {_markdown_cell(selected.get('confidence_reason'))}",
         f"- Executable Now: {str(bool(selected.get('executable_now', False))).lower()}",
         f"- Reason: {_markdown_cell(selected.get('reason'))}",
+        f"- Input: {_markdown_cell(selected.get('input_summary'))}",
+        f"- Expected Output: `{_markdown_cell(selected.get('expected_output'))}`",
+        f"- Blocker: `{_markdown_cell(selected.get('blocker') or 'none')}`",
+        f"- Next Plan: {_markdown_cell(selected.get('next_plan'))}",
         f"- Command: `{_markdown_cell(selected.get('command'))}`",
         "",
         "## LLM Repair Action Audit",
@@ -145,6 +209,36 @@ def render_agent_controller_markdown(payload: dict[str, Any]) -> str:
             f"{_markdown_cell(step)} | "
             f"{_markdown_cell(loop.get(step) or 'none')} |"
         )
+    llm_replan = _dict(payload.get("llm_replan_advisor"))
+    llm_replan_config = _dict(llm_replan.get("config"))
+    llm_replan_advice = _dict(llm_replan.get("advice"))
+    llm_planner_decision = _dict(llm_replan.get("planner_decision"))
+    llm_planner_gate = _dict(llm_replan.get("safety_gate"))
+    lines.extend(
+        [
+            "",
+            "## LLM Replan Advisor",
+            "",
+            f"- Status: `{_markdown_cell(llm_replan.get('status') or 'none')}`",
+            f"- Reason: `{_markdown_cell(llm_replan.get('reason') or 'none')}`",
+            f"- Authority: `{_markdown_cell(llm_replan.get('authority') or 'advisory_only_controller_policy_decides')}`",
+            f"- Provider/Model: `{_markdown_cell(llm_replan_config.get('provider') or 'none')}` / `{_markdown_cell(llm_replan_config.get('model') or 'none')}`",
+            f"- API Key Present: {str(bool(llm_replan_config.get('api_key_present', False))).lower()}",
+            f"- Recommended Action: `{_markdown_cell(llm_replan_advice.get('recommended_action') or 'none')}`",
+            f"- Planner Selected Action: `{_markdown_cell(llm_planner_decision.get('selected_action') or 'none')}`",
+            f"- Proposal Source: `{_markdown_cell(llm_planner_decision.get('proposal_source') or 'none')}`",
+            f"- Confidence: `{_markdown_cell(llm_planner_decision.get('confidence') if llm_planner_decision else 'none')}`",
+            f"- Risk: `{_markdown_cell(llm_planner_decision.get('risk') or 'none')}`",
+            f"- Blocker: `{_markdown_cell(llm_replan_advice.get('blocker') or llm_replan.get('blocker') or 'none')}`",
+            f"- Required Evidence: `{_markdown_cell(', '.join(str(item) for item in _list(llm_planner_decision.get('required_evidence'))) or 'none')}`",
+            f"- Memory Used: `{_markdown_cell(', '.join(str(item) for item in _list(llm_planner_decision.get('memory_used'))) or 'none')}`",
+            f"- Next Plan: {_markdown_cell(llm_planner_decision.get('next_plan') or 'none')}",
+            f"- Fallback To Rule Planner: {str(bool(llm_replan.get('fallback_to_rule_planner', False))).lower()}",
+            f"- Safety Gate: `{_markdown_cell(llm_planner_gate.get('status') or 'none')}` / `{_markdown_cell(llm_planner_gate.get('reason') or 'none')}`",
+            f"- Controller Action Match: {str(bool(llm_planner_gate.get('controller_action_match', False))).lower()}",
+            f"- Override Requested/Allowed: {str(bool(llm_planner_gate.get('override_requested', False))).lower()} / {str(bool(llm_planner_gate.get('override_allowed', False))).lower()}",
+        ]
+    )
     lines.extend(
         [
             "",
@@ -177,6 +271,38 @@ def render_agent_controller_markdown(payload: dict[str, Any]) -> str:
         )
     if not _list(payload.get("plan")):
         lines.append("| 0 | none | none | none | none |")
+    action_audit = _dict(payload.get("action_decision_audit"))
+    lines.extend(
+        [
+            "",
+            "## Action Decision Audit",
+            "",
+            f"- Status: `{_markdown_cell(action_audit.get('status') or 'none')}`",
+            f"- Reason: `{_markdown_cell(action_audit.get('reason') or 'none')}`",
+            f"- Actions: {_int(action_audit.get('complete_action_count', 0))}/"
+            f"{_int(action_audit.get('action_count', 0))} complete",
+            f"- Source: `{_markdown_cell(action_audit.get('source') or 'none')}`",
+            "",
+            "| Iteration | Action | Why Selected | Confidence | Risk | Input | Output | Blocker | Next Plan |",
+            "| ---: | --- | --- | ---: | --- | --- | --- | --- | --- |",
+        ]
+    )
+    for item_value in _list(action_audit.get("actions")):
+        item = _dict(item_value)
+        lines.append(
+            "| "
+            f"{_int(item.get('iteration', 0))} | "
+            f"{_markdown_cell(item.get('action_id'))} | "
+            f"{_markdown_cell(item.get('why_selected'))} | "
+            f"{_float(item.get('confidence', 0.0)):.2f} | "
+            f"{_markdown_cell(item.get('risk'))} | "
+            f"{_markdown_cell(item.get('input'))} | "
+            f"{_markdown_cell(item.get('output'))} | "
+            f"{_markdown_cell(item.get('blocker') or 'none')} | "
+            f"{_markdown_cell(item.get('next_plan'))} |"
+        )
+    if not _list(action_audit.get("actions")):
+        lines.append("| 0 | none | none | 0.00 | none | none | none | none | none |")
     auto_controller = _dict(payload.get("auto_controller"))
     lines.extend(
         [
@@ -1186,6 +1312,10 @@ def _observations(
             ),
         ),
         _observation(
+            "repository_llm_patch_generation_telemetry",
+            _llm_patch_telemetry_summary(summary, llm_patch_audit),
+        ),
+        _observation(
             "repository_llm_reflection_status",
             llm_reflection_status,
         ),
@@ -1279,12 +1409,19 @@ def _llm_repair_action_audit(
         or llm_audit.get("api_key_fingerprint")
         or ""
     )
+    failure_policy = _llm_patch_failure_policy(summary, llm_audit)
     blocked = bool(
         summary.get("repository_llm_patch_blocked", False)
         or llm_audit.get("blocked", False)
-        or llm_status in {"blocked", "unavailable", "failed"}
+        or llm_status in {"blocked", "unavailable", "failed", "error"}
         or llm_reason.startswith("missing_api_key:")
         or llm_reason == "missing_llm_api_key"
+        or _int(
+            summary.get("repository_llm_patch_failure_count")
+            or llm_audit.get("failure_count")
+            or 0
+        )
+        > 0
     )
     blocker = str(
         summary.get("repository_llm_patch_blocker")
@@ -1305,6 +1442,29 @@ def _llm_repair_action_audit(
         or generator_counts.get("rule")
         or 0
     )
+    llm_request_count = _int(
+        summary.get("repository_llm_patch_request_count")
+        or llm_audit.get("request_count")
+        or 0
+    )
+    llm_failure_count = _int(
+        summary.get("repository_llm_patch_failure_count")
+        or llm_audit.get("failure_count")
+        or 0
+    )
+    llm_total_tokens = _int(
+        summary.get("repository_llm_patch_total_tokens")
+        or llm_audit.get("total_tokens")
+        or 0
+    )
+    llm_estimated_tokens = _int(
+        summary.get("repository_llm_patch_estimated_total_tokens")
+        or llm_audit.get("estimated_total_tokens")
+        or 0
+    )
+    llm_error_reason_counts = _dict(
+        summary.get("repository_llm_patch_error_reason_counts")
+    ) or _dict(llm_audit.get("error_reason_counts"))
     validation_status = str(
         summary.get("repository_test_patch_validation_status")
         or readiness.get("patch_validation_status")
@@ -1340,9 +1500,13 @@ def _llm_repair_action_audit(
     )
     judge_mode = str(summary.get("repository_test_patch_judge_mode") or "none")
     judge_status = str(summary.get("repository_test_patch_judge_status") or "none")
-    repair_action_id = _llm_repair_action_id(
-        patch_mode=patch_mode,
-        blocked=blocked,
+    repair_action_id = (
+        str(failure_policy.get("action_id") or "")
+        if failure_policy and patch_mode == "llm"
+        else _llm_repair_action_id(
+            patch_mode=patch_mode,
+            blocked=blocked,
+        )
     )
     selected_action_id = str(selected_action.get("id") or "")
     reflection_action_id = (
@@ -1389,18 +1553,22 @@ def _llm_repair_action_audit(
             f"patch_mode={patch_mode}; llm_status={llm_status}; "
             f"dynamic={readiness.get('dynamic_evidence_level') or 'none'}; "
             f"provider={provider}; model={model}; "
-            f"key_present={str(key_present).lower()}"
+            f"key_present={str(key_present).lower()}; "
+            f"requests={llm_request_count}; failures={llm_failure_count}; "
+            f"failure_class={failure_policy.get('failure_class') or 'none'}"
         ),
         "plan": (
             f"repair_action={repair_action_id or 'none'}; "
             f"reflection_action={reflection_action_id or 'none'}; "
+            f"llm_recovery_policy={failure_policy.get('recovery_policy') or 'none'}; "
             "LLM output is constrained to localized Top-k functions and must pass "
             "JSON/AST/scope/safety gates before sandbox validation"
         ),
         "act": (
             f"llm_candidates={llm_candidate_count}; "
             f"rule_candidates={rule_candidate_count}; "
-            f"llm_reason={llm_reason or 'none'}"
+            f"llm_reason={llm_reason or 'none'}; "
+            f"tokens={llm_total_tokens}; estimated_tokens={llm_estimated_tokens}"
         ),
         "verify": (
             f"sandbox_validation={validation_status}; "
@@ -1417,7 +1585,11 @@ def _llm_repair_action_audit(
         ),
         "replan": (
             "stop_with_blocker="
-            f"{blocker or 'none'}" if blocked else next_action
+            f"{blocker or _format_counts(llm_error_reason_counts) or 'none'}; "
+            f"failure_class={failure_policy.get('failure_class') or 'none'}; "
+            f"policy={failure_policy.get('recovery_policy') or 'none'}"
+            if blocked
+            else next_action
         ),
     }
     return {
@@ -1434,6 +1606,23 @@ def _llm_repair_action_audit(
         "blocker": blocker,
         "llm_candidate_count": llm_candidate_count,
         "rule_candidate_count": rule_candidate_count,
+        "llm_request_count": llm_request_count,
+        "llm_failure_count": llm_failure_count,
+        "llm_total_tokens": llm_total_tokens,
+        "llm_estimated_total_tokens": llm_estimated_tokens,
+        "llm_error_reason_counts": llm_error_reason_counts,
+        "llm_provider_failure_class": str(
+            failure_policy.get("failure_class") or ""
+        ),
+        "llm_provider_primary_error": str(
+            failure_policy.get("primary_error") or ""
+        ),
+        "llm_provider_recovery_policy": str(
+            failure_policy.get("recovery_policy") or ""
+        ),
+        "llm_provider_recovery_action_id": str(
+            failure_policy.get("action_id") or ""
+        ),
         "validation_status": validation_status,
         "validation_executed_count": validation_executed_count,
         "validation_success_count": validation_success_count,
@@ -1454,6 +1643,403 @@ def _llm_repair_action_id(*, patch_mode: str, blocked: bool) -> str:
     if patch_mode == "hybrid":
         return "generate_hybrid_patch_candidates"
     return ""
+
+
+def _enrich_selected_action_decision(
+    *,
+    summary: dict[str, Any],
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+    verification: dict[str, Any],
+    reflection: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+) -> dict[str, Any]:
+    item = _selected_action_decision_item(
+        summary=summary,
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        observations=observations,
+        verification=verification,
+        reflection=reflection,
+        replan=replan,
+        termination=termination,
+        iteration=1,
+    )
+    enriched = dict(selected_action)
+    enriched.update(
+        {
+            "canonical_id": item["canonical_action_id"],
+            "why_selected": item["why_selected"],
+            "confidence": item["confidence"],
+            "confidence_reason": item["confidence_reason"],
+            "input_summary": item["input"],
+            "expected_output": item["output"],
+            "blocker": item["blocker"],
+            "blocker_present": item["blocker_present"],
+            "next_plan": item["next_plan"],
+        }
+    )
+    return enriched
+
+
+def _action_decision_audit(
+    summary: dict[str, Any],
+    *,
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+    verification: dict[str, Any],
+    reflection: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+) -> dict[str, Any]:
+    auto_trace = [_dict(item) for item in _list(summary.get("agent_auto_trace"))]
+    if auto_trace:
+        source = "agent_auto_trace"
+        actions = [
+            _auto_trace_action_decision_item(item, iteration=index + 1)
+            for index, item in enumerate(auto_trace)
+        ]
+    else:
+        source = "agent_controller"
+        actions = [
+            _selected_action_decision_item(
+                summary=summary,
+                readiness=readiness,
+                fault=fault,
+                selected_action=selected_action,
+                observations=observations,
+                verification=verification,
+                reflection=reflection,
+                replan=replan,
+                termination=termination,
+                iteration=1,
+            )
+        ]
+    complete_count = sum(
+        1 for item in actions if bool(item.get("complete", False))
+    )
+    status = (
+        "pass"
+        if actions and complete_count == len(actions)
+        else "warning"
+    )
+    return {
+        "status": status,
+        "reason": (
+            "action_decision_audit_complete"
+            if status == "pass"
+            else "action_decision_audit_incomplete"
+        ),
+        "source": source,
+        "required_fields": ACTION_DECISION_REQUIRED_FIELDS,
+        "action_count": len(actions),
+        "complete_action_count": complete_count,
+        "incomplete_action_count": len(actions) - complete_count,
+        "actions": actions,
+    }
+
+
+def _selected_action_decision_item(
+    *,
+    summary: dict[str, Any],
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+    verification: dict[str, Any],
+    reflection: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+    iteration: int,
+) -> dict[str, Any]:
+    del reflection
+    action_id = str(selected_action.get("id") or "")
+    canonical_id = canonical_action_id(action_id)
+    spec = action_spec_for(action_id)
+    blocker = _effective_blocker(readiness)
+    confidence, confidence_reason = _action_confidence(
+        readiness=readiness,
+        fault=fault,
+        selected_action=selected_action,
+        verification=verification,
+        blocker=blocker,
+        registered=bool(spec),
+    )
+    output = _action_output_summary(
+        action_id=action_id,
+        spec=spec,
+        verification=verification,
+    )
+    next_plan = _action_next_plan_summary(
+        selected_action=selected_action,
+        replan=replan,
+        termination=termination,
+        spec=spec,
+    )
+    item = {
+        "iteration": iteration,
+        "source": "agent_controller",
+        "action_id": action_id,
+        "canonical_action_id": canonical_id,
+        "registered": bool(spec),
+        "phase": str(selected_action.get("phase") or spec.get("phase") or ""),
+        "tool": str(selected_action.get("tool") or spec.get("tool") or ""),
+        "why_selected": str(selected_action.get("reason") or ""),
+        "confidence": confidence,
+        "confidence_reason": confidence_reason,
+        "risk": str(selected_action.get("risk") or _risk_for_action(action_id)),
+        "input": _controller_action_input_summary(
+            summary=summary,
+            readiness=readiness,
+            fault=fault,
+            observation_count=len(observations),
+        ),
+        "output": output,
+        "blocker": blocker,
+        "blocker_present": bool(blocker),
+        "next_plan": next_plan,
+        "executable_now": bool(selected_action.get("executable_now", False)),
+        "verify_status": str(verification.get("status") or ""),
+        "replan_policy": str(replan.get("next_policy") or ""),
+    }
+    item["complete"] = _action_decision_item_complete(item)
+    return item
+
+
+def _auto_trace_action_decision_item(
+    item: dict[str, Any],
+    *,
+    iteration: int,
+) -> dict[str, Any]:
+    action_id = str(item.get("plan_selected_action") or "")
+    canonical_id = canonical_action_id(action_id)
+    spec = action_spec_for(action_id)
+    blocker = str(
+        item.get("observe_blocker")
+        or item.get("stop_reason")
+        or item.get("stop_category")
+        or ""
+    )
+    confidence, confidence_reason = _auto_action_confidence(item)
+    why = str(item.get("plan_reason") or "")
+    if not why:
+        why = (
+            "Auto controller selected this action from the observed stage, "
+            "blocker, dynamic-evidence level, and goal-readiness gap."
+        )
+    output = str(
+        item.get("verify_outcome")
+        or item.get("verify_stage")
+        or item.get("stop_reason")
+        or spec.get("expected_artifact")
+        or ""
+    )
+    next_plan = str(
+        item.get("replan_next_action")
+        or item.get("stop_reason")
+        or item.get("replan_policy")
+        or _format_list(_list(spec.get("next_possible_actions")))
+    )
+    decision = {
+        "iteration": _int(item.get("iteration", iteration)),
+        "source": "agent_auto_trace",
+        "action_id": action_id,
+        "canonical_action_id": canonical_id,
+        "registered": bool(spec),
+        "phase": str(item.get("plan_action_phase") or spec.get("phase") or ""),
+        "tool": str(item.get("plan_action_tool") or spec.get("tool") or ""),
+        "why_selected": why,
+        "confidence": confidence,
+        "confidence_reason": confidence_reason,
+        "risk": _risk_for_action(action_id),
+        "input": _auto_trace_input_summary(item),
+        "output": output,
+        "blocker": blocker,
+        "blocker_present": bool(blocker),
+        "next_plan": next_plan,
+        "executable_now": bool(item.get("plan_executable_now", False)),
+        "executed": bool(item.get("auto_executed", False)),
+        "verify_status": str(item.get("verify_status") or item.get("verify_outcome") or ""),
+        "replan_policy": str(item.get("replan_policy") or ""),
+    }
+    decision["complete"] = _action_decision_item_complete(decision)
+    return decision
+
+
+def _controller_action_input_summary(
+    *,
+    summary: dict[str, Any],
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    observation_count: int,
+) -> str:
+    goal = _dict(summary.get("agent_goal_readiness"))
+    return (
+        f"stage={readiness.get('current_stage') or 'unknown'}; "
+        f"blocker={_effective_blocker(readiness) or 'none'}; "
+        f"dynamic={readiness.get('dynamic_evidence_level') or 'none'}; "
+        f"fault={fault.get('mode') or 'none'}/{fault.get('status') or 'none'}; "
+        f"top={fault.get('top_function') or 'none'}; "
+        f"goal={goal.get('status') or 'none'}; "
+        f"observations={observation_count}"
+    )
+
+
+def _auto_trace_input_summary(item: dict[str, Any]) -> str:
+    return (
+        f"stage={item.get('observe_stage') or 'unknown'}; "
+        f"blocker={item.get('observe_blocker') or 'none'}; "
+        f"dynamic={item.get('observe_dynamic_evidence_level') or 'none'}; "
+        "fault="
+        f"{item.get('observe_fault_localization_mode') or 'none'}/"
+        f"{item.get('observe_fault_localization_status') or 'none'}; "
+        f"goal={item.get('observe_agent_goal_readiness_status') or 'none'}"
+    )
+
+
+def _action_output_summary(
+    *,
+    action_id: str,
+    spec: dict[str, Any],
+    verification: dict[str, Any],
+) -> str:
+    expected = str(
+        verification.get("expected_artifact")
+        or spec.get("expected_artifact")
+        or ""
+    )
+    condition = str(
+        verification.get("success_condition")
+        or spec.get("success_condition")
+        or ""
+    )
+    if expected and condition:
+        return f"{expected}; success={condition}"
+    return expected or condition or f"{action_id or 'action'} updates artifacts"
+
+
+def _action_next_plan_summary(
+    *,
+    selected_action: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+    spec: dict[str, Any],
+) -> str:
+    next_action = str(termination.get("next_action") or "")
+    if next_action:
+        return next_action
+    fallback = str(replan.get("fallback_action") or "")
+    policy = str(replan.get("next_policy") or "")
+    if fallback and policy:
+        return f"{policy} -> {fallback}"
+    if policy:
+        return policy
+    possible = _format_list(_list(spec.get("next_possible_actions")))
+    if possible != "none":
+        return possible
+    return str(selected_action.get("command") or selected_action.get("id") or "")
+
+
+def _action_confidence(
+    *,
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    verification: dict[str, Any],
+    blocker: str,
+    registered: bool,
+) -> tuple[float, str]:
+    action_id = str(selected_action.get("id") or "")
+    status = str(verification.get("status") or "")
+    score = 0.66 if registered else 0.52
+    reasons = ["registered" if registered else "unregistered_action"]
+    if status == "verified":
+        score = max(score, 0.95)
+        reasons.append("verified_repair_or_phase_completion")
+    elif bool(selected_action.get("executable_now", False)):
+        score += 0.10
+        reasons.append("executable_now")
+    else:
+        reasons.append("external_or_blocked_action")
+    if _is_environment_blocker(blocker) and action_id in {
+        "await_environment_repair",
+        "prepare_repository_test_environment",
+    }:
+        score += 0.12
+        reasons.append("matches_environment_blocker")
+    elif blocker and canonical_action_id(action_id) == "emit_blocker_report":
+        score += 0.14
+        reasons.append("terminal_blocker_route")
+    elif blocker:
+        score -= 0.04
+        reasons.append("blocker_present")
+    if str(fault.get("mode") or "") == "dynamic" and str(
+        fault.get("status") or ""
+    ) == "pass":
+        score += 0.08
+        reasons.append("dynamic_localization_ready")
+    elif str(fault.get("mode") or "") == "static_fallback":
+        score += 0.04
+        reasons.append("static_fallback_available")
+    return max(0.05, min(0.99, round(score, 2))), ",".join(reasons)
+
+
+def _auto_action_confidence(item: dict[str, Any]) -> tuple[float, str]:
+    executed = bool(item.get("auto_executed", False))
+    progress = bool(item.get("verify_progress", False))
+    stop_reason = str(item.get("stop_reason") or "")
+    registered = bool(action_spec_for(item.get("plan_selected_action")))
+    score = 0.66 if registered else 0.52
+    reasons = ["registered" if registered else "unregistered_action"]
+    if executed and progress:
+        score += 0.22
+        reasons.append("executed_with_progress")
+    elif executed:
+        score += 0.10
+        reasons.append("executed")
+    elif stop_reason:
+        score -= 0.12
+        reasons.append("stopped_with_reason")
+    else:
+        reasons.append("planned_or_stopped")
+    if str(item.get("observe_blocker") or ""):
+        score -= 0.02
+        reasons.append("blocker_present")
+    return max(0.05, min(0.99, round(score, 2))), ",".join(reasons)
+
+
+def _risk_for_action(action_id: Any) -> str:
+    canonical = canonical_action_id(action_id)
+    if canonical in {
+        "run_repository_tests",
+        "diagnose_environment",
+        "validate_patch_in_sandbox",
+        "generate_llm_patch_candidates",
+        "generate_hybrid_patch_candidates",
+        "run_llm_patch_reflection_loop",
+        "clone_or_load_repository",
+    }:
+        return "medium"
+    return "low"
+
+
+def _action_decision_item_complete(item: dict[str, Any]) -> bool:
+    return bool(
+        str(item.get("action_id") or "")
+        and str(item.get("why_selected") or "")
+        and _float(item.get("confidence", 0.0)) > 0.0
+        and str(item.get("risk") or "")
+        and str(item.get("input") or "")
+        and str(item.get("output") or "")
+        and "blocker_present" in item
+        and str(item.get("next_plan") or "")
+    )
 
 
 def _loop_iteration_audit(
@@ -2293,10 +2879,21 @@ def _patch_generation_action(
         summary.get("repository_llm_patch_blocked", False)
         or audit.get("blocked", False)
         or status == "blocked"
+        or status == "error"
         or blocker == "missing_llm_api_key"
         or blocker.startswith("missing_api_key:")
+        or _int(summary.get("repository_llm_patch_failure_count") or 0) > 0
     )
+    failure_policy = _llm_patch_failure_policy(summary, audit)
     if mode == "llm" and blocked:
+        if failure_policy:
+            return _llm_provider_failure_action(
+                policy=failure_policy,
+                command=command,
+                reason=reason,
+                llm_patch_hint=llm_patch_hint,
+                readiness=readiness,
+            )
         return _action(
             "configure_llm_patch_api_key",
             "phase3",
@@ -2313,6 +2910,21 @@ def _patch_generation_action(
             ),
             "low",
             executable_now=False,
+        )
+    generator_counts = _dict(summary.get("repository_patch_generator_counts"))
+    rule_fallback_count = _int(
+        summary.get("repository_patch_generator_rule_count")
+        or summary.get("repository_patch_generator_rule_candidate_count")
+        or generator_counts.get("rule")
+        or 0
+    )
+    if mode == "hybrid" and failure_policy and rule_fallback_count <= 0:
+        return _llm_provider_failure_action(
+            policy=failure_policy,
+            command=command,
+            reason=reason,
+            llm_patch_hint=llm_patch_hint,
+            readiness=readiness,
         )
 
     action_id = (
@@ -2341,6 +2953,50 @@ def _patch_generation_action(
         "medium",
         executable_now=bool(readiness.get("can_attempt_patch_repair", False)),
     )
+
+
+def _llm_provider_failure_action(
+    *,
+    policy: dict[str, Any],
+    command: str,
+    reason: str,
+    llm_patch_hint: str,
+    readiness: dict[str, Any],
+) -> dict[str, Any]:
+    action_id = str(policy.get("action_id") or "diagnose_llm_provider_failure")
+    recovery_command = str(policy.get("command") or command)
+    recovery_reason = (
+        f"{reason} LLM provider failure is classified as "
+        f"`{policy.get('failure_class') or 'unknown'}` from "
+        f"`{policy.get('primary_error') or 'unknown'}`; "
+        f"recovery policy is `{policy.get('recovery_policy') or 'none'}`. "
+        + str(policy.get("reason") or "")
+        + llm_patch_hint
+    )
+    action = _action(
+        action_id,
+        "phase3",
+        (
+            "repository_test_patch_candidates"
+            if action_id == "retry_llm_patch_generation"
+            else "llm_provider_diagnostics"
+        ),
+        recovery_command,
+        recovery_reason,
+        str(policy.get("risk") or "medium"),
+        executable_now=bool(
+            policy.get("executable_now", False)
+            and readiness.get("can_attempt_patch_repair", False)
+        ),
+    )
+    action["llm_provider_failure_class"] = str(policy.get("failure_class") or "")
+    action["llm_provider_primary_error"] = str(policy.get("primary_error") or "")
+    action["llm_provider_recovery_policy"] = str(
+        policy.get("recovery_policy") or ""
+    )
+    action["replan_trigger"] = str(policy.get("replan_trigger") or "")
+    action["replan_policy"] = str(policy.get("replan_policy") or "")
+    return action
 
 
 def _llm_patch_generation_hint(summary: dict[str, Any]) -> str:
@@ -2398,9 +3054,12 @@ def _llm_patch_generation_hint(summary: dict[str, Any]) -> str:
             "fallback before expecting LLM candidates."
         )
     if status == "error":
+        policy = _llm_patch_failure_policy(summary, audit)
         return (
             f" LLM patch generation `{provider}/{model}` failed with "
-            f"`{reason or 'unknown_error'}`."
+            f"`{reason or 'unknown_error'}`"
+            f" ({policy.get('failure_class') or 'unknown'}); "
+            f"{_llm_patch_telemetry_summary(summary, audit)}."
         )
     if status == "pass":
         return (
@@ -2408,6 +3067,257 @@ def _llm_patch_generation_hint(summary: dict[str, Any]) -> str:
             "that remain subject to safety gates and sandbox validation."
         )
     return ""
+
+
+def _llm_patch_telemetry_summary(
+    summary: dict[str, Any],
+    audit: dict[str, Any] | None = None,
+) -> str:
+    audit = _dict(audit)
+    telemetry = _dict(
+        summary.get("repository_llm_patch_generation_telemetry")
+    ) or _dict(audit.get("telemetry"))
+    request_count = _int(
+        summary.get("repository_llm_patch_request_count")
+        or audit.get("request_count")
+        or telemetry.get("request_count")
+        or 0
+    )
+    failure_count = _int(
+        summary.get("repository_llm_patch_failure_count")
+        or audit.get("failure_count")
+        or telemetry.get("failure_count")
+        or 0
+    )
+    total_tokens = _int(
+        summary.get("repository_llm_patch_total_tokens")
+        or audit.get("total_tokens")
+        or telemetry.get("total_tokens")
+        or 0
+    )
+    estimated_tokens = _int(
+        summary.get("repository_llm_patch_estimated_total_tokens")
+        or audit.get("estimated_total_tokens")
+        or telemetry.get("estimated_total_tokens")
+        or 0
+    )
+    error_counts = _dict(
+        summary.get("repository_llm_patch_error_reason_counts")
+    ) or _dict(audit.get("error_reason_counts")) or _dict(
+        telemetry.get("error_reason_counts")
+    )
+    return (
+        f"requests={request_count}, failures={failure_count}, "
+        f"tokens={total_tokens}, estimated_tokens={estimated_tokens}, "
+        f"errors={_format_counts(error_counts) or 'none'}"
+    )
+
+
+def _llm_patch_failure_policy(
+    summary: dict[str, Any],
+    audit: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    audit = _dict(audit)
+    status = str(
+        summary.get("repository_llm_patch_generation_status")
+        or audit.get("status")
+        or ""
+    ).lower()
+    reason = str(
+        summary.get("repository_llm_patch_generation_reason")
+        or audit.get("reason")
+        or ""
+    )
+    telemetry = _dict(
+        summary.get("repository_llm_patch_generation_telemetry")
+    ) or _dict(audit.get("telemetry"))
+    error_counts = _dict(
+        summary.get("repository_llm_patch_error_reason_counts")
+    ) or _dict(audit.get("error_reason_counts")) or _dict(
+        telemetry.get("error_reason_counts")
+    )
+    failure_count = _int(
+        summary.get("repository_llm_patch_failure_count")
+        or audit.get("failure_count")
+        or telemetry.get("failure_count")
+        or 0
+    )
+    if not (
+        status in {"error", "failed", "unavailable"}
+        or failure_count > 0
+        or error_counts
+    ):
+        return {}
+    primary_error = _primary_llm_error_reason(reason, error_counts)
+    failure_class = _llm_provider_failure_class(primary_error, reason)
+    provider = str(
+        summary.get("repository_llm_patch_provider")
+        or audit.get("provider")
+        or "unknown-provider"
+    )
+    model = str(
+        summary.get("repository_llm_patch_model")
+        or audit.get("model")
+        or "unknown-model"
+    )
+    telemetry_text = _llm_patch_telemetry_summary(summary, audit)
+    if failure_class in {"credential", "provider_config"}:
+        policy = {
+            "action_id": "diagnose_llm_provider_failure",
+            "recovery_policy": (
+                "refresh_llm_credentials_or_model_access"
+                if failure_class == "credential"
+                else "verify_llm_base_url_model_and_request_schema"
+            ),
+            "replan_policy": "repair_llm_provider_configuration",
+            "risk": "low",
+            "executable_now": False,
+            "command": (
+                f"Verify `{provider}/{model}` credentials, base URL, model "
+                "access, and environment-variable wiring; then rerun bounded "
+                "LLM patch generation."
+            ),
+            "reason": (
+                "This failure requires provider configuration or credential "
+                "repair before the Agent can safely call the model again."
+            ),
+        }
+    elif failure_class == "rate_limit":
+        policy = {
+            "action_id": "retry_llm_patch_generation",
+            "recovery_policy": "retry_after_backoff_with_smaller_candidate_budget",
+            "replan_policy": "retry_llm_generation_after_provider_backoff",
+            "risk": "medium",
+            "executable_now": True,
+            "command": (
+                "Rerun repository_test_patch_candidates after provider backoff "
+                "with repository_llm_patch_candidate_limit=1 and the same "
+                "Top-k localized context."
+            ),
+            "reason": (
+                "Rate-limit failures are transient, so the Agent should retry "
+                "with a bounded candidate budget before switching to hybrid "
+                "fallback or blocker."
+            ),
+        }
+    elif failure_class == "timeout":
+        policy = {
+            "action_id": "retry_llm_patch_generation",
+            "recovery_policy": "retry_with_smaller_context_or_higher_timeout",
+            "replan_policy": "reduce_llm_context_then_retry_generation",
+            "risk": "medium",
+            "executable_now": True,
+            "command": (
+                "Rerun repository_test_patch_candidates with candidate_limit=1, "
+                "a narrower Top-k function slice, or an increased CIA_LLM_TIMEOUT."
+            ),
+            "reason": (
+                "Timeout indicates the prompt or provider latency exceeded the "
+                "current budget; retry must reduce context or explicitly raise "
+                "the timeout."
+            ),
+        }
+    elif failure_class == "response_schema":
+        policy = {
+            "action_id": "retry_llm_patch_generation",
+            "recovery_policy": "retry_with_strict_json_patch_schema",
+            "replan_policy": "tighten_llm_output_schema_then_retry",
+            "risk": "medium",
+            "executable_now": True,
+            "command": (
+                "Rerun LLM patch generation with strict JSON-only instructions "
+                "and keep AST/scope/safety gates before sandbox validation."
+            ),
+            "reason": (
+                "The provider responded, but the response was not usable as a "
+                "structured patch candidate."
+            ),
+        }
+    elif failure_class in {"network", "provider_transient"}:
+        policy = {
+            "action_id": "retry_llm_patch_generation",
+            "recovery_policy": "retry_transient_provider_or_network_failure_once",
+            "replan_policy": "retry_or_switch_provider_after_transient_failure",
+            "risk": "medium",
+            "executable_now": True,
+            "command": (
+                "Rerun bounded LLM patch generation once; if the same provider "
+                "failure repeats, switch provider/model or fall back to hybrid "
+                "rule candidates."
+            ),
+            "reason": (
+                "The failure is likely outside patch semantics, so the Agent "
+                "should retry once with telemetry preserved."
+            ),
+        }
+    else:
+        policy = {
+            "action_id": "diagnose_llm_provider_failure",
+            "recovery_policy": "classify_unknown_llm_provider_failure",
+            "replan_policy": "classify_llm_failure_before_retry",
+            "risk": "medium",
+            "executable_now": False,
+            "command": (
+                "Inspect llm_generation_telemetry and provider configuration "
+                "before retrying LLM patch generation."
+            ),
+            "reason": "The provider failure class is unknown and needs diagnosis.",
+        }
+    return {
+        **policy,
+        "failure_class": failure_class,
+        "primary_error": primary_error,
+        "telemetry": telemetry,
+        "error_reason_counts": error_counts,
+        "replan_trigger": f"llm_patch_provider_failure:{failure_class}",
+        "provider": provider,
+        "model": model,
+        "telemetry_summary": telemetry_text,
+    }
+
+
+def _primary_llm_error_reason(reason: str, error_counts: dict[str, Any]) -> str:
+    if error_counts:
+        items = sorted(
+            ((str(key), _int(value)) for key, value in error_counts.items()),
+            key=lambda item: (-item[1], item[0]),
+        )
+        if items and items[0][0]:
+            return items[0][0]
+    return reason or "unknown"
+
+
+def _llm_provider_failure_class(primary_error: str, reason: str) -> str:
+    text = f"{primary_error} {reason}".lower()
+    if "missing_llm_api_key" in text or "missing_api_key" in text:
+        return "credential"
+    if "http_401" in text or "http_403" in text:
+        return "credential"
+    if "http_404" in text or "model_not_found" in text:
+        return "provider_config"
+    if "http_429" in text or "rate_limit" in text:
+        return "rate_limit"
+    if "timeout" in text:
+        return "timeout"
+    if (
+        "invalid_json_response" in text
+        or "missing_chat_completion_content" in text
+        or "invalid_text_response" in text
+    ):
+        return "response_schema"
+    if (
+        "url_error" in text
+        or "connection" in text
+        or "dns" in text
+        or "network" in text
+        or "proxy" in text
+    ):
+        return "network"
+    if any(f"http_5{digit}" in text for digit in range(10)):
+        return "provider_transient"
+    if "http_400" in text:
+        return "provider_config"
+    return "unknown"
 
 
 def _llm_reflection_hint(summary: dict[str, Any]) -> str:
@@ -2716,6 +3626,20 @@ def _reflection(
             "file/nodeid scopes or adjust the timeout before repair."
         )
         fallback = "narrow_repository_tests_after_timeout"
+    elif action_id == "diagnose_llm_provider_failure":
+        hypothesis = (
+            "LLM patch generation reached the provider but failed before usable "
+            "candidate generation, so credentials, model access, base URL, or "
+            "response contract must be diagnosed before another unsafe retry."
+        )
+        fallback = "emit_blocker_report"
+    elif action_id == "retry_llm_patch_generation":
+        hypothesis = (
+            "LLM patch generation failed with a recoverable provider class; a "
+            "bounded retry should reduce context, apply provider backoff, or "
+            "tighten the JSON patch schema."
+        )
+        fallback = "diagnose_llm_provider_failure"
     elif str(fault.get("mode") or "") == "static_fallback":
         hypothesis = "Only static suspicious-function evidence is available."
         fallback = "collect_dynamic_failure_evidence"
@@ -2761,9 +3685,14 @@ def _replan(
     status = str(verification.get("status") or "")
     goal = _dict(goal_readiness)
     failed_goal_criteria = _list(goal.get("failed_criteria"))
+    action_replan_trigger = str(selected_action.get("replan_trigger") or "")
+    action_replan_policy = str(selected_action.get("replan_policy") or "")
     if status == "verified":
         trigger = "phase_completed"
         next_policy = "advance_to_next_stage"
+    elif action_replan_trigger:
+        trigger = action_replan_trigger
+        next_policy = action_replan_policy or "recover_from_selected_action_blocker"
     elif blocker and blocker != "none":
         trigger = blocker
         next_policy = "classify_blocker_and_select_recovery_action"
@@ -2822,6 +3751,15 @@ def _termination(
         return {
             "status": "blocked",
             "reason": str(readiness.get("blocker") or "github_fetch_blocked"),
+            "next_action": str(selected_action.get("command") or ""),
+        }
+    if str(selected_action.get("id") or "") == "diagnose_llm_provider_failure":
+        return {
+            "status": "blocked",
+            "reason": str(
+                selected_action.get("llm_provider_failure_class")
+                or "llm_provider_failure"
+            ),
             "next_action": str(selected_action.get("command") or ""),
         }
     if str(selected_action.get("id") or "") == "await_environment_repair":
@@ -2893,6 +3831,533 @@ def _decision_trace(
     ]
 
 
+def _llm_replan_advisor(
+    summary: dict[str, Any],
+    *,
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+    verification: dict[str, Any],
+    reflection: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+    client: LLMClient | None = None,
+    enabled: bool | None = None,
+) -> dict[str, Any]:
+    explicit_enabled = enabled
+    if explicit_enabled is None:
+        explicit_enabled = (
+            bool(summary.get("llm_replan_enabled", False))
+            or _env_flag("CIA_LLM_REPLAN_ENABLED")
+            or _agent_auto_llm_planner_enabled(summary)
+        )
+    active = bool(client is not None or explicit_enabled)
+    audit = llm_config_audit("replan", enabled=active).to_dict()
+    memory_context = _llm_planner_memory_context(summary)
+    base = {
+        "enabled": active,
+        "status": "disabled",
+        "reason": "llm_replan_disabled",
+        "authority": "advisory_only_controller_policy_decides",
+        "planner_type": "llm_planner_replanner",
+        "planner_schema_version": 1,
+        "controller_authority": "rules_and_sandbox_gate_decide",
+        "config": audit,
+        "advice": {},
+        "planner_decision": {},
+        "llm_planner_proposal": {},
+        "safety_gate": _llm_planner_safety_gate({}, selected_action),
+        "request_metadata": {},
+        "memory_context": memory_context,
+        "fallback_to_rule_planner": False,
+    }
+    if not active:
+        return base
+    if client is None and not bool(audit.get("api_key_present", False)):
+        fallback = _rule_fallback_planner_proposal(
+            selected_action=selected_action,
+            verification=verification,
+            memory_context=memory_context,
+            reason="missing_llm_replan_api_key",
+        )
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "missing_llm_replan_api_key",
+            "blocker": "missing_llm_replan_api_key",
+            "checked_api_key_envs": _list(audit.get("checked_api_key_envs")),
+            "planner_decision": fallback,
+            "llm_planner_proposal": fallback,
+            "safety_gate": _llm_planner_fallback_gate(
+                selected_action,
+                reason="missing_llm_replan_api_key",
+            ),
+            "fallback_to_rule_planner": True,
+            "fallback_reason": "missing_llm_replan_api_key",
+        }
+    try:
+        active_client = client or create_replan_client()
+        response = active_client.complete(
+            _llm_replan_prompt(
+                summary,
+                readiness=readiness,
+                fault=fault,
+                selected_action=selected_action,
+                observations=observations,
+                verification=verification,
+                reflection=reflection,
+                replan=replan,
+                termination=termination,
+                memory_context=memory_context,
+            )
+        )
+    except LLMRequestError as exc:
+        fallback = _rule_fallback_planner_proposal(
+            selected_action=selected_action,
+            verification=verification,
+            memory_context=memory_context,
+            reason=exc.reason,
+        )
+        return {
+            **base,
+            "status": "error",
+            "reason": exc.reason,
+            "blocker": exc.reason,
+            "request_metadata": _safe_llm_metadata(exc.metadata),
+            "planner_decision": fallback,
+            "llm_planner_proposal": fallback,
+            "fallback_to_rule_planner": True,
+            "fallback_reason": exc.reason,
+        }
+    except Exception as exc:  # pragma: no cover - defensive artifact path
+        reason = type(exc).__name__
+        fallback = _rule_fallback_planner_proposal(
+            selected_action=selected_action,
+            verification=verification,
+            memory_context=memory_context,
+            reason=reason,
+        )
+        return {
+            **base,
+            "status": "error",
+            "reason": reason,
+            "blocker": reason,
+            "message": str(exc),
+            "planner_decision": fallback,
+            "llm_planner_proposal": fallback,
+            "fallback_to_rule_planner": True,
+            "fallback_reason": reason,
+        }
+    advice, parse_reason = _parse_llm_replan_advice(response.text)
+    if not advice:
+        fallback = _rule_fallback_planner_proposal(
+            selected_action=selected_action,
+            verification=verification,
+            memory_context=memory_context,
+            reason=parse_reason,
+        )
+        return {
+            **base,
+            "status": "error",
+            "reason": parse_reason,
+            "blocker": parse_reason,
+            "request_metadata": _safe_llm_metadata(response.metadata),
+            "planner_decision": fallback,
+            "llm_planner_proposal": fallback,
+            "fallback_to_rule_planner": True,
+            "fallback_reason": parse_reason,
+        }
+    planner_decision = _llm_planner_decision_from_advice(advice, memory_context)
+    return {
+        **base,
+        "status": "pass",
+        "reason": "llm_replan_advice_recorded",
+        "advice": advice,
+        "planner_decision": planner_decision,
+        "llm_planner_proposal": planner_decision,
+        "safety_gate": _llm_planner_safety_gate(advice, selected_action),
+        "request_metadata": _safe_llm_metadata(response.metadata),
+    }
+
+
+def _agent_auto_llm_planner_enabled(summary: dict[str, Any]) -> bool:
+    invocation = _dict(summary.get("agent_invocation"))
+    profile = str(invocation.get("effective_execution_profile") or "").lower()
+    return bool(
+        profile == "agent-auto"
+        or invocation.get("agent_mode", False)
+        or invocation.get("auto_controller_actions", False)
+        or summary.get("auto_controller_actions", False)
+    )
+
+
+def _llm_planner_memory_context(summary: dict[str, Any]) -> dict[str, Any]:
+    memory_report = _dict(summary.get("agent_memory_report"))
+    layers = _dict(memory_report.get("memory_layers"))
+    session_layer = _dict(layers.get("session_memory"))
+    repo_layer = _dict(layers.get("repo_memory"))
+    repair_layer = _dict(layers.get("repair_memory"))
+    agent_session = _dict(summary.get("agent_session"))
+    patch_attempts = _list(summary.get("patch_attempt_history"))
+    failed_patch_count = _int(
+        repair_layer.get("failed_patch_count")
+        or summary.get("repository_test_patch_validation_failed_count")
+        or summary.get("repository_patch_failed_count")
+        or 0
+    )
+    constraints = _unique_strings(
+        [
+            *[str(item) for item in _list(session_layer.get("constraints"))],
+            *[str(item) for item in _list(repair_layer.get("user_constraints"))],
+            *[str(item) for item in _list(summary.get("constraints"))],
+        ]
+    )
+    strategy_preferences = _unique_strings(
+        [
+            *[
+                str(item)
+                for item in _list(session_layer.get("repair_strategy_preferences"))
+            ],
+            *[str(item) for item in _list(repair_layer.get("strategy_preferences"))],
+            *[
+                str(item)
+                for item in _list(summary.get("repair_strategy_preferences"))
+            ],
+        ]
+    )
+    failed_fingerprints = _unique_strings(
+        [
+            *[
+                str(item)
+                for item in _list(repair_layer.get("failed_patch_fingerprints"))
+            ],
+            *[
+                str(_dict(item).get("diff_fingerprint") or "")
+                for item in patch_attempts
+            ],
+        ]
+    )[:10]
+    memory_used = []
+    if agent_session:
+        memory_used.append("session_memory")
+    if repo_layer:
+        memory_used.append("repo_memory")
+    if repair_layer or failed_patch_count or failed_fingerprints:
+        memory_used.append("repair_memory")
+    if constraints:
+        memory_used.append("user_constraints")
+    if strategy_preferences:
+        memory_used.append("repair_strategy_preferences")
+    if failed_fingerprints:
+        memory_used.append("failed_patch_fingerprints")
+    return {
+        "available": bool(
+            agent_session
+            or session_layer
+            or repo_layer
+            or repair_layer
+            or constraints
+            or strategy_preferences
+            or failed_fingerprints
+        ),
+        "sources": memory_used,
+        "memory_used": memory_used,
+        "session_memory": {
+            "session_id": str(agent_session.get("session_id") or session_layer.get("session_id") or ""),
+            "turn_count": _int(agent_session.get("turn_count") or session_layer.get("turn_count") or 0),
+            "last_intent": str(session_layer.get("last_intent") or ""),
+            "active_scope": str(session_layer.get("active_scope") or ""),
+        },
+        "repo_memory": {
+            "repo": str(repo_layer.get("repo") or summary.get("repo") or summary.get("repo_spec") or ""),
+            "test_command": str(repo_layer.get("test_command") or summary.get("planned_repository_test_command") or ""),
+            "test_status": str(repo_layer.get("test_status") or summary.get("planned_repository_test_result_status") or ""),
+            "top_suspicious_functions": _list(repo_layer.get("top_suspicious_functions"))[:5],
+        },
+        "repair_memory": {
+            "failed_patch_count": failed_patch_count,
+            "patch_attempt_count": _int(repair_layer.get("patch_attempt_count") or len(patch_attempts)),
+            "failed_patch_fingerprints": failed_fingerprints,
+            "latest_failure_category": str(
+                repair_layer.get("latest_failure_category")
+                or summary.get("planned_repository_test_failure_category")
+                or ""
+            ),
+            "constraints": constraints,
+            "repair_strategy_preferences": strategy_preferences,
+        },
+    }
+
+
+def _rule_fallback_planner_proposal(
+    *,
+    selected_action: dict[str, Any],
+    verification: dict[str, Any],
+    memory_context: dict[str, Any],
+    reason: str,
+) -> dict[str, Any]:
+    required = []
+    expected_artifact = str(verification.get("expected_artifact") or "")
+    if expected_artifact:
+        required.append(expected_artifact)
+    return {
+        "selected_action": str(selected_action.get("id") or ""),
+        "reason": (
+            f"LLM planner unavailable ({reason}); using rule-selected action "
+            "after controller policy and sandbox safety gates."
+        ),
+        "confidence": _float(selected_action.get("confidence", 0.0)),
+        "risk": str(selected_action.get("risk") or "medium"),
+        "required_evidence": required,
+        "next_plan": str(selected_action.get("next_plan") or ""),
+        "memory_used": _list(memory_context.get("memory_used")),
+        "proposal_source": "rule_fallback",
+        "fallback_reason": reason,
+    }
+
+
+def _llm_planner_fallback_gate(
+    selected_action: dict[str, Any],
+    *,
+    reason: str,
+) -> dict[str, Any]:
+    controller_action = str(selected_action.get("id") or "")
+    controller_canonical = canonical_action_id(controller_action)
+    return {
+        "status": "fallback",
+        "reason": "llm_unavailable_rule_planner_fallback",
+        "recommended_action": controller_action,
+        "recommended_canonical_action": controller_canonical,
+        "recommended_registered": bool(action_spec_for(controller_action)),
+        "controller_action": controller_action,
+        "controller_canonical_action": controller_canonical,
+        "controller_registered": bool(action_spec_for(controller_action)),
+        "controller_action_match": True,
+        "override_requested": False,
+        "override_allowed": False,
+        "adopted_action": controller_action,
+        "authority": "rules_and_sandbox_gate_decide",
+        "fallback_reason": reason,
+    }
+
+
+def _llm_replan_prompt(
+    summary: dict[str, Any],
+    *,
+    readiness: dict[str, Any],
+    fault: dict[str, Any],
+    selected_action: dict[str, Any],
+    observations: list[dict[str, str]],
+    verification: dict[str, Any],
+    reflection: dict[str, Any],
+    replan: dict[str, Any],
+    termination: dict[str, Any],
+    memory_context: dict[str, Any],
+) -> str:
+    payload = {
+        "objective": "advise_on_next_agent_replan_action",
+        "repo": summary.get("repo") or summary.get("repo_spec") or "",
+        "current_stage": readiness.get("current_stage") or "",
+        "next_stage": readiness.get("next_stage") or "",
+        "blocker": readiness.get("blocker") or "",
+        "fault_localization": {
+            "mode": fault.get("mode") or "",
+            "status": fault.get("status") or "",
+            "top_function": fault.get("top_function") or "",
+        },
+        "selected_action": {
+            "id": selected_action.get("id") or "",
+            "reason": selected_action.get("reason") or "",
+            "risk": selected_action.get("risk") or "",
+            "executable_now": bool(selected_action.get("executable_now", False)),
+        },
+        "verification": verification,
+        "reflection": reflection,
+        "rule_replan": replan,
+        "termination": termination,
+        "memory_context": memory_context,
+        "observations": observations[:40],
+        "response_schema": {
+            "selected_action": "string action id; use same value as recommended_action when both are present",
+            "recommended_action": "string",
+            "reason": "string",
+            "rationale": "string fallback for reason",
+            "confidence": "number from 0 to 1",
+            "risk": "low|medium|high",
+            "blocker": "string",
+            "required_evidence": ["string evidence needed before execution"],
+            "next_plan": "string",
+            "memory_used": ["string memory source or fact used for the decision"],
+            "should_override_controller": "boolean",
+        },
+        "constraints": [
+            "Do not invent repair success.",
+            "Do not override sandbox pytest as the success authority.",
+            "Prefer blocker reporting when evidence is insufficient.",
+            "Use memory_context when it contains failed patches, user constraints, or repair strategy preferences.",
+        ],
+    }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def _parse_llm_replan_advice(text: str) -> tuple[dict[str, Any], str]:
+    try:
+        payload = json.loads(str(text or ""))
+    except json.JSONDecodeError:
+        return {}, "invalid_json_response"
+    if not isinstance(payload, dict):
+        return {}, "invalid_replan_schema"
+    action = str(
+        payload.get("selected_action") or payload.get("recommended_action") or ""
+    ).strip()
+    next_plan = str(payload.get("next_plan") or "").strip()
+    rationale = str(payload.get("reason") or payload.get("rationale") or "").strip()
+    if not action or not next_plan:
+        return {}, "missing_required_replan_fields"
+    risk = str(payload.get("risk") or "medium").strip().lower()
+    if risk not in {"low", "medium", "high"}:
+        risk = "medium"
+    required_evidence = [
+        str(item)
+        for item in _list(payload.get("required_evidence"))
+        if str(item or "").strip()
+    ]
+    memory_used = [
+        str(item)
+        for item in _list(payload.get("memory_used"))
+        if str(item or "").strip()
+    ]
+    return (
+        {
+            "recommended_action": action,
+            "selected_action": action,
+            "rationale": rationale,
+            "reason": rationale,
+            "confidence": max(0.0, min(1.0, _float(payload.get("confidence", 0.0)))),
+            "risk": risk,
+            "blocker": str(payload.get("blocker") or "").strip(),
+            "required_evidence": required_evidence,
+            "memory_used": memory_used,
+            "next_plan": next_plan,
+            "should_override_controller": bool(
+                payload.get("should_override_controller", False)
+            ),
+        },
+        "pass",
+    )
+
+
+def _llm_planner_decision_from_advice(
+    advice: dict[str, Any],
+    memory_context: dict[str, Any],
+) -> dict[str, Any]:
+    action = str(
+        advice.get("selected_action") or advice.get("recommended_action") or ""
+    )
+    memory_used = [
+        str(item)
+        for item in _list(advice.get("memory_used"))
+        if str(item or "").strip()
+    ] or _list(memory_context.get("memory_used"))
+    return {
+        "selected_action": action,
+        "reason": str(advice.get("reason") or advice.get("rationale") or ""),
+        "confidence": max(0.0, min(1.0, _float(advice.get("confidence", 0.0)))),
+        "risk": str(advice.get("risk") or "medium"),
+        "required_evidence": [
+            str(item)
+            for item in _list(advice.get("required_evidence"))
+            if str(item or "").strip()
+        ],
+        "next_plan": str(advice.get("next_plan") or ""),
+        "memory_used": memory_used,
+        "proposal_source": "llm",
+    }
+
+
+def _llm_planner_safety_gate(
+    advice: dict[str, Any],
+    selected_action: dict[str, Any],
+) -> dict[str, Any]:
+    recommended = str(
+        advice.get("selected_action") or advice.get("recommended_action") or ""
+    )
+    controller_action = str(selected_action.get("id") or "")
+    recommended_canonical = canonical_action_id(recommended)
+    controller_canonical = canonical_action_id(controller_action)
+    recommended_registered = bool(action_spec_for(recommended))
+    controller_registered = bool(action_spec_for(controller_action))
+    action_match = bool(
+        recommended
+        and controller_action
+        and (
+            recommended == controller_action
+            or recommended_canonical == controller_canonical
+        )
+    )
+    override_requested = bool(advice.get("should_override_controller", False))
+    if not recommended:
+        status = "not_requested"
+        reason = "llm_planner_not_available"
+    elif not recommended_registered:
+        status = "blocked"
+        reason = "llm_recommended_action_not_registered"
+    elif action_match:
+        status = "pass"
+        reason = "llm_recommendation_matches_controller_policy"
+    else:
+        status = "advisory_only"
+        reason = "controller_policy_retains_rule_selected_action"
+    return {
+        "status": status,
+        "reason": reason,
+        "recommended_action": recommended,
+        "recommended_canonical_action": recommended_canonical,
+        "recommended_registered": recommended_registered,
+        "controller_action": controller_action,
+        "controller_canonical_action": controller_canonical,
+        "controller_registered": controller_registered,
+        "controller_action_match": action_match,
+        "override_requested": override_requested,
+        "override_allowed": False,
+        "adopted_action": controller_action,
+        "authority": "rules_and_sandbox_gate_decide",
+    }
+
+
+def _safe_llm_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    safe = {}
+    for key in [
+        "status",
+        "provider",
+        "model",
+        "base_url",
+        "timeout_seconds",
+        "latency_ms",
+        "prompt_chars",
+        "response_chars",
+        "usage",
+        "cost_estimate",
+        "api_key_present",
+        "api_key_fingerprint",
+        "error_type",
+        "error_reason",
+        "http_status",
+        "response_preview",
+        "mode",
+        "index",
+    ]:
+        if key in metadata:
+            safe[key] = metadata[key]
+    return safe
+
+
+def _env_flag(name: str) -> bool:
+    value = os.environ.get(name, "")
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _verification_success_condition(action_id: str) -> str:
     if action_id == "run_repository_tests_with_checkout":
         return "repository_test_execution_result and dynamic evidence are refreshed"
@@ -2916,6 +4381,10 @@ def _verification_success_condition(action_id: str) -> str:
         return "repository_test_fault_localization has a non-empty Top-k ranking"
     if action_id == "configure_llm_patch_api_key":
         return "LLM patch configuration records a missing-key blocker without leaking raw secrets"
+    if action_id == "diagnose_llm_provider_failure":
+        return "LLM provider failure is classified with a concrete recovery policy and no raw secret leakage"
+    if action_id == "retry_llm_patch_generation":
+        return "LLM patch generation is retried with bounded context, retry budget, and preserved telemetry"
     if action_id in {
         "generate_and_validate_patches",
         "generate_llm_patch_candidates",
@@ -2969,6 +4438,10 @@ def _verification_expected_artifact(
         return "repository_test_fault_localization.json"
     if action_id == "configure_llm_patch_api_key":
         return "repository_test_patch_candidates.json"
+    if action_id == "diagnose_llm_provider_failure":
+        return "agent_policy_trace.json"
+    if action_id == "retry_llm_patch_generation":
+        return "repository_test_patch_candidates.json"
     if action_id in {
         "generate_llm_patch_candidates",
         "generate_hybrid_patch_candidates",
@@ -3008,6 +4481,7 @@ def _controller_status(selected_action: dict[str, Any]) -> str:
         "extend_failure_overlay_or_provide_bug_report",
         "retry_with_github_token_or_cache",
         "configure_llm_patch_api_key",
+        "diagnose_llm_provider_failure",
     }:
         return "blocked"
     return "ready"
@@ -3062,11 +4536,29 @@ def _list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
 
 
+def _unique_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result = []
+    for value in values:
+        item = str(value or "").strip()
+        if item and item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
 def _int(value: Any) -> int:
     try:
         return int(value)
     except (TypeError, ValueError):
         return 0
+
+
+def _float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _format_counts(counts: dict[str, Any]) -> str:

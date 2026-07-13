@@ -79,6 +79,56 @@ def test_repository_test_execution_result_uses_python_executable_override(tmp_pa
     assert "Python Executable Source" in markdown
 
 
+def test_repository_test_execution_result_runs_from_recommended_working_dir(tmp_path):
+    api_root = tmp_path / "services" / "api"
+    api_root.mkdir(parents=True)
+    calls = []
+
+    def fake_runner(command, cwd, capture_output, text, timeout, check, env):
+        del capture_output, text, timeout, check, env
+        calls.append((command, cwd))
+        return subprocess.CompletedProcess(command, 0, "1 passed", "")
+
+    payload = execute_repository_test_plan(
+        {
+            "recommended_execution_command": "python -m pytest -q tests/test_api.py",
+            "recommended_execution_level": "narrow",
+            "recommended_execution_risk": "low",
+            "recommended_execution_scope": "subproject pytest",
+            "recommended_execution_runner": "pytest",
+            "recommended_working_dir": "services/api",
+            "executable_now": True,
+        },
+        repository_root=tmp_path,
+        runner=fake_runner,
+    )
+    markdown = render_repository_test_execution_result_markdown(payload)
+
+    assert payload["status"] == "pass"
+    assert payload["repository_root"] == str(tmp_path)
+    assert payload["working_dir"] == "services/api"
+    assert payload["cwd"] == str(api_root)
+    assert calls[0][1] == api_root
+    assert "Working Dir: `services/api`" in markdown
+
+
+def test_repository_test_execution_result_blocks_unsafe_working_dir(tmp_path):
+    payload = execute_repository_test_plan(
+        {
+            "recommended_execution_command": "python -m pytest -q",
+            "recommended_execution_level": "narrow",
+            "recommended_execution_risk": "low",
+            "recommended_working_dir": "../outside",
+            "executable_now": True,
+        },
+        repository_root=tmp_path,
+    )
+
+    assert payload["status"] == "skipped"
+    assert payload["reason"] == "selected_working_dir_missing"
+    assert payload["executed"] is False
+
+
 def test_repository_test_execution_result_applies_planned_environment_variables(tmp_path):
     seen_env = {}
 

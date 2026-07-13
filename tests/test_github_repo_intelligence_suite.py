@@ -23,6 +23,157 @@ from code_intelligence_agent.evaluation.github_repo_intelligence_suite import (
 from code_intelligence_agent.evaluation.github_discovery_fetcher import GitHubAPIError
 
 
+def test_suite_summary_aggregates_llm_patch_telemetry():
+    runs = [
+        GitHubRepoIntelligenceSuiteRunResult(
+            name="direct_success",
+            repo="example/direct",
+            output_dir="out/direct",
+            report_path="out/direct/github_repo_intelligence.json",
+            status="pass",
+            passed=True,
+            expected_status="pass",
+            expectation_passed=True,
+            metrics={
+                "repository_llm_patch_generation_status": "pass",
+                "repository_llm_patch_request_count": 1,
+                "repository_llm_patch_success_count": 1,
+                "repository_llm_patch_failure_count": 0,
+                "repository_llm_patch_total_tokens": 100,
+                "repository_llm_patch_estimated_total_tokens": 120,
+                "repository_llm_patch_latency_ms_total": 3000,
+                "repository_llm_patch_cost_available": True,
+                "repository_llm_patch_estimated_cost_usd": 0.0012,
+            },
+            metric_checks=[],
+            expectation_checks=[],
+            command_args=[],
+        ),
+        GitHubRepoIntelligenceSuiteRunResult(
+            name="timeout_retry",
+            repo="example/timeout",
+            output_dir="out/timeout",
+            report_path="out/timeout/github_repo_intelligence.json",
+            status="blocked",
+            passed=False,
+            expected_status="blocked",
+            expectation_passed=True,
+            metrics={
+                "repository_llm_patch_generation_status": "error",
+                "repository_llm_patch_request_count": 2,
+                "repository_llm_patch_success_count": 0,
+                "repository_llm_patch_failure_count": 2,
+                "repository_llm_patch_total_tokens": 0,
+                "repository_llm_patch_estimated_total_tokens": 64,
+                "repository_llm_patch_latency_ms_total": 6000,
+                "repository_llm_patch_error_reason_counts": {
+                    "http_429": 1,
+                    "timeout": 1,
+                },
+                "repository_llm_patch_provider_failure_class": "timeout",
+            },
+            metric_checks=[],
+            expectation_checks=[],
+            command_args=[],
+        ),
+    ]
+
+    summary = _suite_summary(runs, suite_thresholds={})
+    markdown = render_github_repo_intelligence_suite_markdown(
+        GitHubRepoIntelligenceSuiteReport(
+            manifest_path="manifest.json",
+            output_dir="out",
+            suite_name="llm_telemetry_suite",
+            passed=False,
+            summary=summary,
+            runs=runs,
+        )
+    )
+
+    assert summary["repository_llm_patch_generation_status_counts"] == {
+        "error": 1,
+        "pass": 1,
+    }
+    assert summary["repository_llm_patch_request_count"] == 3
+    assert summary["repository_llm_patch_success_count"] == 1
+    assert summary["repository_llm_patch_failure_count"] == 2
+    assert summary["repository_llm_patch_total_tokens"] == 100
+    assert summary["repository_llm_patch_estimated_total_tokens"] == 184
+    assert summary["repository_llm_patch_latency_ms_total"] == 9000
+    assert summary["repository_llm_patch_latency_ms_average"] == 3000.0
+    assert summary["repository_llm_patch_estimated_cost_usd_total"] == 0.0012
+    assert summary["repository_llm_patch_cost_available_count"] == 1
+    assert summary["repository_llm_patch_cost_available_runs"] == [
+        "direct_success"
+    ]
+    assert summary["repository_llm_patch_error_reason_counts"] == {
+        "http_429": 1,
+        "timeout": 1,
+    }
+    assert summary["repository_llm_patch_provider_failure_class_counts"] == {
+        "timeout": 1
+    }
+    assert "LLM Patch Telemetry: requests=3" in markdown
+    assert "latency_ms_average=3000.0" in markdown
+    assert "estimated_cost_usd=0.0012" in markdown
+    assert "LLM Patch Error Reasons: http_429=1, timeout=1" in markdown
+    assert "LLM Patch Provider Failure Classes: timeout=1" in markdown
+
+
+def test_suite_summary_aggregates_run_elapsed_time_without_metric_pollution():
+    runs = [
+        GitHubRepoIntelligenceSuiteRunResult(
+            name="command_failure",
+            repo="example/failure",
+            output_dir="out/failure",
+            report_path="",
+            status="command_error",
+            passed=False,
+            expected_status="pass",
+            expectation_passed=False,
+            metrics={},
+            metric_checks=[],
+            expectation_checks=[],
+            command_args=[],
+            error="boom",
+            elapsed_ms=120,
+        ),
+        GitHubRepoIntelligenceSuiteRunResult(
+            name="cached_success",
+            repo="example/cached",
+            output_dir="out/cached",
+            report_path="out/cached/github_repo_intelligence.json",
+            status="pass",
+            passed=True,
+            expected_status="pass",
+            expectation_passed=True,
+            metrics={},
+            metric_checks=[],
+            expectation_checks=[],
+            command_args=[],
+            elapsed_ms=80,
+        ),
+    ]
+
+    summary = _suite_summary(runs, suite_thresholds={})
+    markdown = render_github_repo_intelligence_suite_markdown(
+        GitHubRepoIntelligenceSuiteReport(
+            manifest_path="manifest.json",
+            output_dir="out",
+            suite_name="elapsed_suite",
+            passed=False,
+            summary=summary,
+            runs=runs,
+        )
+    )
+
+    assert summary["suite_run_elapsed_ms_total"] == 200
+    assert summary["suite_run_elapsed_ms_average"] == 100.0
+    assert summary["suite_run_elapsed_ms_max"] == 120
+    assert summary["agent_status_counts"] == {}
+    assert "Suite Run Elapsed Average ms: 100.0" in markdown
+
+
 def test_intelligence_suite_runs_static_and_blocked_reports(tmp_path):
     raw_source = _write_average_mean(tmp_path)
     manifest_path = tmp_path / "manifest.json"
@@ -79,7 +230,7 @@ def test_intelligence_suite_runs_static_and_blocked_reports(tmp_path):
                             "checkout:full_repo_not_materialized"
                         ),
                         "metric_thresholds": {
-                            "artifact_inventory_core_file_nonempty_count": 18,
+                            "artifact_inventory_core_file_nonempty_count": 24,
                             "repository_structure_analyzed_file_count": 2,
                             "repository_structure_function_count": 2,
                             "repository_structure_total_loc": 1,
@@ -756,7 +907,7 @@ def test_intelligence_suite_runs_unittest_dynamic_evidence_path(
                         "expected_dynamic_evidence_level": "failing_tests",
                         "expected_patch_generation_mode": "rule",
                         "metric_thresholds": {
-                            "artifact_inventory_core_file_nonempty_count": 18,
+                            "artifact_inventory_core_file_nonempty_count": 24,
                             "fault_localization_ranking_count": 1,
                         },
                     }
@@ -4402,6 +4553,58 @@ def test_intelligence_suite_runs_controlled_safety_gate_blocker_case(tmp_path):
     assert row["patch_judge_authority"] == "sandbox_pytest_decides_success"
 
 
+def test_intelligence_suite_can_run_manifest_slice(tmp_path):
+    manifest_path = tmp_path / "manifest.json"
+    output_dir = tmp_path / "suite"
+    runs = [
+        {
+            "name": f"safety_gate_blocker_{index}",
+            "repo": f"controlled/safety_gate_blocker_{index}",
+            "expected_status": "pass",
+            "expected_blocker": "patch_candidates_blocked_by_safety_gate",
+            "expected_controller_action": "regenerate_safe_patch_candidates",
+            "expected_patch_generation_mode": "hybrid",
+            "expected_patch_safety_gate_status": "blocked",
+            "expected_patch_validation_status": "skipped",
+        }
+        for index in range(3)
+    ]
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "suite_name": "controlled_slice_suite",
+                "defaults": {
+                    "execution_profile": "controlled-repair",
+                    "controlled_repair_case": "safety_gate_blocker",
+                    "repository_patch_generation_mode": "hybrid",
+                    "repository_test_reflection_mode": "none",
+                },
+                "runs": runs,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    report = run_github_repo_intelligence_suite(
+        manifest_path,
+        output_dir,
+        start_index=1,
+        limit_runs=1,
+    )
+
+    assert [run.name for run in report.runs] == ["safety_gate_blocker_1"]
+    assert (output_dir / "safety_gate_blocker_1").exists()
+    assert not (output_dir / "safety_gate_blocker_0").exists()
+    assert not (output_dir / "safety_gate_blocker_2").exists()
+    assert report.summary["run_count"] == 1
+    assert report.summary["manifest_run_count"] == 3
+    assert report.summary["suite_slice_applied"] is True
+    assert report.summary["suite_slice_start_index"] == 1
+    assert report.summary["suite_slice_limit"] == 1
+    assert report.summary["suite_slice_run_count"] == 1
+
+
 def test_intelligence_suite_llm_preflight_blocks_missing_keys_before_runner(
     tmp_path,
     monkeypatch,
@@ -4804,6 +5007,21 @@ def test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed(
             "repository_llm_patch_api_key_present": True,
             "repository_patch_generator_counts": {"llm": 1},
             "repository_patch_generator_llm_candidate_count": 1,
+            "repository_llm_patch_generation_telemetry": {
+                "request_count": 1,
+                "success_count": 1,
+                "failure_count": 0,
+                "total_tokens": 100,
+                "estimated_total_tokens": 120,
+                "latency_ms_total": 2500,
+                "latency_ms_average": 2500.0,
+                "cost_estimate": {
+                    "available": True,
+                    "estimated_cost_usd": 0.0015,
+                    "source": "llm_metadata",
+                },
+                "error_reason_counts": {},
+            },
             "repository_test_patch_validation_status": "pass",
             "repository_test_patch_validation_success_count": 1,
             "repository_test_patch_validation_successful_reflection_count": 0,
@@ -4840,6 +5058,18 @@ def test_intelligence_suite_llm_showcase_thresholds_recompute_report_passed(
     assert report.runs[0].metrics["repository_llm_patch_provider"] == "deepseek"
     assert report.runs[0].metrics["repository_llm_patch_model"] == "deepseek-v4-pro"
     assert report.runs[0].metrics["repository_llm_patch_api_key_present"] is True
+    assert report.runs[0].metrics["repository_llm_patch_request_count"] == 1
+    assert report.runs[0].metrics["repository_llm_patch_success_count"] == 1
+    assert report.runs[0].metrics["repository_llm_patch_total_tokens"] == 100
+    assert report.runs[0].metrics[
+        "repository_llm_patch_estimated_total_tokens"
+    ] == 120
+    assert report.runs[0].metrics["repository_llm_patch_latency_ms_total"] == 2500
+    assert report.runs[0].metrics[
+        "repository_llm_patch_estimated_cost_usd"
+    ] == 0.0015
+    assert report.summary["repository_llm_patch_request_count"] == 1
+    assert report.summary["repository_llm_patch_estimated_cost_usd_total"] == 0.0015
     assert checks[
         "min_llm_repair_showcase_matrix_direct_success_count"
     ]["passed"] is True

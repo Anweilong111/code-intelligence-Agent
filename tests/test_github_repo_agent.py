@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from code_intelligence_agent.evaluation.github_repo_agent import (
+    GitHubRepoAgentReport,
     _agent_summary,
     _build_fetch_error_report,
     _repository_test_final_diagnosis,
@@ -87,6 +88,9 @@ def test_github_repo_agent_runs_smoke_preset_for_repo_url():
         assert report.summary["repository_test_command_reason"] == (
             "full_repo_not_materialized"
         )
+        assert report.summary["repository_test_command_repository_root"] == ""
+        assert report.summary["repository_test_command_working_dir"] == ""
+        assert report.summary["repository_test_command_cwd"] == ""
         assert report.summary["repository_test_setup_doctor_status"] == "blocked"
         assert report.summary["repository_test_setup_doctor_blocker"] == (
             "checkout:full_repo_not_materialized"
@@ -403,6 +407,9 @@ def test_github_repo_agent_runs_smoke_preset_for_repo_url():
         assert "Static Intelligence" in markdown
         assert "mined_static_candidates" in markdown
         assert "Recommended Test Command" in markdown
+        assert "Repository Test Command Working Dir" in markdown
+        assert "Repository Test Command CWD" in markdown
+        assert "Repository Test Command Root" in markdown
         assert "Repository Test Environment Setup Status" in markdown
         assert "Repository Test Environment Setup Result Status" in markdown
         assert "Planned Repository Test Command" in markdown
@@ -442,6 +449,42 @@ def test_github_repo_agent_runs_smoke_preset_for_repo_url():
         assert "| repository_test_execution | blocked | repository_test_not_executed" in (
             plan_markdown
         )
+
+
+def test_github_repo_agent_summary_preserves_repository_test_command_location(tmp_path):
+    checkout = tmp_path / "checkout"
+    api_root = checkout / "services" / "api"
+    onboarding = _minimal_onboarding_report(tmp_path).to_dict()
+    onboarding["repository_test_command"] = {
+        "status": "pass",
+        "executed": True,
+        "reason": "command_returncode",
+        "repository_root": str(checkout),
+        "working_dir": "services/api",
+        "cwd": str(api_root),
+    }
+    summary = _agent_summary(onboarding)
+    report = GitHubRepoAgentReport(
+        repo_spec="example/project",
+        owner="example",
+        repo="project",
+        output_dir=str(tmp_path),
+        preset="mining",
+        status="pass",
+        summary=summary,
+        output_paths={},
+        onboarding_report=onboarding,
+    )
+    markdown = render_github_repo_agent_markdown(report)
+
+    assert summary["repository_test_command_status"] == "pass"
+    assert summary["repository_test_command_executed"] is True
+    assert summary["repository_test_command_repository_root"] == str(checkout)
+    assert summary["repository_test_command_working_dir"] == "services/api"
+    assert summary["repository_test_command_cwd"] == str(api_root)
+    assert "Repository Test Command Working Dir: `services/api`" in markdown
+    assert f"Repository Test Command CWD: `{api_root}`" in markdown
+    assert f"Repository Test Command Root: `{checkout}`" in markdown
 
 
 def test_github_repo_agent_uses_ref_inferred_from_tree_url():
@@ -702,6 +745,60 @@ def test_github_repo_agent_summary_lifts_repository_repair_conclusion():
     assert summary["repository_test_repair_summary_path"] == (
         "out/repository_test_repair_summary.md"
     )
+
+
+def test_github_repo_agent_summary_lifts_llm_patch_telemetry(tmp_path):
+    summary = _agent_summary(
+        {
+            "repository_test_patch_candidates": {
+                "status": "warning",
+                "reason": "no_patch_candidates_generated",
+                "patch_generation_mode": "llm",
+                "llm_generation_status": "error",
+                "llm_generation_reason": "http_error",
+                "llm_generation_telemetry": {
+                    "request_count": 1,
+                    "success_count": 0,
+                    "failure_count": 1,
+                    "total_tokens": 18,
+                    "estimated_total_tokens": 24,
+                    "latency_ms_total": 130,
+                    "latency_ms_average": 130.0,
+                    "cost_estimate": {
+                        "available": True,
+                        "estimated_cost_usd": 0.00024,
+                    },
+                    "error_reason_counts": {"http_401": 1},
+                },
+            }
+        }
+    )
+    report = GitHubRepoAgentReport(
+        repo_spec="example/project",
+        owner="example",
+        repo="project",
+        output_dir=str(tmp_path),
+        preset="mining",
+        status="warning",
+        summary=summary,
+        output_paths={},
+        onboarding_report={},
+    )
+    markdown = render_github_repo_agent_markdown(report)
+
+    assert summary["repository_llm_patch_generation_status"] == "error"
+    assert summary["repository_llm_patch_generation_reason"] == "http_error"
+    assert summary["repository_llm_patch_request_count"] == 1
+    assert summary["repository_llm_patch_success_count"] == 0
+    assert summary["repository_llm_patch_failure_count"] == 1
+    assert summary["repository_llm_patch_total_tokens"] == 18
+    assert summary["repository_llm_patch_estimated_total_tokens"] == 24
+    assert summary["repository_llm_patch_latency_ms_total"] == 130
+    assert summary["repository_llm_patch_latency_ms_average"] == 130.0
+    assert summary["repository_llm_patch_estimated_cost_usd"] == 0.00024
+    assert summary["repository_llm_patch_error_reason_counts"] == {"http_401": 1}
+    assert "Repository LLM Patch Telemetry: requests=1" in markdown
+    assert "failures=1" in markdown
 
 
 def test_github_repo_agent_final_diagnosis_explains_framework_configuration():

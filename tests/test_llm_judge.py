@@ -2,6 +2,7 @@ import hashlib
 from pathlib import Path
 import json
 import tempfile
+import urllib.error
 
 from code_intelligence_agent.agents.llm_client import (
     ALIBABA_BEST_JUDGE_MODEL,
@@ -9,6 +10,8 @@ from code_intelligence_agent.agents.llm_client import (
     DEEPSEEK_BEST_JUDGE_MODEL,
     DEEPSEEK_CHAT_COMPLETIONS_URL,
     JUDGE_SYSTEM_PROMPT,
+    LLMRequestError,
+    OpenAICompatibleLLMClient,
     SequenceLLMClient,
     StaticLLMClient,
     create_alibaba_judge_client,
@@ -157,6 +160,89 @@ def test_deepseek_clients_accept_role_specific_timeout_env(monkeypatch):
 
     assert patch_client.timeout == 180
     assert judge_client.timeout == 240
+
+
+def test_openai_compatible_client_records_usage_cost_and_latency(monkeypatch):
+    requests = []
+    response_body = {
+        "id": "chatcmpl-test",
+        "object": "chat.completion",
+        "choices": [
+            {
+                "message": {
+                    "content": json.dumps(
+                        {"fixed_source": "def f():\n    return 1\n"}
+                    )
+                }
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 12,
+            "completion_tokens": 6,
+            "total_tokens": 18,
+        },
+    }
+
+    def fake_urlopen(request, timeout):
+        requests.append((request, timeout))
+        return _FakeHTTPResponse(json.dumps(response_body))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.setenv("CIA_LLM_INPUT_USD_PER_1K_TOKENS", "0.01")
+    monkeypatch.setenv("CIA_LLM_OUTPUT_USD_PER_1K_TOKENS", "0.02")
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        base_url="https://api.deepseek.com",
+        timeout=7,
+    )
+
+    response = client.complete("repair this function")
+    metadata = response.metadata
+
+    assert response.text.startswith("{")
+    assert requests[0][1] == 7
+    assert metadata["status"] == "pass"
+    assert metadata["provider"] == "deepseek"
+    assert metadata["model"] == "deepseek-v4-pro"
+    assert metadata["base_url"] == DEEPSEEK_CHAT_COMPLETIONS_URL
+    assert metadata["response_id"] == "chatcmpl-test"
+    assert metadata["usage"]["source"] == "provider_usage"
+    assert metadata["usage"]["total_tokens"] == 18
+    assert metadata["cost_estimate"]["available"] is True
+    assert metadata["cost_estimate"]["estimated_cost_usd"] == 0.00024
+    assert metadata["latency_ms"] >= 0
+    assert metadata["api_key_fingerprint"].startswith("sha256:")
+    assert "fake-key" not in json.dumps(metadata)
+
+
+def test_openai_compatible_client_raises_structured_request_error(monkeypatch):
+    def fake_urlopen(request, timeout):
+        del request, timeout
+        raise urllib.error.URLError("network unavailable")
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        timeout=5,
+    )
+
+    try:
+        client.complete("repair this function")
+    except LLMRequestError as exc:
+        payload = json.dumps(exc.metadata)
+        assert exc.reason == "url_error"
+        assert exc.metadata["status"] == "error"
+        assert exc.metadata["provider"] == "deepseek"
+        assert exc.metadata["model"] == "deepseek-v4-pro"
+        assert exc.metadata["error_type"] == "URLError"
+        assert "network unavailable" in exc.metadata["error_reason"]
+        assert "fake-key" not in payload
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
 
 
 def test_llm_config_audit_masks_keys_and_tracks_enabled_roles(monkeypatch):
@@ -939,3 +1025,17 @@ def _patch_judge_beam_result(
         "failure_reason": "",
         "trace": [],
     }
+
+
+class _FakeHTTPResponse:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback):
+        return False
+
+    def read(self) -> bytes:
+        return self.text.encode("utf-8")

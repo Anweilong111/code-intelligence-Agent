@@ -38,6 +38,11 @@ def test_repository_profile_ranks_managed_test_command_candidates():
 
     assert profile["recommended_test_command"] == "python -m tox"
     assert profile["recommended_target_prefix"] == "demo"
+    assert profile["layout_type"] == "src_layout"
+    assert profile["layout_profile"]["confidence"] == 0.9
+    assert profile["layout_profile"]["recommended_analysis_roots"] == ["src/demo"]
+    assert profile["recommended_analysis_roots"] == ["src/demo"]
+    assert profile["monorepo_candidate"] is False
     assert profile["doctor_status"] == "pass"
     assert profile["doctor_blocker"] == "none"
     assert profile["repository_doctor"]["score"] == 1.0
@@ -57,6 +62,8 @@ def test_repository_profile_ranks_managed_test_command_candidates():
     assert profile["test_command_candidates"][0]["reason"] == "tox_ini_detected"
     assert "Test Command Candidates" in markdown
     assert "Dependency And Packaging Profile" in markdown
+    assert "Layout Profile" in markdown
+    assert "Layout Type: `src_layout`" in markdown
     assert "python -m pip install tox" in markdown
     assert "Repository Doctor Status: pass" in markdown
     assert "python -m tox" in markdown
@@ -256,11 +263,85 @@ def test_repository_profile_ignores_auxiliary_roots_when_recommending_target_pre
     )
 
     assert profile["package_roots"] == ["bench", "h11"]
+    assert profile["layout_type"] == "single_package"
     assert profile["recommended_target_prefix"] == "h11"
     assert (
         "use target_prefix=h11 when materializing flat GitHub sources"
         in profile["layout_hints"]
     )
+
+
+def test_repository_profile_classifies_partial_monorepo_candidate():
+    profile = build_github_repository_profile(
+        {
+            "tree": [
+                {"path": "services/api/pyproject.toml"},
+                {"path": "services/api/src/api/__init__.py"},
+                {"path": "services/api/src/api/routes.py"},
+                {"path": "services/worker/pyproject.toml"},
+                {"path": "services/worker/src/worker/__init__.py"},
+                {"path": "services/worker/src/worker/jobs.py"},
+                {"path": "libs/common/common/__init__.py"},
+                {"path": "libs/common/common/util.py"},
+                {"path": "tests/test_smoke.py"},
+            ]
+        },
+        _import_report(
+            raw_paths=[
+                "services/api/pyproject.toml",
+                "services/api/src/api/__init__.py",
+                "services/api/src/api/routes.py",
+                "services/worker/pyproject.toml",
+                "services/worker/src/worker/__init__.py",
+                "services/worker/src/worker/jobs.py",
+                "libs/common/common/__init__.py",
+                "libs/common/common/util.py",
+                "tests/test_smoke.py",
+            ],
+            imported_paths=[
+                "services/api/src/api/__init__.py",
+                "services/api/src/api/routes.py",
+                "services/worker/src/worker/__init__.py",
+                "services/worker/src/worker/jobs.py",
+                "libs/common/common/__init__.py",
+                "libs/common/common/util.py",
+                "tests/test_smoke.py",
+            ],
+        ),
+    )
+    markdown = render_github_repository_profile_markdown(profile)
+
+    assert profile["layout_type"] == "monorepo_candidate"
+    assert profile["monorepo_candidate"] is True
+    assert profile["layout_profile"]["application_roots"] == [
+        "libs",
+        "services",
+    ]
+    assert profile["layout_profile"]["nested_project_config_roots"] == [
+        "services/api",
+        "services/worker",
+    ]
+    assert profile["layout_profile"]["recommended_analysis_roots"] == [
+        "services/api",
+        "services/worker",
+    ]
+    nested_candidates = [
+        (candidate["runner"], candidate["working_dir"], candidate["reason"])
+        for candidate in profile["test_command_candidates"]
+        if candidate.get("working_dir")
+    ]
+    assert ("pytest", "services/api", "nested_pytest_config_or_tests_detected") in (
+        nested_candidates
+    )
+    assert ("pytest", "services/worker", "nested_pytest_config_or_tests_detected") in (
+        nested_candidates
+    )
+    assert profile["recommended_test_working_dir"] == "services/api"
+    assert "multiple_project_roots_or_nested_configs" in (
+        profile["layout_profile"]["reason"]
+    )
+    assert "Layout Type: `monorepo_candidate`" in markdown
+    assert "Monorepo Candidate: true" in markdown
 
 
 def test_repository_profile_detects_django_framework_settings_module():

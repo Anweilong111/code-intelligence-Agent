@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
@@ -37,8 +38,27 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
     }
 
 
-def main() -> None:
-    cli = argparse.ArgumentParser(description="Phase-1 static code analysis.")
+def main(argv: list[str] | None = None) -> None:
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_session_agent(raw_argv):
+        from code_intelligence_agent.agents.session_cli import main as session_main
+
+        session_main(raw_argv)
+        return
+    if _should_route_to_repo_agent(raw_argv):
+        from code_intelligence_agent.evaluation.github_repo_intelligence import (
+            main as repo_agent_main,
+        )
+
+        repo_agent_main(_repo_agent_argv(raw_argv))
+        return
+
+    cli = argparse.ArgumentParser(
+        description=(
+            "Static code analysis for a local Python path. Use --agent or the "
+            "`agent` subcommand for arbitrary GitHub repository analysis."
+        )
+    )
     cli.add_argument("path", help="Python file or repository path")
     cli.add_argument(
         "--patch-mode",
@@ -46,7 +66,7 @@ def main() -> None:
         default="rule",
         help="Patch generation mode",
     )
-    args = cli.parse_args()
+    args = cli.parse_args(raw_argv)
     print(
         json.dumps(
             analyze_path(args.path, patch_mode=args.patch_mode),
@@ -54,6 +74,31 @@ def main() -> None:
             ensure_ascii=False,
         )
     )
+
+
+def _should_route_to_repo_agent(argv: list[str]) -> bool:
+    if argv and argv[0] in {"agent", "repo-agent", "github-agent"}:
+        return True
+    return any(
+        item == "--agent"
+        or item.startswith("--execution-profile")
+        or item.startswith("--repository-test-")
+        or item.startswith("--auto-controller")
+        for item in argv
+    )
+
+
+def _should_route_to_session_agent(argv: list[str]) -> bool:
+    return bool(argv and argv[0] in {"chat", "chat-ui", "resume"})
+
+
+def _repo_agent_argv(argv: list[str]) -> list[str]:
+    if argv and argv[0] in {"agent", "repo-agent", "github-agent"}:
+        routed = list(argv[1:])
+        if "--agent" not in routed:
+            routed.append("--agent")
+        return routed
+    return argv
 
 
 if __name__ == "__main__":

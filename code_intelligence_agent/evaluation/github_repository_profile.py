@@ -86,6 +86,14 @@ def build_github_repository_profile(
         config_files=config_files,
     )
     dependency_profile = _dependency_manager_profile(config_files)
+    layout_profile = _layout_profile(
+        imported_paths=imported_paths,
+        config_files=config_files,
+        test_source_paths=test_source_paths,
+        package_roots=package_roots,
+        src_layout_packages=src_layout_packages,
+        recommended_target_prefix=recommended_target_prefix,
+    )
     test_command_candidates = _test_command_candidates(
         test_frameworks=test_frameworks,
         test_source_paths=test_source_paths,
@@ -98,6 +106,7 @@ def build_github_repository_profile(
             str(item)
             for item in _list(test_content_profile.get("unittest_test_source_paths"))
         ],
+        layout_profile=layout_profile,
     )
     recommended_test_command = _recommended_test_command(
         test_frameworks=test_frameworks,
@@ -156,6 +165,11 @@ def build_github_repository_profile(
         "test_command_candidate_count": len(test_command_candidates),
         "test_command_candidates": test_command_candidates,
         "recommended_test_command": recommended_test_command,
+        "recommended_test_working_dir": str(
+            _dict(test_command_candidates[0]).get("working_dir")
+            if test_command_candidates
+            else ""
+        ),
         "test_content_profile": test_content_profile,
         "repository_doctor": repository_doctor,
         "doctor_status": str(repository_doctor.get("status") or ""),
@@ -163,6 +177,12 @@ def build_github_repository_profile(
         "doctor_next_action": str(repository_doctor.get("next_action") or ""),
         "doctor_score": _float(repository_doctor.get("score", 0.0)),
         "recommended_target_prefix": recommended_target_prefix,
+        "layout_profile": layout_profile,
+        "layout_type": str(layout_profile.get("layout_type") or ""),
+        "monorepo_candidate": bool(layout_profile.get("monorepo_candidate", False)),
+        "recommended_analysis_roots": [
+            str(item) for item in _list(layout_profile.get("recommended_analysis_roots"))
+        ],
         "layout_hints": _layout_hints(
             imported_paths=imported_paths,
             config_files=config_files,
@@ -200,6 +220,18 @@ def render_github_repository_profile_markdown(profile: dict[str, Any]) -> str:
             f"`{_markdown_cell(profile.get('recommended_target_prefix') or 'none')}`"
         ),
         (
+            "- Layout Type: "
+            f"`{_markdown_cell(profile.get('layout_type') or 'unknown')}`"
+        ),
+        (
+            "- Monorepo Candidate: "
+            f"{str(bool(profile.get('monorepo_candidate', False))).lower()}"
+        ),
+        (
+            "- Recommended Analysis Roots: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(profile.get('recommended_analysis_roots'))) or 'none')}"
+        ),
+        (
             "- Repository Doctor Status: "
             f"{_markdown_cell(profile.get('doctor_status') or 'unknown')}"
         ),
@@ -233,13 +265,66 @@ def render_github_repository_profile_markdown(profile: dict[str, Any]) -> str:
         )
     if not _list(_dict(profile.get("repository_doctor")).get("checks")):
         lines.append("| none | skipped | none | none | none |")
+    layout_profile = _dict(profile.get("layout_profile"))
+    lines.extend(
+        [
+            "",
+            "## Layout Profile",
+            "",
+            f"- Type: `{_markdown_cell(layout_profile.get('layout_type') or 'unknown')}`",
+            f"- Confidence: {_float(layout_profile.get('confidence', 0.0)):.2f}",
+            f"- Reason: `{_markdown_cell(layout_profile.get('reason') or 'none')}`",
+            f"- Monorepo Candidate: {str(bool(layout_profile.get('monorepo_candidate', False))).lower()}",
+            (
+                "- Application Roots: "
+                + (
+                    ", ".join(
+                        str(item)
+                        for item in _list(layout_profile.get("application_roots"))
+                    )
+                    or "none"
+                )
+            ),
+            (
+                "- Nested Project Config Roots: "
+                + (
+                    ", ".join(
+                        str(item)
+                        for item in _list(
+                            layout_profile.get("nested_project_config_roots")
+                        )
+                    )
+                    or "none"
+                )
+            ),
+            (
+                "- Recommended Analysis Roots: "
+                + (
+                    ", ".join(
+                        str(item)
+                        for item in _list(
+                            layout_profile.get("recommended_analysis_roots")
+                        )
+                    )
+                    or "none"
+                )
+            ),
+            "",
+            "| Evidence |",
+            "| --- |",
+        ]
+    )
+    for item in _list(layout_profile.get("evidence")):
+        lines.append(f"| {_markdown_cell(item)} |")
+    if not _list(layout_profile.get("evidence")):
+        lines.append("| none |")
     lines.extend(
         [
         "",
         "## Test Command Candidates",
         "",
-        "| Rank | Command | Runner | Confidence | Reason | Evidence |",
-        "| ---: | --- | --- | ---: | --- | --- |",
+        "| Rank | Command | Working Dir | Runner | Confidence | Reason | Evidence |",
+        "| ---: | --- | --- | --- | ---: | --- | --- |",
         ]
     )
     for candidate in _list(profile.get("test_command_candidates")):
@@ -248,6 +333,7 @@ def render_github_repository_profile_markdown(profile: dict[str, Any]) -> str:
             "| "
             f"{_int(row.get('rank', 0))} | "
             f"`{_markdown_cell(row.get('command', ''))}` | "
+            f"`{_markdown_cell(row.get('working_dir') or '.')}` | "
             f"{_markdown_cell(row.get('runner', ''))} | "
             f"{_float(row.get('confidence', 0.0)):.2f} | "
             f"{_markdown_cell(row.get('reason', ''))} | "
@@ -857,9 +943,16 @@ def _test_command_candidates(
     config_files: list[str],
     pytest_test_source_paths: list[str],
     unittest_test_source_paths: list[str],
+    layout_profile: dict[str, Any],
 ) -> list[dict[str, Any]]:
     names = {PurePosixPath(path).name for path in config_files}
-    candidates: list[dict[str, Any]] = []
+    candidates: list[dict[str, Any]] = _nested_project_test_command_candidates(
+        config_files=config_files,
+        test_source_paths=test_source_paths,
+        pytest_test_source_paths=pytest_test_source_paths,
+        unittest_test_source_paths=unittest_test_source_paths,
+        layout_profile=layout_profile,
+    )
     if "tox" in test_frameworks:
         candidates.append(
             _command_candidate(
@@ -869,6 +962,7 @@ def _test_command_candidates(
                 reason="tox_ini_detected",
                 evidence=_matching_paths(config_files, {"tox.ini"}),
                 scope="tox managed environments",
+                working_dir="",
             )
         )
     if "nox" in test_frameworks:
@@ -880,6 +974,7 @@ def _test_command_candidates(
                 reason="noxfile_detected",
                 evidence=_matching_paths(config_files, {"noxfile.py"}),
                 scope="nox managed sessions",
+                working_dir="",
             )
         )
     pytest_evidence = _matching_paths(
@@ -902,6 +997,7 @@ def _test_command_candidates(
                 ),
                 evidence=[*pytest_evidence, *_sample_paths(test_source_paths, limit=3)],
                 scope="pytest repository discovery",
+                working_dir="",
             )
         )
     if test_source_paths:
@@ -926,6 +1022,7 @@ def _test_command_candidates(
                     if unittest_test_source_paths
                     else "stdlib unittest discovery fallback"
                 ),
+                working_dir="",
             )
         )
     if not candidates and {"pyproject.toml", "setup.py", "setup.cfg"} & names:
@@ -940,9 +1037,98 @@ def _test_command_candidates(
                     {"pyproject.toml", "setup.py", "setup.cfg"},
                 ),
                 scope="best effort Python project smoke test",
+                working_dir="",
             )
         )
     return _rank_candidates(_dedupe_candidates(candidates))
+
+
+def _nested_project_test_command_candidates(
+    *,
+    config_files: list[str],
+    test_source_paths: list[str],
+    pytest_test_source_paths: list[str],
+    unittest_test_source_paths: list[str],
+    layout_profile: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if not bool(layout_profile.get("monorepo_candidate", False)):
+        return []
+    nested_roots = [
+        str(item)
+        for item in _list(layout_profile.get("nested_project_config_roots"))
+        if str(item)
+    ]
+    candidates: list[dict[str, Any]] = []
+    for root in nested_roots[:8]:
+        root_configs = _paths_under_root(config_files, root)
+        root_tests = _paths_under_root(test_source_paths, root)
+        root_pytest_tests = _paths_under_root(pytest_test_source_paths, root)
+        root_unittest_tests = _paths_under_root(unittest_test_source_paths, root)
+        if not (root_configs or root_tests):
+            continue
+        if _matching_paths(root_configs, {"tox.ini"}):
+            candidates.append(
+                _command_candidate(
+                    command="python -m tox",
+                    runner="tox",
+                    confidence=0.88,
+                    reason="nested_tox_ini_detected",
+                    evidence=_matching_paths(root_configs, {"tox.ini"}),
+                    scope=f"tox managed tests under {root}",
+                    working_dir=root,
+                )
+            )
+        if _matching_paths(root_configs, {"noxfile.py"}):
+            candidates.append(
+                _command_candidate(
+                    command="python -m nox",
+                    runner="nox",
+                    confidence=0.86,
+                    reason="nested_noxfile_detected",
+                    evidence=_matching_paths(root_configs, {"noxfile.py"}),
+                    scope=f"nox managed tests under {root}",
+                    working_dir=root,
+                )
+            )
+        pytest_evidence = _matching_paths(
+            root_configs,
+            {"pytest.ini", "setup.cfg", "tox.ini", "pyproject.toml"},
+        )
+        if pytest_evidence or root_pytest_tests or (
+            root_tests and not root_unittest_tests
+        ):
+            candidates.append(
+                _command_candidate(
+                    command="python -m pytest",
+                    runner="pytest",
+                    confidence=0.82 if pytest_evidence or root_pytest_tests else 0.70,
+                    reason="nested_pytest_config_or_tests_detected",
+                    evidence=[*pytest_evidence, *_sample_paths(root_tests, limit=3)],
+                    scope=f"pytest discovery under {root}",
+                    working_dir=root,
+                )
+            )
+        if root_tests:
+            candidates.append(
+                _command_candidate(
+                    command="python -m unittest discover",
+                    runner="unittest",
+                    confidence=0.78 if root_unittest_tests else 0.52,
+                    reason=(
+                        "nested_unittest_testcase_detected"
+                        if root_unittest_tests
+                        else "nested_python_test_files_fallback"
+                    ),
+                    evidence=(
+                        _sample_paths(root_unittest_tests, limit=3)
+                        if root_unittest_tests
+                        else _sample_paths(root_tests, limit=3)
+                    ),
+                    scope=f"unittest discovery under {root}",
+                    working_dir=root,
+                )
+            )
+    return candidates
 
 
 def _command_candidate(
@@ -953,6 +1139,7 @@ def _command_candidate(
     reason: str,
     evidence: list[str],
     scope: str,
+    working_dir: str = "",
 ) -> dict[str, Any]:
     return {
         "command": command,
@@ -961,6 +1148,7 @@ def _command_candidate(
         "reason": reason,
         "evidence": evidence[:8],
         "scope": scope,
+        "working_dir": _clean_path(working_dir),
     }
 
 
@@ -969,9 +1157,11 @@ def _dedupe_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]
     deduped: list[dict[str, Any]] = []
     for candidate in candidates:
         command = str(candidate.get("command") or "")
-        if not command or command in seen:
+        working_dir = str(candidate.get("working_dir") or "")
+        key = f"{working_dir}\0{command}"
+        if not command or key in seen:
             continue
-        seen.add(command)
+        seen.add(key)
         deduped.append(candidate)
     return deduped
 
@@ -1086,8 +1276,160 @@ def _matching_paths(paths: list[str], names: set[str]) -> list[str]:
     return [path for path in paths if PurePosixPath(path).name in names]
 
 
+def _paths_under_root(paths: list[str], root: str) -> list[str]:
+    normalized_root = _clean_path(root)
+    if not normalized_root:
+        return list(paths)
+    prefix = f"{normalized_root}/"
+    return [
+        path
+        for path in paths
+        if path == normalized_root or _clean_path(path).startswith(prefix)
+    ]
+
+
 def _sample_paths(paths: list[str], *, limit: int) -> list[str]:
     return list(paths[: max(0, limit)])
+
+
+def _layout_profile(
+    *,
+    imported_paths: list[str],
+    config_files: list[str],
+    test_source_paths: list[str],
+    package_roots: list[str],
+    src_layout_packages: list[str],
+    recommended_target_prefix: str,
+) -> dict[str, Any]:
+    app_roots = _application_roots(imported_paths)
+    nested_config_roots = _nested_project_config_roots(config_files)
+    root_config_files = [
+        path for path in config_files if _is_root_project_config(path)
+    ]
+    non_aux_package_roots = [
+        root
+        for root in package_roots
+        if root != "src" and root.lower() not in AUXILIARY_PACKAGE_ROOTS
+    ]
+    monorepo_candidate = bool(
+        len(nested_config_roots) >= 2
+        or (
+            len(nested_config_roots) >= 1
+            and len(app_roots) >= 2
+            and len(root_config_files) == 0
+        )
+        or len(non_aux_package_roots) >= 3
+    )
+    evidence = [
+        f"application_roots={_format_list(app_roots)}",
+        f"package_roots={_format_list(package_roots)}",
+        f"src_layout_packages={_format_list(src_layout_packages)}",
+        f"nested_project_config_roots={_format_list(nested_config_roots)}",
+        f"root_project_config_files={_format_list(root_config_files)}",
+        f"test_source_count={len(test_source_paths)}",
+    ]
+    if not imported_paths:
+        layout_type = "no_python_source"
+        reason = "no_imported_python_sources"
+        confidence = 0.0
+    elif monorepo_candidate:
+        layout_type = "monorepo_candidate"
+        reason = "multiple_project_roots_or_nested_configs"
+        confidence = 0.78
+    elif len(src_layout_packages) > 1:
+        layout_type = "multi_package_src_layout"
+        reason = "multiple_src_layout_packages"
+        confidence = 0.86
+    elif len(src_layout_packages) == 1:
+        layout_type = "src_layout"
+        reason = "single_src_layout_package"
+        confidence = 0.9
+    elif len(non_aux_package_roots) > 1:
+        layout_type = "multi_package"
+        reason = "multiple_application_package_roots"
+        confidence = 0.82
+    elif len(non_aux_package_roots) == 1:
+        layout_type = "single_package"
+        reason = "single_application_package_root"
+        confidence = 0.84
+    else:
+        layout_type = "flat_module"
+        reason = "python_sources_without_package_init"
+        confidence = 0.58
+    recommended_roots = _recommended_analysis_roots(
+        recommended_target_prefix=recommended_target_prefix,
+        app_roots=app_roots,
+        nested_config_roots=nested_config_roots,
+        src_layout_packages=src_layout_packages,
+        non_aux_package_roots=non_aux_package_roots,
+    )
+    return {
+        "status": "blocked" if layout_type == "no_python_source" else "pass",
+        "layout_type": layout_type,
+        "reason": reason,
+        "confidence": confidence,
+        "monorepo_candidate": monorepo_candidate,
+        "application_roots": app_roots,
+        "application_root_count": len(app_roots),
+        "nested_project_config_roots": nested_config_roots,
+        "nested_project_config_root_count": len(nested_config_roots),
+        "root_project_config_files": root_config_files,
+        "root_project_config_file_count": len(root_config_files),
+        "recommended_target_prefix": recommended_target_prefix,
+        "recommended_analysis_roots": recommended_roots,
+        "evidence": evidence,
+    }
+
+
+def _application_roots(paths: list[str]) -> list[str]:
+    roots: list[str] = []
+    for path in paths:
+        pure = PurePosixPath(path)
+        parts = pure.parts
+        if not parts or _is_test_path(path):
+            continue
+        if parts[0] == "src" and len(parts) >= 2:
+            roots.append(f"src/{parts[1]}")
+        elif len(parts) >= 2:
+            if parts[0].lower() not in AUXILIARY_PACKAGE_ROOTS:
+                roots.append(parts[0])
+        elif pure.suffix == ".py":
+            roots.append(".")
+    return sorted(set(roots))
+
+
+def _nested_project_config_roots(config_files: list[str]) -> list[str]:
+    roots: list[str] = []
+    for path in config_files:
+        pure = PurePosixPath(path)
+        parts = pure.parts
+        if len(parts) <= 1 or parts[0] == ".github":
+            continue
+        parent = str(pure.parent)
+        if parent and parent != ".":
+            roots.append(parent)
+    return sorted(set(roots))
+
+
+def _recommended_analysis_roots(
+    *,
+    recommended_target_prefix: str,
+    app_roots: list[str],
+    nested_config_roots: list[str],
+    src_layout_packages: list[str],
+    non_aux_package_roots: list[str],
+) -> list[str]:
+    if recommended_target_prefix:
+        if src_layout_packages and recommended_target_prefix in src_layout_packages:
+            return [f"src/{recommended_target_prefix}"]
+        return [recommended_target_prefix]
+    if nested_config_roots:
+        return nested_config_roots[:5]
+    if app_roots:
+        return app_roots[:5]
+    if src_layout_packages:
+        return [f"src/{item}" for item in src_layout_packages[:5]]
+    return non_aux_package_roots[:5]
 
 
 def _layout_hints(
@@ -1191,6 +1533,11 @@ def _float(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _format_list(values: list[Any]) -> str:
+    items = [str(value) for value in values if str(value)]
+    return ", ".join(items) if items else "none"
 
 
 def _markdown_cell(value: Any) -> str:

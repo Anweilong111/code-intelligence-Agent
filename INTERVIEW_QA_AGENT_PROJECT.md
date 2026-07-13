@@ -1,6 +1,6 @@
 # 代码智能 Agent 项目面试问答
 
-## 0. 面试开场怎么讲？
+## 0. 面试开场怎么讲
 
 30 秒版本：
 
@@ -11,93 +11,93 @@
 1. 先讲 AgentController，证明它不是固定 workflow。
 2. 再讲 AST / Call Graph / Program Graph 和 `FinalScore`，证明算法深度。
 3. 再讲 patch validation、sandbox 和 reflection，证明修复不是文本猜测。
-4. 最后讲 P6 矩阵和边界，证明结果可审计、不夸大。
+4. 最后讲 V1 评估和边界，证明结果可审计、不夸大。
 
-## 1. 这个项目为什么算 Agent，而不是普通工作流？
+## 1. 这个项目为什么是 Agent，而不是普通工作流？
 
-普通工作流通常按固定顺序执行：下载仓库、分析、输出报告。这个项目有 `AgentController`，每轮都会观察当前 artifact、测试状态、定位结果和 blocker，再规划下一步 action，执行后验证结果，并根据失败原因反思和重规划。
+普通工作流通常按固定顺序执行：拉取仓库、分析、测试、报告。这个项目的 `AgentController` 每一轮都会观察当前 artifact、测试状态、定位结果和 blocker，再规划下一步 action，执行后验证结果，如果遇到失败原因就反思并重规划。
 
 例如：
 
-- 没有 Python 源码时，选择 source blocker，不继续伪分析。
-- 有测试但缺 runner 时，进入 environment diagnosis。
+- 没有 Python 源码时，选择 source blocker，而不是伪造分析结果。
+- 有测试但缺 runner 或依赖时，进入 environment diagnosis。
 - 没有 failing test 或 oracle 时，输出 blocker 和下一步建议。
 - 初始 patch 失败时，进入 LLM reflection，生成 refined candidate。
-- patch 通过 sandbox 时，生成最终报告。
+- patch 通过 sandbox 时，输出最终报告。
 
 这就是 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan`。
 
-## 2. AgentController 的六个阶段分别做什么？
+## 2. AgentController 六个阶段分别做什么？
 
 | 阶段 | 作用 |
 | --- | --- |
 | Observe | 读取仓库结构、测试环境、静态信号、动态证据、patch validation 和 blocker |
 | Plan | 根据当前状态选择下一步 action |
 | Act | 执行源码筛选、测试发现、测试运行、定位、补丁生成、sandbox 验证或 blocker 输出 |
-| Verify | 检查 action 是否产生有效 artifact，是否满足阶段目标 |
+| Verify | 检查 action 是否产出有效 artifact，是否满足阶段目标 |
 | Reflect | 对失败、阻塞、无进展或 patch failure 做归因 |
-| Replan | 根据归因选择继续、停止、请求外部输入或进入下一阶段 |
+| Replan | 根据归因选择继续、停止、等待外部条件或进入下一阶段 |
 
-## 3. 代码仓库理解怎么做？
+## 3. 任意 GitHub 仓库输入后怎么处理？
 
-系统先做 repo discovery，解析 `owner/repo`、GitHub URL、ref、默认分支、源码候选、配置文件和测试 runner 信号。然后做 source filtering，过滤缓存、输出目录、非 Python 文件和无关内容。之后用 AST 提取函数、类、导入、调用、行号和规则信号，并输出 `repository_structure`、`repo_graph`、`analysis_readiness` 等 artifact。
+系统先做 repo discovery，支持 `owner/repo`、GitHub URL、ref、默认分支、源码候选、配置文件和测试 runner 信号。然后做 source filtering，过滤缓存、构建目录、非 Python 文件和无关数据。之后用 AST 提取函数、类、导入、调用、行号和规则信号，并生成 `repository_profile`、`repository_structure`、`repo_graph`、`analysis_readiness` 等 artifact。
 
 ## 4. AST、Call Graph、Program Graph 分别解决什么问题？
 
-AST 解决“代码结构是什么”，例如函数边界、参数、返回、条件分支和调用表达式。
+AST 解决“代码结构是什么”，例如函数边界、参数、返回、异常分支和调用表达式。
 
 Call Graph 解决“谁调用谁”，用于跨函数风险传播。
 
-Program Graph 把函数、调用边、静态规则、测试证据、定位分数和数据/控制流信号放到统一结构里，便于计算 `GraphScore` 和解释 Top-k ranking。
+Program Graph 把函数、调用边、静态规则、测试证据、定位分数、修复候选和验证信号放到统一结构里，便于计算 `GraphScore` 和解释 Top-k ranking。
 
 ## 5. FinalScore 怎么设计？
 
-`FinalScore` 是多信号融合分数，不依赖单一规则。它可以融合：
+`FinalScore` 是多信号融合分数，不是单一规则：
 
-- `StaticRuleScore`：静态 bug pattern 先验。
-- `GraphScore`：调用图或程序图上的风险传播。
+- `StaticRuleScore`：静态 bug pattern 命中。
+- `GraphScore`：调用图和程序图上的风险传播。
 - `DynamicEvidenceScore`：failing tests、traceback 和执行反馈。
 - `SBFLScore`：失败/通过测试覆盖差异。
 - risk penalty：越界修改、低置信度或高风险模式惩罚。
 
-最后输出函数级 Top-k suspicious ranking，并保留每个信号的贡献。
+输出不是只有 Top-k suspicious ranking，还会记录每个信号的贡献。
 
-## 6. 没有测试时系统怎么做？
+## 6. 没有测试时系统怎么处理？
 
-没有测试、没有可执行测试命令、没有 failing evidence 或没有 oracle 时，系统不会编造动态证据。它会输出 blocker，保留静态分析结果，并给出下一步建议，例如提供 failing test、扩大 source scope、安装依赖或补充测试命令。
+没有测试、没有可执行测试命令、没有 failing evidence 或没有 oracle 时，系统不会伪造动态证据，也不会声称自动修复成功。它会输出 blocker、静态分析结果和下一步建议，例如提供 failing test、扩大 source scope、安装依赖或补充测试命令。
 
-这点很重要，因为真实仓库经常没有现成 failing test。项目的目标是可审计分析和受控修复，而不是把不确定结果包装成成功。
+这很重要，因为真实仓库经常没有现成 failing test。项目目标是可审计分析与受控修复，而不是把不确定结果包装成成功。
 
 ## 7. patch 是怎么生成和验证的？
 
-补丁生成只在 Top-k suspicious functions 附近进行，避免全仓库乱改。候选可能来自规则、LLM 或 hybrid 策略。每个候选都要经过：
+补丁只在 Top-k suspicious functions 附近生成，不全仓库乱改。候选可以来自规则、LLM 或 hybrid 策略。每个候选要经过：
 
-1. JSON parse。
-2. AST parse。
-3. scope check。
-4. signature check。
-5. safety gate。
-6. patch apply。
-7. sandbox pytest。
+1. JSON parse
+2. AST parse
+3. scope check
+4. signature check
+5. safety gate
+6. patch apply
+7. sandbox pytest
 
-只有 sandbox 执行通过，补丁才算成功。
+只有 sandbox 执行通过，才算修复成功。
 
-## 8. 为什么必须 sandbox 验证？
+## 8. 为什么强调 sandbox 验证？
 
-代码补丁不能只靠文本判断。sandbox 会在隔离目录里应用 patch 并执行指定 pytest 命令，记录 return code、passed/failed/errors、stdout/stderr 和 timeout。LLM judge 可以给风险和排序建议，但不能把 sandbox fail 的候选提升为成功。
+代码补丁不能只靠文本判断。sandbox 会在隔离目录里应用 patch 并执行指定 pytest 命令，记录 return code、passed/failed/errors、stdout/stderr 和 timeout。LLM judge 可以辅助排序和解释，但不能把 sandbox fail 的候选判为成功。
 
-## 9. reflection loop 怎么工作？
+## 9. reflection loop 怎么设计？
 
 reflection loop 会读取 parent candidate、previous diff、failure type、pytest stdout/stderr、traceback、failed patch fingerprint、target function source、caller/callee context 和可选 judge feedback，然后生成 refined candidates。refined candidates 仍然要经过 AST/scope/safety gate 和 sandbox pytest。
 
-P6 中已经有 4 个 LLM reflection success case，其中 3 个 reflection evidence complete，用于证明失败补丁可以通过执行反馈进入下一轮修复。
+V1 评估中 `reflection_uplift` 已作为 measured metric 进入 evaluation summary，当前值为 0.1333，表示 reflection 在 repair case 上贡献了额外成功率。
 
 ## 10. 如何防止 LLM 乱改代码？
 
-- 先用定位算法把范围压缩到 Top-k 函数。
-- patch 限制在候选函数附近。
-- AST/scope/signature/safety gate 阻止越界修改。
-- sandbox pytest 是最终成功标准。
+- 用定位算法把范围压缩到 Top-k 函数。
+- patch 生成限制在候选函数附近。
+- AST/scope/signature/safety gate 防止越界修改。
+- sandbox pytest 作为最终成功标准。
 - 报告保留失败原因、blocker 和 caveat。
 - API key 只通过环境变量注入，不写入代码或报告。
 
@@ -108,50 +108,53 @@ P6 中已经有 4 个 LLM reflection success case，其中 3 个 reflection evid
 - 结构建模：AST、Call Graph、Program Graph。
 - 缺陷定位：StaticRuleScore、GraphScore、DynamicEvidenceScore、SBFLScore、FinalScore。
 - 受控修复：候选生成、去重、风险过滤、sandbox validation、reflection。
-- 实验评估：onboarding matrix、repair evaluation matrix、metrics report、case catalog audit、P6 readiness audit。
+- 真实评估：onboarding matrix、repair evaluation matrix、metrics report、case catalog audit、V1 evaluation summary。
 
-## 12. 当前 P6 结果是什么？
+## 12. 当前 V1 评估证明了什么？
 
-最新 P6 readiness audit 已通过：
+当前 V1 evidence snapshot：
 
 | 指标 | 结果 |
 | --- | ---: |
-| Readiness checks | 24/24 pass |
-| Real GitHub onboarding cases | 10 |
-| Repair/evaluation cases | 30 |
-| LLM direct success | 5 |
-| LLM reflection success | 4 |
-| LLM blocker cases | 21 |
-| Declared catalog matched | 20/20 |
-| Sandbox authority | `sandbox_pytest_decides_success` |
+| GitHub onboarding repositories | 30/30 |
+| Repair/evaluation cases | 50 |
+| Required metric contracts | 9/9 |
+| Directly measured metrics | 9/9 |
+| Proxy metrics | 0 |
+| Missing evidence metrics | 0 |
 
-面试时要强调：这些数字证明项目具备可审计 Agent 闭环和多类别评估能力，不等于承诺任意仓库都能自动修复真实 bug。
+9 个指标包括：onboarding success、Top-k localization、Pass@1、Pass@k、reflection uplift、blocker accuracy、sandbox success、average runtime 和 LLM cost。
 
-## 13. “任意 GitHub 仓库都支持吗”怎么回答？
+## 13. 还有哪些边界？
 
-准确回答：
+项目不承诺任意真实 bug 都能自动修复。以下情况会输出 blocker：
 
-当前目标是面向公开 Python GitHub 仓库做智能分析，系统可以完成仓库发现、源码筛选、结构建模、测试诊断、Top-k 定位、可选测试执行、补丁验证和 blocker 报告。不是承诺任意语言、任意依赖、任意真实 bug 都能自动修复。对没有 Python 源码、没有测试命令、环境不可复现、缺少 failing test 或 test oracle 的仓库，Agent 会输出 blocker 和下一步建议。
+- 仓库不是 Python 项目或源码不可解析。
+- 没有测试、没有 failing test 或没有 oracle。
+- 依赖缺失、安装失败或 pytest 超时。
+- LLM API key 缺失或 provider 失败。
+- 补丁不安全、越界修改或 sandbox fail。
 
-## 14. LLM judge 的作用是什么？
+这些 blocker 是系统设计的一部分，不是失败隐藏。
 
-LLM judge 参与候选排序和风险判断，输入包括 candidate summary、diff summary、localization score、safety gate summary 和 execution feedback summary。输出包括 score、verdict、reason、risk 和 confidence。
+## 14. 面试官问“为什么不用纯 LLM”怎么回答？
 
-但最终成功标准仍是 sandbox pytest。也就是说，LLM judge 可以帮助排序，不能替代执行验证。
+纯 LLM 的问题是上下文大、搜索空间大、容易越界修改，而且很难证明补丁正确。这个项目先用程序分析把问题压缩到函数级 Top-k，再让 LLM 在受约束上下文中生成候选，最后用 AST/scope/safety gate 和 sandbox pytest 验证。也就是说，LLM 是 Agent 的一个 action，不是唯一决策者。
 
-## 15. 如果继续优化，你会怎么做？
+## 15. 最适合写在简历上的总结
 
-优先做三件事：
+面向任意公开 Python GitHub 仓库的代码智能 Agent：融合静态程序分析、图结构建模、LLM 自动修复、沙箱验证与反思式规划，实现从仓库理解到缺陷定位和补丁验证的端到端智能体系统。
+## LLM Planner Planning Authority
 
-1. 增强真实仓库环境诊断，支持 uv、poetry、pdm、多包项目和更稳定的依赖安装建议。
-2. 扩展真实 issue / PR diff / failing tests 到可复现实验样例的自动转化能力。
-3. 增强跨文件数据流和更复杂调用链下的定位与修复能力。
+Accurate interview wording: the LLM is the default planning proposer in
+`agent-auto` mode, not an unrestricted executor. The planner reads repository
+state, blockers, Top-k localization, test results, session memory, repair
+memory, failed patch fingerprints, user constraints, and repair strategy
+preferences. It outputs `selected_action`, `reason`, `confidence`, `risk`,
+`required_evidence`, `next_plan`, and `memory_used`.
 
-## 16. 项目有哪些边界？
-
-- 主要面向 Python 仓库。
-- 不承诺任意真实 bug 都能自动发现和修复。
-- 不承诺任意 GitHub 仓库都能 100% 自动修复真实 bug。
-- 没有 failing evidence 或 test oracle 时不能声称修复成功。
-- 复杂系统依赖、私有服务、超大型 monorepo 仍需要更多工程化。
-- LLM 输出必须经过结构化解析、安全门禁和 sandbox 验证。
+The final execution decision still belongs to AgentController through the
+action registry, risk policy, and sandbox safety gate. If the LLM is unavailable
+or the replan key is not configured, the report records
+`fallback_to_rule_planner=true`, keeps the rule-selected action, and explains
+which action was proposed, which action was adopted, and why.

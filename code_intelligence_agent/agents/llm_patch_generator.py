@@ -75,6 +75,7 @@ class LLMPatchGenerator:
                 "parsed_candidate_count": len(fixed_sources),
                 "prompt_context_audit": prompt_context_audit,
                 "response_parse": response_parse,
+                "llm_metadata": response.metadata,
                 "accepted_candidate_count": 0,
                 "rejected_candidate_count": 0,
                 "rejection_counts": {},
@@ -192,6 +193,7 @@ class LLMPatchGenerator:
             "parsed_candidate_count": len(fixed_sources),
             "prompt_context_audit": prompt_context_audit,
             "response_parse": response_parse,
+            "llm_metadata": response.metadata,
             "accepted_candidate_count": 0,
             "rejected_candidate_count": 0,
             "rejection_counts": {},
@@ -388,6 +390,19 @@ def build_patch_prompt(
     }
     if dynamic_oracle:
         payload["dynamic_oracle"] = dynamic_oracle
+    if _dict(dynamic_oracle.get("session_patch_memory")):
+        payload["constraints"].append(
+            "Use session_patch_memory to avoid repeating failed patch diffs, "
+            "failed source fingerprints, and sandbox failure patterns."
+        )
+    for constraint in _list(dynamic_oracle.get("user_constraints"))[:5]:
+        payload["constraints"].append(f"User constraint: {constraint}")
+    for strategy in _list(dynamic_oracle.get("repair_strategy_preferences"))[:5]:
+        payload["constraints"].append(
+            "Repair strategy preference: "
+            f"{strategy}. Generate a meaningfully different patch shape from "
+            "previous failed attempts when session_patch_memory is present."
+        )
     if candidate_count > 1:
         payload["constraints"].append(
             "Return distinct alternatives ordered from most likely to pass tests."

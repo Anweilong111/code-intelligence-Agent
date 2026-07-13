@@ -1,0 +1,143 @@
+{
+  "name": "v1_llm_repair_case_catalog_50",
+  "description": "V1 target catalog for 50 repair/evaluation cases. This is a declared target catalog; run the referenced suites and audit artifacts before using it as completion evidence.",
+  "agent_loop": "Observe -> Plan -> Act -> Verify -> Reflect -> Replan",
+  "targets": {
+    "case_count": 50,
+    "agent_loop_trace_complete": 50,
+    "llm_direct_success": 12,
+    "llm_reflection_success": 10,
+    "llm_blocker": 28,
+    "llm_failed_blocker": 4,
+    "environment_blocker": 4,
+    "no_test_oracle_blocker": 4,
+    "safety_gate_blocker": 4,
+    "localization_failure": 3,
+    "generation_failure": 3,
+    "dependency_failure": 3,
+    "timeout_blocker": 3
+  },
+  "source_reports": [
+    "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json",
+    "../../outputs_smoke/v1_repair_catalog/github_repo_intelligence_suite.json"
+  ],
+  "evaluation_metrics": [
+    {
+      "metric_id": "onboarding_success_rate",
+      "display_name": "Onboarding success rate",
+      "computed_from": ["suite.summary.passed_count", "suite.summary.run_count"],
+      "evidence_artifacts": ["github_repo_intelligence_suite.json", "github_onboarding_matrix.json"],
+      "purpose": "Measure whether arbitrary public GitHub repos can be cloned, profiled, modeled, and reported without command or expectation failures."
+    },
+    {
+      "metric_id": "topk_localization_accuracy",
+      "display_name": "Top-k localization accuracy",
+      "computed_from": ["fault_localization.ranked_functions", "benchmark.ground_truth.buggy_functions", "evaluation.metrics.top_k_accuracy"],
+      "evidence_artifacts": ["fault_localization.json", "benchmark_report.json", "phase4_search_evaluation.json"],
+      "purpose": "Measure whether the ground-truth buggy function appears in the suspicious-function Top-k ranking."
+    },
+    {
+      "metric_id": "pass_at_1",
+      "display_name": "Pass@1",
+      "computed_from": ["repository_test_patch_validation.candidates[0].passed", "repository_test_patch_validation.success_count"],
+      "evidence_artifacts": ["repository_test_patch_validation.json", "llm_repair_metrics_report.json"],
+      "purpose": "Measure whether the first generated patch candidate passes sandbox validation."
+    },
+    {
+      "metric_id": "pass_at_k",
+      "display_name": "Pass@k",
+      "computed_from": ["repository_test_patch_validation.success_count", "repository_test_patch_validation.candidate_count", "llm_repair_metrics_report.patch_success_at"],
+      "evidence_artifacts": ["repository_test_patch_validation.json", "llm_repair_metrics_report.json"],
+      "purpose": "Measure whether any candidate within the evaluated candidate budget passes sandbox validation."
+    },
+    {
+      "metric_id": "reflection_uplift",
+      "display_name": "Reflection uplift",
+      "computed_from": ["reflection_trace.initial_candidate_success_count", "reflection_trace.successful_reflection_candidate_count", "repository_test_patch_validation.successful_reflection_count"],
+      "evidence_artifacts": ["reflection_trace.json", "repository_test_patch_validation.json", "llm_repair_metrics_report.json"],
+      "purpose": "Measure how much the Reflect/Replan loop improves repair success after initial candidates fail."
+    },
+    {
+      "metric_id": "blocker_accuracy",
+      "display_name": "Blocker accuracy",
+      "computed_from": ["case.expected_blocker_category", "github_repo_agent_controller.selected_action.blocker_type", "github_repo_intelligence.blocker"],
+      "evidence_artifacts": ["github_repo_agent_controller.json", "github_repo_intelligence.json", "llm_repair_case_catalog_audit.json"],
+      "purpose": "Measure whether the Agent stops for the correct reason when repair cannot safely continue."
+    },
+    {
+      "metric_id": "sandbox_success_rate",
+      "display_name": "Sandbox success rate",
+      "computed_from": ["repository_test_patch_validation.success_count", "repository_test_patch_validation.candidate_count", "llm_repair_metrics_report.sandbox_pass_rate"],
+      "evidence_artifacts": ["repository_test_patch_validation.json", "llm_repair_metrics_report.json"],
+      "purpose": "Measure the fraction of validated candidates that pass the authoritative sandbox test gate."
+    },
+    {
+      "metric_id": "average_runtime_ms",
+      "display_name": "Average runtime",
+      "computed_from": ["github_repo_intelligence_suite.runs.elapsed_ms", "github_repo_intelligence_suite.summary.suite_run_elapsed_ms_average"],
+      "evidence_artifacts": ["github_repo_intelligence_suite.json", "github_repo_intelligence.json"],
+      "purpose": "Track end-to-end suite run latency for throughput and cost planning."
+    },
+    {
+      "metric_id": "llm_cost_usd",
+      "display_name": "LLM cost",
+      "computed_from": ["llm_client.metadata.cost_estimate.estimated_cost_usd", "github_repo_intelligence_suite.summary.repository_llm_patch_estimated_cost_usd_total"],
+      "evidence_artifacts": ["repository_test_patch_candidates.json", "github_repo_intelligence_suite.json"],
+      "purpose": "Track estimated LLM patch-generation cost when provider pricing is configured."
+    }
+  ],
+  "cases": [
+    {"case_id": "direct_repair_00", "repo": "https://github.com/TheAlgorithms/Python", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_01", "repo": "https://github.com/pypa/sampleproject", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_02", "repo": "https://github.com/pytest-dev/pluggy", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_03", "repo": "https://github.com/pallets/click", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_04", "repo": "https://github.com/psf/requests", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_05", "repo": "https://github.com/Textualize/rich", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_06", "repo": "https://github.com/tiangolo/fastapi", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_07", "repo": "https://github.com/pallets/flask", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_08", "repo": "https://github.com/encode/httpx", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_09", "repo": "https://github.com/pydantic/pydantic", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_10", "repo": "https://github.com/psf/black", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "direct_repair_11", "repo": "https://github.com/PyCQA/isort", "expected_class": "llm_direct_success", "source_report_path": "../../outputs_smoke/v1_llm_direct_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_00", "repo": "https://github.com/TheAlgorithms/Python", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_01", "repo": "https://github.com/pytest-dev/pytest", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_02", "repo": "https://github.com/pallets/werkzeug", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_03", "repo": "https://github.com/scrapy/scrapy", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_04", "repo": "https://github.com/celery/celery", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_05", "repo": "https://github.com/mkdocs/mkdocs", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_06", "repo": "https://github.com/sphinx-doc/sphinx", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_07", "repo": "https://github.com/sqlalchemy/sqlalchemy", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_08", "repo": "https://github.com/aio-libs/aiohttp", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "reflection_repair_09", "repo": "https://github.com/python-poetry/poetry", "expected_class": "llm_reflection_success", "source_report_path": "../../outputs_smoke/v1_llm_reflection_success/github_repo_intelligence_suite.json"},
+    {"case_id": "llm_failed_blocker_00", "repo": "https://github.com/TheAlgorithms/Python", "expected_class": "llm_blocker", "expected_blocker_category": "llm_failed_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "llm_failed_blocker_01", "repo": "https://github.com/pypa/sampleproject", "expected_class": "llm_blocker", "expected_blocker_category": "llm_failed_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "llm_failed_blocker_02", "repo": "https://github.com/pytest-dev/pluggy", "expected_class": "llm_blocker", "expected_blocker_category": "llm_failed_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "llm_failed_blocker_03", "repo": "https://github.com/psf/requests", "expected_class": "llm_blocker", "expected_blocker_category": "llm_failed_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "environment_blocker_00", "repo": "https://github.com/tiangolo/fastapi", "expected_class": "llm_blocker", "expected_blocker_category": "environment_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "environment_blocker_01", "repo": "https://github.com/scrapy/scrapy", "expected_class": "llm_blocker", "expected_blocker_category": "environment_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "environment_blocker_02", "repo": "https://github.com/celery/celery", "expected_class": "llm_blocker", "expected_blocker_category": "environment_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "environment_blocker_03", "repo": "https://github.com/numpy/numpy", "expected_class": "llm_blocker", "expected_blocker_category": "environment_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "no_test_oracle_blocker_00", "repo": "https://github.com/karpathy/nanoGPT", "expected_class": "llm_blocker", "expected_blocker_category": "no_test_oracle_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "no_test_oracle_blocker_01", "repo": "https://github.com/octocat/Hello-World", "expected_class": "llm_blocker", "expected_blocker_category": "no_test_oracle_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "no_test_oracle_blocker_02", "repo": "https://github.com/encode/starlette", "expected_class": "llm_blocker", "expected_blocker_category": "no_test_oracle_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "no_test_oracle_blocker_03", "repo": "https://github.com/pandas-dev/pandas", "expected_class": "llm_blocker", "expected_blocker_category": "no_test_oracle_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "safety_gate_blocker_00", "repo": "https://github.com/TheAlgorithms/Python", "expected_class": "llm_blocker", "expected_blocker_category": "safety_gate_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "safety_gate_blocker_01", "repo": "https://github.com/pallets/click", "expected_class": "llm_blocker", "expected_blocker_category": "safety_gate_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "safety_gate_blocker_02", "repo": "https://github.com/Textualize/rich", "expected_class": "llm_blocker", "expected_blocker_category": "safety_gate_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "safety_gate_blocker_03", "repo": "https://github.com/PyCQA/flake8", "expected_class": "llm_blocker", "expected_blocker_category": "safety_gate_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "localization_failure_00", "repo": "https://github.com/django/django", "expected_class": "llm_blocker", "expected_blocker_category": "localization_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "localization_failure_01", "repo": "https://github.com/scikit-learn/scikit-learn", "expected_class": "llm_blocker", "expected_blocker_category": "localization_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "localization_failure_02", "repo": "https://github.com/scipy/scipy", "expected_class": "llm_blocker", "expected_blocker_category": "localization_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "generation_failure_00", "repo": "https://github.com/psf/black", "expected_class": "llm_blocker", "expected_blocker_category": "generation_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "generation_failure_01", "repo": "https://github.com/PyCQA/isort", "expected_class": "llm_blocker", "expected_blocker_category": "generation_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "generation_failure_02", "repo": "https://github.com/pydantic/pydantic", "expected_class": "llm_blocker", "expected_blocker_category": "generation_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "dependency_failure_00", "repo": "https://github.com/aio-libs/aiohttp", "expected_class": "llm_blocker", "expected_blocker_category": "dependency_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "dependency_failure_01", "repo": "https://github.com/matplotlib/matplotlib", "expected_class": "llm_blocker", "expected_blocker_category": "dependency_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "dependency_failure_02", "repo": "https://github.com/python-poetry/poetry", "expected_class": "llm_blocker", "expected_blocker_category": "dependency_failure", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "timeout_blocker_00", "repo": "https://github.com/pandas-dev/pandas", "expected_class": "llm_blocker", "expected_blocker_category": "timeout_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "timeout_blocker_01", "repo": "https://github.com/celery/celery", "expected_class": "llm_blocker", "expected_blocker_category": "timeout_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"},
+    {"case_id": "timeout_blocker_02", "repo": "https://github.com/matplotlib/matplotlib", "expected_class": "llm_blocker", "expected_blocker_category": "timeout_blocker", "source_report_path": "../../outputs_smoke/v1_llm_blockers/github_repo_intelligence_suite.json"}
+  ]
+}

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from code_intelligence_agent.agents.action_registry import REQUIRED_ACTION_IDS
+from code_intelligence_agent.agents.llm_client import StaticLLMClient
 from code_intelligence_agent.agents.controller import (
     build_agent_controller_plan,
     render_agent_controller_markdown,
@@ -9,24 +10,28 @@ from code_intelligence_agent.agents.controller import (
 )
 
 
+def _repair_ready_summary() -> dict:
+    return {
+        "repo": "example/project",
+        "repo_spec": "example/project",
+        "analysis_readiness": {
+            "current_stage": "phase3_patch_validation",
+            "next_stage": "phase4_search_and_evaluation",
+            "blocker": "",
+            "repair_ready": True,
+            "repair_validation_scope": "narrow_and_unchanged_regression_baseline",
+        },
+        "fault_localization": {
+            "mode": "dynamic",
+            "status": "pass",
+            "top_function": "fix_me",
+        },
+    }
+
+
 def test_agent_controller_reflects_verified_repair_without_false_blocker():
     controller = build_agent_controller_plan(
-        {
-            "repo": "example/project",
-            "repo_spec": "example/project",
-            "analysis_readiness": {
-                "current_stage": "phase3_patch_validation",
-                "next_stage": "phase4_search_and_evaluation",
-                "blocker": "",
-                "repair_ready": True,
-                "repair_validation_scope": "narrow_and_unchanged_regression_baseline",
-            },
-            "fault_localization": {
-                "mode": "dynamic",
-                "status": "pass",
-                "top_function": "fix_me",
-            },
-        }
+        _repair_ready_summary()
     )
     trace = {item["phase"]: item for item in controller["decision_trace"]}
 
@@ -77,6 +82,247 @@ def test_agent_controller_reflects_verified_repair_without_false_blocker():
     assert "Current blocker needs" not in markdown
     assert "## Loop Iteration Audit" in markdown
     assert "run_search_and_ablation_evaluation" in markdown
+
+
+def test_agent_controller_llm_replan_advisor_disabled_by_default():
+    controller = build_agent_controller_plan(_repair_ready_summary())
+
+    advisor = controller["llm_replan_advisor"]
+    assert advisor["status"] == "disabled"
+    assert advisor["reason"] == "llm_replan_disabled"
+    assert advisor["authority"] == "advisory_only_controller_policy_decides"
+
+    markdown = render_agent_controller_markdown(controller)
+
+    assert "## LLM Replan Advisor" in markdown
+    assert "Status: `disabled`" in markdown
+
+
+def test_agent_controller_llm_replan_advisor_records_static_advice():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "recommended_action": "run_search_and_ablation_evaluation",
+                "rationale": "Patch validation is ready, so quantify search behavior.",
+                "confidence": 0.91,
+                "risk": "low",
+                "blocker": "",
+                "required_evidence": ["repository_test_patch_validation.json"],
+                "next_plan": "Run Phase 4 search metrics and ablation.",
+                "should_override_controller": False,
+            }
+        )
+    )
+
+    controller = build_agent_controller_plan(
+        _repair_ready_summary(),
+        llm_replan_client=client,
+    )
+
+    advisor = controller["llm_replan_advisor"]
+    assert advisor["status"] == "pass"
+    assert advisor["reason"] == "llm_replan_advice_recorded"
+    assert advisor["authority"] == "advisory_only_controller_policy_decides"
+    assert advisor["planner_type"] == "llm_planner_replanner"
+    assert advisor["controller_authority"] == "rules_and_sandbox_gate_decide"
+    assert advisor["advice"]["recommended_action"] == (
+        "run_search_and_ablation_evaluation"
+    )
+    assert advisor["planner_decision"]["selected_action"] == (
+        "run_search_and_ablation_evaluation"
+    )
+    assert advisor["planner_decision"]["required_evidence"] == [
+        "repository_test_patch_validation.json"
+    ]
+    assert advisor["safety_gate"]["status"] == "pass"
+    assert advisor["safety_gate"]["controller_action_match"] is True
+    assert advisor["safety_gate"]["override_allowed"] is False
+    assert advisor["advice"]["confidence"] == 0.91
+    assert advisor["advice"]["should_override_controller"] is False
+    assert client.prompts
+    assert "advise_on_next_agent_replan_action" in client.prompts[0]
+    assert "sandbox pytest" in client.prompts[0]
+
+    markdown = render_agent_controller_markdown(controller)
+
+    assert "Status: `pass`" in markdown
+    assert "Recommended Action: `run_search_and_ablation_evaluation`" in markdown
+    assert "Safety Gate: `pass`" in markdown
+    assert "Run Phase 4 search metrics and ablation." in markdown
+
+
+def test_agent_controller_llm_planner_override_is_advisory_only():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "run_repository_tests_with_checkout",
+                "reason": "The model wants to rerun tests before evaluation.",
+                "confidence": 0.77,
+                "risk": "medium",
+                "required_evidence": ["repository_test_execution_result.json"],
+                "next_plan": "Rerun repository tests before phase 4.",
+                "should_override_controller": True,
+            }
+        )
+    )
+
+    controller = build_agent_controller_plan(
+        _repair_ready_summary(),
+        llm_replan_client=client,
+    )
+
+    advisor = controller["llm_replan_advisor"]
+
+    assert controller["selected_action"]["id"] == "run_search_and_ablation_evaluation"
+    assert advisor["status"] == "pass"
+    assert advisor["planner_decision"]["selected_action"] == (
+        "run_repository_tests_with_checkout"
+    )
+    assert advisor["safety_gate"]["status"] == "advisory_only"
+    assert advisor["safety_gate"]["reason"] == (
+        "controller_policy_retains_rule_selected_action"
+    )
+    assert advisor["safety_gate"]["override_requested"] is True
+    assert advisor["safety_gate"]["override_allowed"] is False
+    assert advisor["safety_gate"]["adopted_action"] == (
+        "run_search_and_ablation_evaluation"
+    )
+
+
+def test_agent_controller_llm_replan_advisor_blocks_without_env_key(monkeypatch):
+    for name in [
+        "CIA_REPLAN_LLM_API_KEY",
+        "CIA_LLM_API_KEY",
+        "DEEPSEEK_API_KEY",
+    ]:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("CIA_LLM_REPLAN_ENABLED", "1")
+
+    controller = build_agent_controller_plan(_repair_ready_summary())
+
+    advisor = controller["llm_replan_advisor"]
+    assert advisor["status"] == "blocked"
+    assert advisor["reason"] == "missing_llm_replan_api_key"
+    assert advisor["blocker"] == "missing_llm_replan_api_key"
+    assert "CIA_REPLAN_LLM_API_KEY" in advisor["checked_api_key_envs"]
+    assert "CIA_LLM_API_KEY" in advisor["checked_api_key_envs"]
+    assert "DEEPSEEK_API_KEY" in advisor["checked_api_key_envs"]
+    assert advisor["config"]["api_key_present"] is False
+
+
+def test_agent_auto_defaults_llm_planner_with_rule_fallback(monkeypatch):
+    for name in [
+        "CIA_REPLAN_LLM_API_KEY",
+        "CIA_LLM_API_KEY",
+        "DEEPSEEK_API_KEY",
+        "CIA_LLM_REPLAN_ENABLED",
+    ]:
+        monkeypatch.delenv(name, raising=False)
+    summary = _repair_ready_summary()
+    summary["agent_invocation"] = {
+        "effective_execution_profile": "agent-auto",
+        "agent_mode": True,
+        "auto_controller_actions": True,
+    }
+
+    controller = build_agent_controller_plan(summary)
+
+    advisor = controller["llm_replan_advisor"]
+    assert advisor["enabled"] is True
+    assert advisor["status"] == "blocked"
+    assert advisor["reason"] == "missing_llm_replan_api_key"
+    assert advisor["fallback_to_rule_planner"] is True
+    assert advisor["planner_decision"]["proposal_source"] == "rule_fallback"
+    assert advisor["llm_planner_proposal"] == advisor["planner_decision"]
+    assert advisor["planner_decision"]["selected_action"] == (
+        controller["selected_action"]["id"]
+    )
+    assert advisor["safety_gate"]["status"] == "fallback"
+    assert advisor["safety_gate"]["adopted_action"] == (
+        controller["selected_action"]["id"]
+    )
+
+    markdown = render_agent_controller_markdown(controller)
+
+    assert "Fallback To Rule Planner: true" in markdown
+    assert "Proposal Source: `rule_fallback`" in markdown
+
+
+def test_agent_controller_llm_planner_prompt_uses_memory_context():
+    client = StaticLLMClient(
+        json.dumps(
+            {
+                "selected_action": "run_search_and_ablation_evaluation",
+                "reason": "Memory shows a failed patch was already tried.",
+                "confidence": 0.86,
+                "risk": "low",
+                "required_evidence": ["repository_test_patch_validation.json"],
+                "memory_used": [
+                    "repair_memory",
+                    "repair_strategy_preferences",
+                ],
+                "next_plan": "Avoid the failed guard-shape patch and evaluate.",
+                "should_override_controller": False,
+            }
+        )
+    )
+    summary = _repair_ready_summary()
+    summary["agent_invocation"] = {
+        "effective_execution_profile": "agent-auto",
+        "agent_mode": True,
+    }
+    summary["agent_session"] = {
+        "session_id": "example-session",
+        "turn_count": 3,
+    }
+    summary["agent_memory_report"] = {
+        "memory_layers": {
+            "session_memory": {
+                "session_id": "example-session",
+                "turn_count": 3,
+                "constraints": ["do not modify public API"],
+                "repair_strategy_preferences": ["prefer guard clause"],
+            },
+            "repo_memory": {
+                "repo": "example/project",
+                "test_command": "python -m pytest tests",
+                "test_status": "fail",
+            },
+            "repair_memory": {
+                "failed_patch_count": 1,
+                "patch_attempt_count": 1,
+                "failed_patch_fingerprints": ["diff-fp-1"],
+                "strategy_preferences": ["prefer guard clause"],
+                "user_constraints": ["do not modify public API"],
+                "latest_failure_category": "assertion_failure",
+            },
+        }
+    }
+
+    controller = build_agent_controller_plan(summary, llm_replan_client=client)
+
+    prompt = json.loads(client.prompts[0])
+    memory = prompt["memory_context"]
+    advisor = controller["llm_replan_advisor"]
+
+    assert memory["available"] is True
+    assert memory["session_memory"]["session_id"] == "example-session"
+    assert memory["repo_memory"]["test_command"] == "python -m pytest tests"
+    assert memory["repair_memory"]["failed_patch_count"] == 1
+    assert memory["repair_memory"]["failed_patch_fingerprints"] == ["diff-fp-1"]
+    assert memory["repair_memory"]["constraints"] == ["do not modify public API"]
+    assert memory["repair_memory"]["repair_strategy_preferences"] == [
+        "prefer guard clause"
+    ]
+    assert prompt["response_schema"]["memory_used"] == [
+        "string memory source or fact used for the decision"
+    ]
+    assert advisor["planner_decision"]["memory_used"] == [
+        "repair_memory",
+        "repair_strategy_preferences",
+    ]
+    assert advisor["llm_planner_proposal"] == advisor["planner_decision"]
+    assert advisor["safety_gate"]["status"] == "pass"
 
 
 def test_agent_controller_embeds_action_registry_and_policy_trace():
@@ -152,6 +398,114 @@ def test_agent_controller_writes_action_registry_and_policy_trace_artifacts(tmp_
     policy = json.loads(Path(paths["agent_policy_trace_json"]).read_text())
     assert registry["status"] == "pass"
     assert policy["canonical_action_id"] == "generate_final_agent_report"
+
+
+def test_agent_controller_records_action_decision_audit_for_selected_action():
+    controller = build_agent_controller_plan(
+        {
+            "repo": "example/project",
+            "repo_spec": "https://github.com/example/project",
+            "output_dir": "outputs/project",
+            "analysis_readiness": {
+                "current_stage": "phase2_static_graph_fault_localization",
+                "next_stage": "phase3_repository_test_execution",
+                "blocker": "",
+                "dynamic_evidence_level": "not_executed",
+            },
+            "fault_localization": {
+                "mode": "static_fallback",
+                "status": "pass",
+                "top_function": "target",
+            },
+        }
+    )
+
+    audit = controller["action_decision_audit"]
+    action = audit["actions"][0]
+
+    assert audit["status"] == "pass"
+    assert audit["source"] == "agent_controller"
+    assert audit["required_fields"] == [
+        "why_selected",
+        "confidence",
+        "risk",
+        "input",
+        "output",
+        "blocker",
+        "next_plan",
+    ]
+    assert action["action_id"] == "run_repository_tests_with_checkout"
+    assert action["canonical_action_id"] == "run_repository_tests"
+    assert action["registered"] is True
+    assert action["complete"] is True
+    assert action["confidence"] > 0
+    assert action["risk"] == "medium"
+    assert "stage=phase2_static_graph_fault_localization" in action["input"]
+    assert "repository_test_dynamic_evidence.json" in action["output"]
+    assert action["blocker_present"] is False
+    assert "--execution-profile checkout" in action["next_plan"]
+    assert controller["selected_action"]["confidence"] == action["confidence"]
+    assert controller["selected_action"]["expected_output"] == action["output"]
+
+    markdown = render_agent_controller_markdown(controller)
+
+    assert "## Action Decision Audit" in markdown
+    assert "run_repository_tests_with_checkout" in markdown
+    assert "repository_test_dynamic_evidence.json" in markdown
+
+
+def test_agent_controller_action_decision_audit_covers_auto_trace_actions():
+    controller = build_agent_controller_plan(
+        {
+            "repo": "example/project",
+            "analysis_readiness": {
+                "current_stage": "phase2_static_graph_fault_localization",
+                "next_stage": "phase3_repository_test_execution",
+                "blocker": "dynamic_evidence_not_usable:passing_tests",
+                "dynamic_evidence_level": "passing_tests",
+            },
+            "fault_localization": {
+                "mode": "static_fallback",
+                "status": "pass",
+                "top_function": "target",
+            },
+            "agent_auto_trace": [
+                {
+                    "iteration": 1,
+                    "observe_stage": "phase2_static_graph_fault_localization",
+                    "observe_blocker": "dynamic_evidence_not_usable:passing_tests",
+                    "observe_dynamic_evidence_level": "passing_tests",
+                    "observe_fault_localization_mode": "static_fallback",
+                    "observe_fault_localization_status": "pass",
+                    "plan_selected_action": "generate_controlled_failure_overlay",
+                    "auto_executed": True,
+                    "verify_outcome": "failure_overlay_attempted",
+                    "verify_progress": True,
+                    "replan_policy": "continue_observe_plan_act",
+                    "verify_dynamic_evidence_level": "passing_tests",
+                }
+            ],
+        }
+    )
+
+    audit = controller["action_decision_audit"]
+    action = audit["actions"][0]
+
+    assert audit["status"] == "pass"
+    assert audit["source"] == "agent_auto_trace"
+    assert action["action_id"] == "generate_controlled_failure_overlay"
+    assert action["canonical_action_id"] == "run_repository_tests"
+    assert action["registered"] is True
+    assert action["complete"] is True
+    assert action["confidence"] > 0.8
+    assert action["risk"] == "medium"
+    assert "Auto controller selected this action" in action["why_selected"]
+    assert "dynamic=passing_tests" in action["input"]
+    assert action["output"] == "failure_overlay_attempted"
+    assert action["blocker"] == "dynamic_evidence_not_usable:passing_tests"
+    assert action["next_plan"] == "continue_observe_plan_act"
+    assert controller["policy_trace"]["canonical_action_id"] == "run_repository_tests"
+    assert controller["policy_trace"]["status"] == "pass"
 
 
 def test_agent_controller_prioritizes_environment_blocker_from_setup_doctor():
@@ -1148,6 +1502,148 @@ def test_agent_controller_llm_repair_audit_uses_generator_counts():
     assert audit["llm_candidate_count"] == 1
     assert audit["rule_candidate_count"] == 0
     assert "judge=llm/ready" in audit["agent_loop_evidence"]["verify"]
+
+
+def test_agent_controller_treats_llm_request_error_telemetry_as_blocker():
+    controller = build_agent_controller_plan(
+        {
+            "repo": "example/project",
+            "repo_spec": "https://github.com/example/project",
+            "output_dir": "outputs/project",
+            "repository_patch_generation_mode": "llm",
+            "repository_patch_generator_counts": {"llm": 0, "rule": 0},
+            "repository_llm_patch_generation_status": "error",
+            "repository_llm_patch_generation_reason": "http_error",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": True,
+            "repository_llm_patch_request_count": 1,
+            "repository_llm_patch_failure_count": 1,
+            "repository_llm_patch_total_tokens": 0,
+            "repository_llm_patch_estimated_total_tokens": 32,
+            "repository_llm_patch_error_reason_counts": {"http_401": 1},
+            "analysis_readiness": {
+                "current_stage": "phase2_dynamic_fault_localization",
+                "next_stage": "phase3_patch_validation",
+                "blocker": "",
+                "dynamic_evidence_level": "failing_tests",
+                "patch_validation_status": "",
+                "repair_ready": False,
+                "can_attempt_patch_repair": True,
+            },
+            "fault_localization": {
+                "mode": "dynamic",
+                "status": "pass",
+                "top_function": "target",
+            },
+        }
+    )
+    observations = {
+        item["signal"]: item["value"]
+        for item in controller["observations"]
+    }
+    audit = controller["llm_repair_action_audit"]
+
+    assert audit["status"] == "blocked"
+    assert audit["reason"] == "http_error"
+    assert audit["blocker"] == "http_error"
+    assert audit["repair_action_id"] == "diagnose_llm_provider_failure"
+    assert audit["llm_request_count"] == 1
+    assert audit["llm_failure_count"] == 1
+    assert audit["llm_estimated_total_tokens"] == 32
+    assert audit["llm_error_reason_counts"] == {"http_401": 1}
+    assert audit["llm_provider_failure_class"] == "credential"
+    assert audit["llm_provider_primary_error"] == "http_401"
+    assert audit["llm_provider_recovery_policy"] == (
+        "refresh_llm_credentials_or_model_access"
+    )
+    assert "requests=1; failures=1" in audit["agent_loop_evidence"]["observe"]
+    assert "failure_class=credential" in audit["agent_loop_evidence"]["observe"]
+    assert "estimated_tokens=32" in audit["agent_loop_evidence"]["act"]
+    assert "stop_with_blocker=http_error" in audit["agent_loop_evidence"]["replan"]
+    assert "policy=refresh_llm_credentials_or_model_access" in (
+        audit["agent_loop_evidence"]["replan"]
+    )
+    assert observations["repository_llm_patch_generation_telemetry"] == (
+        "requests=1, failures=1, tokens=0, estimated_tokens=32, "
+        "errors=http_401=1"
+    )
+    assert controller["status"] == "blocked"
+    assert controller["selected_action"]["id"] == "diagnose_llm_provider_failure"
+    assert controller["selected_action"]["executable_now"] is False
+    assert "http_error" in controller["selected_action"]["reason"]
+    assert controller["replan"]["trigger"] == "llm_patch_provider_failure:credential"
+    assert controller["replan"]["next_policy"] == "repair_llm_provider_configuration"
+    assert controller["policy_trace"]["canonical_action_id"] == (
+        "diagnose_llm_provider_failure"
+    )
+    assert controller["policy_trace"]["policy_rule"] == (
+        "llm_provider_failure_requires_classified_recovery"
+    )
+
+
+def test_agent_controller_retries_recoverable_llm_timeout_with_budget_controls():
+    controller = build_agent_controller_plan(
+        {
+            "repo": "example/project",
+            "repo_spec": "https://github.com/example/project",
+            "output_dir": "outputs/project",
+            "repository_patch_generation_mode": "llm",
+            "repository_patch_generator_counts": {"llm": 0, "rule": 0},
+            "repository_llm_patch_generation_status": "error",
+            "repository_llm_patch_generation_reason": "timeout",
+            "repository_llm_patch_provider": "deepseek",
+            "repository_llm_patch_model": "deepseek-v4-pro",
+            "repository_llm_patch_api_key_present": True,
+            "repository_llm_patch_request_count": 1,
+            "repository_llm_patch_failure_count": 1,
+            "repository_llm_patch_total_tokens": 0,
+            "repository_llm_patch_estimated_total_tokens": 128,
+            "repository_llm_patch_error_reason_counts": {"timeout": 1},
+            "analysis_readiness": {
+                "current_stage": "phase2_dynamic_fault_localization",
+                "next_stage": "phase3_patch_validation",
+                "blocker": "",
+                "dynamic_evidence_level": "failing_tests",
+                "patch_validation_status": "",
+                "repair_ready": False,
+                "can_attempt_patch_repair": True,
+            },
+            "fault_localization": {
+                "mode": "dynamic",
+                "status": "pass",
+                "top_function": "target",
+            },
+        }
+    )
+
+    selected = controller["selected_action"]
+    audit = controller["llm_repair_action_audit"]
+
+    assert controller["status"] == "ready"
+    assert selected["id"] == "retry_llm_patch_generation"
+    assert selected["executable_now"] is True
+    assert selected["llm_provider_failure_class"] == "timeout"
+    assert selected["llm_provider_recovery_policy"] == (
+        "retry_with_smaller_context_or_higher_timeout"
+    )
+    assert audit["repair_action_id"] == "retry_llm_patch_generation"
+    assert audit["llm_provider_failure_class"] == "timeout"
+    assert audit["llm_provider_primary_error"] == "timeout"
+    assert "failure_class=timeout" in audit["agent_loop_evidence"]["observe"]
+    assert "llm_recovery_policy=retry_with_smaller_context_or_higher_timeout" in (
+        audit["agent_loop_evidence"]["plan"]
+    )
+    assert controller["replan"]["trigger"] == "llm_patch_provider_failure:timeout"
+    assert controller["replan"]["next_policy"] == (
+        "reduce_llm_context_then_retry_generation"
+    )
+    assert controller["policy_trace"]["canonical_action_id"] == (
+        "retry_llm_patch_generation"
+    )
+    assert controller["policy_trace"]["policy_rule"] == (
+        "recoverable_llm_provider_failure_retry_with_budget_controls"
+    )
 
 
 def test_agent_controller_llm_repair_audit_ready_when_patch_action_selected():

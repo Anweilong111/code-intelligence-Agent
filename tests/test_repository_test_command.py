@@ -43,6 +43,47 @@ def test_repository_test_command_executes_safe_python_module_command():
         assert payload["command_args"][1:3] == ["-m", "pytest"]
 
 
+def test_repository_test_command_runs_from_recommended_working_dir(tmp_path):
+    api_root = tmp_path / "services" / "api"
+    api_root.mkdir(parents=True)
+    (api_root / "test_api.py").write_text(
+        "def test_api_smoke():\n"
+        "    assert True\n",
+        encoding="utf-8",
+    )
+
+    payload = validate_repository_test_command(
+        {
+            "recommended_test_command": "python -m pytest -q",
+            "recommended_test_working_dir": "services/api",
+        },
+        repository_root=tmp_path,
+        timeout=10,
+    )
+    markdown = render_repository_test_command_markdown(payload)
+
+    assert payload["status"] == "pass"
+    assert payload["repository_root"] == str(tmp_path)
+    assert payload["working_dir"] == "services/api"
+    assert payload["cwd"] == str(api_root)
+    assert payload["passed"] == 1
+    assert "Working Dir: `services/api`" in markdown
+
+
+def test_repository_test_command_blocks_unsafe_working_dir(tmp_path):
+    payload = validate_repository_test_command(
+        {
+            "recommended_test_command": "python -m pytest -q",
+            "recommended_test_working_dir": "../outside",
+        },
+        repository_root=tmp_path,
+    )
+
+    assert payload["status"] == "skipped"
+    assert payload["executed"] is False
+    assert payload["reason"] == "selected_working_dir_missing"
+
+
 def test_repository_test_command_rejects_unsupported_shell_command():
     with tempfile.TemporaryDirectory() as tmp_dir:
         payload = validate_repository_test_command(

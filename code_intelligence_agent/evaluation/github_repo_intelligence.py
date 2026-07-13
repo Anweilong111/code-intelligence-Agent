@@ -14,6 +14,17 @@ from code_intelligence_agent.agents.controller import (
     build_agent_controller_plan,
     write_agent_controller_artifacts,
 )
+from code_intelligence_agent.agents.execution_trace import (
+    build_agent_execution_trace,
+    render_agent_execution_trace_markdown,
+)
+from code_intelligence_agent.agents.session_memory import (
+    build_agent_decision_report_from_summary,
+    build_agent_memory_report_from_summary,
+    create_or_update_session_from_summary,
+    render_agent_decision_report,
+    render_agent_memory_report,
+)
 from code_intelligence_agent.core.ast_analyzer import ASTAnalyzer
 from code_intelligence_agent.core.call_graph import build_call_graph
 from code_intelligence_agent.core.models import RepoParseResult
@@ -2952,6 +2963,8 @@ def _auto_trace_item(
         "plan_action_phase": str(selected_action.get("phase") or ""),
         "plan_action_tool": str(selected_action.get("tool") or ""),
         "plan_executable_now": bool(selected_action.get("executable_now", False)),
+        "plan_command": str(selected_action.get("command") or ""),
+        "plan_next_plan": str(selected_action.get("next_plan") or ""),
         "plan_reason": str(selected_action.get("reason") or ""),
         "controller_status": str(controller.get("status") or ""),
     }
@@ -3787,6 +3800,7 @@ def _auto_loop_audit(
     goal_readiness_counts: dict[str, int] = {}
     progress_count = 0
     goal_readiness_passed_action_count = 0
+    complete_action_loop_count = 0
     for action in actions:
         if bool(action.get("loop_verify_progress", False)):
             progress_count += 1
@@ -3801,6 +3815,21 @@ def _auto_loop_audit(
         _increment(goal_readiness_counts, goal_status)
         if goal_status == "pass":
             goal_readiness_passed_action_count += 1
+        if _auto_action_loop_complete(action):
+            complete_action_loop_count += 1
+    stopped_trace_count = sum(
+        1 for item in trace if not bool(_dict(item).get("auto_executed", False))
+    )
+    complete_trace_count = sum(
+        1 for item in trace if _auto_trace_loop_complete(_dict(item))
+    )
+    complete_loop_recorded = bool(
+        complete_action_loop_count == len(actions)
+        and (
+            complete_action_loop_count > 0
+            or (trace and complete_trace_count == len(trace))
+        )
+    )
     return {
         "loop": [
             "observe",
@@ -3813,6 +3842,9 @@ def _auto_loop_audit(
         "stop_reason": str(stop_reason or ""),
         "action_count": len(actions),
         "trace_count": len(trace),
+        "stopped_trace_count": stopped_trace_count,
+        "complete_action_loop_count": complete_action_loop_count,
+        "complete_trace_count": complete_trace_count,
         "progress_count": progress_count,
         "no_progress_count": max(0, len(actions) - progress_count),
         "verify_outcome_counts": _top_counts(outcome_counts),
@@ -3828,20 +3860,58 @@ def _auto_loop_audit(
         "last_replan_next_action": str(
             actions[-1].get("loop_replan_next_action") if actions else ""
         ),
-        "complete_loop_recorded": all(
-            key in action
-            for action in actions
-            for key in (
-                "loop_observe_stage",
-                "loop_plan_action",
-                "loop_verify_outcome",
-                "loop_reflect_strategy",
-                "loop_replan_policy",
-            )
-        )
-        if actions
-        else False,
+        "complete_loop_recorded": complete_loop_recorded,
     }
+
+
+def _auto_action_loop_complete(action: dict[str, Any]) -> bool:
+    return all(
+        key in action
+        and (
+            key == "loop_verify_progress"
+            or action.get(key) is not None
+        )
+        for key in (
+            "loop_observe_stage",
+            "loop_plan_action",
+            "loop_verify_outcome",
+            "loop_reflect_strategy",
+            "loop_replan_policy",
+        )
+    )
+
+
+def _auto_trace_loop_complete(item: dict[str, Any]) -> bool:
+    if bool(item.get("auto_executed", False)):
+        return _auto_executed_trace_loop_complete(item)
+    return _auto_stopped_trace_loop_complete(item)
+
+
+def _auto_executed_trace_loop_complete(item: dict[str, Any]) -> bool:
+    return all(
+        item.get(key) not in {None, ""}
+        for key in (
+            "observe_stage",
+            "plan_selected_action",
+            "verify_outcome",
+            "reflect_status",
+            "reflect_strategy",
+            "replan_policy",
+        )
+    )
+
+
+def _auto_stopped_trace_loop_complete(item: dict[str, Any]) -> bool:
+    return all(
+        item.get(key) not in {None, ""}
+        for key in (
+            "observe_stage",
+            "plan_selected_action",
+            "stop_reason",
+            "stop_category",
+            "stop_recovery_policy",
+        )
+    )
 
 
 def _agent_decision_timeline_summary(payload: dict[str, Any]) -> dict[str, Any]:
@@ -4467,6 +4537,12 @@ def github_repo_intelligence_summary(
         "agent_decision_timeline_markdown": str(
             output_root / "agent_decision_timeline.md"
         ),
+        "agent_execution_trace_json": str(output_root / "agent_execution_trace.json"),
+        "agent_execution_trace_markdown": str(output_root / "agent_execution_trace.md"),
+        "agent_memory_report_json": str(output_root / "agent_memory_report.json"),
+        "agent_memory_report_markdown": str(output_root / "agent_memory_report.md"),
+        "agent_decision_report_json": str(output_root / "agent_decision_report.json"),
+        "agent_decision_report_markdown": str(output_root / "agent_decision_report.md"),
         "final_report_json": str(output_root / "final_report.json"),
         "final_report_markdown": str(output_root / "final_report.md"),
         "repository_structure_json": str(output_root / "repository_structure.json"),
@@ -4686,15 +4762,18 @@ def github_repo_intelligence_summary(
             summary.get("repository_patch_candidate_variant_filter")
         ) or _dict(patch_candidates_payload.get("candidate_variant_filter")),
         "repository_llm_patch_generation_status": str(
-            summary.get("repository_llm_patch_generation_status")
-            or patch_candidates_payload.get("llm_generation_status")
+            patch_candidates_payload.get("llm_generation_status")
+            or summary.get("repository_llm_patch_generation_status")
             or ""
         ),
         "repository_llm_patch_generation_reason": str(
-            summary.get("repository_llm_patch_generation_reason")
-            or patch_candidates_payload.get("llm_generation_reason")
+            patch_candidates_payload.get("llm_generation_reason")
+            or summary.get("repository_llm_patch_generation_reason")
             or ""
         ),
+        "repository_llm_patch_generation_telemetry": _dict(
+            patch_candidates_payload.get("llm_generation_telemetry")
+        ) or _dict(summary.get("repository_llm_patch_generation_telemetry")),
         "repository_llm_patch_generation_audit": llm_patch_audit,
         "repository_llm_patch_config_audit": _dict(
             llm_patch_audit.get("config_audit")
@@ -4725,6 +4804,33 @@ def github_repo_intelligence_summary(
         ),
         "repository_llm_patch_generation_fallback_reason": str(
             llm_patch_audit.get("fallback_reason") or ""
+        ),
+        "repository_llm_patch_request_count": _int(
+            llm_patch_audit.get("request_count", 0)
+        ),
+        "repository_llm_patch_success_count": _int(
+            llm_patch_audit.get("success_count", 0)
+        ),
+        "repository_llm_patch_failure_count": _int(
+            llm_patch_audit.get("failure_count", 0)
+        ),
+        "repository_llm_patch_total_tokens": _int(
+            llm_patch_audit.get("total_tokens", 0)
+        ),
+        "repository_llm_patch_estimated_total_tokens": _int(
+            llm_patch_audit.get("estimated_total_tokens", 0)
+        ),
+        "repository_llm_patch_latency_ms_total": _int(
+            llm_patch_audit.get("latency_ms_total", 0)
+        ),
+        "repository_llm_patch_latency_ms_average": _float(
+            llm_patch_audit.get("latency_ms_average", 0.0)
+        ),
+        "repository_llm_patch_estimated_cost_usd": _dict(
+            llm_patch_audit.get("cost_estimate")
+        ).get("estimated_cost_usd"),
+        "repository_llm_patch_error_reason_counts": _dict(
+            llm_patch_audit.get("error_reason_counts")
         ),
         "repository_patch_safety_gate_status": str(
             summary.get("repository_patch_safety_gate_status") or ""
@@ -4884,8 +4990,11 @@ def github_repo_intelligence_summary(
             report.output_paths.get("reflection_trace_markdown") or ""
         ),
     }
+    payload["agent_memory_report"] = build_agent_memory_report_from_summary(payload)
     payload["agent_controller"] = build_agent_controller_plan(payload)
     payload["agent_decision_timeline"] = _agent_decision_timeline_summary(payload)
+    payload["agent_execution_trace"] = build_agent_execution_trace(payload)
+    payload["agent_decision_report"] = build_agent_decision_report_from_summary(payload)
     payload["phase4_search_evaluation"] = _phase4_search_evaluation_summary(payload)
     payload["artifact_inventory"] = _artifact_inventory_summary(payload)
     payload.update(_github_repo_intelligence_status_summary(payload))
@@ -4963,11 +5072,18 @@ def refresh_github_repo_intelligence_summary_status(
     if not _dict(refreshed.get("agent_answers")):
         refreshed["agent_answers"] = _agent_answers_summary(refreshed)
     refreshed["acceptance_gate"] = _acceptance_gate_summary(refreshed)
+    refreshed["agent_memory_report"] = build_agent_memory_report_from_summary(
+        refreshed
+    )
     controller = _dict(refreshed.get("agent_controller"))
     selected_action = _dict(controller.get("selected_action"))
     if not controller or not selected_action.get("id"):
         refreshed["agent_controller"] = build_agent_controller_plan(refreshed)
     refreshed["agent_decision_timeline"] = _agent_decision_timeline_summary(
+        refreshed
+    )
+    refreshed["agent_execution_trace"] = build_agent_execution_trace(refreshed)
+    refreshed["agent_decision_report"] = build_agent_decision_report_from_summary(
         refreshed
     )
     refreshed["agent_goal_readiness"] = _agent_goal_readiness_summary(refreshed)
@@ -4991,26 +5107,30 @@ def _repository_llm_patch_generation_audit(
     patch_candidates_payload = _dict(patch_candidates_payload)
     summary = _dict(summary)
     mode = str(
-        summary.get("repository_patch_generation_mode")
-        or patch_candidates_payload.get("patch_generation_mode")
+        patch_candidates_payload.get("patch_generation_mode")
+        or summary.get("repository_patch_generation_mode")
         or "rule"
     ).lower()
     generator_counts = _dict(
-        summary.get("repository_patch_generator_counts")
-    ) or _dict(patch_candidates_payload.get("generator_counts"))
+        patch_candidates_payload.get("generator_counts")
+    ) or _dict(summary.get("repository_patch_generator_counts"))
     status = str(
-        summary.get("repository_llm_patch_generation_status")
-        or patch_candidates_payload.get("llm_generation_status")
+        patch_candidates_payload.get("llm_generation_status")
+        or summary.get("repository_llm_patch_generation_status")
         or ("disabled" if mode == "rule" else "")
     )
     reason = str(
-        summary.get("repository_llm_patch_generation_reason")
-        or patch_candidates_payload.get("llm_generation_reason")
+        patch_candidates_payload.get("llm_generation_reason")
+        or summary.get("repository_llm_patch_generation_reason")
         or ("patch_generation_mode_rule" if mode == "rule" else "")
     )
     config_audit = _dict(
-        summary.get("repository_llm_patch_config_audit")
-    ) or _dict(patch_candidates_payload.get("llm_config_audit"))
+        patch_candidates_payload.get("llm_config_audit")
+    ) or _dict(summary.get("repository_llm_patch_config_audit"))
+    telemetry = _dict(
+        patch_candidates_payload.get("llm_generation_telemetry")
+    ) or _dict(summary.get("repository_llm_patch_generation_telemetry"))
+    cost_estimate = _dict(telemetry.get("cost_estimate"))
     enabled = bool(config_audit.get("enabled", mode in {"llm", "hybrid"}))
     api_key_present = bool(config_audit.get("api_key_present", False))
     rule_count = _int(generator_counts.get("rule", 0))
@@ -5020,8 +5140,10 @@ def _repository_llm_patch_generation_audit(
     )
     blocked = bool(
         status == "blocked"
+        or status == "error"
         or reason in {"missing_llm_api_key", "fault_localization_not_ready"}
         or reason.startswith("missing_api_key:")
+        or _int(telemetry.get("failure_count", 0)) > 0
     )
     fallback_used = bool(
         mode == "hybrid"
@@ -5060,6 +5182,17 @@ def _repository_llm_patch_generation_audit(
         "api_key_fingerprint": str(config_audit.get("api_key_fingerprint") or ""),
         "warnings": [str(item) for item in _list(config_audit.get("warnings"))],
         "config_audit": config_audit,
+        "telemetry": telemetry,
+        "request_count": _int(telemetry.get("request_count", 0)),
+        "success_count": _int(telemetry.get("success_count", 0)),
+        "failure_count": _int(telemetry.get("failure_count", 0)),
+        "total_tokens": _int(telemetry.get("total_tokens", 0)),
+        "estimated_total_tokens": _int(telemetry.get("estimated_total_tokens", 0)),
+        "latency_ms_total": _int(telemetry.get("latency_ms_total", 0)),
+        "latency_ms_average": _float(telemetry.get("latency_ms_average", 0.0)),
+        "cost_estimate": cost_estimate,
+        "estimated_cost_usd": cost_estimate.get("estimated_cost_usd"),
+        "error_reason_counts": _dict(telemetry.get("error_reason_counts")),
     }
 
 
@@ -5775,6 +5908,42 @@ def _artifact_inventory_summary(
             check_files=check_files,
         ),
         _artifact_item(
+            "agent_execution_trace.json",
+            payload.get("agent_execution_trace_json"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
+            "agent_execution_trace.md",
+            payload.get("agent_execution_trace_markdown"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
+            "agent_memory_report.json",
+            payload.get("agent_memory_report_json"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
+            "agent_memory_report.md",
+            payload.get("agent_memory_report_markdown"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
+            "agent_decision_report.json",
+            payload.get("agent_decision_report_json"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
+            "agent_decision_report.md",
+            payload.get("agent_decision_report_markdown"),
+            "always",
+            check_files=check_files,
+        ),
+        _artifact_item(
             "final_report.json",
             payload.get("final_report_json"),
             "always",
@@ -6464,6 +6633,11 @@ def _agent_answer_repository_structure(structure: dict[str, Any]) -> str:
     project_config = _dict(structure.get("project_config"))
     package_roots = _format_list(_list(package_structure.get("package_roots")))
     src_packages = _format_list(_list(package_structure.get("src_layout_packages")))
+    layout_type = str(package_structure.get("layout_type") or "unknown")
+    monorepo_candidate = bool(package_structure.get("monorepo_candidate", False))
+    recommended_roots = _format_list(
+        _list(package_structure.get("recommended_analysis_roots"))
+    )
     test_dirs = _format_list(_list(test_structure.get("test_directories")))
     config_files = _format_list(_list(project_config.get("project_config_files")))
     return (
@@ -6474,6 +6648,9 @@ def _agent_answer_repository_structure(structure: dict[str, Any]) -> str:
         f"max cyclomatic complexity is "
         f"{_int(structure.get('max_cyclomatic_complexity', 0))}; "
         f"top directories: {top_dirs}; "
+        f"layout type: {layout_type}; "
+        f"monorepo candidate: {str(monorepo_candidate).lower()}; "
+        f"recommended analysis roots: {recommended_roots}; "
         f"package roots: {package_roots}; "
         f"src layout packages: {src_packages}; "
         f"test directories: {test_dirs}; "
@@ -7869,8 +8046,11 @@ def _refresh_agent_goal_readiness_and_controller(
     payload: dict[str, Any],
 ) -> dict[str, Any]:
     payload["agent_goal_readiness"] = _agent_goal_readiness_summary(payload)
+    payload["agent_memory_report"] = build_agent_memory_report_from_summary(payload)
     payload["agent_controller"] = build_agent_controller_plan(payload)
     payload["agent_decision_timeline"] = _agent_decision_timeline_summary(payload)
+    payload["agent_execution_trace"] = build_agent_execution_trace(payload)
+    payload["agent_decision_report"] = build_agent_decision_report_from_summary(payload)
     payload["acceptance_gate"] = _acceptance_gate_summary(payload)
     payload["agent_goal_readiness"] = _agent_goal_readiness_summary(payload)
     payload["final_report"] = _final_agent_report_summary(payload)
@@ -8478,6 +8658,24 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
             f"{_int(_dict(payload.get('agent_decision_timeline')).get('step_count', 0))} complete)"
         ),
         (
+            "- Agent Execution Trace: "
+            f"`{_markdown_cell(_dict(payload.get('agent_execution_trace')).get('status') or 'none')}` "
+            f"(executed={_int(_dict(payload.get('agent_execution_trace')).get('executed_action_count', 0))}, "
+            f"verified={_int(_dict(payload.get('agent_execution_trace')).get('verified_action_count', 0))}, "
+            f"blocked={_int(_dict(payload.get('agent_execution_trace')).get('blocked_action_count', 0))})"
+        ),
+        (
+            "- Agent Memory Report: "
+            f"`{_markdown_cell(_dict(payload.get('agent_memory_report')).get('status') or 'none')}` "
+            f"({_int(_dict(payload.get('agent_memory_report')).get('ready_layer_count', 0))}/"
+            f"{_int(_dict(payload.get('agent_memory_report')).get('layer_count', 0))} layers ready)"
+        ),
+        (
+            "- Agent Decision Report: "
+            f"`{_markdown_cell(_dict(payload.get('agent_decision_report')).get('status') or 'none')}` "
+            f"(selected=`{_markdown_cell(_dict(_dict(payload.get('agent_decision_report')).get('selected_action')).get('id') or 'none')}`)"
+        ),
+        (
             "- Acceptance Gate: "
             f"`{_markdown_cell(_dict(payload.get('acceptance_gate')).get('status') or 'none')}` "
             f"({_int(_dict(payload.get('acceptance_gate')).get('passed_check_count', 0))}/"
@@ -8525,6 +8723,28 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
         f"- Next Action: {_markdown_cell(payload['next_action'])}",
         "",
     ]
+    agent_session = _dict(payload.get("agent_session"))
+    if agent_session:
+        memory_evidence = _dict(agent_session.get("memory_usage_evidence"))
+        lines.extend(
+            [
+                "## Agent Session Memory",
+                "",
+                f"- Session ID: `{_markdown_cell(agent_session.get('session_id') or '')}`",
+                f"- Turn Count: {_int(agent_session.get('turn_count', 0))}",
+                f"- Memory Path: `{_markdown_cell(agent_session.get('memory_path') or '')}`",
+                f"- Session Report: `{_markdown_cell(agent_session.get('session_report_path') or '')}`",
+                (
+                    "- Memory Loaded: "
+                    f"repo={str(bool(memory_evidence.get('repo_profile_loaded'))).lower()}, "
+                    f"topk={_int(memory_evidence.get('topk_loaded', 0))}, "
+                    f"tests={str(bool(memory_evidence.get('test_result_loaded'))).lower()}, "
+                    f"patch_attempts={_int(memory_evidence.get('patch_attempt_memory_loaded', 0))}, "
+                    f"blockers={_int(memory_evidence.get('blocker_memory_loaded', 0))}"
+                ),
+                "",
+            ]
+        )
     github_error = _dict(payload.get("github_error"))
     if github_error:
         lines.extend(
@@ -8990,6 +9210,18 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
             f"`{_markdown_cell(_dict(_dict(payload['repository_structure']).get('package_structure')).get('recommended_target_prefix') or 'none')}`"
         ),
         (
+            "- Layout Type: "
+            f"`{_markdown_cell(_dict(_dict(payload['repository_structure']).get('package_structure')).get('layout_type') or 'unknown')}`"
+        ),
+        (
+            "- Monorepo Candidate: "
+            f"{str(bool(_dict(_dict(payload['repository_structure']).get('package_structure')).get('monorepo_candidate', False))).lower()}"
+        ),
+        (
+            "- Recommended Analysis Roots: "
+            f"{_markdown_cell(_format_list(_list(_dict(_dict(payload['repository_structure']).get('package_structure')).get('recommended_analysis_roots'))))}"
+        ),
+        (
             "- Test Sources: "
             f"{_int(_dict(_dict(payload['repository_structure']).get('test_structure')).get('test_source_count', 0))}"
         ),
@@ -9020,8 +9252,8 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
         "",
         "### Test Command Candidates",
         "",
-        "| Rank | Runner | Command | Reason | Confidence |",
-        "| ---: | --- | --- | --- | ---: |",
+        "| Rank | Runner | Working Dir | Command | Reason | Confidence |",
+        "| ---: | --- | --- | --- | --- | ---: |",
     ]
     )
     for item_value in _list(
@@ -9034,6 +9266,7 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
             "| "
             f"{_int(item.get('rank', 0))} | "
             f"{_markdown_cell(item.get('runner') or 'none')} | "
+            f"`{_markdown_cell(item.get('working_dir') or '.')}` | "
             f"`{_markdown_cell(item.get('command') or 'none')}` | "
             f"{_markdown_cell(item.get('reason') or 'none')} | "
             f"{_float(item.get('confidence', 0.0)):.4f} |"
@@ -9043,7 +9276,7 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
             "test_command_candidates"
         )
     ):
-        lines.append("| 0 | none | `none` | none | 0.0000 |")
+        lines.append("| 0 | none | `none` | `none` | none | 0.0000 |")
     lines.extend(
         [
         "## Complexity Hotspots",
@@ -9236,6 +9469,15 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
                 f"`{_markdown_cell(payload.get('repository_llm_patch_generation_reason') or 'none')}`"
             ),
             (
+                "- LLM Patch Telemetry: "
+                f"requests={_int(payload.get('repository_llm_patch_request_count', 0))}, "
+                f"failures={_int(payload.get('repository_llm_patch_failure_count', 0))}, "
+                f"tokens={_int(payload.get('repository_llm_patch_total_tokens', 0))}, "
+                f"estimated_tokens={_int(payload.get('repository_llm_patch_estimated_total_tokens', 0))}, "
+                f"cost_usd=`{_markdown_cell(payload.get('repository_llm_patch_estimated_cost_usd') or 'none')}`, "
+                f"errors=`{_markdown_cell(_format_counts(_dict(payload.get('repository_llm_patch_error_reason_counts'))))}`"
+            ),
+            (
                 "- LLM Patch Config: "
                 f"provider=`{_markdown_cell(payload.get('repository_llm_patch_provider') or 'none')}`, "
                 f"model=`{_markdown_cell(payload.get('repository_llm_patch_model') or 'none')}`, "
@@ -9320,6 +9562,30 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
         (
             "- Agent Goal Readiness Markdown: "
             f"`{_markdown_cell(payload['agent_goal_readiness_markdown'])}`"
+        ),
+        (
+            "- Agent Execution Trace JSON: "
+            f"`{_markdown_cell(payload['agent_execution_trace_json'])}`"
+        ),
+        (
+            "- Agent Execution Trace Markdown: "
+            f"`{_markdown_cell(payload['agent_execution_trace_markdown'])}`"
+        ),
+        (
+            "- Agent Memory Report JSON: "
+            f"`{_markdown_cell(payload['agent_memory_report_json'])}`"
+        ),
+        (
+            "- Agent Memory Report Markdown: "
+            f"`{_markdown_cell(payload['agent_memory_report_markdown'])}`"
+        ),
+        (
+            "- Agent Decision Report JSON: "
+            f"`{_markdown_cell(payload['agent_decision_report_json'])}`"
+        ),
+        (
+            "- Agent Decision Report Markdown: "
+            f"`{_markdown_cell(payload['agent_decision_report_markdown'])}`"
         ),
         (
             "- Final Report JSON: "
@@ -9433,6 +9699,7 @@ def write_github_repo_intelligence_artifacts(
     summary = payload if payload is not None else github_repo_intelligence_summary(report)
     root = Path(report.output_dir)
     root.mkdir(parents=True, exist_ok=True)
+    _ensure_github_repo_intelligence_artifact_paths(summary, root)
     json_path = root / "github_repo_intelligence.json"
     markdown_path = root / "github_repo_intelligence.md"
     controller_paths: dict[str, str] = {}
@@ -9511,6 +9778,86 @@ def write_github_repo_intelligence_artifacts(
     }
 
 
+def _ensure_github_repo_intelligence_artifact_paths(
+    summary: dict[str, Any],
+    output_dir: Path,
+) -> None:
+    """Backfill artifact paths when refreshing summaries from older releases."""
+    root = Path(output_dir)
+    root_artifacts = {
+        "intelligence_json": "github_repo_intelligence.json",
+        "intelligence_markdown": "github_repo_intelligence.md",
+        "agent_controller_json": "github_repo_agent_controller.json",
+        "agent_controller_markdown": "github_repo_agent_controller.md",
+        "agent_action_registry_json": "agent_action_registry.json",
+        "agent_action_registry_markdown": "agent_action_registry.md",
+        "agent_policy_trace_json": "agent_policy_trace.json",
+        "agent_policy_trace_markdown": "agent_policy_trace.md",
+        "agent_invocation_json": "agent_invocation.json",
+        "agent_invocation_markdown": "agent_invocation.md",
+        "agent_goal_readiness_json": "agent_goal_readiness.json",
+        "agent_goal_readiness_markdown": "agent_goal_readiness.md",
+        "agent_decision_timeline_json": "agent_decision_timeline.json",
+        "agent_decision_timeline_markdown": "agent_decision_timeline.md",
+        "agent_execution_trace_json": "agent_execution_trace.json",
+        "agent_execution_trace_markdown": "agent_execution_trace.md",
+        "agent_memory_report_json": "agent_memory_report.json",
+        "agent_memory_report_markdown": "agent_memory_report.md",
+        "agent_decision_report_json": "agent_decision_report.json",
+        "agent_decision_report_markdown": "agent_decision_report.md",
+        "final_report_json": "final_report.json",
+        "final_report_markdown": "final_report.md",
+        "repository_structure_json": "repository_structure.json",
+        "repository_structure_markdown": "repository_structure.md",
+        "repository_test_discovery_json": "repository_test_discovery.json",
+        "repository_test_discovery_markdown": "repository_test_discovery.md",
+        "repo_graph_json": "repo_graph.json",
+        "repo_graph_markdown": "repo_graph.md",
+        "fault_localization_json": "fault_localization.json",
+        "fault_localization_markdown": "fault_localization.md",
+        "analysis_readiness_json": "analysis_readiness.json",
+        "analysis_readiness_markdown": "analysis_readiness.md",
+        "phase4_search_evaluation_json": "phase4_search_evaluation.json",
+        "phase4_search_evaluation_markdown": "phase4_search_evaluation.md",
+        "artifact_inventory_json": "artifact_inventory.json",
+        "artifact_inventory_markdown": "artifact_inventory.md",
+    }
+    for key, filename in root_artifacts.items():
+        if not str(summary.get(key) or ""):
+            summary[key] = str(root / filename)
+
+    optional_path_keys = [
+        "agent_json",
+        "agent_markdown",
+        "execution_plan_json",
+        "execution_plan_markdown",
+        "source_mining_markdown",
+        "source_mining_json",
+        "phase4_search_evaluation_execution_json",
+        "phase4_search_evaluation_execution_markdown",
+        "repository_test_environment_json",
+        "repository_test_environment_markdown",
+        "repository_test_environment_repair_plan_json",
+        "repository_test_environment_repair_plan_markdown",
+        "repository_test_execution_plan_json",
+        "repository_test_execution_plan_markdown",
+        "repository_test_execution_result_json",
+        "repository_test_execution_result_markdown",
+        "repository_test_dynamic_evidence_json",
+        "repository_test_dynamic_evidence_markdown",
+        "repository_test_regression_guard_json",
+        "repository_test_regression_guard_markdown",
+        "repository_test_patch_candidates_json",
+        "repository_test_patch_candidates_markdown",
+        "repository_test_patch_validation_json",
+        "repository_test_patch_validation_markdown",
+        "reflection_trace_json",
+        "reflection_trace_markdown",
+    ]
+    for key in optional_path_keys:
+        summary.setdefault(key, "")
+
+
 def _ensure_repository_test_environment_repair_plan_artifacts(
     summary: dict[str, Any],
     output_dir: Path,
@@ -9571,6 +9918,7 @@ def _ensure_repository_test_environment_repair_plan_artifacts(
             ),
         }
     )
+    summary["agent_memory_report"] = build_agent_memory_report_from_summary(summary)
     summary["agent_controller"] = build_agent_controller_plan(summary)
     summary["artifact_inventory"] = _artifact_inventory_summary(summary)
     summary["agent_answers"] = _agent_answers_summary(summary)
@@ -9592,6 +9940,9 @@ def _write_intelligence_component_artifacts(
         "fault_localization": _dict(summary.get("fault_localization")),
         "analysis_readiness": _dict(summary.get("analysis_readiness")),
         "agent_decision_timeline": _dict(summary.get("agent_decision_timeline")),
+        "agent_execution_trace": _dict(summary.get("agent_execution_trace")),
+        "agent_memory_report": _dict(summary.get("agent_memory_report")),
+        "agent_decision_report": _dict(summary.get("agent_decision_report")),
         "final_report": _dict(summary.get("final_report")),
         "phase4_search_evaluation": _dict(
             summary.get("phase4_search_evaluation")
@@ -9609,6 +9960,12 @@ def _write_intelligence_component_artifacts(
         markdown = (
             _render_phase4_search_evaluation_markdown(payload)
             if name == "phase4_search_evaluation"
+            else render_agent_memory_report(payload)
+            if name == "agent_memory_report"
+            else render_agent_decision_report(payload)
+            if name == "agent_decision_report"
+            else render_agent_execution_trace_markdown(payload)
+            if name == "agent_execution_trace"
             else _render_agent_decision_timeline_markdown(payload)
             if name == "agent_decision_timeline"
             else _render_component_markdown(name, payload)
@@ -9944,6 +10301,7 @@ def _repository_structure_summary(report: GitHubRepoAgentReport) -> dict[str, An
     dependency_tool_signals = [
         str(item) for item in _list(repository_profile.get("dependency_tool_signals"))
     ]
+    layout_profile = _dict(repository_profile.get("layout_profile"))
     return {
         "source_entry_count": len(source_entries),
         "analyzed_file_count": len(file_summaries),
@@ -9972,6 +10330,15 @@ def _repository_structure_summary(report: GitHubRepoAgentReport) -> dict[str, An
             "recommended_target_prefix": str(
                 repository_profile.get("recommended_target_prefix") or ""
             ),
+            "layout_type": str(repository_profile.get("layout_type") or ""),
+            "monorepo_candidate": bool(
+                repository_profile.get("monorepo_candidate", False)
+            ),
+            "recommended_analysis_roots": [
+                str(item)
+                for item in _list(repository_profile.get("recommended_analysis_roots"))
+            ],
+            "layout_profile": layout_profile,
             "layout_hints": [
                 str(item) for item in _list(repository_profile.get("layout_hints"))
             ],
@@ -10105,6 +10472,14 @@ def _repository_test_discovery_summary(
         "recommended_target_prefix": str(
             package_structure.get("recommended_target_prefix") or ""
         ),
+        "layout_type": str(package_structure.get("layout_type") or ""),
+        "monorepo_candidate": bool(
+            package_structure.get("monorepo_candidate", False)
+        ),
+        "recommended_analysis_roots": [
+            str(item)
+            for item in _list(package_structure.get("recommended_analysis_roots"))
+        ],
         "pytest_configured": "pytest" in framework_signals
         or "pytest.ini" in config_files
         or "pyproject.toml" in config_files,
@@ -10121,6 +10496,7 @@ def _test_command_candidate_summary(value: Any) -> dict[str, Any]:
         "reason": str(candidate.get("reason") or ""),
         "confidence": _float(candidate.get("confidence", 0.0)),
         "scope": str(candidate.get("scope") or ""),
+        "working_dir": str(candidate.get("working_dir") or ""),
         "evidence": [str(item) for item in _list(candidate.get("evidence"))[:8]],
         "recommended": bool(candidate.get("recommended", False)),
     }
@@ -11781,6 +12157,8 @@ def main(argv: list[str] | None = None, opener=None) -> None:
         opener=opener,
     )
     summary = github_repo_intelligence_summary(report)
+    write_github_repo_intelligence_artifacts(report, summary)
+    create_or_update_session_from_summary(summary, raw_argv=raw_argv)
     write_github_repo_intelligence_artifacts(report, summary)
     markdown = _render_github_repo_intelligence_payload(summary)
     if args.format == "json":

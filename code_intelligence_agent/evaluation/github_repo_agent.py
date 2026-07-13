@@ -463,6 +463,14 @@ def render_github_repo_agent_markdown(report: GitHubRepoAgentReport) -> str:
             f"`{_markdown_cell(summary.get('repository_test_command_status') or 'none')}`"
         ),
         (
+            "- Repository Test Command Working Dir: "
+            f"`{_markdown_cell(summary.get('repository_test_command_working_dir') or '.')}`"
+        ),
+        (
+            "- Repository Test Command CWD: "
+            f"`{_markdown_cell(summary.get('repository_test_command_cwd') or 'none')}`"
+        ),
+        (
             "- Repository Test Setup Doctor: "
             f"`{_markdown_cell(summary.get('repository_test_setup_doctor_status') or 'none')}`/"
             f"`{_markdown_cell(summary.get('repository_test_setup_doctor_blocker') or 'none')}`, "
@@ -797,6 +805,14 @@ def render_github_repo_agent_markdown(report: GitHubRepoAgentReport) -> str:
             f"{_int(summary.get('repository_test_patch_candidate_count', 0))}"
         ),
         (
+            "- Repository LLM Patch Telemetry: "
+            f"requests={_int(summary.get('repository_llm_patch_request_count', 0))}, "
+            f"failures={_int(summary.get('repository_llm_patch_failure_count', 0))}, "
+            f"tokens={_int(summary.get('repository_llm_patch_total_tokens', 0))}, "
+            f"estimated_tokens={_int(summary.get('repository_llm_patch_estimated_total_tokens', 0))}, "
+            f"cost_usd=`{_markdown_cell(summary.get('repository_llm_patch_estimated_cost_usd') or 'none')}`"
+        ),
+        (
             "- Repository Test Patch Validation Status: "
             f"`{_markdown_cell(summary.get('repository_test_patch_validation_status') or 'none')}`"
         ),
@@ -913,6 +929,10 @@ def render_github_repo_agent_markdown(report: GitHubRepoAgentReport) -> str:
         (
             "- Repository Test Command Executed: "
             f"{str(bool(summary.get('repository_test_command_executed', False))).lower()}"
+        ),
+        (
+            "- Repository Test Command Root: "
+            f"`{_markdown_cell(summary.get('repository_test_command_repository_root') or 'none')}`"
         ),
         f"- Ready For Benchmark: {str(bool(summary.get('ready_for_benchmark', False))).lower()}",
         (
@@ -2310,6 +2330,9 @@ def _build_fetch_error_report(
         "repository_test_command_status": "",
         "repository_test_command_executed": False,
         "repository_test_command_reason": "",
+        "repository_test_command_repository_root": "",
+        "repository_test_command_working_dir": "",
+        "repository_test_command_cwd": "",
         "repository_test_setup_doctor_status": "",
         "repository_test_setup_doctor_blocker": "",
         "repository_test_setup_doctor_score": 0.0,
@@ -2457,6 +2480,16 @@ def _build_fetch_error_report(
         "repository_patch_generator_counts": {},
         "repository_llm_patch_generation_status": "",
         "repository_llm_patch_generation_reason": "",
+        "repository_llm_patch_generation_telemetry": {},
+        "repository_llm_patch_request_count": 0,
+        "repository_llm_patch_success_count": 0,
+        "repository_llm_patch_failure_count": 0,
+        "repository_llm_patch_total_tokens": 0,
+        "repository_llm_patch_estimated_total_tokens": 0,
+        "repository_llm_patch_latency_ms_total": 0,
+        "repository_llm_patch_latency_ms_average": 0.0,
+        "repository_llm_patch_estimated_cost_usd": None,
+        "repository_llm_patch_error_reason_counts": {},
         "repository_patch_safety_gate_status": "",
         "repository_patch_safety_gate_blocked_count": 0,
         "repository_test_patch_target_function_count": 0,
@@ -2890,6 +2923,13 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         "repository_test_command_reason": str(
             repository_test.get("reason") or ""
         ),
+        "repository_test_command_repository_root": str(
+            repository_test.get("repository_root") or ""
+        ),
+        "repository_test_command_working_dir": str(
+            repository_test.get("working_dir") or ""
+        ),
+        "repository_test_command_cwd": str(repository_test.get("cwd") or ""),
         "repository_test_setup_doctor_status": str(
             repository_setup_doctor.get("status") or ""
         ),
@@ -3052,6 +3092,12 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         ),
         "planned_repository_test_source": str(
             repository_execution_recommended.get("source") or ""
+        ),
+        "planned_repository_test_working_dir": str(
+            repository_execution_plan.get("recommended_working_dir") or ""
+        ),
+        "planned_repository_test_execution_cwd": str(
+            repository_execution_plan.get("recommended_execution_cwd") or ""
         ),
         "planned_repository_test_preferred_runner": str(
             repository_execution_plan.get("preferred_test_runner") or ""
@@ -3410,6 +3456,61 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         ),
         "repository_llm_patch_generation_reason": str(
             repository_patch_candidates.get("llm_generation_reason") or ""
+        ),
+        "repository_llm_patch_generation_telemetry": _dict(
+            repository_patch_candidates.get("llm_generation_telemetry")
+        ),
+        "repository_llm_patch_request_count": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "request_count",
+                0,
+            )
+        ),
+        "repository_llm_patch_success_count": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "success_count",
+                0,
+            )
+        ),
+        "repository_llm_patch_failure_count": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "failure_count",
+                0,
+            )
+        ),
+        "repository_llm_patch_total_tokens": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "total_tokens",
+                0,
+            )
+        ),
+        "repository_llm_patch_estimated_total_tokens": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "estimated_total_tokens",
+                0,
+            )
+        ),
+        "repository_llm_patch_latency_ms_total": _int(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "latency_ms_total",
+                0,
+            )
+        ),
+        "repository_llm_patch_latency_ms_average": _float(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "latency_ms_average",
+                0.0,
+            )
+        ),
+        "repository_llm_patch_estimated_cost_usd": _dict(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "cost_estimate"
+            )
+        ).get("estimated_cost_usd"),
+        "repository_llm_patch_error_reason_counts": _dict(
+            _dict(repository_patch_candidates.get("llm_generation_telemetry")).get(
+                "error_reason_counts"
+            )
         ),
         "repository_patch_safety_gate_status": str(
             _dict(repository_patch_candidates.get("safety_gate")).get("status") or ""

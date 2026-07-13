@@ -6,8 +6,9 @@ from contextlib import contextmanager, redirect_stdout
 import json
 import os
 import shutil
+import time
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -79,6 +80,7 @@ class GitHubRepoIntelligenceSuiteRunResult:
     expectation_checks: list[dict[str, Any]]
     command_args: list[str]
     error: str | None = None
+    elapsed_ms: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -110,6 +112,8 @@ def run_github_repo_intelligence_suite(
     *,
     opener=None,
     reuse_existing_reports: bool = False,
+    start_index: int = 0,
+    limit_runs: int | None = None,
 ) -> GitHubRepoIntelligenceSuiteReport:
     manifest = Path(manifest_path)
     payload = json.loads(manifest.read_text(encoding="utf-8"))
@@ -117,10 +121,16 @@ def run_github_repo_intelligence_suite(
     output_root.mkdir(parents=True, exist_ok=True)
     suite_name = str(payload.get("suite_name") or payload.get("name") or manifest.stem)
     defaults = _dict(payload.get("defaults"))
-    runs = [_dict(run) for run in _list(payload.get("runs"))]
+    manifest_runs = [_dict(run) for run in _list(payload.get("runs"))]
+    selected_runs = _slice_runs(
+        manifest_runs,
+        start_index=start_index,
+        limit_runs=limit_runs,
+    )
     run_results: list[GitHubRepoIntelligenceSuiteRunResult] = []
 
-    for index, entry in enumerate(runs):
+    for index, entry in selected_runs:
+        run_started_at = time.perf_counter()
         raw_options = {**defaults, **entry}
         options = raw_options
         name = _run_name(raw_options, index)
@@ -129,7 +139,8 @@ def run_github_repo_intelligence_suite(
         run_output = Path(str(raw_options.get("output_dir") or output_root / name))
         command_args = _command_args(repo, run_output, raw_options)
         if not repo:
-            run_results.append(
+            _append_run_result(
+                run_results,
                 _failed_run_result(
                     name=name,
                     repo="",
@@ -137,7 +148,8 @@ def run_github_repo_intelligence_suite(
                     expected_status=expected_status,
                     error="manifest run is missing repo",
                     command_args=command_args,
-                )
+                ),
+                run_started_at,
             )
             continue
 
@@ -160,7 +172,7 @@ def run_github_repo_intelligence_suite(
                 command_args=command_args,
             )
             if controlled_result is not None:
-                run_results.append(controlled_result)
+                _append_run_result(run_results, controlled_result, run_started_at)
                 continue
             if _reuse_existing_report_requested(
                 options,
@@ -177,7 +189,8 @@ def run_github_repo_intelligence_suite(
                     reuse_reason="explicit_existing_report_reuse",
                 )
                 if reused_result is None:
-                    run_results.append(
+                    _append_run_result(
+                        run_results,
                         _failed_run_result(
                             name=name,
                             repo=repo,
@@ -189,10 +202,11 @@ def run_github_repo_intelligence_suite(
                                 "or did not match the requested repository"
                             ),
                             command_args=command_args,
-                        )
+                        ),
+                        run_started_at,
                     )
                 else:
-                    run_results.append(reused_result)
+                    _append_run_result(run_results, reused_result, run_started_at)
                 continue
             _seed_discovery_cache(options, run_output)
             with _temporary_cleared_env(
@@ -210,7 +224,7 @@ def run_github_repo_intelligence_suite(
                     command_args=command_args,
                 )
                 if preflight_result is not None:
-                    run_results.append(preflight_result)
+                    _append_run_result(run_results, preflight_result, run_started_at)
                     continue
                 if _bool_option(options, "use_cli_default_output_dir", False):
                     cli_result = _run_cli_default_output_dir_result(
@@ -223,7 +237,7 @@ def run_github_repo_intelligence_suite(
                         command_args=command_args,
                         opener=opener,
                     )
-                    run_results.append(cli_result)
+                    _append_run_result(run_results, cli_result, run_started_at)
                     continue
                 report = run_github_repo_intelligence(
                     repo,
@@ -337,7 +351,8 @@ def run_github_repo_intelligence_suite(
                     timeout=_int(options.get("timeout", 20)),
                     opener=opener,
                 )
-            run_results.append(
+            _append_run_result(
+                run_results,
                 _run_result_from_report(
                     name=name,
                     repo=repo,
@@ -346,7 +361,8 @@ def run_github_repo_intelligence_suite(
                     options=options,
                     metric_thresholds=_metric_thresholds(options),
                     command_args=command_args,
-                )
+                ),
+                run_started_at,
             )
         except (GitHubAPIError, ValueError, OSError) as exc:
             if isinstance(exc, GitHubAPIError) and _is_rate_limit_error(exc):
@@ -361,9 +377,10 @@ def run_github_repo_intelligence_suite(
                     error=exc,
                 )
                 if cached_result is not None:
-                    run_results.append(cached_result)
+                    _append_run_result(run_results, cached_result, run_started_at)
                     continue
-            run_results.append(
+            _append_run_result(
+                run_results,
                 _failed_run_result(
                     name=name,
                     repo=repo,
@@ -371,13 +388,17 @@ def run_github_repo_intelligence_suite(
                     expected_status=expected_status,
                     error=str(exc),
                     command_args=command_args,
-                )
+                ),
+                run_started_at,
             )
 
     suite_thresholds = _suite_thresholds(payload)
     summary = _suite_summary(
         run_results,
         suite_thresholds=suite_thresholds,
+        manifest_run_count=len(manifest_runs),
+        slice_start_index=_normalized_start_index(start_index),
+        slice_limit=limit_runs,
     )
     passed = _suite_passed(summary)
     report = GitHubRepoIntelligenceSuiteReport(
@@ -464,11 +485,17 @@ def render_github_repo_intelligence_suite_markdown(
         f"- Output Dir: `{report.output_dir}`",
         f"- Passed: {str(report.passed).lower()}",
         f"- Runs: {_int(summary.get('run_count', 0))}",
+        f"- Manifest Runs: {_int(summary.get('manifest_run_count', summary.get('run_count', 0)))}",
+        f"- Suite Slice Applied: {str(bool(summary.get('suite_slice_applied'))).lower()}",
+        f"- Suite Slice: start={_int(summary.get('suite_slice_start_index', 0))}, limit={_markdown_cell(summary.get('suite_slice_limit'))}, runs={_int(summary.get('suite_slice_run_count', summary.get('run_count', 0)))}",
         f"- Agent Passed Runs: {_int(summary.get('agent_passed_count', 0))}",
         f"- Agent Failed Runs: {_int(summary.get('agent_failed_count', 0))}",
         f"- Expectation Passed Runs: {_int(summary.get('expectation_passed_count', 0))}",
         f"- Expectation Failed Runs: {_int(summary.get('expectation_failed_count', 0))}",
         f"- Command Failed Runs: {_int(summary.get('command_failed_count', 0))}",
+        f"- Suite Run Elapsed Total ms: {_int(summary.get('suite_run_elapsed_ms_total', 0))}",
+        f"- Suite Run Elapsed Average ms: {_float(summary.get('suite_run_elapsed_ms_average', 0.0))}",
+        f"- Suite Run Elapsed Max ms: {_int(summary.get('suite_run_elapsed_ms_max', 0))}",
         f"- Existing Report Reuse Runs: {_int(summary.get('existing_report_reuse_count', 0))}",
         f"- Cached Report Fallback Runs: {_int(summary.get('cached_report_fallback_count', 0))}",
         f"- Discovery Cache Reuse Runs: {_int(summary.get('discovery_cache_reuse_count', 0))}",
@@ -623,6 +650,19 @@ def render_github_repo_intelligence_suite_markdown(
         f"- Patch Candidate Statuses: {_format_counts(_dict(summary.get('repository_test_patch_candidates_status_counts')))}",
         f"- Patch Generation Modes: {_format_counts(_dict(summary.get('repository_patch_generation_mode_counts')))}",
         f"- LLM Patch Generation Statuses: {_format_counts(_dict(summary.get('repository_llm_patch_generation_status_counts')))}",
+        (
+            "- LLM Patch Telemetry: "
+            f"requests={_int(summary.get('repository_llm_patch_request_count', 0))}, "
+            f"successes={_int(summary.get('repository_llm_patch_success_count', 0))}, "
+            f"failures={_int(summary.get('repository_llm_patch_failure_count', 0))}, "
+            f"tokens={_int(summary.get('repository_llm_patch_total_tokens', 0))}, "
+            f"estimated_tokens={_int(summary.get('repository_llm_patch_estimated_total_tokens', 0))}, "
+            f"latency_ms_total={_int(summary.get('repository_llm_patch_latency_ms_total', 0))}, "
+            f"latency_ms_average={_float(summary.get('repository_llm_patch_latency_ms_average', 0.0))}, "
+            f"estimated_cost_usd={_float(summary.get('repository_llm_patch_estimated_cost_usd_total', 0.0))}"
+        ),
+        f"- LLM Patch Error Reasons: {_format_counts(_dict(summary.get('repository_llm_patch_error_reason_counts')))}",
+        f"- LLM Patch Provider Failure Classes: {_format_counts(_dict(summary.get('repository_llm_patch_provider_failure_class_counts')))}",
         f"- LLM Reflection Statuses: {_format_counts(_dict(summary.get('repository_llm_reflection_status_counts')))}",
         f"- LLM Reflection Blockers: {_format_counts(_dict(summary.get('repository_llm_reflection_blocker_counts')))}",
         f"- Patch Safety Gate Statuses: {_format_counts(_dict(summary.get('repository_patch_safety_gate_status_counts')))}",
@@ -782,6 +822,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "github_repo_intelligence.json files without rerunning repositories."
         ),
     )
+    parser.add_argument(
+        "--start-index",
+        type=int,
+        default=0,
+        help="Run only manifest entries starting from this zero-based index.",
+    )
+    parser.add_argument(
+        "--limit-runs",
+        type=int,
+        default=None,
+        help="Run at most this many manifest entries.",
+    )
     return parser
 
 
@@ -793,6 +845,8 @@ def main(argv: list[str] | None = None, opener=None) -> None:
         args.output_dir,
         opener=opener,
         reuse_existing_reports=args.reuse_existing_reports,
+        start_index=args.start_index,
+        limit_runs=args.limit_runs,
     )
     rendered_json = json.dumps(report.to_dict(), indent=2, ensure_ascii=False)
     rendered_markdown = render_github_repo_intelligence_suite_markdown(report)
@@ -1090,6 +1144,35 @@ def _is_rate_limit_error(error: GitHubAPIError) -> bool:
             or "rate limit exceeded" in error.response_body.lower()
         )
     )
+
+
+def _slice_runs(
+    runs: list[dict[str, Any]],
+    *,
+    start_index: int,
+    limit_runs: int | None,
+) -> list[tuple[int, dict[str, Any]]]:
+    start = _normalized_start_index(start_index)
+    indexed = list(enumerate(runs))
+    if start:
+        indexed = indexed[start:]
+    if limit_runs is not None:
+        limit = max(0, _int(limit_runs))
+        indexed = indexed[:limit]
+    return indexed
+
+
+def _normalized_start_index(value: Any) -> int:
+    return max(0, _int(value))
+
+
+def _append_run_result(
+    run_results: list[GitHubRepoIntelligenceSuiteRunResult],
+    result: GitHubRepoIntelligenceSuiteRunResult,
+    started_at: float,
+) -> None:
+    elapsed_ms = max(0, int(round((time.perf_counter() - started_at) * 1000)))
+    run_results.append(replace(result, elapsed_ms=elapsed_ms))
 
 
 def _failed_run_result(
@@ -1852,9 +1935,6 @@ def _placeholder_api_key_reason(api_key: str, *, min_length: int) -> str:
         "your-api-key",
         "your_deepseek_api_key",
         "your-deepseek-api-key",
-        "sk-placeholder",
-        "sk-your-api-key",
-        "sk-your_api_key",
     }
     if lowered in exact_placeholders:
         return "placeholder_api_key_value"
@@ -2026,6 +2106,9 @@ def _suite_summary(
     runs: list[GitHubRepoIntelligenceSuiteRunResult],
     *,
     suite_thresholds: dict[str, float],
+    manifest_run_count: int | None = None,
+    slice_start_index: int = 0,
+    slice_limit: int | None = None,
 ) -> dict[str, Any]:
     agent_status_counts: Counter[str] = Counter()
     static_status_counts: Counter[str] = Counter()
@@ -2056,6 +2139,8 @@ def _suite_summary(
     patch_candidates_status_counts: Counter[str] = Counter()
     patch_generation_mode_counts: Counter[str] = Counter()
     llm_patch_generation_status_counts: Counter[str] = Counter()
+    llm_patch_error_reason_counts: Counter[str] = Counter()
+    llm_patch_failure_class_counts: Counter[str] = Counter()
     llm_reflection_status_counts: Counter[str] = Counter()
     llm_reflection_blocker_counts: Counter[str] = Counter()
     patch_safety_gate_status_counts: Counter[str] = Counter()
@@ -2175,6 +2260,14 @@ def _suite_summary(
     patch_validation_success_total = 0
     rule_patch_candidate_total = 0
     llm_patch_candidate_total = 0
+    llm_patch_request_total = 0
+    llm_patch_success_total = 0
+    llm_patch_failure_total = 0
+    llm_patch_total_tokens = 0
+    llm_patch_estimated_total_tokens = 0
+    llm_patch_latency_ms_total = 0
+    llm_patch_estimated_cost_usd_total = 0.0
+    llm_patch_cost_available_runs: list[str] = []
     patch_safety_gate_blocked_total = 0
     patch_validation_input_candidate_total = 0
     patch_validation_candidate_total = 0
@@ -2293,6 +2386,42 @@ def _suite_summary(
         _count(
             llm_patch_generation_status_counts,
             metrics.get("repository_llm_patch_generation_status"),
+        )
+        llm_patch_request_total += _int(
+            metrics.get("repository_llm_patch_request_count", 0)
+        )
+        llm_patch_success_total += _int(
+            metrics.get("repository_llm_patch_success_count", 0)
+        )
+        llm_patch_failure_total += _int(
+            metrics.get("repository_llm_patch_failure_count", 0)
+        )
+        llm_patch_total_tokens += _int(
+            metrics.get("repository_llm_patch_total_tokens", 0)
+        )
+        llm_patch_estimated_total_tokens += _int(
+            metrics.get("repository_llm_patch_estimated_total_tokens", 0)
+        )
+        llm_patch_latency_ms_total += _int(
+            metrics.get("repository_llm_patch_latency_ms_total", 0)
+        )
+        if bool(metrics.get("repository_llm_patch_cost_available", False)):
+            llm_patch_cost_available_runs.append(run.name)
+            llm_patch_estimated_cost_usd_total += _float(
+                metrics.get("repository_llm_patch_estimated_cost_usd", 0.0)
+            )
+        llm_patch_error_reason_counts.update(
+            {
+                str(key): _int(value)
+                for key, value in _dict(
+                    metrics.get("repository_llm_patch_error_reason_counts")
+                ).items()
+                if str(key)
+            }
+        )
+        _count(
+            llm_patch_failure_class_counts,
+            metrics.get("repository_llm_patch_provider_failure_class"),
         )
         _count(
             llm_reflection_status_counts,
@@ -2829,6 +2958,14 @@ def _suite_summary(
             )
         )
 
+    run_elapsed_values = [_int(run.elapsed_ms) for run in runs]
+    run_elapsed_ms_total = sum(run_elapsed_values)
+    run_elapsed_ms_average = (
+        round(run_elapsed_ms_total / len(run_elapsed_values), 2)
+        if run_elapsed_values
+        else 0.0
+    )
+    run_elapsed_ms_max = max(run_elapsed_values, default=0)
     metric_check_count = sum(len(run.metric_checks) for run in runs)
     metric_check_failed_count = sum(
         1
@@ -2845,9 +2982,25 @@ def _suite_summary(
     )
     summary = {
         "run_count": len(runs),
+        "manifest_run_count": (
+            _int(manifest_run_count)
+            if manifest_run_count is not None
+            else len(runs)
+        ),
+        "suite_slice_applied": bool(
+            _int(slice_start_index) > 0 or slice_limit is not None
+        ),
+        "suite_slice_start_index": _normalized_start_index(slice_start_index),
+        "suite_slice_limit": (
+            _int(slice_limit) if slice_limit is not None else None
+        ),
+        "suite_slice_run_count": len(runs),
         "agent_passed_count": sum(1 for run in runs if run.passed),
         "agent_failed_count": sum(1 for run in runs if not run.passed),
         "command_failed_count": sum(1 for run in runs if run.error),
+        "suite_run_elapsed_ms_total": run_elapsed_ms_total,
+        "suite_run_elapsed_ms_average": run_elapsed_ms_average,
+        "suite_run_elapsed_ms_max": run_elapsed_ms_max,
         "existing_report_reuse_count": len(existing_report_reuse_runs),
         "existing_report_reuse_runs": existing_report_reuse_runs,
         "cached_report_fallback_count": len(cached_report_fallback_runs),
@@ -3096,6 +3249,38 @@ def _suite_summary(
         ),
         "repository_llm_patch_generation_status_counts": dict(
             sorted(llm_patch_generation_status_counts.items())
+        ),
+        "repository_llm_patch_request_count": llm_patch_request_total,
+        "repository_llm_patch_success_count": llm_patch_success_total,
+        "repository_llm_patch_failure_count": llm_patch_failure_total,
+        "repository_llm_patch_total_tokens": llm_patch_total_tokens,
+        "repository_llm_patch_estimated_total_tokens": (
+            llm_patch_estimated_total_tokens
+        ),
+        "repository_llm_patch_latency_ms_total": llm_patch_latency_ms_total,
+        "repository_llm_patch_latency_ms_average": (
+            round(llm_patch_latency_ms_total / llm_patch_request_total, 2)
+            if llm_patch_request_total
+            else 0.0
+        ),
+        "repository_llm_patch_estimated_cost_usd_total": (
+            round(llm_patch_estimated_cost_usd_total, 8)
+        ),
+        "repository_llm_patch_cost_available_count": len(
+            llm_patch_cost_available_runs
+        ),
+        "repository_llm_patch_cost_available_runs": llm_patch_cost_available_runs,
+        "repository_llm_patch_error_reason_counts": dict(
+            sorted(llm_patch_error_reason_counts.items())
+        ),
+        "repository_llm_patch_error_reason_kind_count": len(
+            llm_patch_error_reason_counts
+        ),
+        "repository_llm_patch_provider_failure_class_counts": dict(
+            sorted(llm_patch_failure_class_counts.items())
+        ),
+        "repository_llm_patch_provider_failure_class_kind_count": len(
+            llm_patch_failure_class_counts
         ),
         "repository_llm_reflection_status_counts": dict(
             sorted(llm_reflection_status_counts.items())
@@ -3707,6 +3892,13 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
     llm_patch_audit = _dict(
         summary.get("repository_llm_patch_config_audit")
     ) or _dict(summary.get("repository_llm_patch_generation_audit"))
+    llm_patch_generation_audit = _dict(
+        summary.get("repository_llm_patch_generation_audit")
+    )
+    llm_patch_telemetry = _dict(
+        summary.get("repository_llm_patch_generation_telemetry")
+    ) or _dict(llm_patch_generation_audit.get("telemetry"))
+    llm_patch_cost_estimate = _dict(llm_patch_telemetry.get("cost_estimate"))
     llm_reflection_audit = _dict(
         summary.get("repository_llm_reflection_config_audit")
     ) or _dict(summary.get("repository_llm_reflection_audit"))
@@ -4554,6 +4746,72 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         "repository_llm_patch_api_key_fingerprint": str(
             summary.get("repository_llm_patch_api_key_fingerprint")
             or llm_patch_audit.get("api_key_fingerprint")
+            or ""
+        ),
+        "repository_llm_patch_request_count": _int(
+            summary.get("repository_llm_patch_request_count")
+            or llm_patch_generation_audit.get("request_count")
+            or llm_patch_telemetry.get("request_count")
+            or 0
+        ),
+        "repository_llm_patch_success_count": _int(
+            summary.get("repository_llm_patch_success_count")
+            or llm_patch_generation_audit.get("success_count")
+            or llm_patch_telemetry.get("success_count")
+            or 0
+        ),
+        "repository_llm_patch_failure_count": _int(
+            summary.get("repository_llm_patch_failure_count")
+            or llm_patch_generation_audit.get("failure_count")
+            or llm_patch_telemetry.get("failure_count")
+            or 0
+        ),
+        "repository_llm_patch_total_tokens": _int(
+            summary.get("repository_llm_patch_total_tokens")
+            or llm_patch_generation_audit.get("total_tokens")
+            or llm_patch_telemetry.get("total_tokens")
+            or 0
+        ),
+        "repository_llm_patch_estimated_total_tokens": _int(
+            summary.get("repository_llm_patch_estimated_total_tokens")
+            or llm_patch_generation_audit.get("estimated_total_tokens")
+            or llm_patch_telemetry.get("estimated_total_tokens")
+            or 0
+        ),
+        "repository_llm_patch_latency_ms_total": _int(
+            summary.get("repository_llm_patch_latency_ms_total")
+            or llm_patch_generation_audit.get("latency_ms_total")
+            or llm_patch_telemetry.get("latency_ms_total")
+            or 0
+        ),
+        "repository_llm_patch_latency_ms_average": _float(
+            summary.get("repository_llm_patch_latency_ms_average")
+            or llm_patch_generation_audit.get("latency_ms_average")
+            or llm_patch_telemetry.get("latency_ms_average")
+            or 0.0
+        ),
+        "repository_llm_patch_estimated_cost_usd": (
+            summary.get("repository_llm_patch_estimated_cost_usd")
+            if summary.get("repository_llm_patch_estimated_cost_usd") is not None
+            else llm_patch_generation_audit.get("estimated_cost_usd")
+            if llm_patch_generation_audit.get("estimated_cost_usd") is not None
+            else llm_patch_cost_estimate.get("estimated_cost_usd")
+        ),
+        "repository_llm_patch_cost_available": bool(
+            llm_patch_cost_estimate.get("available", False)
+            or summary.get("repository_llm_patch_estimated_cost_usd") is not None
+            or llm_patch_generation_audit.get("estimated_cost_usd") is not None
+        ),
+        "repository_llm_patch_error_reason_counts": _dict(
+            summary.get("repository_llm_patch_error_reason_counts")
+        )
+        or _dict(llm_patch_generation_audit.get("error_reason_counts"))
+        or _dict(llm_patch_telemetry.get("error_reason_counts")),
+        "repository_llm_patch_provider_failure_class": str(
+            summary.get("repository_llm_patch_provider_failure_class")
+            or _dict(summary.get("llm_repair_action_audit")).get(
+                "llm_provider_failure_class"
+            )
             or ""
         ),
         "repository_llm_reflection_status": str(

@@ -14,6 +14,8 @@ REQUIRED_ACTION_IDS = [
     "run_repository_tests",
     "localize_fault",
     "generate_llm_patch_candidates",
+    "diagnose_llm_provider_failure",
+    "retry_llm_patch_generation",
     "generate_hybrid_patch_candidates",
     "validate_patch_in_sandbox",
     "run_llm_patch_reflection_loop",
@@ -29,19 +31,30 @@ ACTION_ALIASES = {
     "adjust_source_filters": "discover_repository_structure",
     "mine_static_bug_signals": "localize_fault",
     "build_static_graph_fault_ranking": "localize_fault",
+    "build_dynamic_fault_localization": "localize_fault",
     "run_dynamic_fault_localization": "localize_fault",
+    "adjust_application_source_focus": "localize_fault",
+    "expand_static_candidate_search": "localize_fault",
     "collect_dynamic_failure_evidence": "run_repository_tests",
     "run_repository_tests_with_checkout": "run_repository_tests",
+    "narrow_repository_tests_after_timeout": "run_repository_tests",
+    "generate_controlled_failure_overlay": "run_repository_tests",
+    "convert_passing_tests_to_regression_guard": "run_repository_tests",
     "discover_repository_tests": "discover_tests",
     "diagnose_test_execution_failure": "diagnose_environment",
     "prepare_repository_test_environment": "diagnose_environment",
     "await_environment_repair": "emit_blocker_report",
     "await_failing_test_or_bug_report": "emit_blocker_report",
     "configure_llm_patch_api_key": "emit_blocker_report",
+    "refresh_llm_patch_credentials": "diagnose_llm_provider_failure",
+    "switch_llm_patch_provider_or_model": "diagnose_llm_provider_failure",
+    "retry_llm_patch_generation_with_backoff": "retry_llm_patch_generation",
+    "retry_llm_patch_generation_with_smaller_context": "retry_llm_patch_generation",
     "extend_failure_overlay_or_provide_bug_report": "emit_blocker_report",
     "inspect_generated_artifacts": "emit_blocker_report",
     "generate_and_validate_patches": "validate_patch_in_sandbox",
     "run_patch_reflection_loop": "run_llm_patch_reflection_loop",
+    "expand_patch_candidates_or_reflection": "run_llm_patch_reflection_loop",
     "regenerate_safe_patch_candidates": "generate_hybrid_patch_candidates",
     "run_search_and_ablation_evaluation": "generate_final_agent_report",
 }
@@ -135,7 +148,13 @@ ACTION_SPECS = [
         blocker_type="test_execution_blocker",
         retry_policy="narrow timeout/test scope or diagnose environment before blocker",
         next_possible_actions=["localize_fault", "diagnose_environment", "emit_blocker_report"],
-        aliases=["run_repository_tests_with_checkout", "collect_dynamic_failure_evidence"],
+        aliases=[
+            "run_repository_tests_with_checkout",
+            "collect_dynamic_failure_evidence",
+            "convert_passing_tests_to_regression_guard",
+            "generate_controlled_failure_overlay",
+            "narrow_repository_tests_after_timeout",
+        ],
     ),
     AgentActionSpec(
         action_id="localize_fault",
@@ -149,7 +168,14 @@ ACTION_SPECS = [
         blocker_type="fault_localization_blocker",
         retry_policy="collect dynamic evidence or broaden source focus before blocker",
         next_possible_actions=["generate_llm_patch_candidates", "generate_hybrid_patch_candidates", "emit_blocker_report"],
-        aliases=["build_static_graph_fault_ranking", "run_dynamic_fault_localization", "mine_static_bug_signals"],
+        aliases=[
+            "adjust_application_source_focus",
+            "build_dynamic_fault_localization",
+            "build_static_graph_fault_ranking",
+            "expand_static_candidate_search",
+            "run_dynamic_fault_localization",
+            "mine_static_bug_signals",
+        ],
     ),
     AgentActionSpec(
         action_id="generate_llm_patch_candidates",
@@ -164,6 +190,73 @@ ACTION_SPECS = [
         retry_policy="retry with corrected key/context or switch to hybrid/blocker",
         next_possible_actions=["validate_patch_in_sandbox", "run_llm_patch_reflection_loop", "emit_blocker_report"],
         aliases=[],
+    ),
+    AgentActionSpec(
+        action_id="diagnose_llm_provider_failure",
+        phase="phase3",
+        tool="llm_provider_diagnostics",
+        module="code_intelligence_agent.agents.controller",
+        input_requirements=[
+            "llm_generation_telemetry",
+            "provider",
+            "model",
+            "base_url",
+            "api_key_fingerprint_optional",
+        ],
+        expected_artifact="agent_policy_trace.json/md with classified LLM provider blocker",
+        success_condition=(
+            "LLM provider failure is classified as credential, rate-limit, "
+            "network, provider, timeout, or response-schema blocker with a "
+            "safe recovery action."
+        ),
+        failure_condition="The Agent cannot classify why the provider request failed.",
+        blocker_type="llm_provider_blocker",
+        retry_policy=(
+            "refresh credentials or provider configuration for auth failures; "
+            "otherwise retry only through explicit provider recovery policy"
+        ),
+        next_possible_actions=[
+            "retry_llm_patch_generation",
+            "generate_hybrid_patch_candidates",
+            "emit_blocker_report",
+        ],
+        aliases=[
+            "refresh_llm_patch_credentials",
+            "switch_llm_patch_provider_or_model",
+        ],
+    ),
+    AgentActionSpec(
+        action_id="retry_llm_patch_generation",
+        phase="phase3",
+        tool="repository_test_patch_candidates",
+        module="code_intelligence_agent.evaluation.repository_test_patch_candidates",
+        input_requirements=[
+            "topk_suspicious_functions",
+            "failing_test_or_oracle",
+            "llm_generation_telemetry",
+            "retry_budget",
+        ],
+        expected_artifact="repository_test_patch_candidates.json/md",
+        success_condition=(
+            "LLM patch generation is retried with bounded candidate count, "
+            "provider backoff, or stricter JSON repair instructions."
+        ),
+        failure_condition="Provider failure repeats or retry budget is exhausted.",
+        blocker_type="llm_patch_retry_blocker",
+        retry_policy=(
+            "retry transient failures once with smaller context/backoff; switch "
+            "to hybrid fallback or blocker if the same class repeats"
+        ),
+        next_possible_actions=[
+            "validate_patch_in_sandbox",
+            "diagnose_llm_provider_failure",
+            "generate_hybrid_patch_candidates",
+            "emit_blocker_report",
+        ],
+        aliases=[
+            "retry_llm_patch_generation_with_backoff",
+            "retry_llm_patch_generation_with_smaller_context",
+        ],
     ),
     AgentActionSpec(
         action_id="generate_hybrid_patch_candidates",
@@ -205,7 +298,7 @@ ACTION_SPECS = [
         blocker_type="llm_reflection_blocker",
         retry_policy="avoid repeated diff fingerprints; stop with blocker when attempts are exhausted",
         next_possible_actions=["validate_patch_in_sandbox", "run_llm_patch_judge", "emit_blocker_report"],
-        aliases=["run_patch_reflection_loop"],
+        aliases=["expand_patch_candidates_or_reflection", "run_patch_reflection_loop"],
     ),
     AgentActionSpec(
         action_id="run_llm_patch_judge",
@@ -475,6 +568,10 @@ def _policy_rule_for(
     obs = {str(item.get("signal") or ""): str(item.get("value") or "") for item in observations}
     if canonical_action == "generate_llm_patch_candidates":
         return "topk_dynamic_evidence_with_llm_patch_config"
+    if canonical_action == "diagnose_llm_provider_failure":
+        return "llm_provider_failure_requires_classified_recovery"
+    if canonical_action == "retry_llm_patch_generation":
+        return "recoverable_llm_provider_failure_retry_with_budget_controls"
     if canonical_action == "generate_hybrid_patch_candidates":
         if obs.get("repository_llm_patch_generation_status") == "blocked":
             return "hybrid_mode_preserves_rule_fallback_and_records_llm_blocker"

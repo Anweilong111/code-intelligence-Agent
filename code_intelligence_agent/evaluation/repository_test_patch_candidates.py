@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
-from code_intelligence_agent.agents.llm_client import llm_config_audit
+from code_intelligence_agent.agents.llm_client import (
+    LLMRequestError,
+    llm_config_audit,
+)
 from code_intelligence_agent.agents.llm_patch_generator import LLMPatchGenerator
 from code_intelligence_agent.agents.patch_generator import PatchGenerator
 from code_intelligence_agent.agents.patch_generator_factory import build_patch_generator
@@ -140,6 +144,7 @@ def build_repository_test_patch_candidates(
         "llm_generation_status": generation["llm_generation_status"],
         "llm_generation_reason": generation["llm_generation_reason"],
         "llm_generation_audit": generation["llm_generation_audit"],
+        "llm_generation_telemetry": generation["llm_generation_telemetry"],
         "llm_config_audit": generation["llm_config_audit"],
         "generation_errors": generation["generation_errors"],
         "safety_gate": safety_gate,
@@ -301,14 +306,20 @@ def _generate_candidates(
                 )
             except Exception as exc:
                 llm_status = "error"
-                llm_reason = type(exc).__name__
-                generation_errors.append(
-                    {
-                        "source": "llm",
-                        "type": type(exc).__name__,
-                        "message": str(exc),
-                    }
+                llm_reason = (
+                    exc.reason
+                    if isinstance(exc, LLMRequestError)
+                    else type(exc).__name__
                 )
+                error = {
+                    "source": "llm",
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                }
+                if isinstance(exc, LLMRequestError):
+                    error["reason"] = exc.reason
+                    error["llm_request_metadata"] = exc.metadata
+                generation_errors.append(error)
 
     candidates = _dedupe_candidates(candidates)
     variant_filter = _candidate_variant_filter_summary(
@@ -327,6 +338,10 @@ def _generate_candidates(
         "llm_generation_status": llm_status,
         "llm_generation_reason": llm_reason,
         "llm_generation_audit": llm_generation_audit,
+        "llm_generation_telemetry": _llm_generation_telemetry(
+            llm_generation_audit,
+            generation_errors,
+        ),
         "llm_config_audit": llm_audit.to_dict(),
         "generation_errors": generation_errors,
     }
@@ -514,6 +529,8 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
     variant_filter = _dict(payload.get("candidate_variant_filter"))
     safety_gate = _dict(payload.get("safety_gate"))
     llm_audit = _dict(payload.get("llm_config_audit"))
+    llm_telemetry = _dict(payload.get("llm_generation_telemetry"))
+    llm_cost = _dict(llm_telemetry.get("cost_estimate"))
     lines = [
         "# Repository Test Patch Candidates",
         "",
@@ -536,6 +553,14 @@ def render_repository_test_patch_candidates_markdown(payload: dict[str, Any]) ->
             "- LLM Generation: "
             f"`{_markdown_cell(payload.get('llm_generation_status') or 'disabled')}` "
             f"({_markdown_cell(payload.get('llm_generation_reason') or 'none')})"
+        ),
+        (
+            "- LLM Telemetry: "
+            f"requests={_int(llm_telemetry.get('request_count', 0))}, "
+            f"failures={_int(llm_telemetry.get('failure_count', 0))}, "
+            f"total_tokens={_int(llm_telemetry.get('total_tokens', 0))}, "
+            f"estimated_tokens={_int(llm_telemetry.get('estimated_total_tokens', 0))}, "
+            f"estimated_cost_usd=`{_markdown_cell(llm_cost.get('estimated_cost_usd') or 'none')}`"
         ),
         (
             "- Candidate Variant Filter: "
@@ -723,6 +748,7 @@ def _ranked_results_from_payload(
 def _llm_repair_context(localization: dict[str, Any]) -> dict[str, Any]:
     overlay_context = _dict(localization.get("overlay_case_context"))
     public_api = _dict(localization.get("public_api_evidence"))
+    session_patch_memory = _session_patch_memory_from_env()
     context = {
         "dynamic_evidence_level": str(
             localization.get("dynamic_evidence_level") or ""
@@ -742,6 +768,18 @@ def _llm_repair_context(localization: dict[str, Any]) -> dict[str, Any]:
             localization.get("unmatched_failing_tests")
         ),
     }
+    if session_patch_memory:
+        context["session_patch_memory"] = session_patch_memory
+        context["previous_failed_patch_fingerprints"] = _list(
+            session_patch_memory.get("avoid_diff_fingerprints")
+        )
+        context["avoid_fixed_source_fingerprints"] = _list(
+            session_patch_memory.get("avoid_fixed_source_fingerprints")
+        )
+        context["user_constraints"] = _list(session_patch_memory.get("constraints"))
+        context["repair_strategy_preferences"] = _list(
+            session_patch_memory.get("repair_strategy_preferences")
+        )
     if overlay_context:
         context["oracle_policy"] = {
             "expected_exception_semantics": (
@@ -756,6 +794,104 @@ def _llm_repair_context(localization: dict[str, Any]) -> dict[str, Any]:
         key: value
         for key, value in context.items()
         if value not in ("", [], {}, None)
+    }
+
+
+def _session_patch_memory_from_env() -> dict[str, Any]:
+    path = str(os.environ.get("CIA_AGENT_PATCH_MEMORY") or "").strip()
+    if not path:
+        return {}
+    payload = _dict(_read_json(path))
+    layers = _dict(payload.get("memory_layers"))
+    repair_memory = _dict(layers.get("repair_memory"))
+    repo_memory = _dict(layers.get("repo_memory"))
+    session_memory = _dict(layers.get("session_memory"))
+    env_strategy = str(os.environ.get("CIA_AGENT_REPAIR_STRATEGY") or "").strip()
+    patch_attempts = [
+        _dict(item)
+        for item in _list(payload.get("patch_attempt_history"))
+        if not bool(_dict(item).get("passed", False))
+    ]
+    layer_diff_fingerprints = [
+        str(item)
+        for item in _list(repair_memory.get("failed_patch_fingerprints"))
+        if str(item or "")
+    ]
+    layer_source_fingerprints = [
+        str(item)
+        for item in _list(repair_memory.get("avoid_fixed_source_fingerprints"))
+        if str(item or "")
+    ]
+    repair_strategy_preferences = [
+        str(item)
+        for item in [
+            env_strategy,
+            *_list(payload.get("repair_strategy_preferences")),
+            *_list(session_memory.get("repair_strategy_preferences")),
+            *_list(repair_memory.get("strategy_preferences")),
+        ]
+        if str(item or "")
+    ]
+    constraints = [
+        str(item)
+        for item in [
+            *_list(payload.get("constraints")),
+            *_list(session_memory.get("constraints")),
+            *_list(repair_memory.get("user_constraints")),
+        ]
+        if str(item or "")
+    ]
+    if (
+        not patch_attempts
+        and not layer_diff_fingerprints
+        and not constraints
+        and not repair_strategy_preferences
+    ):
+        return {}
+    diff_fingerprints = [
+        str(item.get("diff_fingerprint") or "")
+        for item in patch_attempts
+        if str(item.get("diff_fingerprint") or "")
+    ] + layer_diff_fingerprints
+    source_fingerprints = [
+        str(item.get("fixed_source_fingerprint") or "")
+        for item in patch_attempts
+        if str(item.get("fixed_source_fingerprint") or "")
+    ] + layer_source_fingerprints
+    return {
+        "source": "CIA_AGENT_PATCH_MEMORY",
+        "memory_path": path,
+        "layered_memory_available": bool(layers),
+        "failed_patch_count": max(
+            len(patch_attempts),
+            _int(repair_memory.get("failed_patch_count", 0)),
+        ),
+        "avoid_diff_fingerprints": list(dict.fromkeys(diff_fingerprints))[:20],
+        "avoid_fixed_source_fingerprints": list(dict.fromkeys(source_fingerprints))[:20],
+        "constraints": list(dict.fromkeys(constraints))[:20],
+        "repair_strategy_preferences": list(
+            dict.fromkeys(repair_strategy_preferences)
+        )[:20],
+        "active_scope": str(
+            payload.get("active_scope")
+            or session_memory.get("active_scope")
+            or ""
+        ),
+        "repo_test_command": str(repo_memory.get("test_command") or ""),
+        "repo_test_runner": str(repo_memory.get("test_runner") or ""),
+        "latest_failure_category": str(
+            repair_memory.get("latest_failure_category") or ""
+        ),
+        "failed_patch_summaries": [
+            {
+                "candidate_id": str(item.get("candidate_id") or ""),
+                "target_function": str(item.get("target_function") or ""),
+                "failure_type": str(item.get("failure_type") or ""),
+                "sandbox_status": str(item.get("sandbox_status") or ""),
+                "diff_fingerprint": str(item.get("diff_fingerprint") or ""),
+            }
+            for item in patch_attempts[:10]
+        ],
     }
 
 
@@ -794,6 +930,70 @@ def _candidate_rule_counts(candidates) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def _llm_generation_telemetry(
+    audits: list[dict[str, Any]],
+    errors: list[dict[str, Any]],
+) -> dict[str, Any]:
+    metadata_rows: list[dict[str, Any]] = []
+    for audit in audits:
+        metadata = _dict(_dict(audit).get("llm_metadata"))
+        if metadata:
+            metadata_rows.append(metadata)
+    for error in errors:
+        metadata = _dict(_dict(error).get("llm_request_metadata"))
+        if metadata:
+            metadata_rows.append(metadata)
+    request_count = len(metadata_rows)
+    failure_count = sum(1 for row in metadata_rows if row.get("status") == "error")
+    total_tokens = 0
+    estimated_total_tokens = 0
+    latency_ms = 0
+    estimated_cost_usd = 0.0
+    cost_available = False
+    providers: set[str] = set()
+    models: set[str] = set()
+    error_reason_counts: dict[str, int] = {}
+    for metadata in metadata_rows:
+        usage = _dict(metadata.get("usage"))
+        total_tokens += _int(usage.get("total_tokens"))
+        estimated_total_tokens += _int(usage.get("estimated_total_tokens"))
+        latency_ms += _int(metadata.get("latency_ms"))
+        provider = str(metadata.get("provider") or "")
+        model = str(metadata.get("model") or "")
+        if provider:
+            providers.add(provider)
+        if model:
+            models.add(model)
+        cost = _dict(metadata.get("cost_estimate"))
+        if bool(cost.get("available", False)):
+            cost_available = True
+            estimated_cost_usd += _float(cost.get("estimated_cost_usd", 0.0))
+        if metadata.get("status") == "error":
+            reason = str(metadata.get("error_reason") or "unknown")
+            error_reason_counts[reason] = error_reason_counts.get(reason, 0) + 1
+    return {
+        "request_count": request_count,
+        "success_count": request_count - failure_count,
+        "failure_count": failure_count,
+        "providers": sorted(providers),
+        "models": sorted(models),
+        "total_tokens": total_tokens,
+        "estimated_total_tokens": estimated_total_tokens,
+        "latency_ms_total": latency_ms,
+        "latency_ms_average": round(latency_ms / request_count, 2)
+        if request_count
+        else 0.0,
+        "cost_estimate": {
+            "available": cost_available,
+            "estimated_cost_usd": round(estimated_cost_usd, 8)
+            if cost_available
+            else None,
+            "source": "llm_metadata" if cost_available else "not_configured",
+        },
+        "error_reason_counts": dict(sorted(error_reason_counts.items())),
+    }
+
+
 def _skipped(
     *,
     reason: str,
@@ -827,6 +1027,7 @@ def _skipped(
             reason if llm_enabled else "patch_generation_mode_rule"
         ),
         "llm_generation_audit": [],
+        "llm_generation_telemetry": _llm_generation_telemetry([], []),
         "llm_candidate_limit": llm_candidate_limit,
         "llm_config_audit": llm_config_audit(
             "patch_generation",
@@ -889,6 +1090,18 @@ def _dict(value: Any) -> dict[str, Any]:
 
 def _list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else []
+
+
+def _read_json(path: str | Path) -> Any:
+    if not path:
+        return {}
+    candidate = Path(path)
+    if not candidate.exists():
+        return {}
+    try:
+        return json.loads(candidate.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def _format_list(values: list[Any]) -> str:

@@ -65,6 +65,8 @@ flowchart TD
 - `run_repository_tests`
 - `localize_fault`
 - `generate_llm_patch_candidates`
+- `diagnose_llm_provider_failure`
+- `retry_llm_patch_generation`
 - `generate_hybrid_patch_candidates`
 - `validate_patch_in_sandbox`
 - `run_llm_patch_reflection_loop`
@@ -81,19 +83,26 @@ flowchart TD
 | Artifact | 作用 |
 | --- | --- |
 | `github_repo_intelligence.json/md` | 总报告，汇总仓库状态、分析阶段、定位、测试与修复结果 |
-| `github_repo_agent_controller.json/md` | AgentController 决策链 |
+| `github_repo_agent_controller.json/md` | AgentController 决策链，包含 `action_decision_audit`：why selected、confidence、risk、input/output、blocker、next plan |
 | `agent_action_registry.json/md` | 可执行 action 列表与条件 |
 | `agent_policy_trace.json/md` | 当前状态到 selected action 的映射过程 |
-| `repository_profile.json/md` | 仓库画像、配置文件、依赖与 runner 信号 |
+| `agent_execution_trace.json/md` | 每个 Agent action 的 planned / executed / skipped / blocked / failed / verified 状态、命令、returncode、证据文件和下一步决策 |
+| `agent_memory_report.json/md` | 分层记忆报告，覆盖 Session / Repo / Repair / Long-term Pattern Memory 以及 patch/reflection/replan 复用证据 |
+| `agent_decision_report.json/md` | Agent 决策报告，汇总规则 selected action、LLM planner decision、安全门控、执行状态和下一步计划 |
+| `repository_profile.json/md` | 仓库画像、layout profile、配置文件、依赖与 runner 信号 |
 | `repository_structure.json/md` | 源码、模块、函数、类和结构摘要 |
 | `repo_graph.json/md` | 仓库图、函数调用和程序图摘要 |
 | `fault_localization.json/md` | Top-k suspicious functions 与分数来源 |
 | `repository_test_environment.json/md` | 测试环境、依赖、runner 和 blocker 诊断 |
-| `repository_test_execution_plan.json/md` | 推荐测试命令、范围和风险 |
+| `repository_test_command.json/md` | 推荐测试命令 quick validation、monorepo working dir 与执行结果 |
+| `repository_test_execution_plan.json/md` | 推荐测试命令、monorepo working dir、范围和风险 |
 | `repository_test_execution_result.json/md` | pytest/unittest 执行结果 |
 | `repository_test_patch_candidates.json/md` | 规则/LLM/hybrid 补丁候选与生成审计 |
 | `repository_test_patch_validation.json/md` | sandbox 验证结果、失败类型和成功补丁 |
 | `reflection_trace.json/md` | 失败补丁到 refined candidate 的反思轨迹 |
+| `agent_session.json` | 当前 Agent 会话元数据，包括 session_id、repo、ref、输出目录、运行配置和当前状态 |
+| `agent_memory.json` | 持久化记忆，包括仓库画像、Top-k、测试结果、blocker、补丁尝试、用户意图和每轮决策轨迹 |
+| `agent_session_report.md` | 多轮会话审计报告，包括 session timeline、memory usage evidence、intent history、patch history 和 blocker evolution |
 
 ## P6 验证结果
 
@@ -111,6 +120,137 @@ flowchart TD
 | Reflection evidence complete | 3 |
 | Declared catalog cases matched | 20/20 |
 | Sandbox authority | `sandbox_pytest_decides_success` |
+
+### Showcase Overview
+
+| Metric | Value |
+| --- | --- |
+| Benchmark Cases | 62 |
+| Top-1 Localization | 1.0000 |
+| Top-3 Localization | 1.0000 |
+| MAP | 1.0000 |
+| Patch Success Rate | 1.0000 |
+| Beam Success Rate | 0.9516 |
+| Cross-function Data-flow Cases | 22 |
+| Program Slice Cases | 62 |
+| Slice-grounded Cases | 62 |
+| Average Top-1 Slice Support | 0.9839 |
+| Generated Hard Cases | 5 |
+| Generated Score Inversions | 2 |
+| Generated Diversity-Assisted Successes | 1 |
+| Generated Diversity Success Lift | 3.0000 |
+| Generated Diversity Success Bonus | 0.5900 |
+| Ablation-linked Generated Cases | 5 |
+
+### V1 Target Dataset
+
+| Target | Dataset | Count |
+| --- | --- | ---: |
+| Public GitHub onboarding cases | `datasets/github_cases/repo_intelligence_v1_onboarding_30.example.json` | 30 |
+| Repair/evaluation cases | `datasets/github_cases/llm_repair_case_catalog_v1_50.example.json` | 50 |
+| Required evaluation metric contracts | onboarding, repair, suite, validation, reflection, cost artifacts | 9 |
+
+The v1 target dataset audit checks case count, scenario coverage, repair class
+coverage, blocker category coverage, and metric contracts for
+`onboarding_success_rate`, `topk_localization_accuracy`, `pass_at_1`,
+`pass_at_k`, `reflection_uplift`, `blocker_accuracy`,
+`sandbox_success_rate`, `average_runtime_ms`, and `llm_cost_usd`.
+
+Current V1 evidence snapshot:
+
+| Metric Area | Result |
+| --- | ---: |
+| GitHub onboarding repositories | 30/30 |
+| Repair/evaluation cases | 50 |
+| Required metric contracts | 9/9 |
+| Directly measured metrics | 9/9 |
+| Proxy metrics | 0 |
+| Missing evidence metrics | 0 |
+
+V1 baseline 将数据集 readiness、9 项评估指标、完整目标审计、当前 Git
+候选集的发布卫生检查和完整 pytest 回归统一写入
+`baseline_metrics.json/md`。在已有 V1 evidence artifacts 的工作区中，可用
+一条命令重新生成：
+
+```powershell
+python -m code_intelligence_agent.evaluation.v1_baseline `
+  outputs/v1_baseline `
+  --run-tests `
+  --require-pass
+```
+
+完整测试当前约需 12 分钟；生成目录 `outputs/` 已加入 `.gitignore`。不希望
+重新运行测试时，可以显式提供已完成回归的 passed count 和 duration，但正式
+baseline/tag 必须来自一次完整测试结果。
+
+The audit command is:
+
+```bash
+python -m code_intelligence_agent.evaluation.v1_readiness_dataset_audit ^
+  datasets/github_cases/repo_intelligence_v1_onboarding_30.example.json ^
+  datasets/github_cases/llm_repair_case_catalog_v1_50.example.json ^
+  outputs_smoke/v1_readiness_dataset_audit ^
+  --require-pass
+```
+
+After the readiness audit, merge available runtime evidence into a v1 metric
+summary. The onboarding input can be either a full suite report or a slice
+aggregate report:
+
+```bash
+python -m code_intelligence_agent.evaluation.v1_evaluation_summary ^
+  outputs/v1_evaluation_summary ^
+  --readiness-audit outputs/v1_readiness_dataset_audit/v1_readiness_dataset_audit.json ^
+  --onboarding-suite outputs/v1_onboarding_aggregate/v1_onboarding_slice_aggregate.json ^
+  --repair-metrics outputs/v1_repair/llm_repair_metrics_report.json ^
+  --repair-catalog-audit outputs/v1_repair/llm_repair_case_catalog_audit.json ^
+  --localization-report outputs/v1_repair/phase4_search_evaluation.json ^
+  --llm-cost-report outputs/v1_cost/llm_cost_evidence.json
+```
+
+The summary marks each metric as `measured`, `proxy`, or `missing_evidence`
+instead of fabricating numbers when an evidence artifact is absent.
+
+For long 30-repository onboarding runs, use resumable slices:
+
+```bash
+python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite ^
+  datasets/github_cases/repo_intelligence_v1_onboarding_30.example.json ^
+  outputs/v1_onboarding_slice_0_5 ^
+  --start-index 0 ^
+  --limit-runs 5
+```
+
+Then aggregate one or more slice reports before feeding them into the v1 metric
+summary:
+
+```bash
+python -m code_intelligence_agent.evaluation.v1_onboarding_slice_aggregate ^
+  datasets/github_cases/repo_intelligence_v1_onboarding_30.example.json ^
+  outputs/v1_onboarding_aggregate ^
+  outputs/v1_onboarding_slice_0_5_suite.json
+```
+
+The aggregate report records completed, failed, and missing manifest rows and
+prints the next `--start-index` / `--limit-runs` command. Partial slice
+aggregates are intentionally treated as proxy evidence by
+`v1_evaluation_summary`; only a complete 30-run aggregate should be used for
+final `onboarding_success_rate` and `average_runtime_ms` claims.
+
+If LLM provider usage tokens are available but pricing was not configured during
+the request, build standalone cost evidence before the v1 metric summary:
+
+```bash
+python -m code_intelligence_agent.evaluation.llm_cost_evidence ^
+  outputs/v1_cost ^
+  outputs/v1_repair/repository_test_patch_candidates.json ^
+  --input-usd-per-1k-tokens 0.001 ^
+  --output-usd-per-1k-tokens 0.002 ^
+  --require-pass
+```
+
+The cost value is a configured pricing estimate and should only be presented as
+provider cost when the supplied rates match the run's billing model.
 
 关键验证文件由以下命令生成：
 
@@ -132,7 +272,93 @@ python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite ^
 
 ## 快速运行
 
+一键 Agent 模式：
+
+```bash
+python -m code_intelligence_agent ^
+  https://github.com/pytest-dev/pluggy ^
+  --agent ^
+  --preset mining ^
+  --format markdown
+```
+
+也可以使用子命令写法：
+
+```bash
+python -m code_intelligence_agent agent pypa/sampleproject --format markdown
+```
+
+多轮会话与记忆系统：
+
+每次 GitHub repo Agent 分析都会自动生成 `agent_session.json`、
+`agent_memory.json` 和 `agent_session_report.md`。本地还会维护
+`.code_intelligence_agent/sessions/index.json`，用于通过 `session_id`
+恢复历史会话；该目录已加入 `.gitignore`，不会作为发布内容上传。
+
+第一轮先分析仓库：
+
+```bash
+python -m code_intelligence_agent agent pypa/sampleproject ^
+  outputs_smoke/sampleproject_agent_session ^
+  --execution-profile agent-auto ^
+  --preset mining ^
+  --format markdown
+```
+
+随后可以基于同一个 `session_id` 继续交互，不需要从零重新分析：
+
+```bash
+python -m code_intelligence_agent chat ^
+  --session <session_id> ^
+  --message "解释上一次失败原因" ^
+  --format markdown
+
+python -m code_intelligence_agent chat ^
+  --session <session_id> ^
+  --message "不要修改公共 API" ^
+  --format markdown
+
+python -m code_intelligence_agent chat ^
+  --session <session_id> ^
+  --message "继续修复 Top-1 函数" ^
+  --format markdown
+
+python -m code_intelligence_agent chat ^
+  --session <session_id> ^
+  --message "重新运行 pytest" ^
+  --execute ^
+  --format markdown
+
+python -m code_intelligence_agent chat ^
+  --session <session_id> ^
+  --message "use alternative repair strategy" ^
+  --format markdown
+
+python -m code_intelligence_agent resume ^
+  --session <session_id> ^
+  --format markdown
+```
+
+当前多轮接口会在 `Observe` 阶段读取 session memory，在 `Plan` 阶段将用户输入解析成
+`continue_repair`、`explain_failure`、`rerun_tests`、`narrow_scope`、
+`generate_report` 或 `change_constraints`，在 `Act/Verify/Reflect/Replan`
+阶段记录本轮动作、记忆使用证据、下一步命令和 replan 原因。默认情况下
+`chat` 只生成下一步动作和命令；显式传入 `--execute` 时，命令型动作会被执行，
+并把 return code、stdout/stderr 摘要写入本轮记忆。
+当用户选择继续修复时，chat 输出会给出 `CIA_AGENT_PATCH_MEMORY` 环境变量；
+hybrid/LLM patch generation 会读取该 `agent_memory.json`，把失败补丁指纹、
+patch attempt history 和用户约束写入 LLM repair context，避免重复生成同类失败补丁。
+
 分析一个公开 GitHub 仓库：
+
+Repair strategy memory:
+
+`change_repair_strategy` stores `repair_strategy_preferences` in
+`agent_memory.json`, exposes them through Session Memory and Repair Memory,
+and injects them into the hybrid/LLM patch-generation `dynamic_oracle`.
+When `CIA_AGENT_PATCH_MEMORY` or `CIA_AGENT_REPAIR_STRATEGY` is present, the
+LLM prompt includes a repair-strategy constraint so the next patch is
+meaningfully different from previous failed attempts.
 
 ```bash
 python -m code_intelligence_agent.evaluation.github_repo_intelligence ^
@@ -186,9 +412,29 @@ set CIA_LLM_API_KEY=<your_key>
 set CIA_JUDGE_PROVIDER=deepseek
 set CIA_JUDGE_MODEL=deepseek-chat
 set CIA_JUDGE_API_KEY=<your_key>
+
+set CIA_LLM_REPLAN_ENABLED=1
+set CIA_REPLAN_LLM_PROVIDER=deepseek
+set CIA_REPLAN_LLM_MODEL=deepseek-chat
+set CIA_REPLAN_LLM_API_KEY=<your_key>
 ```
 
-也可以使用 OpenAI-compatible 或 DashScope-compatible endpoint。报告只记录 provider、model、key presence 和短 fingerprint，不记录原始 key。
+`CIA_REPLAN_LLM_*` 用于可选的 LLM Planner / Replanner。LLM 会输出结构化 `planner_decision`：`selected_action`、`reason`、`confidence`、`risk`、`required_evidence` 和 `next_plan`；规则控制器仍保留最终安全门控，`safety_gate` 会记录 LLM 推荐 action 是否注册、是否匹配 controller action、是否请求 override，以及最终采用的规则 action。也可以使用 OpenAI-compatible 或 DashScope-compatible endpoint。报告只记录 provider、model、key presence 和短 fingerprint，不记录原始 key。
+
+Agent-auto planning behavior:
+
+- In `agent-auto` / `--agent` mode, the LLM Planner is treated as the default
+  planning proposer when replan credentials are available.
+- The planner prompt includes compact session memory, repo memory, repair
+  memory, failed patch fingerprints, user constraints, and repair strategy
+  preferences.
+- The planner proposal records `selected_action`, `reason`, `confidence`,
+  `risk`, `required_evidence`, `next_plan`, and `memory_used`.
+- If the LLM is unavailable or no replan key is configured, the controller
+  falls back to the rule-selected action and records
+  `fallback_to_rule_planner=true`; the safety gate still shows the adopted
+  controller action.
+- The LLM never bypasses action registry, risk policy, or sandbox validation.
 
 ## 目录结构
 
@@ -210,10 +456,44 @@ set CIA_JUDGE_API_KEY=<your_key>
 - [INTERVIEW_QA_AGENT_PROJECT.md](INTERVIEW_QA_AGENT_PROJECT.md)
 - [docs/showcase/github_release_guide.md](docs/showcase/github_release_guide.md)
 - [docs/examples/README.md](docs/examples/README.md)
+- [docs/examples/v1_sample_reports.md](docs/examples/v1_sample_reports.md)
+- [docs/examples/v1_readiness_audit.md](docs/examples/v1_readiness_audit.md)
+- [docs/examples/v1_evaluation_summary.md](docs/examples/v1_evaluation_summary.md)
+- [docs/examples/top_level_agent_live_smoke.md](docs/examples/top_level_agent_live_smoke.md)
+- [docs/examples/llm_repair_readiness.md](docs/examples/llm_repair_readiness.md)
+- [docs/examples/agent_demo_artifact_checklist.md](docs/examples/agent_demo_artifact_checklist.md)
+
+## Release Hygiene Gate
+
+Run this before publishing the repository:
+
+```bash
+python -m code_intelligence_agent.evaluation.release_hygiene_audit ^
+  outputs_smoke/release_hygiene_audit_current ^
+  --format json ^
+  --require-pass
+```
+
+This gate checks the Git candidate set for raw API keys, tracked local outputs,
+binary Word artifacts, misleading LLM-judge authority claims, and visible
+assistant/tool generation signatures in public docs.
+
+Run the final V1 completion audit after the evidence artifacts are generated:
+
+```bash
+python -m code_intelligence_agent.evaluation.v1_goal_completion_audit ^
+  outputs_smoke/v1_goal_completion_audit_current ^
+  --format json ^
+  --require-pass
+```
+
+This audit checks the V1 metrics, a new public-repository Agent smoke,
+AgentController loop evidence, sandbox authority, public sample reports,
+resume/interview packaging, and release hygiene in one report.
 
 推荐一句话：
 
-> 构建面向公开 Python GitHub 仓库的代码智能 Agent，结合 AST / Call Graph / Program Graph、静态规则、动态测试证据和 SBFL-style scoring 实现函数级 Top-k 缺陷定位，并通过 AgentController 的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 闭环调度 LLM patch generation、sandbox validation、reflection repair 和 blocker reporting；P6 验证覆盖 10 个真实仓库 onboarding case、30 个 repair/evaluation case、5 个 LLM direct success、4 个 LLM reflection success 和 21 个 blocker case。
+> 构建面向公开 Python GitHub 仓库的代码智能 Agent，结合 AST / Call Graph / Program Graph、静态规则、动态测试证据和 SBFL-style scoring 实现函数级 Top-k 缺陷定位，并通过 AgentController 的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 闭环调度 LLM patch generation、sandbox validation、reflection repair 和 blocker reporting；V1 评估覆盖 30 个真实 GitHub onboarding case、50 个 repair/evaluation case，并完成 9/9 required metrics measured。
 
 ## 能力边界
 
@@ -222,7 +502,7 @@ set CIA_JUDGE_API_KEY=<your_key>
 - 任意语言仓库都支持。
 - 任意 GitHub 仓库都能 100% 自动发现并修复真实 bug。
 - 没有 failing test、test oracle 或可复现环境时仍能给出可靠修复。
-- LLM judge 可以替代 pytest sandbox。
+- 不要把 LLM judge 写成最终成功标准，或写成 pytest sandbox 替代品。
 - 可以把 API key 写入仓库或输出报告。
 
 准确表述是：系统面向公开 Python GitHub 仓库做智能分析、测试诊断、函数级定位、受控补丁验证和 blocker 报告。当仓库缺少 Python 源码、测试命令、依赖环境、failing evidence 或安全修复条件时，Agent 会输出可审计 blocker 和下一步建议。

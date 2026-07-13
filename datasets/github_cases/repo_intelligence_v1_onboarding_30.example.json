@@ -1,0 +1,217 @@
+{
+  "suite_name": "repo_intelligence_v1_onboarding_30",
+  "description": "V1 target manifest for 30 public GitHub repository onboarding cases. This is the target set for arbitrary-repo Agent evaluation; run it with github_repo_intelligence_suite to generate evidence reports before claiming v1 completion.",
+  "v1_target": {
+    "onboarding_case_count": 30,
+    "agent_loop": "Observe -> Plan -> Act -> Verify -> Reflect -> Replan"
+  },
+  "defaults": {
+    "execution_profile": "agent-auto",
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 20,
+    "max_candidates": 10,
+    "auto_fallback": true,
+    "run_repository_test_command": false,
+    "checkout_repository_tests": false,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_timeout": 120,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 0
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 30,
+    "min_scenario_tag_v1_onboarding_count": 30,
+    "min_scenario_tag_kind_count": 13,
+    "min_agent_controller_loop_complete_count": 30,
+    "min_agent_decision_timeline_complete_count": 30,
+    "min_artifact_core_ready_count": 30,
+    "min_objective_compliance_pass_count": 30
+  },
+  "runs": [
+    {
+      "name": "pypa_sampleproject_v1_owner_repo",
+      "repo": "pypa/sampleproject",
+      "scenario_tags": ["v1_onboarding", "owner_repo_input", "pyproject_project", "tox_or_nox_project", "dependency_missing", "pytest_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "pluggy_v1_src_layout",
+      "repo": "https://github.com/pytest-dev/pluggy",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "requests_v1_requirements_tox",
+      "repo": "https://github.com/psf/requests",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "requirements_project", "tox_or_nox_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "click_v1_src_pyproject",
+      "repo": "https://github.com/pallets/click",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "rich_v1_pyproject",
+      "repo": "https://github.com/Textualize/rich",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "fastapi_v1_dependency",
+      "repo": "https://github.com/tiangolo/fastapi",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "thealgorithms_v1_failing_evidence",
+      "repo": "https://github.com/TheAlgorithms/Python",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "requirements_project", "failing_test_evidence"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "octocat_v1_no_python_blocker",
+      "repo": "https://github.com/octocat/Hello-World",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "no_python_sources"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "nanogpt_v1_no_tests",
+      "repo": "https://github.com/karpathy/nanoGPT",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pyproject_project", "no_tests"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "flask_v1_src_pytest",
+      "repo": "https://github.com/pallets/flask",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "werkzeug_v1_src_pytest",
+      "repo": "https://github.com/pallets/werkzeug",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "django_v1_large_pytest",
+      "repo": "https://github.com/django/django",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "requirements_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "scrapy_v1_requirements",
+      "repo": "https://github.com/scrapy/scrapy",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "requirements_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "celery_v1_timeout",
+      "repo": "https://github.com/celery/celery",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "tox_or_nox_project", "timeout"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "black_v1_pyproject",
+      "repo": "https://github.com/psf/black",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "flake8_v1_dependency",
+      "repo": "https://github.com/PyCQA/flake8",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "isort_v1_pyproject",
+      "repo": "https://github.com/PyCQA/isort",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "poetry_v1_src_layout",
+      "repo": "https://github.com/python-poetry/poetry",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "mkdocs_v1_pytest",
+      "repo": "https://github.com/mkdocs/mkdocs",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "requirements_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "sphinx_v1_pytest",
+      "repo": "https://github.com/sphinx-doc/sphinx",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "sqlalchemy_v1_pytest",
+      "repo": "https://github.com/sqlalchemy/sqlalchemy",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "aiohttp_v1_pytest",
+      "repo": "https://github.com/aio-libs/aiohttp",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "pytest_v1_tox",
+      "repo": "https://github.com/pytest-dev/pytest",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "tox_or_nox_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "numpy_v1_large",
+      "repo": "https://github.com/numpy/numpy",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "pandas_v1_large",
+      "repo": "https://github.com/pandas-dev/pandas",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "timeout"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "scikit_learn_v1_large",
+      "repo": "https://github.com/scikit-learn/scikit-learn",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "scipy_v1_large",
+      "repo": "https://github.com/scipy/scipy",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "dependency_missing"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "matplotlib_v1_large",
+      "repo": "https://github.com/matplotlib/matplotlib",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project", "requirements_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "httpx_v1_pyproject",
+      "repo": "https://github.com/encode/httpx",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "pyproject_project"],
+      "expected_status": "pass"
+    },
+    {
+      "name": "pydantic_v1_src_pyproject",
+      "repo": "https://github.com/pydantic/pydantic",
+      "scenario_tags": ["v1_onboarding", "github_url_input", "pytest_project", "src_layout_project", "pyproject_project"],
+      "expected_status": "pass"
+    }
+  ]
+}

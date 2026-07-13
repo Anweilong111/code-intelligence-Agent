@@ -7,7 +7,10 @@ from pathlib import Path
 import pytest
 
 from code_intelligence_agent.agents.patch_generator import PatchGenerator
-from code_intelligence_agent.agents.controller import build_agent_controller_plan
+from code_intelligence_agent.agents.controller import (
+    build_agent_controller_plan,
+    render_agent_controller_markdown,
+)
 import code_intelligence_agent.evaluation.github_benchmark_onboarding as onboarding_module
 import code_intelligence_agent.evaluation.github_repo_intelligence as intelligence_module
 from code_intelligence_agent.core.models import ExecutionResult
@@ -68,6 +71,18 @@ def test_github_repo_intelligence_defaults_to_static_analysis_summary():
         assert summary["repository_structure"]["package_structure"][
             "src_layout_packages"
         ] == []
+        assert summary["repository_structure"]["package_structure"][
+            "layout_type"
+        ] == "flat_module"
+        assert summary["repository_structure"]["package_structure"][
+            "monorepo_candidate"
+        ] is False
+        assert summary["repository_structure"]["package_structure"][
+            "recommended_analysis_roots"
+        ] == [".", "maths"]
+        assert summary["repository_structure"]["package_structure"][
+            "layout_profile"
+        ]["reason"] == "python_sources_without_package_init"
         assert summary["repository_structure"]["test_structure"][
             "test_source_count"
         ] == 0
@@ -158,12 +173,34 @@ def test_github_repo_intelligence_defaults_to_static_analysis_summary():
         assert final_report["evidence_artifacts"]["fault_localization_json"].endswith(
             "fault_localization.json"
         )
+        action_audit = summary["agent_controller"]["action_decision_audit"]
+        assert action_audit["status"] == "pass"
+        assert action_audit["source"] == "agent_controller"
+        assert action_audit["complete_action_count"] == 1
+        assert action_audit["actions"][0]["action_id"] == (
+            "run_repository_tests_with_checkout"
+        )
+        assert action_audit["actions"][0]["canonical_action_id"] == (
+            "run_repository_tests"
+        )
+        assert action_audit["actions"][0]["registered"] is True
+        assert action_audit["actions"][0]["confidence"] > 0
+        assert "stage=phase2_static_graph_fault_localization" in (
+            action_audit["actions"][0]["input"]
+        )
+        controller_markdown = render_agent_controller_markdown(
+            summary["agent_controller"]
+        )
+        assert "Action Decision Audit" in controller_markdown
         answers = summary["agent_answers"]
         assert answers["repository_structure"]["analyzed_files"] == 2
         assert answers["repository_structure"]["functions"] == 2
         assert answers["repository_structure"]["project_config"][
             "project_config_files"
         ] == ["pyproject.toml"]
+        assert "layout type: flat_module" in (
+            answers["repository_structure_answer"]
+        )
         assert "project config files: pyproject.toml" in (
             answers["repository_structure_answer"]
         )
@@ -279,6 +316,22 @@ def test_github_repo_intelligence_defaults_to_static_analysis_summary():
         assert controller["selected_action"]["phase"] == "phase3"
         assert controller["reflection"]["fallback_action"] == (
             "collect_dynamic_failure_evidence"
+        )
+        execution_trace = summary["agent_execution_trace"]
+        assert execution_trace["status"] == "pass"
+        assert execution_trace["source"] == "agent_controller"
+        assert execution_trace["action_count"] == 1
+        assert execution_trace["executed_action_count"] == 0
+        assert execution_trace["actions"][0]["action_id"] == (
+            "run_repository_tests_with_checkout"
+        )
+        assert execution_trace["actions"][0]["execution_status"] in {
+            "planned",
+            "blocked",
+        }
+        assert execution_trace["actions"][0]["status_flags"]["planned"] is True
+        assert "No auto action was executed" in (
+            execution_trace["real_execution_answer"]
         )
         controller_observations = {
             item["signal"]: item["value"] for item in controller["observations"]
@@ -554,6 +607,20 @@ def test_github_repo_intelligence_lifts_hybrid_llm_patch_blocker_audit(
                     "generator_counts": {"rule": 2, "llm": 0},
                     "llm_generation_status": "blocked",
                     "llm_generation_reason": "missing_llm_api_key",
+                    "llm_generation_telemetry": {
+                        "request_count": 0,
+                        "success_count": 0,
+                        "failure_count": 0,
+                        "total_tokens": 0,
+                        "estimated_total_tokens": 0,
+                        "latency_ms_total": 0,
+                        "latency_ms_average": 0.0,
+                        "cost_estimate": {
+                            "available": False,
+                            "estimated_cost_usd": None,
+                        },
+                        "error_reason_counts": {},
+                    },
                     "llm_config_audit": {
                         "role": "patch_generation",
                         "enabled": True,
@@ -621,6 +688,9 @@ def test_github_repo_intelligence_lifts_hybrid_llm_patch_blocker_audit(
         assert summary["repository_llm_patch_generation_fallback_reason"] == (
             "hybrid_rule_fallback_after_llm_blocker"
         )
+        assert summary["repository_llm_patch_request_count"] == 0
+        assert summary["repository_llm_patch_failure_count"] == 0
+        assert summary["repository_llm_patch_error_reason_counts"] == {}
         assert summary["repository_llm_patch_config_audit"][
             "api_key_fingerprint"
         ] == ""
@@ -637,6 +707,9 @@ def test_github_repo_intelligence_lifts_hybrid_llm_patch_blocker_audit(
         assert observations["repository_llm_patch_generation_fallback"] == (
             "blocked=True, fallback_used=True, provider=deepseek, "
             "model=deepseek-v4-pro"
+        )
+        assert observations["repository_llm_patch_generation_telemetry"] == (
+            "requests=0, failures=0, tokens=0, estimated_tokens=0, errors=none"
         )
         readiness_criteria = {
             item["name"]: item
@@ -664,6 +737,126 @@ def test_github_repo_intelligence_lifts_hybrid_llm_patch_blocker_audit(
             markdown
         )
         assert "LLM Patch Fallback: blocked=true, fallback_used=true" in markdown
+
+
+def test_github_repo_intelligence_treats_llm_request_error_as_controller_blocker(
+    monkeypatch,
+):
+    monkeypatch.setenv("CIA_LLM_API_KEY", "fake-key")
+    monkeypatch.setenv("CIA_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("CIA_LLM_MODEL", "deepseekv4PRO")
+    for env_name in ("DEEPSEEK_API_KEY", "DASHSCOPE_API_KEY", "ALIBABA_API_KEY"):
+        monkeypatch.delenv(env_name, raising=False)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        raw_source = _write_average_mean(root)
+        output_dir = root / "repo_intelligence"
+        opener = _FakeOpener(_repo_payloads(raw_source))
+
+        report = run_github_repo_intelligence(
+            "example/project",
+            output_dir,
+            recipes=["missing_len_zero_guard"],
+            max_sources=5,
+            max_candidates=5,
+            opener=opener,
+        )
+        patch_candidates_path = output_dir / "repository_test_patch_candidates.json"
+        patch_candidates_path.write_text(
+            json.dumps(
+                {
+                    "status": "warning",
+                    "reason": "no_patch_candidates_generated",
+                    "candidate_count": 0,
+                    "patch_generation_mode": "llm",
+                    "generator_counts": {"rule": 0, "llm": 0},
+                    "llm_generation_status": "error",
+                    "llm_generation_reason": "http_error",
+                    "llm_generation_telemetry": {
+                        "request_count": 1,
+                        "success_count": 0,
+                        "failure_count": 1,
+                        "total_tokens": 0,
+                        "estimated_total_tokens": 32,
+                        "latency_ms_total": 210,
+                        "latency_ms_average": 210.0,
+                        "cost_estimate": {
+                            "available": False,
+                            "estimated_cost_usd": None,
+                        },
+                        "error_reason_counts": {"http_401": 1},
+                    },
+                    "llm_config_audit": {
+                        "role": "patch_generation",
+                        "enabled": True,
+                        "provider": "deepseek",
+                        "model": "deepseek-v4-pro",
+                        "base_url": "https://api.deepseek.com/chat/completions",
+                        "api_key_env": "CIA_LLM_API_KEY",
+                        "checked_api_key_envs": [
+                            "CIA_LLM_API_KEY",
+                            "DEEPSEEK_API_KEY",
+                        ],
+                        "api_key_present": True,
+                        "api_key_source": "CIA_LLM_API_KEY",
+                        "api_key_fingerprint": "sha256:fakefinger",
+                        "warnings": [],
+                    },
+                    "candidates": [],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        report = replace(
+            report,
+            summary={
+                **report.summary,
+                "repository_patch_generation_mode": "llm",
+                "repository_test_patch_candidates_status": "warning",
+                "repository_test_patch_candidates_reason": (
+                    "no_patch_candidates_generated"
+                ),
+            },
+            output_paths={
+                **report.output_paths,
+                "repository_test_patch_candidates_json": str(
+                    patch_candidates_path
+                ),
+            },
+        )
+
+        summary = github_repo_intelligence_summary(report)
+        markdown = render_github_repo_intelligence_summary(report)
+        observations = {
+            item["signal"]: item["value"]
+            for item in summary["agent_controller"]["observations"]
+        }
+        audit = summary["repository_llm_patch_generation_audit"]
+        repair_audit = summary["agent_controller"]["llm_repair_action_audit"]
+
+        assert summary["repository_llm_patch_generation_status"] == "error"
+        assert summary["repository_llm_patch_generation_reason"] == "http_error"
+        assert summary["repository_llm_patch_blocked"] is True
+        assert summary["repository_llm_patch_request_count"] == 1
+        assert summary["repository_llm_patch_failure_count"] == 1
+        assert summary["repository_llm_patch_estimated_total_tokens"] == 32
+        assert summary["repository_llm_patch_error_reason_counts"] == {
+            "http_401": 1,
+        }
+        assert audit["blocked"] is True
+        assert audit["failure_count"] == 1
+        assert audit["error_reason_counts"] == {"http_401": 1}
+        assert repair_audit["status"] == "blocked"
+        assert repair_audit["llm_failure_count"] == 1
+        assert repair_audit["llm_error_reason_counts"] == {"http_401": 1}
+        assert observations["repository_llm_patch_generation_telemetry"] == (
+            "requests=1, failures=1, tokens=0, estimated_tokens=32, "
+            "errors=http_401=1"
+        )
+        assert "LLM Patch Telemetry: requests=1" in markdown
+        assert "errors=`http_401=1`" in markdown
 
 
 def test_github_repo_intelligence_lifts_llm_reflection_blocker_audit(
@@ -3031,6 +3224,41 @@ def test_auto_controller_timeout_narrowing_rerun_enables_retry_execution():
     )
 
     assert stop_reason == "selected_action_already_applied"
+
+
+def test_auto_loop_audit_counts_complete_stopped_trace_without_fake_progress():
+    audit = intelligence_module._auto_loop_audit(
+        [],
+        [
+            {
+                "iteration": 1,
+                "auto_executed": False,
+                "observe_stage": "phase1_repo_understanding",
+                "observe_blocker": "no_static_candidates",
+                "observe_dynamic_evidence_level": "passing_tests",
+                "observe_agent_goal_readiness_status": "pass",
+                "plan_selected_action": "run_repository_tests_with_checkout",
+                "plan_action_phase": "phase3",
+                "plan_action_tool": "github_repo_intelligence",
+                "plan_executable_now": True,
+                "stop_reason": "selected_action_already_applied",
+                "stop_category": "no_additional_auto_action",
+                "stop_recovery_policy": (
+                    "change_analysis_scope_or_supply_external_evidence"
+                ),
+            }
+        ],
+        "selected_action_already_applied",
+    )
+
+    assert audit["action_count"] == 0
+    assert audit["progress_count"] == 0
+    assert audit["no_progress_count"] == 0
+    assert audit["trace_count"] == 1
+    assert audit["stopped_trace_count"] == 1
+    assert audit["complete_action_loop_count"] == 0
+    assert audit["complete_trace_count"] == 1
+    assert audit["complete_loop_recorded"] is True
 
 
 @pytest.mark.parametrize(
@@ -6249,6 +6477,50 @@ def test_github_repo_intelligence_cli_writes_json_summary(capsys):
         assert saved["agent_decision_timeline"]["source"] == "agent_controller"
         assert saved["agent_decision_timeline"]["step_count"] == 1
         assert saved["agent_decision_timeline"]["complete_step_count"] == 1
+        assert saved["agent_execution_trace_json"].endswith(
+            "agent_execution_trace.json"
+        )
+        assert saved["agent_execution_trace_markdown"].endswith(
+            "agent_execution_trace.md"
+        )
+        assert saved["agent_execution_trace"]["status"] == "pass"
+        assert saved["agent_execution_trace"]["action_count"] == 1
+        assert json.loads(
+            (output_dir / "agent_execution_trace.json").read_text(
+                encoding="utf-8"
+            )
+        ) == saved["agent_execution_trace"]
+        assert "Agent Execution Trace" in (
+            output_dir / "agent_execution_trace.md"
+        ).read_text(encoding="utf-8")
+        assert saved["agent_memory_report_json"].endswith("agent_memory_report.json")
+        assert saved["agent_memory_report_markdown"].endswith("agent_memory_report.md")
+        assert saved["agent_memory_report"]["status"] == "pass"
+        assert saved["agent_memory_report"]["ready_layer_count"] == 4
+        assert json.loads(
+            (output_dir / "agent_memory_report.json").read_text(encoding="utf-8")
+        ) == saved["agent_memory_report"]
+        assert "Agent Memory Report" in (
+            output_dir / "agent_memory_report.md"
+        ).read_text(encoding="utf-8")
+        assert saved["agent_decision_report_json"].endswith(
+            "agent_decision_report.json"
+        )
+        assert saved["agent_decision_report_markdown"].endswith(
+            "agent_decision_report.md"
+        )
+        assert saved["agent_decision_report"]["status"] == "pass"
+        assert saved["agent_decision_report"]["selected_action"]["id"] == (
+            "run_repository_tests_with_checkout"
+        )
+        assert json.loads(
+            (output_dir / "agent_decision_report.json").read_text(
+                encoding="utf-8"
+            )
+        ) == saved["agent_decision_report"]
+        assert "Agent Decision Report" in (
+            output_dir / "agent_decision_report.md"
+        ).read_text(encoding="utf-8")
         assert saved["final_report_json"].endswith("final_report.json")
         assert saved["final_report_markdown"].endswith("final_report.md")
         assert json.loads(
@@ -6306,6 +6578,12 @@ def test_github_repo_intelligence_cli_writes_json_summary(capsys):
         assert "agent_invocation.md" in core_names
         assert "agent_goal_readiness.json" in core_names
         assert "agent_goal_readiness.md" in core_names
+        assert "agent_execution_trace.json" in core_names
+        assert "agent_execution_trace.md" in core_names
+        assert "agent_memory_report.json" in core_names
+        assert "agent_memory_report.md" in core_names
+        assert "agent_decision_report.json" in core_names
+        assert "agent_decision_report.md" in core_names
         assert "final_report.json" in core_names
         assert "final_report.md" in core_names
         assert saved["artifact_inventory"]["groups"]["core"][0]["name"] == (
@@ -6377,6 +6655,69 @@ def test_github_repo_intelligence_cli_writes_json_summary(capsys):
         assert saved["source_mining_markdown"].endswith("source_mining.md")
 
 
+def test_write_artifacts_backfills_paths_for_legacy_summary_payload():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        raw_source = _write_average_mean(root)
+        output_dir = root / "repo_intelligence"
+        opener = _FakeOpener(_repo_payloads(raw_source))
+        report = run_github_repo_intelligence(
+            "example/project",
+            output_dir,
+            recipes=["missing_len_zero_guard"],
+            max_sources=5,
+            max_candidates=5,
+            opener=opener,
+        )
+        legacy_summary = github_repo_intelligence_summary(report)
+        for key in [
+            "agent_action_registry_json",
+            "agent_action_registry_markdown",
+            "agent_policy_trace_json",
+            "agent_policy_trace_markdown",
+            "agent_execution_trace_json",
+            "agent_execution_trace_markdown",
+            "agent_memory_report_json",
+            "agent_memory_report_markdown",
+            "agent_decision_report_json",
+            "agent_decision_report_markdown",
+            "final_report_json",
+            "final_report_markdown",
+        ]:
+            legacy_summary.pop(key, None)
+
+        write_github_repo_intelligence_artifacts(report, legacy_summary)
+        saved = json.loads(
+            (output_dir / "github_repo_intelligence.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        assert saved["agent_action_registry_json"].endswith(
+            "agent_action_registry.json"
+        )
+        assert saved["agent_execution_trace_json"].endswith(
+            "agent_execution_trace.json"
+        )
+        assert saved["agent_memory_report_json"].endswith(
+            "agent_memory_report.json"
+        )
+        assert saved["agent_decision_report_json"].endswith(
+            "agent_decision_report.json"
+        )
+        assert saved["final_report_json"].endswith("final_report.json")
+        for name in [
+            "agent_action_registry.json",
+            "agent_policy_trace.json",
+            "agent_execution_trace.md",
+            "agent_memory_report.md",
+            "agent_decision_report.md",
+            "final_report.md",
+        ]:
+            assert (output_dir / name).is_file()
+            assert (output_dir / name).stat().st_size > 0
+
+
 def test_artifact_inventory_flags_missing_current_stage_required_artifacts(tmp_path):
     def write_artifact(name: str) -> str:
         path = tmp_path / name
@@ -6398,6 +6739,12 @@ def test_artifact_inventory_flags_missing_current_stage_required_artifacts(tmp_p
         "agent_goal_readiness_markdown": write_artifact("agent_goal_readiness.md"),
         "agent_decision_timeline_json": write_artifact("agent_decision_timeline.json"),
         "agent_decision_timeline_markdown": write_artifact("agent_decision_timeline.md"),
+        "agent_execution_trace_json": write_artifact("agent_execution_trace.json"),
+        "agent_execution_trace_markdown": write_artifact("agent_execution_trace.md"),
+        "agent_memory_report_json": write_artifact("agent_memory_report.json"),
+        "agent_memory_report_markdown": write_artifact("agent_memory_report.md"),
+        "agent_decision_report_json": write_artifact("agent_decision_report.json"),
+        "agent_decision_report_markdown": write_artifact("agent_decision_report.md"),
         "final_report_json": write_artifact("final_report.json"),
         "final_report_markdown": write_artifact("final_report.md"),
         "repository_structure_json": write_artifact("repository_structure.json"),
@@ -6482,8 +6829,8 @@ def test_artifact_inventory_flags_missing_current_stage_required_artifacts(tmp_p
         "reflection_trace.json",
         "reflection_trace.md",
     ]
-    assert inventory["required_count"] == 32
-    assert inventory["required_available_count"] == 30
+    assert inventory["required_count"] == 38
+    assert inventory["required_available_count"] == 36
     repair_rows = {item["name"]: item for item in inventory["groups"]["repair"]}
     assert repair_rows["reflection_trace.json"]["required_now"] is True
     assert repair_rows["reflection_trace.json"]["available"] is False
@@ -6521,6 +6868,12 @@ def test_artifact_inventory_requires_failure_overlay_artifacts_when_attempted(
         "agent_goal_readiness_markdown": write_artifact("agent_goal_readiness.md"),
         "agent_decision_timeline_json": write_artifact("agent_decision_timeline.json"),
         "agent_decision_timeline_markdown": write_artifact("agent_decision_timeline.md"),
+        "agent_execution_trace_json": write_artifact("agent_execution_trace.json"),
+        "agent_execution_trace_markdown": write_artifact("agent_execution_trace.md"),
+        "agent_memory_report_json": write_artifact("agent_memory_report.json"),
+        "agent_memory_report_markdown": write_artifact("agent_memory_report.md"),
+        "agent_decision_report_json": write_artifact("agent_decision_report.json"),
+        "agent_decision_report_markdown": write_artifact("agent_decision_report.md"),
         "final_report_json": write_artifact("final_report.json"),
         "final_report_markdown": write_artifact("final_report.md"),
         "repository_structure_json": write_artifact("repository_structure.json"),

@@ -99,6 +99,9 @@ def test_readme_links_public_materials_and_states_boundaries():
         "INTERVIEW_QA_AGENT_PROJECT.md",
         "docs/showcase/github_release_guide.md",
         "docs/examples/README.md",
+        "docs/examples/v1_sample_reports.md",
+        "docs/examples/top_level_agent_live_smoke.md",
+        "docs/examples/llm_repair_readiness.md",
     ]:
         assert f"]({relative_path})" in readme
         assert (ROOT / relative_path).exists()
@@ -108,6 +111,10 @@ def test_readme_links_public_materials_and_states_boundaries():
     assert "不承诺" in readme
     assert "API key 只能通过环境变量注入" in readme
     assert "Observe -> Plan -> Act -> Verify -> Reflect -> Replan" in readme
+    assert "release_hygiene_audit" in readme
+    assert "v1_goal_completion_audit" in readme
+    assert "LLM judge " + "可以替代 pytest sandbox" not in readme
+    assert "不要把 LLM judge 写成最终成功标准" in readme
 
 
 def test_readme_showcase_sync_updates_stale_metrics_from_fixture():

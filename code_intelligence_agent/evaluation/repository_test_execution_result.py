@@ -79,6 +79,21 @@ def execute_repository_test_plan(
             reason="repository_root_missing",
             message="Repository test root does not exist or is not a directory.",
         )
+    working_dir = str(execution_plan.get("recommended_working_dir") or "")
+    execution_cwd = _execution_cwd(repo_path, working_dir)
+    if execution_cwd is None or not execution_cwd.exists() or not execution_cwd.is_dir():
+        return _skipped(
+            command=command,
+            level=level,
+            risk=risk,
+            scope=scope,
+            cwd=str(execution_cwd or repo_path),
+            python_executable=resolved_python,
+            python_executable_source=resolved_python_source,
+            planned_environment_variables=planned_environment_variables,
+            reason="selected_working_dir_missing",
+            message="Planned repository test working directory is missing or unsafe.",
+        )
     command_args = _safe_python_module_command(
         command,
         python_executable=resolved_python,
@@ -89,7 +104,7 @@ def execute_repository_test_plan(
             level=level,
             risk=risk,
             scope=scope,
-            cwd=str(repo_path),
+            cwd=str(execution_cwd),
             python_executable=resolved_python,
             python_executable_source=resolved_python_source,
             planned_environment_variables=planned_environment_variables,
@@ -104,7 +119,7 @@ def execute_repository_test_plan(
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env.update(planned_environment_variables)
     automatic_environment_variables = _automatic_environment_variables(
-        repo_path,
+        execution_cwd,
         env=env,
     )
     env.update(automatic_environment_variables)
@@ -112,7 +127,7 @@ def execute_repository_test_plan(
     try:
         completed = run(
             command_args,
-            cwd=repo_path,
+            cwd=execution_cwd,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -135,7 +150,9 @@ def execute_repository_test_plan(
             "execution_level": level,
             "execution_risk": risk,
             "execution_scope": scope,
-            "cwd": str(repo_path),
+            "cwd": str(execution_cwd),
+            "repository_root": str(repo_path),
+            "working_dir": working_dir,
             "python_executable": resolved_python,
             "python_executable_source": resolved_python_source,
             "planned_environment_variables": planned_environment_variables,
@@ -204,7 +221,9 @@ def execute_repository_test_plan(
         "execution_risk": risk,
         "execution_scope": scope,
         "execution_runner": execution_runner,
-        "cwd": str(repo_path),
+        "cwd": str(execution_cwd),
+        "repository_root": str(repo_path),
+        "working_dir": working_dir,
         "python_executable": resolved_python,
         "python_executable_source": resolved_python_source,
         "planned_environment_variables": planned_environment_variables,
@@ -245,6 +264,8 @@ def render_repository_test_execution_result_markdown(payload: dict[str, Any]) ->
         f"- Execution Risk: `{_markdown_cell(payload.get('execution_risk', ''))}`",
         f"- Execution Scope: `{_markdown_cell(payload.get('execution_scope', ''))}`",
         f"- Execution Runner: `{_markdown_cell(payload.get('execution_runner', ''))}`",
+        f"- Repository Root: `{_markdown_cell(payload.get('repository_root') or 'none')}`",
+        f"- Working Dir: `{_markdown_cell(payload.get('working_dir') or '.')}`",
         f"- CWD: `{_markdown_cell(payload.get('cwd', ''))}`",
         f"- Python Executable: `{_markdown_cell(payload.get('python_executable', ''))}`",
         (
@@ -366,6 +387,16 @@ def _module_from_command_args(command_args: list[str]) -> str:
     if len(command_args) >= 3 and command_args[1] == "-m":
         return str(command_args[2])
     return ""
+
+
+def _execution_cwd(repository_root: Path, working_dir: str) -> Path | None:
+    normalized = str(working_dir or "").replace("\\", "/").strip().strip("/")
+    if not normalized:
+        return repository_root
+    pure = PurePosixPath(normalized)
+    if pure.is_absolute() or any(part == ".." for part in pure.parts):
+        return None
+    return repository_root.joinpath(*pure.parts)
 
 
 def _skipped(

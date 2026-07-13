@@ -55,13 +55,38 @@ def plan_repository_test_execution(
         pytest_addopts=pytest_addopts,
         root_path=root_path if root_present else None,
         prepared_test_runner=prepared_test_runner,
+        fallback_working_dir=str(
+            repository_profile.get("recommended_test_working_dir") or ""
+        ),
     )
     recommended = candidates[0] if candidates else {}
-    missing_selected_paths = (
+    recommended_working_dir = str(recommended.get("working_dir") or "")
+    recommended_selected_paths = [
+        str(item) for item in _list(recommended.get("selected_test_paths"))
+    ]
+    recommended_cwd = (
+        _candidate_cwd(root_path, recommended_working_dir)
+        if root_present and root_path is not None
+        else None
+    )
+    working_dir_missing = bool(
+        root_present
+        and root_path is not None
+        and recommended_working_dir
+        and (recommended_cwd is None or not recommended_cwd.is_dir())
+    )
+    input_missing_selected_paths = (
         _missing_paths(selected_paths, root_path)
-        if root_present and root_path
+        if root_present and root_path is not None and selected_paths
         else []
     )
+    missing_selected_paths = (
+        _missing_paths(recommended_selected_paths, recommended_cwd)
+        if root_present and recommended_cwd is not None and recommended_selected_paths
+        else []
+    )
+    if not recommended_selected_paths and input_missing_selected_paths:
+        missing_selected_paths = input_missing_selected_paths
     recommended_runner = str(recommended.get("runner") or _test_module(str(recommended.get("command") or "")))
     recommended_source = str(recommended.get("source") or "")
     recommended_reason = str(recommended.get("reason") or "")
@@ -95,6 +120,7 @@ def plan_repository_test_execution(
         and root_present
         and bool(candidates)
         and not selected_tool_missing
+        and not working_dir_missing
         and not missing_selected_paths
     )
     status = "pass"
@@ -111,6 +137,9 @@ def plan_repository_test_execution(
     elif selected_tool_missing:
         status = "warning"
         reason = "test_environment_warning"
+    elif working_dir_missing:
+        status = "warning"
+        reason = "selected_working_dir_missing"
     elif environment.get("status") == "warning" and str(
         environment.get("reason") or ""
     ) != "test_tool_missing":
@@ -130,6 +159,13 @@ def plan_repository_test_execution(
         "recommended_execution_runner": recommended_runner,
         "recommended_execution_source": recommended_source,
         "recommended_execution_reason": recommended_reason,
+        "recommended_working_dir": recommended_working_dir,
+        "recommended_execution_cwd": str(recommended_cwd or ""),
+        "recommended_working_dir_present": bool(
+            recommended_cwd is not None and recommended_cwd.is_dir()
+        )
+        if root_present
+        else False,
         "recommended_execution_profile_reason": str(
             recommended.get("profile_reason") or ""
         ),
@@ -155,7 +191,7 @@ def plan_repository_test_execution(
         "configured_test_paths": configured_test_paths,
         "pytest_addopts": pytest_addopts,
         "pytest_config_source_count": _int(pytest_config.get("source_count", 0)),
-        "selected_test_paths": selected_paths,
+        "selected_test_paths": recommended_selected_paths or selected_paths,
         "missing_selected_test_paths": missing_selected_paths,
         "max_narrow_tests": max_narrow_tests,
         "framework_signals": [
@@ -234,6 +270,8 @@ def render_repository_test_execution_plan_markdown(payload: dict[str, Any]) -> s
         f"- Executable Now: {str(bool(payload.get('executable_now'))).lower()}",
         f"- Repository Root: `{_markdown_cell(payload.get('repository_root') or 'none')}`",
         f"- Repository Root Present: {str(bool(payload.get('repository_root_present'))).lower()}",
+        f"- Recommended Working Dir: `{_markdown_cell(payload.get('recommended_working_dir') or '.')}`",
+        f"- Recommended Execution CWD: `{_markdown_cell(payload.get('recommended_execution_cwd') or 'none')}`",
         f"- Test Module: `{_markdown_cell(payload.get('test_module') or 'none')}`",
         f"- Test Sources: {_int(payload.get('test_source_count', 0))}",
         (
@@ -259,8 +297,8 @@ def render_repository_test_execution_plan_markdown(payload: dict[str, Any]) -> s
         "",
         "## Candidate Commands",
         "",
-        "| Recommended | Level | Risk | Runner | Source | Scope | Command | Reason |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Recommended | Level | Risk | Runner | Working Dir | Source | Scope | Command | Reason |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for candidate in _list(payload.get("candidate_commands")):
         row = _dict(candidate)
@@ -270,13 +308,14 @@ def render_repository_test_execution_plan_markdown(payload: dict[str, Any]) -> s
             f"{_markdown_cell(row.get('level', ''))} | "
             f"{_markdown_cell(row.get('risk', ''))} | "
             f"{_markdown_cell(row.get('runner', ''))} | "
+            f"`{_markdown_cell(row.get('working_dir') or '.')}` | "
             f"{_markdown_cell(row.get('source', ''))} | "
             f"{_markdown_cell(row.get('scope', ''))} | "
             f"`{_markdown_cell(row.get('command', ''))}` | "
             f"{_markdown_cell(row.get('reason', ''))} |"
         )
     if not _list(payload.get("candidate_commands")):
-        lines.append("| false | none | none | none | none | none | none | none |")
+        lines.append("| false | none | none | none | none | none | none | none | none |")
     lines.extend(["", "## Selected Test Paths", ""])
     for path in _list(payload.get("selected_test_paths")):
         lines.append(f"- `{_markdown_cell(path)}`")
@@ -340,6 +379,7 @@ def _candidate_commands(
     pytest_addopts: list[str],
     root_path: Path | None,
     prepared_test_runner: str = "",
+    fallback_working_dir: str = "",
 ) -> list[dict[str, Any]]:
     if not command and not profile_command_candidates and not ci_command_candidates:
         return []
@@ -349,19 +389,27 @@ def _candidate_commands(
         test_module=test_module,
         profile_command_candidates=profile_command_candidates,
         ci_command_candidates=ci_command_candidates,
+        fallback_working_dir=fallback_working_dir,
     )
     for spec in command_specs:
+        working_dir = str(spec.get("working_dir") or "")
+        spec_selected_paths = _paths_for_working_dir(selected_paths, working_dir)
         candidates.extend(
             _candidate_commands_for_command(
                 command=str(spec.get("command") or ""),
                 test_module=str(spec.get("runner") or _test_module(str(spec.get("command") or ""))),
-                selected_paths=selected_paths,
-                test_path_count=test_path_count,
+                selected_paths=spec_selected_paths,
+                test_path_count=(
+                    len(spec_selected_paths)
+                    if working_dir and spec_selected_paths
+                    else test_path_count
+                ),
                 source=str(spec.get("source") or ""),
                 profile_rank=_int(spec.get("profile_rank", 0)),
                 profile_reason=str(spec.get("profile_reason") or ""),
                 profile_confidence=_float(spec.get("profile_confidence", 0.0)),
                 pytest_addopts=pytest_addopts,
+                working_dir=working_dir,
             )
         )
     return _mark_recommended(
@@ -383,6 +431,7 @@ def _candidate_commands_for_command(
     profile_reason: str,
     profile_confidence: float,
     pytest_addopts: list[str],
+    working_dir: str = "",
 ) -> list[dict[str, Any]]:
     if not command:
         return []
@@ -609,6 +658,8 @@ def _candidate_commands_for_command(
                 "total_test_path_count": test_path_count,
             }
         )
+    for candidate in candidates:
+        candidate["working_dir"] = working_dir
     return candidates
 
 
@@ -665,7 +716,12 @@ def _recommended_candidate_index(
         if prepared_test_runner and runner and runner != prepared_test_runner:
             continue
         selected_paths = [str(item) for item in _list(candidate.get("selected_test_paths"))]
-        if root_path is not None and _missing_paths(selected_paths, root_path):
+        candidate_cwd = _candidate_cwd(root_path, str(candidate.get("working_dir") or ""))
+        if root_path is not None and candidate_cwd is None:
+            continue
+        if root_path is not None and candidate_cwd is not None and not candidate_cwd.is_dir():
+            continue
+        if candidate_cwd is not None and _missing_paths(selected_paths, candidate_cwd):
             continue
         eligible_indices.append(index)
     for index in eligible_indices:
@@ -737,6 +793,7 @@ def _command_specs(
     test_module: str,
     profile_command_candidates: list[dict[str, Any]],
     ci_command_candidates: list[dict[str, Any]],
+    fallback_working_dir: str = "",
 ) -> list[dict[str, Any]]:
     specs: list[dict[str, Any]] = []
     fallback_specs: list[dict[str, Any]] = []
@@ -757,6 +814,7 @@ def _command_specs(
                 "profile_rank": _int(candidate.get("rank", 0)),
                 "profile_reason": str(candidate.get("reason") or ""),
                 "profile_confidence": _float(candidate.get("confidence", 0.0)),
+                "working_dir": str(candidate.get("working_dir") or ""),
             }
             if source == "profile_recommended":
                 specs.append(spec)
@@ -772,6 +830,7 @@ def _command_specs(
                 "profile_rank": 1,
                 "profile_reason": "recommended_test_command",
                 "profile_confidence": 1.0,
+                "working_dir": fallback_working_dir,
             },
         )
     next_rank = len(specs) + 1
@@ -787,6 +846,7 @@ def _command_specs(
                 "profile_rank": _int(candidate.get("rank", next_rank)),
                 "profile_reason": str(candidate.get("reason") or "ci_test_command_candidate"),
                 "profile_confidence": _float(candidate.get("confidence", 0.74)),
+                "working_dir": str(candidate.get("working_dir") or ""),
             }
         )
         next_rank += 1
@@ -840,32 +900,64 @@ def _profile_command_candidates(
                 "rank": 1,
                 "reason": "recommended_test_command",
                 "confidence": 1.0,
+                "working_dir": str(
+                    repository_profile.get("recommended_test_working_dir") or ""
+                ),
             }
         )
     return candidates
 
 
+def _paths_for_working_dir(paths: list[str], working_dir: str) -> list[str]:
+    normalized = _clean_path(working_dir)
+    if not normalized:
+        return list(paths)
+    prefix = f"{normalized}/"
+    scoped: list[str] = []
+    for path in paths:
+        clean = _clean_path(path)
+        if clean == normalized:
+            scoped.append(".")
+        elif clean.startswith(prefix):
+            scoped.append(clean[len(prefix) :])
+    return scoped
+
+
+def _candidate_cwd(root_path: Path | None, working_dir: str) -> Path | None:
+    if root_path is None:
+        return None
+    normalized = _clean_path(working_dir)
+    if not normalized:
+        return root_path
+    pure = PurePosixPath(normalized)
+    if pure.is_absolute() or any(part == ".." for part in pure.parts):
+        return None
+    return root_path.joinpath(*pure.parts)
+
+
 def _dedupe_command_specs(specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     deduped: list[dict[str, Any]] = []
     for spec in specs:
         command = str(spec.get("command") or "")
-        if not command or command in seen:
+        key = (str(spec.get("working_dir") or ""), command)
+        if not command or key in seen:
             continue
-        seen.add(command)
+        seen.add(key)
         deduped.append(spec)
     return deduped
 
 
 def _dedupe_candidate_commands(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str]] = set()
     deduped: list[dict[str, Any]] = []
     for candidate in candidates:
         key = (
             str(candidate.get("level") or ""),
+            str(candidate.get("working_dir") or ""),
             str(candidate.get("command") or ""),
         )
-        if not key[1] or key in seen:
+        if not key[2] or key in seen:
             continue
         seen.add(key)
         deduped.append(candidate)
@@ -1120,6 +1212,10 @@ def _next_actions(
         )
     if reason == "selected_tests_missing_in_checkout":
         actions.append("Verify checkout ref/depth because selected test files are missing.")
+    if reason == "selected_working_dir_missing":
+        actions.append(
+            "Verify monorepo subproject checkout paths because the selected working directory is missing."
+        )
     if planned_environment_variables:
         actions.append(
             "Execute with planned environment variables: "

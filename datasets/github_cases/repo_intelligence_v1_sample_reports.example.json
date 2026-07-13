@@ -1,0 +1,111 @@
+{
+  "suite_name": "repo_intelligence_v1_sample_reports",
+  "description": "Compact v1 sample-report suite for three public GitHub repositories. It is intended for GitHub-facing examples: a testable Python package, a src-layout package, and a non-Python blocker repository.",
+  "defaults": {
+    "execution_profile": "agent-auto",
+    "preset": "mining",
+    "source_cache_dir": "outputs_smoke/github_raw_source_cache",
+    "max_sources": 20,
+    "max_candidates": 10,
+    "auto_fallback": true,
+    "run_repository_test_command": false,
+    "checkout_repository_tests": false,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_timeout": 20,
+    "repository_checkout_timeout": 120,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 0
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 3,
+    "min_scenario_tag_v1_sample_report_count": 3,
+    "min_artifact_core_ready_count": 3,
+    "min_agent_controller_loop_complete_count": 3,
+    "min_agent_decision_timeline_complete_count": 3,
+    "min_objective_compliance_pass_count": 3,
+    "min_repo_input_kind_count": 2,
+    "min_repository_structure_modeled_count": 2,
+    "min_repo_graph_ready_count": 2,
+    "min_program_graph_available_count": 2,
+    "min_source_import_blocked_count": 1
+  },
+  "runs": [
+    {
+      "name": "pypa_sampleproject_v1_sample",
+      "repo": "pypa/sampleproject",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pypa_sampleproject.discovery.json",
+      "scenario_tags": [
+        "v1_sample_report",
+        "owner_repo_input",
+        "testable_python_package",
+        "pyproject_project",
+        "tox_or_nox_project"
+      ],
+      "expected_status": "pass",
+      "expected_artifact_inventory_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "pluggy_v1_src_layout_sample",
+      "repo": "https://github.com/pytest-dev/pluggy",
+      "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/pytest_dev_pluggy_7fce99c.discovery.json",
+      "include": [
+        "src/pluggy/__init__.py",
+        "src/pluggy/_tracing.py"
+      ],
+      "scenario_tags": [
+        "v1_sample_report",
+        "github_url_input",
+        "src_layout_project",
+        "pytest_project",
+        "pyproject_project"
+      ],
+      "expected_status": "pass",
+      "expected_artifact_inventory_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "repository_structure_analyzed_file_count": 2,
+        "repository_structure_src_layout_package_count": 1,
+        "repo_graph_program_graph_available": 1,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "objective_compliance_passed": 1
+      }
+    },
+    {
+      "name": "octocat_hello_world_v1_blocker_sample",
+      "repo": "https://github.com/octocat/Hello-World",
+      "prefer_cached_discovery": true,
+      "seed_discovery_path": "datasets/github_cases/discovery_cache/octocat_hello_world_master.discovery.json",
+      "scenario_tags": [
+        "v1_sample_report",
+        "github_url_input",
+        "no_python_sources",
+        "blocker_report"
+      ],
+      "expected_status": "pass",
+      "expected_analysis_stage": "source_import_blocked",
+      "expected_blocker": "source_import_or_parse_missing",
+      "expected_controller_action": "adjust_source_filters",
+      "expected_artifact_inventory_status": "pass",
+      "metric_thresholds": {
+        "artifact_inventory_core_file_nonempty_count": 18,
+        "agent_controller_loop_complete": 1,
+        "agent_decision_timeline_complete": 1,
+        "objective_compliance_passed": 1
+      }
+    }
+  ]
+}

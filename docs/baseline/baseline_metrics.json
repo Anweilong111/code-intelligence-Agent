@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0",
+  "baseline_name": "code-intelligence-agent-v1",
+  "baseline_ref": "v1-baseline",
+  "generated_at": "2026-07-13T16:29:29.696612+00:00",
+  "status": "pass",
+  "reason": "v1_baseline_evidence_complete",
+  "agent_loop": "Observe -> Plan -> Act -> Verify -> Reflect -> Replan",
+  "source_paths": {
+    "readiness_audit": "outputs_smoke/v1_readiness_dataset_audit_current/v1_readiness_dataset_audit.json",
+    "evaluation_summary": "outputs_smoke/v1_evaluation_summary_complete_current/v1_evaluation_summary.json",
+    "goal_audit": "outputs_smoke/v1_goal_completion_audit_current/v1_goal_completion_audit.json",
+    "release_hygiene": "generated_from_current_git_candidate_set"
+  },
+  "summary": {
+    "check_count": 6,
+    "passed_check_count": 6,
+    "failed_check_count": 0,
+    "onboarding_case_count": 30,
+    "repair_case_count": 50,
+    "required_metric_count": 9,
+    "measured_metric_count": 9,
+    "test_passed_count": 1127,
+    "test_duration_seconds": 615.77
+  },
+  "checks": [
+    {
+      "name": "dataset_readiness",
+      "passed": true,
+      "evidence": "onboarding=30; repair=50; required_metrics=9"
+    },
+    {
+      "name": "evaluation_metrics",
+      "passed": true,
+      "evidence": "measured=9; required=9; proxy=0; missing=0"
+    },
+    {
+      "name": "v1_goal_audit",
+      "passed": true,
+      "evidence": "passed=7; checks=7"
+    },
+    {
+      "name": "full_test_suite",
+      "passed": true,
+      "evidence": "passed=1127; failed=0; duration_seconds=615.77"
+    },
+    {
+      "name": "release_hygiene",
+      "passed": true,
+      "evidence": "passed=5; checks=5"
+    },
+    {
+      "name": "agent_loop_contract",
+      "passed": true,
+      "evidence": "Observe -> Plan -> Act -> Verify -> Reflect -> Replan"
+    }
+  ],
+  "failed_checks": [],
+  "metrics": [
+    {
+      "metric_id": "onboarding_success_rate",
+      "evidence_status": "measured",
+      "value": 1.0,
+      "evidence": [
+        "github_repo_intelligence_suite.summary"
+      ],
+      "reason": "computed from suite passed runs over total runs",
+      "numerator": 30,
+      "denominator": 30
+    },
+    {
+      "metric_id": "topk_localization_accuracy",
+      "evidence_status": "measured",
+      "value": 1.0,
+      "evidence": [
+        "localization_report.summary.top3"
+      ],
+      "reason": "computed from benchmark localization top3",
+      "k": 3
+    },
+    {
+      "metric_id": "pass_at_1",
+      "evidence_status": "measured",
+      "value": 0.0,
+      "evidence": [
+        "llm_repair_metrics_report.patch_success_at"
+      ],
+      "reason": "computed from first successful sandbox rank at k=1",
+      "k": 1
+    },
+    {
+      "metric_id": "pass_at_k",
+      "evidence_status": "measured",
+      "value": 0.0,
+      "evidence": [
+        "llm_repair_metrics_report.patch_success_at"
+      ],
+      "reason": "computed from first successful sandbox rank at k=5",
+      "k": 5
+    },
+    {
+      "metric_id": "reflection_uplift",
+      "evidence_status": "measured",
+      "value": 0.1333,
+      "evidence": [
+        "llm_repair_metrics_report.reflection_success_case_rate"
+      ],
+      "reason": "computed as cases recovered by reflection over all repair cases",
+      "numerator": 4,
+      "denominator": 30
+    },
+    {
+      "metric_id": "blocker_accuracy",
+      "evidence_status": "measured",
+      "value": 1.0,
+      "evidence": [
+        "llm_repair_case_catalog_audit.cases"
+      ],
+      "reason": "computed from expected vs observed blocker category",
+      "numerator": 7,
+      "denominator": 7
+    },
+    {
+      "metric_id": "sandbox_success_rate",
+      "evidence_status": "measured",
+      "value": 0.6957,
+      "evidence": [
+        "llm_repair_metrics_report.sandbox_pass_rate"
+      ],
+      "reason": "computed from sandbox-passed candidates over executed candidates",
+      "numerator": 16,
+      "denominator": 23
+    },
+    {
+      "metric_id": "average_runtime_ms",
+      "evidence_status": "measured",
+      "value": 4130.7,
+      "evidence": [
+        "github_repo_intelligence_suite.summary.suite_run_elapsed_ms_average"
+      ],
+      "reason": "computed from suite run elapsed time"
+    },
+    {
+      "metric_id": "llm_cost_usd",
+      "evidence_status": "measured",
+      "value": 0.007966,
+      "evidence": [
+        "llm_cost_evidence.llm_token_cost"
+      ],
+      "reason": "computed from standalone LLM token and pricing evidence"
+    }
+  ],
+  "test_suite": {
+    "passed_count": 1127,
+    "failed_count": 0,
+    "skipped_count": 0,
+    "duration_seconds": 615.77,
+    "status": "pass",
+    "command": "python -m pytest -q",
+    "returncode": 0,
+    "output_tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 31%]\n........................................................................ [ 38%]\n........................................................................ [ 44%]\n........................................................................ [ 51%]\n........................................................................ [ 57%]\n........................................................................ [ 63%]\n........................................................................ [ 70%]\n........................................................................ [ 76%]\n........................................................................ [ 83%]\n........................................................................ [ 89%]\n........................................................................ [ 95%]\n...............................................                          [100%]\n1127 passed in 615.77s (0:10:15)\n"
+  },
+  "capability_boundaries": [
+    "The baseline targets public Python GitHub repositories, not every language.",
+    "Repository analysis is general; verified repair still requires executable test evidence.",
+    "Dependency, network, credential, timeout, and configuration failures are reported as blockers.",
+    "LLM judge scores are advisory; sandbox pytest remains the repair authority.",
+    "A clean repository may correctly produce no patch candidate."
+  ],
+  "reproduction": {
+    "command": "python -m code_intelligence_agent.evaluation.v1_baseline outputs/v1_baseline --run-tests --require-pass",
+    "requires": [
+      "V1 evidence artifacts at the recorded source paths",
+      "Python test dependencies installed",
+      "network/provider credentials only for refreshing live evidence"
+    ]
+  }
+}

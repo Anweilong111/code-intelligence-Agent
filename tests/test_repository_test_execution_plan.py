@@ -331,6 +331,67 @@ def test_repository_test_execution_plan_uses_pytest_fallback_when_tox_missing(tm
     )
 
 
+def test_repository_test_execution_plan_preserves_monorepo_working_dirs(tmp_path):
+    api_tests = tmp_path / "services" / "api" / "tests"
+    worker_tests = tmp_path / "services" / "worker" / "tests"
+    api_tests.mkdir(parents=True)
+    worker_tests.mkdir(parents=True)
+    (api_tests / "test_api.py").write_text("def test_api():\n    assert True\n")
+    (worker_tests / "test_worker.py").write_text(
+        "def test_worker():\n    assert True\n"
+    )
+
+    payload = plan_repository_test_execution(
+        {
+            "recommended_test_command": "python -m pytest",
+            "recommended_test_working_dir": "services/api",
+            "test_source_paths": [
+                "services/api/tests/test_api.py",
+                "services/worker/tests/test_worker.py",
+            ],
+            "test_command_candidates": [
+                {
+                    "rank": 1,
+                    "command": "python -m pytest",
+                    "runner": "pytest",
+                    "confidence": 0.82,
+                    "reason": "nested_pytest_config_or_tests_detected",
+                    "working_dir": "services/api",
+                },
+                {
+                    "rank": 2,
+                    "command": "python -m pytest",
+                    "runner": "pytest",
+                    "confidence": 0.82,
+                    "reason": "nested_pytest_config_or_tests_detected",
+                    "working_dir": "services/worker",
+                },
+            ],
+        },
+        repository_test_environment={"status": "pass", "test_tool_available": True},
+        repository_root=tmp_path,
+    )
+    markdown = render_repository_test_execution_plan_markdown(payload)
+
+    assert payload["status"] == "pass"
+    assert payload["reason"] == "execution_plan_built"
+    assert payload["recommended_working_dir"] == "services/api"
+    assert payload["recommended_execution_cwd"] == str(tmp_path / "services" / "api")
+    assert payload["recommended_execution_command"] == (
+        "python -m pytest -q tests/test_api.py"
+    )
+    assert payload["selected_test_paths"] == ["tests/test_api.py"]
+    assert payload["missing_selected_test_paths"] == []
+    working_dirs = {
+        candidate["working_dir"]
+        for candidate in payload["candidate_commands"]
+        if candidate["command"].startswith("python -m pytest")
+    }
+    assert {"services/api", "services/worker"} <= working_dirs
+    assert "Recommended Working Dir: `services/api`" in markdown
+    assert "`services/worker`" in markdown
+
+
 def test_repository_test_execution_plan_uses_ci_pytest_candidate_when_tox_missing(tmp_path):
     tests_dir = tmp_path / "tests" / "unit"
     tests_dir.mkdir(parents=True)

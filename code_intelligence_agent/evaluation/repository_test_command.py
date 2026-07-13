@@ -6,7 +6,7 @@ import re
 import shlex
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -17,15 +17,18 @@ def validate_repository_test_command(
     timeout: int = 20,
 ) -> dict[str, Any]:
     command = str(repository_profile.get("recommended_test_command") or "").strip()
+    working_dir = str(repository_profile.get("recommended_test_working_dir") or "")
     if not command:
         return _skipped(
             command=command,
+            working_dir=working_dir,
             reason="no_recommended_test_command",
             message="Repository profile did not infer a runnable test command.",
         )
     if repository_root is None:
         return _skipped(
             command=command,
+            working_dir=working_dir,
             reason="full_repo_not_materialized",
             message=(
                 "Recommended test command requires a full repository checkout; "
@@ -36,15 +39,29 @@ def validate_repository_test_command(
     if not repo_path.exists() or not repo_path.is_dir():
         return _skipped(
             command=command,
+            repository_root=str(repo_path),
+            working_dir=working_dir,
             cwd=str(repo_path),
             reason="repository_root_missing",
             message="Repository test root does not exist or is not a directory.",
+        )
+    command_cwd = _command_cwd(repo_path, working_dir)
+    if command_cwd is None or not command_cwd.exists() or not command_cwd.is_dir():
+        return _skipped(
+            command=command,
+            repository_root=str(repo_path),
+            working_dir=working_dir,
+            cwd=str(command_cwd or repo_path),
+            reason="selected_working_dir_missing",
+            message="Recommended test working directory is missing or unsafe.",
         )
     command_args = _safe_python_module_command(command)
     if not command_args:
         return _skipped(
             command=command,
-            cwd=str(repo_path),
+            repository_root=str(repo_path),
+            working_dir=working_dir,
+            cwd=str(command_cwd),
             reason="unsupported_command",
             message="Only python -m module style test commands are executed.",
         )
@@ -53,7 +70,7 @@ def validate_repository_test_command(
     try:
         completed = subprocess.run(
             command_args,
-            cwd=repo_path,
+            cwd=command_cwd,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -68,7 +85,9 @@ def validate_repository_test_command(
             "message": f"Recommended test command exceeded {timeout}s timeout.",
             "command": command,
             "command_args": command_args,
-            "cwd": str(repo_path),
+            "repository_root": str(repo_path),
+            "working_dir": working_dir,
+            "cwd": str(command_cwd),
             "returncode": -1,
             "timeout": True,
             "passed": 0,
@@ -93,7 +112,9 @@ def validate_repository_test_command(
         ),
         "command": command,
         "command_args": command_args,
-        "cwd": str(repo_path),
+        "repository_root": str(repo_path),
+        "working_dir": working_dir,
+        "cwd": str(command_cwd),
         "returncode": completed.returncode,
         "timeout": False,
         "passed": _extract_count(stdout, "passed"),
@@ -117,6 +138,8 @@ def render_repository_test_command_markdown(payload: dict[str, Any]) -> str:
         f"- Executed: {str(bool(payload.get('executed', False))).lower()}",
         f"- Reason: `{_markdown_cell(payload.get('reason', ''))}`",
         f"- Command: `{_markdown_cell(payload.get('command', ''))}`",
+        f"- Repository Root: `{_markdown_cell(payload.get('repository_root') or 'none')}`",
+        f"- Working Dir: `{_markdown_cell(payload.get('working_dir') or '.')}`",
         f"- CWD: `{_markdown_cell(payload.get('cwd', ''))}`",
         f"- Return Code: {_markdown_cell(payload.get('returncode'))}",
         f"- Timeout: {str(bool(payload.get('timeout', False))).lower()}",
@@ -192,11 +215,23 @@ def _safe_python_module_command(command: str) -> list[str]:
     return [sys.executable, "-m", module, *args[3:]]
 
 
+def _command_cwd(repository_root: Path, working_dir: str) -> Path | None:
+    normalized = str(working_dir or "").replace("\\", "/").strip().strip("/")
+    if not normalized:
+        return repository_root
+    pure = PurePosixPath(normalized)
+    if pure.is_absolute() or any(part == ".." for part in pure.parts):
+        return None
+    return repository_root.joinpath(*pure.parts)
+
+
 def _skipped(
     *,
     command: str,
     reason: str,
     message: str,
+    repository_root: str = "",
+    working_dir: str = "",
     cwd: str = "",
 ) -> dict[str, Any]:
     return {
@@ -206,6 +241,8 @@ def _skipped(
         "message": message,
         "command": command,
         "command_args": [],
+        "repository_root": repository_root,
+        "working_dir": working_dir,
         "cwd": cwd,
         "returncode": None,
         "timeout": False,
@@ -225,6 +262,11 @@ def _skipped_next_actions(reason: str) -> list[str]:
         ]
     if reason == "repository_root_missing":
         return ["Verify repository_test_root points to a local full repository checkout."]
+    if reason == "selected_working_dir_missing":
+        return [
+            "Verify the recommended repository test working directory exists inside the checkout.",
+            "If this is a monorepo, rerun repository profiling to select the intended subproject.",
+        ]
     if reason == "unsupported_command":
         return ["Use a python -m module style command for safe non-shell execution."]
     return []

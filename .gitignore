@@ -12,6 +12,8 @@ venv/
 env/
 
 # Local execution outputs and generated artifacts
+.code_intelligence_agent/
+outputs/
 outputs_smoke/
 outputs_live/
 outputs_docx_render/

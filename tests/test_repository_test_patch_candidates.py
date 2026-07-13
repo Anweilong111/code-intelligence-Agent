@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from code_intelligence_agent.agents.llm_client import StaticLLMClient
+from code_intelligence_agent.agents.llm_client import LLMRequestError, StaticLLMClient
 from code_intelligence_agent.agents.llm_patch_generator import LLMPatchGenerator
 from code_intelligence_agent.evaluation.repository_test_fault_localization import (
     build_repository_test_fault_localization,
@@ -191,6 +191,9 @@ def test_repository_test_patch_candidates_hybrid_adds_llm_candidates(
     assert payload["generator_counts"] == {"rule": 2, "llm": 1}
     assert payload["llm_generation_status"] == "pass"
     assert payload["llm_generation_reason"] == "llm_patch_candidates_generated"
+    assert payload["llm_generation_telemetry"]["request_count"] == 1
+    assert payload["llm_generation_telemetry"]["success_count"] == 1
+    assert payload["llm_generation_telemetry"]["failure_count"] == 0
     assert len(payload["llm_generation_audit"]) == 1
     assert payload["llm_generation_audit"][0]["requested_candidate_count"] == 1
     assert payload["llm_generation_audit"][0]["parsed_candidate_count"] == 1
@@ -234,7 +237,86 @@ def test_repository_test_patch_candidates_hybrid_adds_llm_candidates(
     ] == 1
     assert "Patch Generation Mode: `hybrid`" in markdown
     assert "llm=1" in markdown
+    assert "LLM Telemetry: requests=1" in markdown
     assert "LLM Generation Audit" in markdown
+
+
+def test_repository_test_patch_candidates_llm_reads_session_patch_memory(
+    tmp_path,
+    monkeypatch,
+):
+    for name in _LLM_API_KEY_ENV_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    _write_patch_candidate_repo(tmp_path)
+    localization = build_repository_test_fault_localization(
+        _dynamic_evidence(),
+        repository_root=tmp_path,
+        top_k=3,
+    )
+    memory_path = tmp_path / "agent_memory.json"
+    memory_path.write_text(
+        json.dumps(
+            {
+                "patch_attempt_history": [
+                    {
+                        "candidate_id": "bad_patch_1",
+                        "target_function": "sample.shift_left",
+                        "failure_type": "assertion_failure",
+                        "sandbox_status": "fail",
+                        "passed": False,
+                        "diff_fingerprint": "failed-diff-fp",
+                    }
+                ],
+                "constraints": ["不要修改公共 API"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CIA_AGENT_PATCH_MEMORY", str(memory_path))
+    monkeypatch.setenv("CIA_AGENT_REPAIR_STRATEGY", "prefer guard clause")
+    fixed_source = (
+        "def shift_left(values):\n"
+        "    return values[1:]\n"
+    )
+    llm = LLMPatchGenerator(StaticLLMClient(json.dumps({"fixed_source": fixed_source})))
+
+    payload = build_repository_test_patch_candidates(
+        localization,
+        repository_root=tmp_path,
+        candidate_limit=3,
+        patch_generation_mode="hybrid",
+        llm_generator=llm,
+    )
+
+    prompt_payload = json.loads(llm.client.prompts[0])
+    assert payload["llm_repair_context"]["previous_failed_patch_fingerprints"] == [
+        "failed-diff-fp"
+    ]
+    assert (
+        payload["llm_repair_context"]["session_patch_memory"]["failed_patch_count"]
+        == 1
+    )
+    assert prompt_payload["previous_failed_patch_fingerprints"] == [
+        "failed-diff-fp"
+    ]
+    assert payload["llm_repair_context"]["repair_strategy_preferences"] == [
+        "prefer guard clause"
+    ]
+    assert (
+        prompt_payload["dynamic_oracle"]["session_patch_memory"][
+            "failed_patch_summaries"
+        ][0]["candidate_id"]
+        == "bad_patch_1"
+    )
+    assert "User constraint: 不要修改公共 API" in prompt_payload["constraints"]
+    assert any(
+        "session_patch_memory" in constraint
+        for constraint in prompt_payload["constraints"]
+    )
+    assert any(
+        "Repair strategy preference: prefer guard clause" in constraint
+        for constraint in prompt_payload["constraints"]
+    )
 
 
 def test_repository_test_patch_candidates_llm_mode_blocks_without_api_key(
@@ -266,6 +348,41 @@ def test_repository_test_patch_candidates_llm_mode_blocks_without_api_key(
     assert payload["llm_config_audit"]["enabled"] is True
     assert payload["llm_config_audit"]["api_key_present"] is False
     assert payload["safety_gate"]["candidate_count"] == 0
+
+
+def test_repository_test_patch_candidates_records_llm_request_error_telemetry(
+    tmp_path,
+):
+    _write_patch_candidate_repo(tmp_path)
+    localization = build_repository_test_fault_localization(
+        _dynamic_evidence(),
+        repository_root=tmp_path,
+        top_k=3,
+    )
+
+    payload = build_repository_test_patch_candidates(
+        localization,
+        repository_root=tmp_path,
+        candidate_limit=2,
+        patch_generation_mode="llm",
+        llm_generator=_FailingLLMGenerator(),
+    )
+
+    assert payload["status"] == "warning"
+    assert payload["candidate_count"] == 0
+    assert payload["llm_generation_status"] == "error"
+    assert payload["llm_generation_reason"] == "http_error"
+    assert payload["generation_errors"][0]["reason"] == "http_error"
+    assert payload["generation_errors"][0]["llm_request_metadata"]["status"] == (
+        "error"
+    )
+    assert payload["llm_generation_telemetry"]["request_count"] == 1
+    assert payload["llm_generation_telemetry"]["failure_count"] == 1
+    assert payload["llm_generation_telemetry"]["providers"] == ["deepseek"]
+    assert payload["llm_generation_telemetry"]["models"] == ["deepseek-v4-pro"]
+    assert payload["llm_generation_telemetry"]["error_reason_counts"] == {
+        "http_401": 1,
+    }
 
 
 def test_repository_test_patch_candidates_skip_when_localization_not_ready(tmp_path):
@@ -360,6 +477,29 @@ _LLM_API_KEY_ENV_NAMES = (
     "DASHSCOPE_API_KEY",
     "ALIBABA_API_KEY",
 )
+
+
+class _FailingLLMGenerator:
+    def generate(self, *args, **kwargs):
+        del args, kwargs
+        raise LLMRequestError(
+            "http_error",
+            "LLM request failed with HTTP 401.",
+            {
+                "status": "error",
+                "provider": "deepseek",
+                "model": "deepseek-v4-pro",
+                "latency_ms": 9,
+                "usage": {
+                    "estimated_total_tokens": 8,
+                },
+                "cost_estimate": {
+                    "available": False,
+                    "estimated_cost_usd": None,
+                },
+                "error_reason": "http_401",
+            },
+        )
 
 
 def _dynamic_evidence():
