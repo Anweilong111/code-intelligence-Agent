@@ -10,6 +10,8 @@ ARCHITECTURE = ROOT / "docs" / "v2" / "architecture_and_design.md"
 CASE_STUDIES = ROOT / "docs" / "v2" / "phase8_case_studies.md"
 DEMO_GUIDE = ROOT / "docs" / "v2" / "phase8_demo_guide_cn.md"
 CAREER_PACK = ROOT / "docs" / "career" / "v2_resume_interview_pack_cn.md"
+RELEASE_CHECKLIST = ROOT / "docs" / "v2" / "phase8_release_checklist.md"
+RELEASE_VERIFICATION = ROOT / "docs" / "v2" / "phase8_release_verification.json"
 PHASE7_REPORT = (
     ROOT
     / "docs"
@@ -25,6 +27,8 @@ def test_phase8_required_public_documents_exist_and_are_substantive():
         CASE_STUDIES: 6_000,
         DEMO_GUIDE: 6_000,
         CAREER_PACK: 12_000,
+        RELEASE_CHECKLIST: 3_000,
+        RELEASE_VERIFICATION: 6_000,
     }
 
     for path, minimum_size in minimum_sizes.items():
@@ -145,6 +149,7 @@ def test_readme_distinguishes_v2_evidence_from_historical_v1_metrics():
         "docs/v2/architecture_and_design.md",
         "docs/v2/phase8_case_studies.md",
         "docs/v2/phase8_demo_guide_cn.md",
+        "docs/v2/phase8_release_checklist.md",
         "docs/career/v2_resume_interview_pack_cn.md",
         "docs/career/agent_project_study_interview_guide.md",
     ]:
@@ -153,7 +158,13 @@ def test_readme_distinguishes_v2_evidence_from_historical_v1_metrics():
 
 
 def test_new_document_local_links_resolve():
-    for document in [ARCHITECTURE, CASE_STUDIES, DEMO_GUIDE, CAREER_PACK]:
+    for document in [
+        ARCHITECTURE,
+        CASE_STUDIES,
+        DEMO_GUIDE,
+        CAREER_PACK,
+        RELEASE_CHECKLIST,
+    ]:
         for target in _local_markdown_targets(document):
             resolved = (document.parent / target).resolve()
             assert resolved.exists(), f"{document}: missing {target}"
@@ -176,6 +187,30 @@ def test_release_tests_use_tracked_compact_evidence_not_local_outputs():
         assert (ROOT / "tests" / "fixtures" / "release_evidence" / name).exists()
 
     assert PHASE7_REPORT.exists()
+
+
+def test_phase8_release_verification_records_final_evidence():
+    import json
+
+    payload = json.loads(RELEASE_VERIFICATION.read_text(encoding="utf-8"))
+
+    assert payload["status"] == "pass"
+    assert len(payload["definition_of_done"]) == 17
+    assert all(item["status"] == "pass" for item in payload["definition_of_done"])
+    full = payload["verification"]["full_test_suite"]
+    assert full == {
+        "command": "python -m pytest -q",
+        "status": "pass",
+        "passed_count": 1234,
+        "failed_count": 0,
+        "duration_seconds": 787.62,
+    }
+    clean = payload["verification"]["clean_archive_release_tests"]
+    assert clean["status"] == "pass"
+    assert clean["passed_count"] == 25
+    assert clean["local_output_directory_present"] is False
+    assert payload["verification"]["release_hygiene"]["passed_check_count"] == 5
+    assert payload["verification"]["pre_fix_regression"]["status"] == "failed_then_fixed"
 
 
 def _local_markdown_targets(path: Path) -> list[str]:

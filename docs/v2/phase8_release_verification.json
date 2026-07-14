@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "phase": "phase8_project_packaging_and_interview_delivery",
+  "status": "pass",
+  "reason": "all_phase8_release_and_definition_of_done_checks_met",
+  "generated_at": "2026-07-14T23:19:27+08:00",
+  "branch": "codex/code-intelligence-agent-v2",
+  "tested_implementation_commit": "39ab6607f942bbd47b29293d55fd2e5c13fcc736",
+  "verification": {
+    "full_test_suite": {
+      "command": "python -m pytest -q",
+      "status": "pass",
+      "passed_count": 1234,
+      "failed_count": 0,
+      "duration_seconds": 787.62
+    },
+    "clean_archive_release_tests": {
+      "source": "git archive of tested implementation commit",
+      "status": "pass",
+      "passed_count": 25,
+      "failed_count": 0,
+      "duration_seconds": 2.73,
+      "git_directory_present": false,
+      "local_output_directory_present": false
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_check_count": 5,
+      "check_count": 5,
+      "raw_api_key_count": 0,
+      "tracked_output_count": 0,
+      "tracked_binary_document_count": 0
+    },
+    "pre_fix_regression": {
+      "status": "failed_then_fixed",
+      "passed_count": 1233,
+      "failed_count": 1,
+      "duration_seconds": 701.30,
+      "failure": "temporary V1 baseline gitignore fixture did not include the new outputs_v2 and outputs_demo release patterns",
+      "fix_commit": "39ab6607f942bbd47b29293d55fd2e5c13fcc736",
+      "post_fix_targeted_tests": "16 passed in 1.48s"
+    }
+  },
+  "evidence": {
+    "phase6_robustness": "docs/v2/phase6_unfamiliar_repository_robustness.md",
+    "phase6_metrics": "docs/v2/phase6_unfamiliar_repository_metrics.json",
+    "phase7_system_evaluation": "docs/v2/phase7_artifacts/phase7_system_evaluation.md",
+    "phase7_metrics": "docs/v2/phase7_artifacts/phase7_system_metrics.json",
+    "architecture": "docs/v2/architecture_and_design.md",
+    "case_studies": "docs/v2/phase8_case_studies.md",
+    "demo_guide": "docs/v2/phase8_demo_guide_cn.md",
+    "career_pack": "docs/career/v2_resume_interview_pack_cn.md",
+    "study_guide": "docs/career/agent_project_study_interview_guide.md"
+  },
+  "definition_of_done": [
+    {
+      "id": 1,
+      "status": "pass",
+      "requirement": "A new public Python GitHub repository can start through one command.",
+      "evidence": "agent CLI plus 20 fixed-SHA unfamiliar-repository runs"
+    },
+    {
+      "id": 2,
+      "status": "pass",
+      "requirement": "The system selects the next action from current evidence.",
+      "evidence": "AgentController decision and execution traces"
+    },
+    {
+      "id": 3,
+      "status": "pass",
+      "requirement": "LLM Planner participates and has a rule fallback.",
+      "evidence": "14 controlled planner cases, 42 runs, provider/schema/safety fallbacks retained"
+    },
+    {
+      "id": 4,
+      "status": "pass",
+      "requirement": "Natural-language terminal interaction supports LLM intent routing and multi-turn sessions.",
+      "evidence": "112 bilingual intent cases, chat-ui, session restore and rule fallback"
+    },
+    {
+      "id": 5,
+      "status": "pass",
+      "requirement": "Every executable action comes from Action Registry.",
+      "evidence": "planner final registered-action rate 1.0000; unregistered proposal rejection case"
+    },
+    {
+      "id": 6,
+      "status": "pass",
+      "requirement": "Patches pass AST, safety and sandbox validation.",
+      "evidence": "unified patch gate and controlled Rule/LLM/Hybrid patch evaluation"
+    },
+    {
+      "id": 7,
+      "status": "pass",
+      "requirement": "Failures can trigger bounded Reflection and Replan.",
+      "evidence": "semantic_parse_port_reflection and reflection budget ablation"
+    },
+    {
+      "id": 8,
+      "status": "pass",
+      "requirement": "Memory changes later planning or patch behavior and records usage evidence.",
+      "evidence": "8 memory cases; completion 0.1250 to 1.0000 and repeated failed patch 1.0000 to 0.0000"
+    },
+    {
+      "id": 9,
+      "status": "pass",
+      "requirement": "Unsolvable states emit an accurate blocker instead of fabricated success.",
+      "evidence": "clean-repo, environment blocker and Phase 6 partial outcomes"
+    },
+    {
+      "id": 10,
+      "status": "pass",
+      "requirement": "At least 20 unfamiliar public repositories are evaluated.",
+      "evidence": "20/20 structured reports at fixed commit SHAs"
+    },
+    {
+      "id": 11,
+      "status": "pass",
+      "requirement": "Patch, planner, memory, graph, dynamic, reflection, Top-k and budget ablations are complete.",
+      "evidence": "8/8 Phase 7 required comparisons"
+    },
+    {
+      "id": 12,
+      "status": "pass",
+      "requirement": "All existing and new tests pass.",
+      "evidence": "1234 passed in 787.62 seconds"
+    },
+    {
+      "id": 13,
+      "status": "pass",
+      "requirement": "No API keys, caches or unrelated outputs are committed.",
+      "evidence": "release hygiene 5/5 pass"
+    },
+    {
+      "id": 14,
+      "status": "pass",
+      "requirement": "README commands are reproducible from a clean source snapshot.",
+      "evidence": "git archive without local outputs; 25 release tests passed"
+    },
+    {
+      "id": 15,
+      "status": "pass",
+      "requirement": "The project supports a 10-minute demonstration.",
+      "evidence": "phase8_demo_guide_cn.md with live and offline fallback paths"
+    },
+    {
+      "id": 16,
+      "status": "pass",
+      "requirement": "Every resume metric is traceable to an experiment artifact.",
+      "evidence": "V2 career pack links Phase 6 and Phase 7 JSON/Markdown artifacts"
+    },
+    {
+      "id": 17,
+      "status": "pass",
+      "requirement": "The project remains an algorithmic code Agent rather than a fixed workflow or generic chatbot.",
+      "evidence": "evidence-fused localization, LLM/hybrid planning, controlled execution, reflection and memory ablations"
+    }
+  ],
+  "capability_boundaries": [
+    "The supported scope is public Python repositories, not every language or private dependency environment.",
+    "Twenty unfamiliar repositories all produced static reports, but only seven started and terminated a test process.",
+    "Phase 7 LLM patch and planner results use deterministic offline fixtures and are not live-model repair rates.",
+    "Graph and dynamic evidence ablations did not improve the current rule-detectable localization benchmark.",
+    "No test oracle means no verified-repair claim.",
+    "LLM Judge remains advisory; sandbox tests are authoritative."
+  ]
+}

@@ -27,7 +27,7 @@
 | Memory 消融 | 8 cases | completion 0.1250 -> 1.0000；重复失败 patch 1.0000 -> 0.0000 |
 | 系统消融 | 8/8 对照完成 | Patch、Planner、Graph、Dynamic、Memory、Reflection、Top-k、Budget |
 
-这里的 `success`、`verified` 和 `pass` 均按对应 artifact 的定义解释。受控 fixture 不代表 live 模型真实仓库修复率，静态分析成功也不代表测试通过。完整证据见 [Phase 7 系统评估](docs/v2/phase7_artifacts/phase7_system_evaluation.md)，架构和能力边界见 [V2 架构与算法设计](docs/v2/architecture_and_design.md)。
+这里的 `success`、`verified` 和 `pass` 均按对应 artifact 的定义解释。受控 fixture 不代表 live 模型真实仓库修复率，静态分析成功也不代表测试通过。完整证据见 [Phase 7 系统评估](docs/v2/phase7_artifacts/phase7_system_evaluation.md)，架构和能力边界见 [V2 架构与算法设计](docs/v2/architecture_and_design.md)，最终 17 项 DoD 见 [Phase 8 发布验收](docs/v2/phase8_release_checklist.md)。
 
 ## 架构
 
@@ -771,6 +771,7 @@ Phase 2 的机器可读指标与验收说明位于
 - [docs/v2/architecture_and_design.md](docs/v2/architecture_and_design.md)
 - [docs/v2/phase8_case_studies.md](docs/v2/phase8_case_studies.md)
 - [docs/v2/phase8_demo_guide_cn.md](docs/v2/phase8_demo_guide_cn.md)
+- [docs/v2/phase8_release_checklist.md](docs/v2/phase8_release_checklist.md)
 - [docs/career/v2_resume_interview_pack_cn.md](docs/career/v2_resume_interview_pack_cn.md)
 - [docs/career/agent_project_study_interview_guide.md](docs/career/agent_project_study_interview_guide.md)
 
