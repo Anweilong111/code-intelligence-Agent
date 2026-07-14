@@ -1,5 +1,7 @@
 # Code Intelligence Agent 系统学习与面试准备指南
 
+> **V2 阅读提示（2026-07）**：本文保留从基础概念到实现链路的完整学习内容，其中部分实验数字和命名来自 V1。面试前请先阅读最新的 [V2 架构与算法设计](../v2/architecture_and_design.md)、[Phase 8 案例集](../v2/phase8_case_studies.md) 和 [V2 中文简历与面试材料](v2_resume_interview_pack_cn.md)。涉及权重、陌生仓库统计、Planner/Memory/Patch 消融和能力边界时，以这些 V2 文档及 Phase 7 artifact 为准。
+
 这份文档的目标不是让你从源码开始硬啃项目，而是让你先建立一套完整的“运行视角”：用户输入一个 GitHub 仓库后，Agent 每一步到底做了什么、怎么做、为什么这么做、做完后会得到什么结果，以及面试时应该如何讲清楚。
 
 你可以把这个项目理解成一个面向 Python GitHub 仓库的代码智能分析与修复 Agent。它不是简单把仓库内容交给大模型总结，而是先做仓库理解、结构建模、缺陷信号挖掘、测试环境诊断，再由 Agent Controller 按 Observe -> Plan -> Act -> Verify -> Reflect -> Replan 的闭环选择下一步动作。大模型主要用于规划增强、补丁生成、失败反思和候选评判，但所有动作都要经过 action registry、安全门控和 sandbox 验证。
@@ -1789,7 +1791,7 @@ Agent 不能把非 Python 仓库伪装成分析成功。
 ### 23.1 普通 Agent 分析
 
 ```powershell
-cd D:\code_intelligence_analysis
+cd <repository_root>
 python -m code_intelligence_agent agent pypa/sampleproject outputs_smoke\sampleproject_agent_run --execution-profile agent-auto --preset mining --format markdown
 ```
 

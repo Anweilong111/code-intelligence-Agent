@@ -1,0 +1,29 @@
+{
+  "headline": {
+    "case_count": 62,
+    "top1": 1.0,
+    "top3": 1.0,
+    "map": 1.0,
+    "patch_success_rate": 1.0,
+    "beam_success_rate": 0.9516
+  },
+  "algorithm_evidence": {
+    "static_graph_reasoning": {
+      "cross_function_data_flow_cases": 22,
+      "program_slice_cases": 62,
+      "slice_grounded_cases": 62,
+      "average_top1_slice_support": 0.9839
+    }
+  },
+  "generated_hard_case_evidence_summary": {
+    "generated_cases": 5,
+    "score_inversions": 2,
+    "diversity_assisted_successes": 1,
+    "average_success_diversity_lift": 3.0,
+    "average_success_diversity_bonus": 0.59
+  },
+  "generated_hard_case_ablation_link_summary": {
+    "linked_cases": 5
+  },
+  "fixture_scope": "Compact tracked projection of the historical controlled showcase artifact."
+}

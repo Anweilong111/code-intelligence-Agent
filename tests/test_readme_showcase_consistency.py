@@ -15,35 +15,18 @@ from code_intelligence_agent.evaluation.readme_showcase_sync import (
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.MD"
-SHOWCASE = (
-    ROOT
-    / "outputs_smoke"
-    / "experiment_suite_62case_showcase_final"
-    / "showcase_report.json"
-)
-P6_ROOT = (
-    ROOT
-    / "outputs_smoke"
-    / "repo_intelligence_p6_onboarding_readiness_cached2_current"
-)
+FIXTURE_ROOT = ROOT / "tests" / "fixtures" / "release_evidence"
+SHOWCASE = FIXTURE_ROOT / "showcase_report.json"
+P6_EVIDENCE = FIXTURE_ROOT / "readme_p6_evidence.json"
 
 
 def test_readme_p6_summary_matches_current_artifacts():
     readme = README.read_text(encoding="utf-8")
-    onboarding = json.loads(
-        (P6_ROOT / "github_onboarding_matrix.json").read_text(encoding="utf-8")
-    )
-    repair = json.loads(
-        (P6_ROOT / "llm_repair_evaluation_matrix.json").read_text(encoding="utf-8")
-    )
-    catalog = json.loads(
-        (P6_ROOT / "llm_repair_case_catalog_audit.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    audit = json.loads(
-        (P6_ROOT / "p6_readiness_audit.json").read_text(encoding="utf-8")
-    )
+    evidence = json.loads(P6_EVIDENCE.read_text(encoding="utf-8"))
+    onboarding = evidence["onboarding"]
+    repair = evidence["repair"]
+    catalog = evidence["catalog"]
+    audit = evidence["audit"]
     audit_summary = audit["summary"]
     repair_metrics = repair["metrics_report"]
     catalog_summary = catalog["summary"]

@@ -1,6 +1,6 @@
 # Code Intelligence Agent
 
-面向公开 Python GitHub 仓库的代码智能分析与修复 Agent。用户输入 `owner/repo`、GitHub URL 或本地仓库路径后，系统会自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告。
+面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。
 
@@ -15,6 +15,19 @@
 - LLM patch/reflection 只作为候选生成与语义修复组件，所有候选都必须经过 JSON parse、AST/scope/signature/safety gate、patch apply 和 sandbox pytest。
 - LLM judge 可以参与候选排序和风险判断，但最终成功标准始终是 `sandbox_pytest_decides_success`。
 - 缺少 key、测试、依赖、oracle 或安全条件时，系统输出 blocker 和下一步动作，不伪造修复成功。
+
+## V2 已验证快照
+
+| 验证面 | 结果 | 口径 |
+| --- | ---: | --- |
+| 陌生公开 Python 仓库 | 20/20 产出结构化报告并完成静态分析 | 固定 commit SHA；7/20 真正启动并终止测试进程 |
+| 定位 test + blind cases | 20 | Top-1/3/5、MRR、MAP 均为 1.0000；graph/dynamic 消融没有显示增益 |
+| Patch 策略 | 3 cases / 9 runs | Rule/LLM/Hybrid verified rate 为 0.3333/1.0000/1.0000；LLM 为离线确定性 fixture |
+| Planner 策略 | 14 cases / 42 runs | 最终已注册动作率、任务完成率和 blocker accuracy 均为 1.0000 |
+| Memory 消融 | 8 cases | completion 0.1250 -> 1.0000；重复失败 patch 1.0000 -> 0.0000 |
+| 系统消融 | 8/8 对照完成 | Patch、Planner、Graph、Dynamic、Memory、Reflection、Top-k、Budget |
+
+这里的 `success`、`verified` 和 `pass` 均按对应 artifact 的定义解释。受控 fixture 不代表 live 模型真实仓库修复率，静态分析成功也不代表测试通过。完整证据见 [Phase 7 系统评估](docs/v2/phase7_artifacts/phase7_system_evaluation.md)，架构和能力边界见 [V2 架构与算法设计](docs/v2/architecture_and_design.md)。
 
 ## 架构
 
@@ -106,9 +119,9 @@ flowchart TD
 | `agent_memory_retrieval.json` | 当前任务检索出的 Top-k 记忆、相关度分解、使用原因及被过滤的过期/跨版本记录 |
 | `agent_session_report.md` | 多轮会话审计报告，包括 session timeline、memory usage evidence、intent history、patch history 和 blocker evolution |
 
-## P6 验证结果
+## 历史 V1/P6 受控证据
 
-最新 P6 readiness 聚合已经通过：
+以下 P6 readiness 与 62-case showcase 是冻结的 V1 历史受控证据，用于保留回归基线，不是当前 V2 的陌生仓库成功率，也不能解释为 live LLM 在真实仓库上的修复率。最新 V2 结论以本 README 的 V2 快照和 Phase 7 artifact 为准。
 
 | 项目 | 结果 |
 | --- | ---: |
@@ -123,7 +136,7 @@ flowchart TD
 | Declared catalog cases matched | 20/20 |
 | Sandbox authority | `sandbox_pytest_decides_success` |
 
-### Showcase Overview
+### Historical Showcase Overview
 
 | Metric | Value |
 | --- | --- |
@@ -273,6 +286,24 @@ python -m code_intelligence_agent.evaluation.github_repo_intelligence_suite ^
 ```
 
 ## 快速运行
+
+### 干净环境安装
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
+```
+
+先确认 CLI 与核心发布测试可运行：
+
+```powershell
+python -m code_intelligence_agent agent --help
+python -m pytest -q tests/test_readme_showcase_consistency.py tests/test_v1_goal_completion_audit.py
+```
+
+完整的 10 分钟演示、LLM 环境变量和失败降级步骤见 [Phase 8 现场演示指南](docs/v2/phase8_demo_guide_cn.md)。
 
 一键 Agent 模式：
 
@@ -720,6 +751,8 @@ Phase 2 的机器可读指标与验收说明位于
 | `tests` | 单元测试、集成测试和 P6 manifest/audit 测试 |
 | `docs/showcase` | GitHub 展示材料 |
 | `docs/examples` | 典型仓库报告样例说明 |
+| `docs/v2` | V2 架构、阶段验收、案例、演示和系统消融 artifact |
+| `docs/career` | 中文简历、系统学习和面试追问材料 |
 | `RESUME_AGENT_PROJECT.md` | 简历写法 |
 | `INTERVIEW_QA_AGENT_PROJECT.md` | 面试问答 |
 
@@ -735,6 +768,11 @@ Phase 2 的机器可读指标与验收说明位于
 - [docs/examples/top_level_agent_live_smoke.md](docs/examples/top_level_agent_live_smoke.md)
 - [docs/examples/llm_repair_readiness.md](docs/examples/llm_repair_readiness.md)
 - [docs/examples/agent_demo_artifact_checklist.md](docs/examples/agent_demo_artifact_checklist.md)
+- [docs/v2/architecture_and_design.md](docs/v2/architecture_and_design.md)
+- [docs/v2/phase8_case_studies.md](docs/v2/phase8_case_studies.md)
+- [docs/v2/phase8_demo_guide_cn.md](docs/v2/phase8_demo_guide_cn.md)
+- [docs/career/v2_resume_interview_pack_cn.md](docs/career/v2_resume_interview_pack_cn.md)
+- [docs/career/agent_project_study_interview_guide.md](docs/career/agent_project_study_interview_guide.md)
 
 ## Release Hygiene Gate
 
@@ -766,7 +804,7 @@ resume/interview packaging, and release hygiene in one report.
 
 推荐一句话：
 
-> 构建面向公开 Python GitHub 仓库的代码智能 Agent，结合 AST / Call Graph / Program Graph、静态规则、动态测试证据和 SBFL-style scoring 实现函数级 Top-k 缺陷定位，并通过 AgentController 的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 闭环调度 LLM patch generation、sandbox validation、reflection repair 和 blocker reporting；V1 评估覆盖 30 个真实 GitHub onboarding case、50 个 repair/evaluation case，并完成 9/9 required metrics measured。
+> 构建面向公开 Python GitHub 仓库的代码智能 Agent，融合 AST / Call Graph / Program Graph、多证据函数级 Top-k 定位、LLM Planner、五层证据记忆和 Rule/LLM/Hybrid 补丁生成，通过 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 闭环与 pytest sandbox 输出可审计修复或 blocker；在 20 个固定 SHA 陌生仓库和 8 类系统消融上完成实证评估。
 
 ## 能力边界
 

@@ -1,0 +1,54 @@
+{
+  "final_report": {
+    "status": "pass",
+    "repo_spec": "pytest-dev/iniconfig",
+    "repository_structure": {
+      "analyzed_files": 1,
+      "package_structure": {"layout_type": "flat"}
+    },
+    "verification": {
+      "acceptance_gate_passed": true,
+      "repair_success_claim": "not_claimed"
+    },
+    "objective_compliance": {"passed": true},
+    "testability": {"status": "pass"},
+    "evidence_artifacts": {"repo_graph_json": "repo_graph.json"},
+    "top_suspicious_functions": [],
+    "blocker": "no_static_candidates"
+  },
+  "controller": {
+    "status": "blocked",
+    "control_loop": ["observe", "plan", "act", "verify", "reflect", "replan"],
+    "action_decision_audit": {
+      "status": "pass",
+      "incomplete_action_count": 0
+    },
+    "loop_iteration_audit": {"status": "pass"},
+    "auto_controller": {"complete_loop_recorded": true},
+    "primary_blocker": "no_static_candidates",
+    "selected_action": {"id": "inspect_generated_artifacts"},
+    "llm_repair_action_audit": {
+      "status": "not_requested",
+      "sandbox_authority": "sandbox_pytest_decides_success",
+      "agent_loop_evidence": {
+        "observe": "repository evidence",
+        "plan": "controller action",
+        "act": "registered action",
+        "verify": "pytest evidence",
+        "reflect": "blocker classification",
+        "replan": "next action"
+      }
+    }
+  },
+  "test_result": {"test_count": 49},
+  "artifact_inventory": {"status": "pass", "artifact_count": 12},
+  "release_hygiene": {
+    "status": "pass",
+    "check_count": 6,
+    "passed_check_count": 6,
+    "failed_check_count": 0,
+    "failed_checks": [],
+    "candidate_file_count": 0
+  },
+  "fixture_scope": "Minimal tracked contract fixture for clean-clone V1 audit regression."
+}

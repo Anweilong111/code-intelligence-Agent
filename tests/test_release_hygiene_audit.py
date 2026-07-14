@@ -25,7 +25,8 @@ def test_release_hygiene_audit_passes_current_git_candidate_set():
 
 def test_release_hygiene_audit_detects_secrets_outputs_and_bad_public_docs(tmp_path):
     (tmp_path / ".gitignore").write_text(
-        "outputs/\noutputs_smoke/\noutputs_live/\nhtmlcov/\n.pytest_cache/\n*.docx\n.env\n.env.*\n",
+        "outputs/\noutputs_v2/\noutputs_demo/\noutputs_smoke/\noutputs_live/\n"
+        "htmlcov/\n.pytest_cache/\n*.docx\n.env\n.env.*\n",
         encoding="utf-8",
     )
     env_name = "CIA_LLM_" + "API_KEY"
@@ -63,6 +64,7 @@ def test_release_hygiene_audit_detects_secrets_outputs_and_bad_public_docs(tmp_p
     assert checks["no_tracked_local_outputs_or_binary_docs"]["passed"] is False
     assert checks["public_docs_keep_sandbox_authority_boundary"]["passed"] is False
     assert checks["public_docs_have_no_tool_signature_traces"]["passed"] is False
+    assert checks["gitignore_release_outputs_and_secrets"]["passed"] is True
 
 
 def test_release_hygiene_audit_cli_writes_artifacts(tmp_path):

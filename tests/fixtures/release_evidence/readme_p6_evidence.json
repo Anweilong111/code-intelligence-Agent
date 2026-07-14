@@ -1,0 +1,33 @@
+{
+  "onboarding": {
+    "status": "pass",
+    "case_count": 10,
+    "passed_check_count": 12,
+    "check_count": 12
+  },
+  "repair": {
+    "status": "pass",
+    "case_count": 30,
+    "metrics_report": {
+      "llm_direct_success_count": 5,
+      "llm_reflection_success_count": 4,
+      "llm_blocker_count": 21,
+      "llm_reflection_evidence_complete_count": 3
+    }
+  },
+  "catalog": {
+    "status": "pass",
+    "summary": {
+      "matched_case_count": 20,
+      "declared_case_count": 20
+    }
+  },
+  "audit": {
+    "status": "pass",
+    "summary": {
+      "passed_check_count": 24,
+      "check_count": 24
+    }
+  },
+  "fixture_scope": "Compact tracked projection of historical P6 controlled evidence."
+}

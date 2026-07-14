@@ -113,56 +113,27 @@ def test_v1_goal_completion_audit_cli_writes_artifacts(tmp_path):
 
 
 def test_current_workspace_v1_goal_completion_audit_passes():
+    evidence = json.loads(
+        (
+            ROOT
+            / "tests"
+            / "fixtures"
+            / "release_evidence"
+            / "v1_goal_completion_evidence.json"
+        ).read_text(encoding="utf-8")
+    )
     audit = build_v1_goal_completion_audit(
         root=ROOT,
         v1_summary=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "v1_evaluation_summary_complete_current"
-                / "v1_evaluation_summary.json"
-            ).read_text(encoding="utf-8")
+            (ROOT / "docs" / "baseline" / "baseline_metrics.json").read_text(
+                encoding="utf-8"
+            )
         ),
-        final_report=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "final_new_repo_iniconfig_current"
-                / "final_report.json"
-            ).read_text(encoding="utf-8")
-        ),
-        controller=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "final_new_repo_iniconfig_current"
-                / "github_repo_agent_controller.json"
-            ).read_text(encoding="utf-8")
-        ),
-        test_result=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "final_new_repo_iniconfig_current"
-                / "repository_test_execution_result.json"
-            ).read_text(encoding="utf-8")
-        ),
-        artifact_inventory=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "final_new_repo_iniconfig_current"
-                / "artifact_inventory.json"
-            ).read_text(encoding="utf-8")
-        ),
-        release_hygiene=json.loads(
-            (
-                ROOT
-                / "outputs_smoke"
-                / "release_hygiene_audit_current"
-                / "release_hygiene_audit.json"
-            ).read_text(encoding="utf-8")
-        ),
+        final_report=evidence["final_report"],
+        controller=evidence["controller"],
+        test_result=evidence["test_result"],
+        artifact_inventory=evidence["artifact_inventory"],
+        release_hygiene=evidence["release_hygiene"],
     )
 
     assert audit["status"] == "pass"

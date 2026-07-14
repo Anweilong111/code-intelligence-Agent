@@ -27,6 +27,8 @@ TOOL_TRACE_PATTERNS = [
 ]
 IGNORED_OUTPUT_PATTERNS = [
     "outputs/",
+    "outputs_v2/",
+    "outputs_demo/",
     "outputs_smoke/",
     "outputs_live/",
     "outputs_docx_render/",
@@ -41,6 +43,8 @@ IGNORED_FILE_SUFFIXES = [
 ]
 REQUIRED_GITIGNORE_PATTERNS = [
     "outputs/",
+    "outputs_v2/",
+    "outputs_demo/",
     "outputs_smoke/",
     "outputs_live/",
     "htmlcov/",
