@@ -61,7 +61,13 @@ def evaluate_patch_strategies(dataset_path: str | Path) -> dict[str, Any]:
     }
 
 
-def _evaluate_case_mode(case: dict[str, Any], *, mode: str) -> dict[str, Any]:
+def evaluate_patch_case(
+    case: dict[str, Any],
+    *,
+    mode: str,
+    overrides: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    settings = {**case, **_dict(overrides)}
     started = time.perf_counter()
     with tempfile.TemporaryDirectory(prefix="cia_patch_strategy_") as tmp_dir:
         root = Path(tmp_dir)
@@ -79,26 +85,33 @@ def _evaluate_case_mode(case: dict[str, Any], *, mode: str) -> dict[str, Any]:
         )
         if target is None:
             return _failed_run(case, mode=mode, reason="target_function_not_found")
-        localization = _localization_payload(case, target)
-        generator = _controlled_llm_generator(case) if mode != "rule" else None
+        localization = _localization_payload(case, parsed.functions, target)
+        generator = (
+            _controlled_llm_generator(
+                case,
+                top_k_functions=int(settings.get("top_k_functions", 5)),
+            )
+            if mode != "rule"
+            else None
+        )
         candidates = build_repository_test_patch_candidates(
             localization,
             repository_root=root,
-            candidate_limit=int(case.get("candidate_limit", 3)),
+            candidate_limit=int(settings.get("candidate_limit", 3)),
             patch_generation_mode=mode,
             llm_generator=generator,
         )
         validation = build_repository_test_patch_validation(
             candidates,
             repository_root=root,
-            validation_limit=int(case.get("validation_limit", 3)),
-            timeout=int(case.get("timeout_seconds", 10)),
+            validation_limit=int(settings.get("validation_limit", 3)),
+            timeout=int(settings.get("timeout_seconds", 10)),
             reflection_mode="llm" if mode != "rule" else "rule",
-            reflection_rounds=int(case.get("reflection_rounds", 1)),
-            reflection_width=int(case.get("reflection_width", 1)),
+            reflection_rounds=int(settings.get("reflection_rounds", 1)),
+            reflection_width=int(settings.get("reflection_width", 1)),
             refiner=generator,
             regression_pytest_args=[
-                str(item) for item in _list(case.get("regression_pytest_args"))
+                str(item) for item in _list(settings.get("regression_pytest_args"))
             ],
         )
     runtime_ms = round((time.perf_counter() - started) * 1000, 4)
@@ -168,8 +181,16 @@ def _evaluate_case_mode(case: dict[str, Any], *, mode: str) -> dict[str, Any]:
         "attribution_consistent": attribution_consistent,
         "expected": expected,
         "expectation_matched": expectation_matched,
+        "experiment_overrides": _dict(overrides),
+        "top_k_functions": int(settings.get("top_k_functions", 5)),
+        "candidate_limit": int(settings.get("candidate_limit", 3)),
+        "reflection_rounds": int(settings.get("reflection_rounds", 1)),
         "runtime_ms": runtime_ms,
     }
+
+
+def _evaluate_case_mode(case: dict[str, Any], *, mode: str) -> dict[str, Any]:
+    return evaluate_patch_case(case, mode=mode)
 
 
 def _materialize_case(root: Path, case: dict[str, Any]) -> None:
@@ -187,45 +208,100 @@ def _safe_case_path(root: Path, relative_path: str) -> Path:
     return root / Path(*pure.parts)
 
 
-def _localization_payload(case: dict[str, Any], target: Any) -> dict[str, Any]:
+def _localization_payload(
+    case: dict[str, Any],
+    functions: list[Any],
+    target: Any,
+) -> dict[str, Any]:
     nodeid = str(case.get("failing_nodeid") or "")
+    rankings = _controlled_localization_rankings(case, functions, target)
     return {
         "status": "pass",
-        "top_function": str(target.metadata.get("qualified_name") or target.name),
-        "top_score": 0.95,
+        "top_function": str(rankings[0]["function_name"]),
+        "top_score": float(rankings[0]["score"]),
         "dynamic_evidence_level": "failing_tests",
         "recommended_validation_command": f"python -m pytest -q {nodeid}",
         "dynamic_evidence_nodeids": {"controlled_failure": nodeid},
         "matched_failing_tests": [{"nodeid": nodeid}],
-        "rankings": [
-            {
-                "function_id": target.id,
-                "function_name": str(
-                    target.metadata.get("qualified_name") or target.name
-                ),
-                "file_path": target.file_path,
-                "start_line": target.start_line,
-                "end_line": target.end_line,
-                "score": 0.95,
-                "rank": 1,
-                "signals": {
-                    str(key): float(value)
-                    for key, value in _dict(case.get("signals")).items()
-                },
-                "reason": "controlled failing-test evidence",
-            }
-        ],
+        "rankings": rankings,
     }
 
 
-def _controlled_llm_generator(case: dict[str, Any]) -> LLMPatchGenerator:
-    responses = [
-        json.dumps({"fixed_source": str(case.get("llm_initial_source") or "")})
+def _controlled_localization_rankings(
+    case: dict[str, Any],
+    functions: list[Any],
+    target: Any,
+) -> list[dict[str, Any]]:
+    configured = [_dict(item) for item in _list(case.get("localization_rankings"))]
+    if not configured:
+        configured = [
+            {
+                "function": str(target.metadata.get("qualified_name") or target.name),
+                "score": 0.95,
+                "signals": _dict(case.get("signals")),
+            }
+        ]
+    function_by_name: dict[str, Any] = {}
+    for function in functions:
+        function_by_name[function.name] = function
+        function_by_name[
+            str(function.metadata.get("qualified_name") or function.name)
+        ] = function
+    rankings: list[dict[str, Any]] = []
+    for index, item in enumerate(configured, start=1):
+        function_name = str(item.get("function") or item.get("function_name") or "")
+        function = function_by_name.get(function_name)
+        if function is None:
+            raise ValueError(
+                f"Controlled localization function not found: {function_name}"
+            )
+        rankings.append(
+            {
+                "function_id": function.id,
+                "function_name": str(
+                    function.metadata.get("qualified_name") or function.name
+                ),
+                "file_path": function.file_path,
+                "start_line": function.start_line,
+                "end_line": function.end_line,
+                "score": float(item.get("score", max(0.0, 1.0 - index * 0.05))),
+                "rank": index,
+                "signals": {
+                    str(key): float(value)
+                    for key, value in _dict(item.get("signals") or case.get("signals")).items()
+                },
+                "reason": str(item.get("reason") or "controlled failing-test evidence"),
+            }
+        )
+    return rankings
+
+
+def _controlled_llm_generator(
+    case: dict[str, Any],
+    *,
+    top_k_functions: int = 5,
+) -> LLMPatchGenerator:
+    generation_sources = [
+        str(item) for item in _list(case.get("llm_generation_sources"))
     ]
+    initial_sources = [str(item) for item in _list(case.get("llm_initial_sources"))]
+    if generation_sources:
+        responses = [
+            json.dumps({"fixed_source": source}) for source in generation_sources
+        ]
+    elif initial_sources:
+        responses = [json.dumps({"fixed_sources": initial_sources})]
+    else:
+        responses = [
+            json.dumps({"fixed_source": str(case.get("llm_initial_source") or "")})
+        ]
     reflection_source = str(case.get("llm_reflection_source") or "")
     if reflection_source:
         responses.append(json.dumps({"fixed_source": reflection_source}))
-    return LLMPatchGenerator(SequenceLLMClient(responses))
+    return LLMPatchGenerator(
+        SequenceLLMClient(responses),
+        top_k_functions=max(1, int(top_k_functions)),
+    )
 
 
 def _attribution_consistent(best_patch: dict[str, Any]) -> bool:
@@ -322,6 +398,10 @@ def _failed_run(case: dict[str, Any], *, mode: str, reason: str) -> dict[str, An
         "attribution_consistent": True,
         "expected": _dict(_dict(case.get("expectations")).get(mode)),
         "expectation_matched": False,
+        "experiment_overrides": {},
+        "top_k_functions": 0,
+        "candidate_limit": 0,
+        "reflection_rounds": 0,
         "runtime_ms": 0.0,
     }
 

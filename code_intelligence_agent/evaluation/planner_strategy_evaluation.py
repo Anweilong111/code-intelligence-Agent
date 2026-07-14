@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from code_intelligence_agent.agents.action_registry import action_execution_policy
 from code_intelligence_agent.agents.controller import build_agent_controller_plan
 from code_intelligence_agent.agents.llm_client import (
     LLMRequestError,
@@ -100,6 +101,7 @@ def evaluate_planner_strategies(dataset_path: str | Path) -> dict[str, Any]:
                 _dict(case.get("expected_classification")).get(mode) or "none"
             )
             metrics = _dict(controller.get("planner_metrics"))
+            repeated_action = _selected_action_repeated(summary, selected)
             rows.append(
                 {
                     "case": str(case.get("name") or ""),
@@ -115,6 +117,10 @@ def evaluate_planner_strategies(dataset_path: str | Path) -> dict[str, Any]:
                     "invalid_action_count": int(
                         metrics.get("invalid_action_count", 0)
                     ),
+                    "selected_action_registered": bool(
+                        action_execution_policy(selected).get("registered")
+                    ),
+                    "repeated_action": repeated_action,
                     "action_count": 1,
                     "runtime_ms": runtime_ms,
                     "llm_total_tokens": int(metrics.get("llm_total_tokens", 0)),
@@ -235,6 +241,12 @@ def _aggregate_mode(rows: list[dict[str, Any]]) -> dict[str, Any]:
             sum(bool(row["task_completed"]) for row in rows), count
         ),
         "invalid_action_count": sum(row["invalid_action_count"] for row in rows),
+        "valid_action_rate": _ratio(
+            sum(bool(row["selected_action_registered"]) for row in rows), count
+        ),
+        "repeated_action_rate": _ratio(
+            sum(bool(row["repeated_action"]) for row in rows), count
+        ),
         "average_action_count": round(
             sum(row["action_count"] for row in rows) / count, 4
         ) if count else 0.0,
@@ -256,6 +268,17 @@ def _aggregate_mode(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _selected_action_repeated(summary: dict[str, Any], selected_action: str) -> bool:
+    current_stage = str(_dict(summary.get("analysis_readiness")).get("current_stage") or "")
+    for item_value in reversed(_list(summary.get("agent_auto_trace"))):
+        item = _dict(item_value)
+        if str(item.get("plan_selected_action") or "") != selected_action:
+            continue
+        previous_stage = str(item.get("observe_stage") or "")
+        return not previous_stage or previous_stage == current_stage
+    return False
+
+
 def render_planner_strategy_evaluation_markdown(payload: dict[str, Any]) -> str:
     lines = [
         "# Planner Strategy Evaluation",
@@ -267,8 +290,8 @@ def render_planner_strategy_evaluation_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Strategy Metrics",
         "",
-        "| Planner | Completion | Invalid Actions | Avg Actions | Blocker Accuracy | Avg Runtime (ms) | Tokens | Cost (USD) | Safety Rejects | Fallbacks |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Planner | Completion | Valid Action | Invalid Proposals | Repeated Action | Avg Actions | Blocker Accuracy | Avg Runtime (ms) | Tokens | Cost (USD) | Safety Rejects | Fallbacks |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for mode in PLANNER_MODES:
         metrics = _dict(_dict(payload.get("strategies")).get(mode))
@@ -278,7 +301,9 @@ def render_planner_strategy_evaluation_markdown(payload: dict[str, Any]) -> str:
                 [
                     mode,
                     f"{float(metrics.get('task_completion_rate', 0.0)):.4f}",
+                    f"{float(metrics.get('valid_action_rate', 0.0)):.4f}",
                     str(metrics.get("invalid_action_count", 0)),
+                    f"{float(metrics.get('repeated_action_rate', 0.0)):.4f}",
                     f"{float(metrics.get('average_action_count', 0.0)):.4f}",
                     f"{float(metrics.get('blocker_identification_accuracy', 0.0)):.4f}",
                     f"{float(metrics.get('average_runtime_ms', 0.0)):.4f}",

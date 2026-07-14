@@ -1,10 +1,13 @@
 import json
 from pathlib import Path
 
+from code_intelligence_agent.core.fault_localizer import ScoreWeights
 from code_intelligence_agent.evaluation.localization_split_evaluation import (
     LocalizationSplitEvaluator,
 )
 from code_intelligence_agent.evaluation.weight_search import (
+    WeightProfile,
+    evidence_v2_ablation_profiles,
     generate_evidence_v2_weight_profiles,
 )
 
@@ -72,12 +75,63 @@ def test_localization_split_evaluator_selects_only_on_validation(tmp_path):
         "graph_only",
         "dynamic_only",
         "llm_only",
+        "without_graph",
+        "without_dynamic",
         "fusion",
     }
     assert Path(report.artifacts["json"]).exists()
     markdown = Path(report.artifacts["markdown"]).read_text(encoding="utf-8")
     assert "Weight selection uses only the validation split" in markdown
     assert "LLM Signal Available: `false`" in markdown
+
+
+def test_evidence_v2_true_ablations_remove_only_the_target_signal():
+    coverage = ScoreWeights(
+        sbfl=0.2,
+        graph=0.3,
+        static=0.1,
+        semantic=0.05,
+        llm=0.05,
+        risk=0.05,
+        test_failure=0.15,
+        traceback=0.1,
+    )
+    static = ScoreWeights(
+        graph=0.4,
+        static=0.4,
+        semantic=0.1,
+        llm=0.05,
+        risk=0.05,
+    )
+    profiles = {
+        item.name: item
+        for item in evidence_v2_ablation_profiles(
+            WeightProfile("fusion", coverage, static)
+        )
+    }
+
+    assert profiles["without_graph"].coverage_weights == ScoreWeights(
+        **{**coverage.to_dict(), "graph": 0.0}
+    )
+    assert profiles["without_graph"].static_only_weights == ScoreWeights(
+        **{**static.to_dict(), "graph": 0.0}
+    )
+    assert profiles["without_dynamic"].coverage_weights == ScoreWeights(
+        **{
+            **coverage.to_dict(),
+            "sbfl": 0.0,
+            "test_failure": 0.0,
+            "traceback": 0.0,
+        }
+    )
+    assert profiles["without_dynamic"].static_only_weights == ScoreWeights(
+        **{
+            **static.to_dict(),
+            "sbfl": 0.0,
+            "test_failure": 0.0,
+            "traceback": 0.0,
+        }
+    )
 
 
 def _template_case(name, repo_path, upstream):

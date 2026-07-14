@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_phase7_system_ablation_controlled",
+  "protocol": {
+    "execution_mode": "deterministic_offline_controlled_fixtures",
+    "llm_provider": "controlled",
+    "llm_model": "sequence-fixture-v1",
+    "success_authority": "targeted_and_full_regression_pytest",
+    "claim_boundary": "Measures orchestration and budget sensitivity, not live-model repair quality."
+  },
+  "reflection_case": "semantic_parse_port_reflection",
+  "reflection_rounds": [0, 1],
+  "candidate_budgets": [1, 2, 3],
+  "top_k_context_sizes": [1, 3, 5],
+  "action_budgets": [1, 2, 3],
+  "candidate_budget_case": {
+    "name": "semantic_candidate_budget",
+    "category": "candidate_budget",
+    "target_function": "normalize",
+    "failing_nodeid": "tests/test_sample.py::test_normalize_none",
+    "signals": {
+      "semantic": 0.95,
+      "traceback": 0.9
+    },
+    "files": {
+      "sample.py": "def normalize(value):\n    return value.strip()\n",
+      "tests/test_sample.py": "from sample import normalize\n\ndef test_normalize_none():\n    assert normalize(None) == \"\"\n\ndef test_normalize_text():\n    assert normalize(\" value \" ) == \"value\"\n"
+    },
+    "llm_initial_sources": [
+      "def normalize(value):\n    if value == \"\":\n        return \"\"\n    return value.strip()\n",
+      "def normalize(value):\n    if value is None:\n        return \"none\"\n    return value.strip()\n",
+      "def normalize(value):\n    if value is None:\n        return \"\"\n    return value.strip()\n"
+    ],
+    "regression_pytest_args": ["tests"],
+    "reflection_rounds": 0
+  },
+  "top_k_context_case": {
+    "name": "semantic_top_k_context",
+    "category": "top_k_context",
+    "target_function": "normalize",
+    "failing_nodeid": "tests/test_sample.py::test_normalize_none",
+    "files": {
+      "sample.py": "def helper_identity(value):\n    return value\n\ndef helper_trim(value):\n    if isinstance(value, str):\n        return value.strip()\n    return value\n\ndef normalize(value):\n    return value.strip()\n",
+      "tests/test_sample.py": "from sample import normalize\n\ndef test_normalize_none():\n    assert normalize(None) == \"\"\n\ndef test_normalize_text():\n    assert normalize(\" value \" ) == \"value\"\n"
+    },
+    "localization_rankings": [
+      {
+        "function": "helper_identity",
+        "score": 0.97,
+        "signals": {"semantic": 0.7}
+      },
+      {
+        "function": "helper_trim",
+        "score": 0.96,
+        "signals": {"semantic": 0.75}
+      },
+      {
+        "function": "normalize",
+        "score": 0.95,
+        "signals": {"semantic": 0.95, "traceback": 0.9}
+      }
+    ],
+    "llm_generation_sources": [
+      "",
+      "",
+      "def normalize(value):\n    if value is None:\n        return \"\"\n    return value.strip()\n"
+    ],
+    "regression_pytest_args": ["tests"],
+    "candidate_limit": 1,
+    "validation_limit": 1,
+    "reflection_rounds": 0
+  },
+  "action_budget_case": {
+    "name": "three_step_repair_evaluation",
+    "planner_mode": "rule",
+    "required_action_sequence": [
+      "generate_llm_patch_candidates",
+      "run_patch_reflection_loop",
+      "run_search_and_ablation_evaluation"
+    ],
+    "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry"
+  }
+}

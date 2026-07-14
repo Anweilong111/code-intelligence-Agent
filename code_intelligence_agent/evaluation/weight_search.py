@@ -313,6 +313,11 @@ def evidence_v2_ablation_profiles(
         llm=0.0,
         risk=0.0,
     )
+    fusion = fusion_profile or WeightProfile(
+        "fusion",
+        DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
+        DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS,
+    )
     return [
         WeightProfile("rule_only", replace(zero, static=1.0), replace(zero, static=1.0)),
         WeightProfile("graph_only", replace(zero, graph=1.0), replace(zero, graph=1.0)),
@@ -322,12 +327,27 @@ def evidence_v2_ablation_profiles(
             zero,
         ),
         WeightProfile("llm_only", replace(zero, llm=1.0), replace(zero, llm=1.0)),
-        fusion_profile
-        or WeightProfile(
-            "fusion",
-            DEFAULT_EVIDENCE_V2_COVERAGE_WEIGHTS,
-            DEFAULT_EVIDENCE_V2_STATIC_ONLY_WEIGHTS,
+        WeightProfile(
+            "without_graph",
+            replace(fusion.coverage_weights, graph=0.0),
+            replace(fusion.static_only_weights, graph=0.0),
         ),
+        WeightProfile(
+            "without_dynamic",
+            replace(
+                fusion.coverage_weights,
+                sbfl=0.0,
+                test_failure=0.0,
+                traceback=0.0,
+            ),
+            replace(
+                fusion.static_only_weights,
+                sbfl=0.0,
+                test_failure=0.0,
+                traceback=0.0,
+            ),
+        ),
+        fusion,
     ]
 
 

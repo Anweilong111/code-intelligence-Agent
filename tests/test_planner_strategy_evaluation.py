@@ -30,13 +30,17 @@ def test_planner_strategy_evaluation_covers_rule_llm_and_hybrid_metrics():
     hybrid = payload["strategies"]["hybrid"]
     assert rule["task_completion_rate"] == 1.0
     assert rule["invalid_action_count"] == 0
+    assert rule["valid_action_rate"] == 1.0
+    assert rule["repeated_action_rate"] == 0.0
     assert rule["llm_total_tokens"] == 0
     assert rule["llm_estimated_cost_usd"] == 0.0
     assert llm["task_completion_rate"] == 1.0
+    assert llm["valid_action_rate"] == 1.0
     assert llm["invalid_action_count"] == 2
     assert llm["safety_gate_rejection_count"] == 8
     assert llm["fallback_count"] == 11
     assert hybrid["task_completion_rate"] == 1.0
+    assert hybrid["valid_action_rate"] == 1.0
     assert hybrid["invalid_action_count"] == 2
     assert hybrid["safety_gate_rejection_count"] == 9
     assert hybrid["fallback_count"] == 12
