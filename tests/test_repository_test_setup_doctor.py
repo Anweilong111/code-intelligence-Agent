@@ -98,6 +98,29 @@ def test_repository_test_setup_doctor_blocks_setup_install_failure():
     assert "requirements path" in payload["next_action"]
 
 
+def test_repository_test_setup_doctor_does_not_treat_none_sentinel_as_failure():
+    payload = build_repository_test_setup_doctor(
+        repository_test_environment_setup={
+            "status": "pass",
+            "reason": "setup_plan_built",
+            "install_command_supported": True,
+        },
+        repository_test_environment_setup_result={
+            "status": "skipped",
+            "reason": "execution_disabled",
+            "executed": False,
+            "install_failure_category": "none",
+        },
+    )
+    setup_check = next(
+        check for check in payload["checks"] if check["name"] == "environment_setup"
+    )
+
+    assert setup_check["status"] == "warning"
+    assert setup_check.get("blocker", "") != "setup_install_failure:none"
+    assert payload["blocker"] != "setup_install_failure:none"
+
+
 def test_repository_test_setup_doctor_passes_with_usable_dynamic_evidence():
     payload = build_repository_test_setup_doctor(
         repository_profile={

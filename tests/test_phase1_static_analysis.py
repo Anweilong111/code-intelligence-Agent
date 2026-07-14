@@ -2235,3 +2235,24 @@ def test_detector_ranks_buggy_functions_above_clean_helpers():
     assert by_name["average_value"].final_score > clean_helper.final_score
     assert by_name["iterator_average.count_items"].final_score > clean_helper.final_score
     assert clean_helper.final_score < ranked[0].final_score
+
+
+def test_repo_parser_keeps_src_package_named_build_and_skips_root_artifact(tmp_path):
+    package = tmp_path / "src" / "build"
+    package.mkdir(parents=True)
+    (package / "core.py").write_text(
+        "def build_project():\n    return 'ok'\n",
+        encoding="utf-8",
+    )
+    artifact = tmp_path / "build"
+    artifact.mkdir()
+    (artifact / "generated.py").write_text(
+        "def generated():\n    return 'artifact'\n",
+        encoding="utf-8",
+    )
+
+    parsed = RepoParser().parse(tmp_path)
+    names = {function.name for function in parsed.functions}
+
+    assert "build_project" in names
+    assert "generated" not in names

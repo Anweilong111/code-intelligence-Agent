@@ -6,6 +6,8 @@ from pathlib import Path
 from pathlib import PurePosixPath
 from typing import Any
 
+from code_intelligence_agent.core.repo_parser import is_default_excluded_repo_path
+
 
 AUXILIARY_PACKAGE_ROOTS = {
     "bench",
@@ -46,6 +48,10 @@ def build_github_repository_profile(
         for source in imported_sources
     ]
     imported_paths = [path for path in imported_paths if path]
+    discovered_python_paths = [
+        path for path in raw_paths if _is_repository_python_path(path)
+    ]
+    repository_python_paths = discovered_python_paths or imported_paths
     sampled = sampled_sources or []
     sampled_directories = {_source_directory(source) for source in sampled}
     extension_counts = Counter(_extension(path) for path in raw_paths)
@@ -55,18 +61,22 @@ def build_github_repository_profile(
         if str(row.get("status", "")) == "skipped"
     )
     directory_counts = Counter(_directory(path) for path in imported_paths)
-    test_source_paths = [path for path in imported_paths if _is_test_path(path)]
+    test_source_paths = [
+        path for path in repository_python_paths if _is_test_path(path)
+    ]
     test_content_profile = _test_content_profile(
         imported_sources,
         test_source_paths,
     )
     config_files = _project_config_files(raw_paths)
-    package_roots = _package_roots(imported_paths)
-    src_layout_packages = _src_layout_packages(imported_paths)
+    package_roots = _package_roots(repository_python_paths)
+    src_layout_packages = _src_layout_packages(repository_python_paths)
     recommended_target_prefix = _recommended_target_prefix(
         package_roots=package_roots,
         src_layout_packages=src_layout_packages,
     )
+    if len(_nested_project_config_roots(config_files)) >= 2:
+        recommended_target_prefix = ""
     test_frameworks = _test_frameworks(
         raw_paths=raw_paths,
         test_source_paths=test_source_paths,
@@ -87,7 +97,7 @@ def build_github_repository_profile(
     )
     dependency_profile = _dependency_manager_profile(config_files)
     layout_profile = _layout_profile(
-        imported_paths=imported_paths,
+        imported_paths=repository_python_paths,
         config_files=config_files,
         test_source_paths=test_source_paths,
         package_roots=package_roots,
@@ -119,6 +129,20 @@ def build_github_repository_profile(
         _int(import_report.get("source_count", 0)),
         max(1, discovery_items),
     )
+    discovered_python_source_ratio = _ratio(
+        len(discovered_python_paths),
+        max(1, discovery_items),
+    )
+    scope_status, scope_reason, scope_blocker = _repository_scope(
+        discovered_python_source_count=len(discovered_python_paths),
+        imported_source_count=_int(import_report.get("source_count", 0)),
+    )
+    source_roots = [
+        str(item)
+        for item in _list(layout_profile.get("application_roots"))
+        if str(item)
+    ]
+    test_roots = _test_roots(test_source_paths)
     repository_doctor = _repository_doctor(
         discovery_item_count=discovery_items,
         imported_source_count=_int(import_report.get("source_count", 0)),
@@ -133,8 +157,17 @@ def build_github_repository_profile(
         "imported_source_count": _int(import_report.get("source_count", 0)),
         "skipped_source_count": _int(import_report.get("skipped_count", 0)),
         "python_source_ratio": python_source_ratio,
+        "discovered_python_source_count": len(discovered_python_paths),
+        "discovered_python_source_ratio": discovered_python_source_ratio,
+        "scope_status": scope_status,
+        "scope_reason": scope_reason,
+        "scope_blocker": scope_blocker,
         "test_source_count": len(test_source_paths),
         "test_source_paths": test_source_paths[:20],
+        "source_roots": source_roots,
+        "source_root_count": len(source_roots),
+        "test_roots": test_roots,
+        "test_root_count": len(test_roots),
         "package_init_count": sum(
             1 for path in imported_paths if PurePosixPath(path).name == "__init__.py"
         ),
@@ -180,6 +213,8 @@ def build_github_repository_profile(
         "layout_profile": layout_profile,
         "layout_type": str(layout_profile.get("layout_type") or ""),
         "monorepo_candidate": bool(layout_profile.get("monorepo_candidate", False)),
+        "multi_package": str(layout_profile.get("layout_type") or "")
+        in {"multi_package", "multi_package_src_layout", "monorepo_candidate"},
         "recommended_analysis_roots": [
             str(item) for item in _list(layout_profile.get("recommended_analysis_roots"))
         ],
@@ -200,8 +235,21 @@ def render_github_repository_profile_markdown(profile: dict[str, Any]) -> str:
         "",
         f"- Discovery Items: {_int(profile.get('discovery_item_count', 0))}",
         f"- Imported Sources: {_int(profile.get('imported_source_count', 0))}",
+        f"- Discovered Python Sources: {_int(profile.get('discovered_python_source_count', 0))}",
         f"- Python Source Ratio: {_float(profile.get('python_source_ratio', 0.0)):.4f}",
+        f"- Discovery Python Ratio: {_float(profile.get('discovered_python_source_ratio', 0.0)):.4f}",
+        f"- Scope Status: `{_markdown_cell(profile.get('scope_status') or 'unknown')}`",
+        f"- Scope Reason: `{_markdown_cell(profile.get('scope_reason') or 'unknown')}`",
+        f"- Scope Blocker: `{_markdown_cell(profile.get('scope_blocker') or 'none')}`",
         f"- Test Sources: {_int(profile.get('test_source_count', 0))}",
+        (
+            "- Source Roots: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(profile.get('source_roots'))) or 'none')}"
+        ),
+        (
+            "- Test Roots: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(profile.get('test_roots'))) or 'none')}"
+        ),
         f"- Project Config Files: {_int(profile.get('project_config_count', 0))}",
         (
             "- Test Framework Signals: "
@@ -1405,6 +1453,11 @@ def _nested_project_config_roots(config_files: list[str]) -> list[str]:
         parts = pure.parts
         if len(parts) <= 1 or parts[0] == ".github":
             continue
+        if any(
+            part.lower() in AUXILIARY_PACKAGE_ROOTS | {"fixture", "fixtures"}
+            for part in parts[:-1]
+        ):
+            continue
         parent = str(pure.parent)
         if parent and parent != ".":
             roots.append(parent)
@@ -1419,6 +1472,8 @@ def _recommended_analysis_roots(
     src_layout_packages: list[str],
     non_aux_package_roots: list[str],
 ) -> list[str]:
+    if len(nested_config_roots) >= 2:
+        return nested_config_roots[:5]
     if recommended_target_prefix:
         if src_layout_packages and recommended_target_prefix in src_layout_packages:
             return [f"src/{recommended_target_prefix}"]
@@ -1501,6 +1556,57 @@ def _is_test_path(path_text: str) -> bool:
         or name.startswith("test_")
         or name.endswith("_test.py")
     )
+
+
+def _is_repository_python_path(path_text: str) -> bool:
+    normalized = _clean_path(path_text)
+    pure = PurePosixPath(normalized)
+    if pure.suffix.lower() not in {".py", ".pyi"}:
+        return False
+    return not is_default_excluded_repo_path(pure.parts)
+
+
+def _test_roots(test_source_paths: list[str]) -> list[str]:
+    roots: list[str] = []
+    for path in test_source_paths:
+        pure = PurePosixPath(_clean_path(path))
+        parts = list(pure.parts)
+        test_index = next(
+            (
+                index
+                for index, part in enumerate(parts[:-1])
+                if part.lower() in {"test", "tests"}
+            ),
+            None,
+        )
+        if test_index is not None:
+            root = str(PurePosixPath(*parts[: test_index + 1]))
+        else:
+            parent = str(pure.parent)
+            root = "." if parent in {"", "."} else parent
+        if root not in roots:
+            roots.append(root)
+    return sorted(roots)[:20]
+
+
+def _repository_scope(
+    *,
+    discovered_python_source_count: int,
+    imported_source_count: int,
+) -> tuple[str, str, str]:
+    if discovered_python_source_count <= 0:
+        return (
+            "unsupported_scope",
+            "no_python_sources_discovered",
+            "unsupported_scope",
+        )
+    if imported_source_count <= 0:
+        return (
+            "partial",
+            "python_sources_discovered_but_none_selected",
+            "source_selection:no_python_sources_imported",
+        )
+    return "supported", "python_sources_discovered_and_imported", ""
 
 
 def _clean_path(value: str) -> str:

@@ -6,24 +6,13 @@ import os
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from code_intelligence_agent.core.repo_parser import (
+    DEFAULT_EXCLUDED_DIRS as PARSER_EXCLUDED_DIRS,
+    is_default_excluded_repo_path,
+)
 
-DEFAULT_EXCLUDED_DIRS = {
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pytest_cache",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pycache__",
-    "build",
-    "dist",
-    "env",
-    "node_modules",
-    "venv",
-}
+
+DEFAULT_EXCLUDED_DIRS = set(PARSER_EXCLUDED_DIRS)
 
 DEFAULT_HASH_EXTENSIONS = {
     ".cfg",
@@ -47,7 +36,8 @@ def build_repository_checkout_discovery(
     excluded_dirs: set[str] | None = None,
 ) -> dict[str, Any]:
     root = Path(checkout_path).resolve()
-    ignored_dirs = set(excluded_dirs or DEFAULT_EXCLUDED_DIRS)
+    using_default_exclusions = excluded_dirs is None
+    ignored_dirs = set(DEFAULT_EXCLUDED_DIRS if excluded_dirs is None else excluded_dirs)
     files: list[dict[str, Any]] = []
     scanned_file_count = 0
     skipped_dir_count = 0
@@ -80,13 +70,22 @@ def build_repository_checkout_discovery(
 
     for current_root, dir_names, file_names in os.walk(root):
         original_dir_names = sorted(dir_names)
+        current = Path(current_root)
+        try:
+            current_parts = current.resolve().relative_to(root).parts
+        except ValueError:
+            current_parts = ()
         dir_names[:] = [
             name
             for name in original_dir_names
-            if name not in ignored_dirs and not _is_hidden_runtime_dir(name)
+            if not _is_hidden_runtime_dir(name)
+            and not (
+                is_default_excluded_repo_path((*current_parts, name))
+                if using_default_exclusions
+                else name in ignored_dirs
+            )
         ]
         skipped_dir_count += len(original_dir_names) - len(dir_names)
-        current = Path(current_root)
         for file_name in sorted(file_names):
             path = current / file_name
             if path.is_symlink() or not path.is_file():

@@ -63,3 +63,19 @@ def test_build_repository_checkout_discovery_reports_missing_checkout():
 
     assert payload["discovery"]["reason"] == "checkout_path_missing"
     assert payload["files"] == []
+
+
+def test_checkout_discovery_keeps_package_named_build_under_src(tmp_path):
+    package = tmp_path / "src" / "build"
+    package.mkdir(parents=True)
+    (package / "core.py").write_text("def build_project():\n    return 1\n", encoding="utf-8")
+    generated = tmp_path / "build"
+    generated.mkdir()
+    (generated / "generated.py").write_text("GENERATED = True\n", encoding="utf-8")
+
+    payload = build_repository_checkout_discovery(tmp_path)
+    paths = {str(item["path"]) for item in payload["files"]}
+
+    assert "src/build/core.py" in paths
+    assert "build/generated.py" not in paths
+    assert payload["discovery"]["skipped_dir_count"] == 1

@@ -104,30 +104,30 @@ def test_github_repo_agent_runs_smoke_preset_for_repo_url():
         ] == 3
         assert report.summary[
             "repository_test_setup_doctor_warning_check_count"
-        ] == 2
+        ] == 3
         assert report.summary[
             "repository_test_setup_doctor_blocked_check_count"
-        ] == 3
+        ] == 2
         assert report.summary[
             "repository_test_setup_doctor_skipped_check_count"
         ] == 0
         assert report.summary[
             "repository_test_setup_doctor_check_status_counts"
         ] == {
-            "blocked": 3,
+            "blocked": 2,
             "pass": 3,
-            "warning": 2,
+            "warning": 3,
         }
         assert report.summary[
             "repository_test_setup_doctor_blocked_check_names"
         ] == [
             "full_repository_checkout",
-            "environment_setup",
             "execution_plan",
         ]
         assert report.summary[
             "repository_test_setup_doctor_warning_check_names"
         ] == [
+            "environment_setup",
             "execution_result",
             "dynamic_evidence",
         ]
@@ -1259,7 +1259,10 @@ def test_github_repo_agent_cli_writes_report_for_github_api_error():
         assert agent_saved["summary"]["github_error"]["rate_limit_reset"] == "1729"
         assert (output_dir / "github_repo_agent.md").exists()
         assert "## GitHub Error" in markdown
-        assert opener.urls == ["https://api.github.com/repos/example/project"]
+        assert opener.urls == [
+            "https://api.github.com/repos/example/project",
+            "https://codeload.github.com/example/project/zip/HEAD",
+        ]
 
 
 def test_github_repo_agent_forwards_phase3_repository_test_options(monkeypatch):
@@ -1581,6 +1584,8 @@ def test_run_onboarding_tree_uses_checkout_seed_after_rate_limit_when_requested(
     assert discovery["api_rate_limit_status_code"] == 403
     assert discovery["api_rate_limit_remaining"] == "0"
     assert discovery["api_rate_limit_reset"] == "1729"
+    assert discovery["api_rate_limit_checkout_mode"] == "test_execution"
+    assert discovery["api_rate_limit_original_checkout_requested"] is True
     assert captured["kwargs"]["source"] == (
         "github-api-rate-limit-checkout:example/project@develop"
     )
@@ -1598,6 +1603,86 @@ def test_run_onboarding_tree_uses_checkout_seed_after_rate_limit_when_requested(
     assert summary["discovery_api_rate_limit_checkout_fallback"] is True
     assert summary["discovery_api_rate_limit_status_code"] == 403
     assert summary["discovery_api_rate_limit_remaining"] == "0"
+
+
+def test_run_onboarding_tree_uses_source_only_checkout_after_rate_limit(
+    tmp_path,
+    monkeypatch,
+):
+    output_dir = tmp_path / "repo_agent"
+    output_dir.mkdir()
+    captured = {}
+
+    def fake_onboard_tree(*args, **kwargs):
+        raise GitHubAPIError(
+            "GitHub API request failed with HTTP 403: rate limit exceeded",
+            status_code=403,
+            rate_limit_remaining="0",
+            rate_limit_reset="1729",
+            response_body="API rate limit exceeded",
+        )
+
+    def fake_onboard_from_discovery(discovery_payload, output_root, **kwargs):
+        captured["discovery_payload"] = discovery_payload
+        captured["output_root"] = output_root
+        captured["kwargs"] = kwargs
+        return _minimal_onboarding_report(
+            output_root,
+            preset=kwargs["preset"],
+            source=kwargs["source"],
+            discovery_metadata=discovery_payload["discovery"],
+        )
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.evaluation.github_repo_agent.onboard_tree",
+        fake_onboard_tree,
+    )
+    monkeypatch.setattr(
+        "code_intelligence_agent.evaluation.github_repo_agent.onboard_from_discovery",
+        fake_onboard_from_discovery,
+    )
+
+    report = _run_onboarding_tree(
+        "example",
+        "project",
+        "develop",
+        output_dir,
+        token=None,
+        recursive=True,
+        api_base_url="https://api.github.com",
+        timeout=20,
+        opener=object(),
+        preset="mining",
+        source_cache_dir=tmp_path / "cache",
+        checkout_repository_tests=False,
+        run_repository_test_command=True,
+        run_repository_test_environment_setup=True,
+        run_repository_test_retry=True,
+        run_repository_test_retry_prerequisites=True,
+        auto_repository_test_retry=True,
+    )
+
+    discovery = captured["discovery_payload"]["discovery"]
+    kwargs = captured["kwargs"]
+    assert captured["output_root"] == output_dir
+    assert discovery["api_rate_limit_checkout_mode"] == "source_only"
+    assert discovery["api_rate_limit_original_checkout_requested"] is False
+    assert kwargs["source"] == (
+        "github-api-rate-limit-source-checkout:example/project@develop"
+    )
+    assert kwargs["checkout_repository_tests"] is True
+    assert kwargs["run_repository_test_command"] is False
+    assert kwargs["run_repository_test_environment_setup"] is False
+    assert kwargs["run_repository_test_retry"] is False
+    assert kwargs["run_repository_test_retry_prerequisites"] is False
+    assert kwargs["auto_repository_test_retry"] is False
+
+    summary = _agent_summary(report.to_dict())
+    assert summary["discovery_api_rate_limit_checkout_fallback"] is True
+    assert summary["discovery_api_rate_limit_checkout_mode"] == "source_only"
+    assert (
+        summary["discovery_api_rate_limit_original_checkout_requested"] is False
+    )
 
 
 def _minimal_onboarding_report(

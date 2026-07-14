@@ -1350,6 +1350,27 @@ def test_intelligence_suite_metric_snapshot_reads_environment_artifact(tmp_path)
     assert metrics["repository_test_dynamic_traceback_frames"] == 2
 
 
+def test_intelligence_suite_metric_snapshot_carries_test_failure_category(tmp_path):
+    execution_result_path = tmp_path / "repository_test_execution_result.json"
+    execution_result_path.write_text(
+        json.dumps(
+            {
+                "status": "fail",
+                "executed": True,
+                "failure_category": "missing_dependency",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    metrics = _suite_metric_snapshot(
+        {"repository_test_execution_result_json": str(execution_result_path)}
+    )
+
+    assert metrics["planned_repository_test_result_executed"] is True
+    assert metrics["planned_repository_test_failure_category"] == "missing_dependency"
+
+
 def test_intelligence_suite_summarizes_repository_test_counts():
     summary = _suite_summary(
         [

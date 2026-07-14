@@ -13,7 +13,12 @@ from typing import Any
 
 from code_intelligence_agent.agents.bug_detector import RuleBasedBugDetector
 from code_intelligence_agent.core.models import BugFinding, CodeEntity, RepoParseResult
-from code_intelligence_agent.core.repo_parser import DEFAULT_EXCLUDED_DIRS, RepoParser
+from code_intelligence_agent.core.repo_parser import (
+    ALWAYS_EXCLUDED_DIRS,
+    ROOT_ONLY_EXCLUDED_DIRS,
+    RepoParser,
+    is_default_excluded_repo_path,
+)
 from code_intelligence_agent.core.source_normalization import normalize_function_source
 from code_intelligence_agent.evaluation.repository_test_dynamic_evidence import (
     build_repository_test_dynamic_evidence,
@@ -586,7 +591,11 @@ def _resolve_analysis_path(
                 resolved_files.append(resolved)
         elif resolved.is_dir():
             for file_path in sorted(resolved.rglob("*.py")):
-                if any(part in DEFAULT_EXCLUDED_DIRS for part in file_path.parts):
+                try:
+                    relative_parts = file_path.resolve().relative_to(root_resolved).parts
+                except ValueError:
+                    continue
+                if is_default_excluded_repo_path(relative_parts):
                     continue
                 key = file_path.resolve().as_posix()
                 if key not in seen:
@@ -2581,7 +2590,7 @@ def _run_overlay_test(
 def _copy_repository(source: Path, destination: Path) -> None:
     if destination.exists():
         shutil.rmtree(destination)
-    ignored_names = set(DEFAULT_EXCLUDED_DIRS) | {
+    ignored_names = set(ALWAYS_EXCLUDED_DIRS) | {
         ".coverage",
         ".nox",
         ".ruff_cache",
@@ -2600,6 +2609,8 @@ def _copy_repository(source: Path, destination: Path) -> None:
     def ignore(dir_path: str, names: list[str]) -> set[str]:
         current = Path(dir_path).resolve()
         ignored = {name for name in names if name in ignored_names}
+        if current == source_root:
+            ignored.update(name for name in names if name in ROOT_ONLY_EXCLUDED_DIRS)
         for name in names:
             child = (current / name).resolve()
             if child in ignored_paths:

@@ -6171,7 +6171,15 @@ def test_github_repo_intelligence_cli_writes_blocked_artifacts_without_python_so
         assert printed["status_source"] == "analysis_readiness"
         assert printed["upstream_agent_status"] == "fail"
         assert printed["static_intelligence_status"] == "blocked"
-        assert printed["static_intelligence_reason"] == "no_imported_sources"
+        assert printed["static_intelligence_reason"] == (
+            "no_python_sources_discovered"
+        )
+        assert printed["repository_scope_status"] == "unsupported_scope"
+        assert printed["repository_scope_blocker"] == "unsupported_scope"
+        assert printed["repository_compatibility_status"] == "blocked"
+        assert printed["repository_compatibility_termination_reason"] == (
+            "unsupported_scope"
+        )
         assert printed["imported_source_count"] == 0
         assert printed["selected_source_count"] == 0
         readiness = printed["analysis_readiness"]

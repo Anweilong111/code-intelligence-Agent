@@ -6,6 +6,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -16,12 +17,29 @@ def plan_repository_test_environment_setup(
     output_dir: str | Path,
     repository_root: str | Path | None = None,
     venv_name: str = ".repo_test_venv",
+    allow_high_risk_install: bool = False,
 ) -> dict[str, Any]:
     environment = _dict(repository_test_environment)
     install_command = str(environment.get("recommended_install_command") or "").strip()
     root_value = repository_root or environment.get("repository_root") or None
     root_path = Path(root_value) if root_value else None
     root_present = bool(root_path and root_path.exists() and root_path.is_dir())
+    compatibility = _dict(environment.get("repository_compatibility"))
+    install_policy = _dict(compatibility.get("install_policy"))
+    if not install_policy:
+        install_policy = _fallback_install_policy(
+            environment,
+            repository_root=root_path if root_present else None,
+        )
+    install_risk = str(install_policy.get("risk") or "unknown")
+    dependency_access_blockers = [
+        str(item)
+        for item in _list(environment.get("dependency_access_blockers"))
+        if str(item)
+    ]
+    python_compatibility_status = str(
+        environment.get("python_compatibility_status") or "unknown"
+    )
     output_root = Path(output_dir)
     venv_path = output_root / venv_name
     venv_python = _venv_python_path(venv_path)
@@ -71,6 +89,15 @@ def plan_repository_test_environment_setup(
     elif not install_args:
         status = "warning"
         reason = "unsupported_install_command"
+    elif python_compatibility_status == "incompatible":
+        status = "warning"
+        reason = "python_version_incompatible"
+    elif dependency_access_blockers:
+        status = "warning"
+        reason = "dependency_access_blocker"
+    elif install_risk == "high" and not allow_high_risk_install:
+        status = "warning"
+        reason = "high_risk_install_requires_authorization"
     elif root_required and not root_present:
         status = "warning"
         reason = "repository_root_missing_for_install"
@@ -89,6 +116,19 @@ def plan_repository_test_environment_setup(
         "install_command_args": install_args,
         "install_command_reason": str(environment.get("install_command_reason") or ""),
         "install_command_translation_reason": install_reason,
+        "install_risk": install_risk,
+        "install_risk_reasons": [
+            str(item) for item in _list(install_policy.get("reasons"))
+        ],
+        "install_requires_explicit_authorization": bool(
+            install_policy.get("requires_explicit_authorization", False)
+        ),
+        "high_risk_install_authorized": bool(allow_high_risk_install),
+        "install_auto_execution_allowed": bool(
+            install_policy.get("auto_execution_allowed", False)
+        ),
+        "python_compatibility_status": python_compatibility_status,
+        "dependency_access_blockers": dependency_access_blockers,
         "install_command_augmented": bool(
             additional_runner_modules
             or pytest_plugin_specs
@@ -147,6 +187,15 @@ def render_repository_test_environment_setup_markdown(payload: dict[str, Any]) -
         (
             "- Install Translation Reason: "
             f"`{_markdown_cell(payload.get('install_command_translation_reason') or 'none')}`"
+        ),
+        f"- Install Risk: `{_markdown_cell(payload.get('install_risk') or 'unknown')}`",
+        (
+            "- High Risk Install Authorized: "
+            f"{str(bool(payload.get('high_risk_install_authorized'))).lower()}"
+        ),
+        (
+            "- Install Requires Explicit Authorization: "
+            f"{str(bool(payload.get('install_requires_explicit_authorization'))).lower()}"
         ),
         f"- Install Command Augmented: {str(bool(payload.get('install_command_augmented', False))).lower()}",
         (
@@ -253,6 +302,7 @@ def execute_repository_test_environment_setup(
     enabled: bool = False,
     timeout: int = 120,
     runner=None,
+    allow_high_risk_install: bool = False,
 ) -> dict[str, Any]:
     plan = _dict(setup_plan)
     create_args = [str(item) for item in _list(plan.get("venv_create_args"))]
@@ -268,7 +318,28 @@ def execute_repository_test_environment_setup(
                 "only the setup plan was written."
             ),
         )
-    if str(plan.get("status") or "") != "pass":
+    if (
+        str(plan.get("install_risk") or "") == "high"
+        and not (
+            allow_high_risk_install
+            or bool(plan.get("high_risk_install_authorized", False))
+        )
+    ):
+        return _execution_skipped(
+            plan,
+            reason="high_risk_install_requires_authorization",
+            message=(
+                "Repository dependency setup contains a high-risk build hook and "
+                "was not explicitly authorized."
+            ),
+        )
+    plan_ready = str(plan.get("status") or "") == "pass"
+    if (
+        str(plan.get("reason") or "") == "high_risk_install_requires_authorization"
+        and allow_high_risk_install
+    ):
+        plan_ready = True
+    if not plan_ready:
         return _execution_skipped(
             plan,
             reason="setup_plan_not_ready",
@@ -677,6 +748,60 @@ def _root_project_metadata_file(value: str) -> str:
     return text if text in {"pyproject.toml", "setup.py", "setup.cfg"} else ""
 
 
+def _fallback_install_policy(
+    environment: dict[str, Any],
+    *,
+    repository_root: Path | None,
+) -> dict[str, Any]:
+    config_files = [
+        str(item).replace("\\", "/").strip("/")
+        for field in ("dependency_files", "project_config_files")
+        for item in _list(environment.get(field))
+        if str(item)
+    ]
+    root_names = {Path(path).name for path in config_files if "/" not in path}
+    risk = "low"
+    reasons = ["Only isolated runner installation was inferred."]
+    if "setup.py" in root_names and "pyproject.toml" not in root_names:
+        risk = "high"
+        reasons = [
+            "Legacy setup.py can execute arbitrary repository code during installation."
+        ]
+    elif "pyproject.toml" in root_names:
+        risk = "medium"
+        reasons = [
+            "Project installation invokes an isolated packaging backend and may access the network."
+        ]
+        if repository_root is not None:
+            path = repository_root / "pyproject.toml"
+            try:
+                data = tomllib.loads(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError):
+                data = {}
+                if path.is_file():
+                    risk = "high"
+                    reasons = [
+                        "pyproject.toml could not be parsed, so build-hook behavior is unknown."
+                    ]
+            build_system = _dict(data.get("build-system"))
+            if _list(build_system.get("backend-path")):
+                risk = "high"
+                reasons = [
+                    "pyproject.toml uses a repository-local backend-path build hook."
+                ]
+    elif "setup.cfg" in root_names or any(
+        name.startswith("requirements") for name in root_names
+    ):
+        risk = "medium"
+        reasons = ["Dependency installation may download or build third-party packages."]
+    return {
+        "risk": risk,
+        "reasons": reasons,
+        "requires_explicit_authorization": risk == "high",
+        "auto_execution_allowed": risk != "high",
+    }
+
+
 def _pip_install_mentions_local_project(args: list[str]) -> bool:
     for index, item in enumerate(args):
         if item in {"-e", "--editable"} and index + 1 < len(args):
@@ -991,6 +1116,10 @@ def _setup_execution_skipped_actions(reason: str) -> list[str]:
         return ["Inspect repository_test_environment_setup.md and resolve warnings first."]
     if reason == "repository_root_missing":
         return ["Provide --repository-test-root or --checkout-repository-tests."]
+    if reason == "high_risk_install_requires_authorization":
+        return [
+            "Review the repository build hook, then explicitly authorize the high-risk install only if it is trusted."
+        ]
     return []
 
 
@@ -1041,10 +1170,22 @@ def _next_actions(
     if status == "skipped" and reason == "no_install_command":
         return ["No dependency setup command is required before planned test execution."]
     actions = [f"Create the isolated test environment with: {create_command}"]
-    if install_args:
+    if install_args and reason != "high_risk_install_requires_authorization":
         actions.append(
             "Install repository test dependencies inside the isolated environment with: "
             + shlex.join(str(item) for item in install_args)
+        )
+    if status == "warning" and reason == "high_risk_install_requires_authorization":
+        actions.append(
+            "Do not execute the repository install hook until its build configuration is reviewed and explicitly authorized."
+        )
+    if status == "warning" and reason == "python_version_incompatible":
+        actions.append(
+            "Create the isolated environment with a Python version allowed by repository metadata."
+        )
+    if status == "warning" and reason == "dependency_access_blocker":
+        actions.append(
+            "Resolve private index, VCS, or credential requirements before dependency installation."
         )
     if status == "warning" and reason == "unsupported_install_command":
         actions.append(

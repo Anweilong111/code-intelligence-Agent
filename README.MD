@@ -498,6 +498,20 @@ LLM reflection 修复；所有获胜候选的 generator attribution 一致。该
 `docs/v2/phase5_patch_generation_and_validation.md`，机器可读结果位于
 `docs/v2/phase5_patch_metrics.json`。
 
+### V2 陌生 GitHub 仓库鲁棒性
+
+Phase 6 使用 20 个未参与前五阶段实现的公开 Python 仓库作为固定 SHA holdout，
+覆盖 `src`/flat layout、多包项目、CLI、Web、数据处理、原生扩展以及 tox/nox。
+系统在 GitHub Tree API 限流时可以回退到固定提交 archive；未授权测试 checkout 的
+仓库只进行源码读取，强制关闭测试、环境安装和自动重试，不会因为网络回退而执行仓库代码。
+
+最终 20/20 仓库生成结构化报告并完成静态分析，20/20 发现源码根，12/20 发现测试命令，
+7/20 真正启动并终止测试进程；13 个部分结果和 6 个测试失败均给出明确 blocker 或
+environment/code failure layer。这里的 `success` 只表示“静态分析完成且测试进程真实启动并
+终止”，不表示测试通过或修复成功。完整协议、算法边界和复现命令位于
+`docs/v2/phase6_unfamiliar_repository_robustness.md`，机器可读指标位于
+`docs/v2/phase6_unfamiliar_repository_metrics.json`。
+
 分析一个公开 GitHub 仓库：
 
 Repair strategy memory:

@@ -4497,10 +4497,60 @@ def github_repo_intelligence_summary(
         "discovery_api_rate_limit_remaining": str(
             summary.get("discovery_api_rate_limit_remaining") or ""
         ),
+        "discovery_api_rate_limit_checkout_mode": str(
+            summary.get("discovery_api_rate_limit_checkout_mode") or ""
+        ),
+        "discovery_api_rate_limit_original_checkout_requested": bool(
+            summary.get(
+                "discovery_api_rate_limit_original_checkout_requested",
+                False,
+            )
+        ),
         "github_error": _dict(summary.get("github_error")),
         "github_error_next_actions": [
             str(item) for item in _list(summary.get("next_actions"))
         ],
+        "repository_scope_status": str(
+            summary.get("repository_scope_status") or "unknown"
+        ),
+        "repository_scope_reason": str(
+            summary.get("repository_scope_reason") or ""
+        ),
+        "repository_scope_blocker": str(
+            summary.get("repository_scope_blocker") or ""
+        ),
+        "repository_discovered_python_source_count": _int(
+            summary.get("repository_discovered_python_source_count", 0)
+        ),
+        "repository_source_roots": _list(summary.get("repository_source_roots")),
+        "repository_test_roots": _list(summary.get("repository_test_roots")),
+        "repository_compatibility_status": str(
+            summary.get("repository_compatibility_status") or "unknown"
+        ),
+        "repository_compatibility_termination_reason": str(
+            summary.get("repository_compatibility_termination_reason") or ""
+        ),
+        "repository_compatibility_primary_blocker": str(
+            summary.get("repository_compatibility_primary_blocker") or ""
+        ),
+        "repository_python_compatibility_status": str(
+            summary.get("repository_python_compatibility_status") or "unknown"
+        ),
+        "repository_dependency_access_blockers": _list(
+            summary.get("repository_dependency_access_blockers")
+        ),
+        "repository_install_risk": str(
+            summary.get("repository_install_risk") or "unknown"
+        ),
+        "repository_install_auto_execution_allowed": bool(
+            summary.get("repository_install_auto_execution_allowed", False)
+        ),
+        "repository_compatibility_json": str(
+            report.output_paths.get("repository_compatibility_json") or ""
+        ),
+        "repository_compatibility_markdown": str(
+            report.output_paths.get("repository_compatibility_markdown") or ""
+        ),
         "agent_auto_enabled": bool(summary.get("agent_auto_enabled", False)),
         "agent_auto_action_count": _int(
             summary.get("agent_auto_action_count", 0)
@@ -8911,6 +8961,10 @@ def _render_github_repo_intelligence_payload(payload: dict[str, Any]) -> str:
             f"{str(bool(payload.get('discovery_api_rate_limit_checkout_fallback', False))).lower()}"
         ),
         (
+            "- API Rate Limit Checkout Mode: "
+            f"`{_markdown_cell(payload.get('discovery_api_rate_limit_checkout_mode') or 'none')}`"
+        ),
+        (
             "- Agent Auto Actions: "
             f"{_int(payload.get('agent_auto_action_count', 0))} "
             f"(enabled={str(bool(payload.get('agent_auto_enabled', False))).lower()}, "
@@ -10637,6 +10691,16 @@ def _repository_structure_summary(report: GitHubRepoAgentReport) -> dict[str, An
                 str(item)
                 for item in _list(repository_profile.get("recommended_analysis_roots"))
             ],
+            "source_roots": [
+                str(item) for item in _list(repository_profile.get("source_roots"))
+            ],
+            "scope_status": str(
+                repository_profile.get("scope_status") or "unknown"
+            ),
+            "scope_reason": str(repository_profile.get("scope_reason") or ""),
+            "discovered_python_source_count": _int(
+                repository_profile.get("discovered_python_source_count", 0)
+            ),
             "layout_profile": layout_profile,
             "layout_hints": [
                 str(item) for item in _list(repository_profile.get("layout_hints"))
@@ -10647,6 +10711,9 @@ def _repository_structure_summary(report: GitHubRepoAgentReport) -> dict[str, An
                 repository_profile.get("test_source_count", len(test_source_paths))
             ),
             "test_source_paths": test_source_paths[:20],
+            "test_roots": [
+                str(item) for item in _list(repository_profile.get("test_roots"))
+            ],
             "test_directories": _unique_directories(test_source_paths),
             "test_framework_signals": test_framework_signals,
             "recommended_test_command": str(

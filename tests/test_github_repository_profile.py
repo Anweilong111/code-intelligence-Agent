@@ -423,6 +423,91 @@ def test_repository_profile_doctor_warns_without_test_or_config_signal():
     assert "benchmark-only smoke" in profile["doctor_next_action"]
 
 
+def test_repository_profile_uses_full_discovery_when_source_filter_is_narrow():
+    raw_paths = [
+        "services/api/pyproject.toml",
+        "services/api/src/api/__init__.py",
+        "services/api/src/api/routes.py",
+        "services/api/tests/test_routes.py",
+        "services/worker/pyproject.toml",
+        "services/worker/src/worker/__init__.py",
+        "services/worker/src/worker/jobs.py",
+        "services/worker/tests/test_jobs.py",
+    ]
+    profile = build_github_repository_profile(
+        {"tree": [{"path": path} for path in raw_paths]},
+        _import_report(
+            raw_paths=raw_paths,
+            imported_paths=["services/api/src/api/routes.py"],
+        ),
+    )
+
+    assert profile["imported_source_count"] == 1
+    assert profile["discovered_python_source_count"] == 6
+    assert profile["scope_status"] == "supported"
+    assert profile["layout_type"] == "monorepo_candidate"
+    assert profile["source_roots"] == ["services"]
+    assert profile["test_roots"] == [
+        "services/api/tests",
+        "services/worker/tests",
+    ]
+    assert profile["test_source_count"] == 2
+    assert profile["recommended_analysis_roots"] == [
+        "services/api",
+        "services/worker",
+    ]
+    assert profile["recommended_test_working_dir"] == "services/api"
+
+
+def test_repository_profile_explicitly_marks_non_python_scope():
+    profile = build_github_repository_profile(
+        {"tree": [{"path": "README.md"}, {"path": "src/index.ts"}]},
+        _import_report(
+            raw_paths=["README.md", "src/index.ts"],
+            imported_paths=[],
+        ),
+    )
+    markdown = render_github_repository_profile_markdown(profile)
+
+    assert profile["scope_status"] == "unsupported_scope"
+    assert profile["scope_reason"] == "no_python_sources_discovered"
+    assert profile["scope_blocker"] == "unsupported_scope"
+    assert profile["discovered_python_source_count"] == 0
+    assert "Scope Status: `unsupported_scope`" in markdown
+
+
+def test_repository_profile_keeps_build_package_and_ignores_test_fixture_projects():
+    raw_paths = [
+        "pyproject.toml",
+        "src/build/__init__.py",
+        "src/build/core.py",
+        "tests/test_core.py",
+        "tests/packages/broken/pyproject.toml",
+        "tests/packages/broken/backend.py",
+    ]
+    profile = build_github_repository_profile(
+        {"tree": [{"path": path} for path in raw_paths]},
+        _import_report(
+            raw_paths=raw_paths,
+            imported_paths=[
+                "src/build/__init__.py",
+                "src/build/core.py",
+                "tests/test_core.py",
+                "tests/packages/broken/backend.py",
+            ],
+        ),
+    )
+
+    assert profile["scope_status"] == "supported"
+    assert profile["discovered_python_source_count"] == 4
+    assert profile["layout_type"] == "src_layout"
+    assert profile["monorepo_candidate"] is False
+    assert profile["src_layout_packages"] == ["build"]
+    assert profile["source_roots"] == ["src/build"]
+    assert profile["recommended_analysis_roots"] == ["src/build"]
+    assert profile["layout_profile"]["nested_project_config_roots"] == []
+
+
 def _import_report(*, raw_paths: list[str], imported_paths: list[str]) -> dict:
     return {
         "input_count": len(raw_paths),

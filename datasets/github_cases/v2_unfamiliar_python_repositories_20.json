@@ -1,0 +1,237 @@
+{
+  "suite_name": "v2_unfamiliar_python_repositories_20",
+  "description": "Phase 6 holdout suite for 20 public Python repositories that were not referenced by the implementation or earlier repository manifests when selected. Every run is pinned to a 40-character commit SHA.",
+  "selection_policy": {
+    "selected_at": "2026-07-14",
+    "role": "unfamiliar_holdout",
+    "minimum_case_count": 20,
+    "fixed_commit_required": true,
+    "development_reference_scan": "No exact owner/repository reference existed in tracked source, tests, docs, or datasets at selection time.",
+    "coverage_targets": [
+      "small_library",
+      "cli",
+      "web",
+      "data_processing",
+      "src_layout",
+      "flat_layout",
+      "multi_package",
+      "native_extension",
+      "tox_or_nox",
+      "modern_pyproject"
+    ]
+  },
+  "defaults": {
+    "execution_profile": "agent-auto",
+    "preset": "mining",
+    "source_cache_dir": "outputs_v2/phase6/source_cache",
+    "max_sources": 12,
+    "max_candidates": 5,
+    "auto_fallback": false,
+    "run_repository_test_command": true,
+    "run_repository_test_environment_setup": false,
+    "run_repository_test_retry": false,
+    "auto_repository_test_retry": false,
+    "repository_patch_generation_mode": "rule",
+    "repository_test_reflection_mode": "none",
+    "repository_test_timeout": 8,
+    "repository_checkout_timeout": 90,
+    "repository_checkout_depth": 1,
+    "auto_controller_max_actions": 0,
+    "clear_llm_api_keys": true
+  },
+  "suite_thresholds": {
+    "max_command_failed_count": 0,
+    "max_expectation_failed_count": 0,
+    "max_metric_check_failed_count": 0,
+    "min_run_count": 20
+  },
+  "runs": [
+    {
+      "name": "pypa_build_holdout",
+      "repo": "pypa/build",
+      "ref": "c9bd978417971295d5a7b057519f75bf79d6f6a9",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "cli", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "pypa_packaging_holdout",
+      "repo": "pypa/packaging",
+      "ref": "9d0ec47b36a1bcdf705b397b84cd89272410a00d",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "pip_tools_holdout",
+      "repo": "jazzband/pip-tools",
+      "ref": "57637dbf08aeefe88fec7786bcd07cf111f9f662",
+      "categories": ["cli", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "attrs_holdout",
+      "repo": "python-attrs/attrs",
+      "ref": "d544dd2dacb4cbd660891e323ad92751ba65b4e0",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "trio_holdout",
+      "repo": "python-trio/trio",
+      "ref": "5a5111bba2b26da5668c27ee1824e890f5753c3d",
+      "categories": ["async_library", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "more_itertools_holdout",
+      "repo": "more-itertools/more-itertools",
+      "ref": "da37f9de442b69fbcaa9f54fb042c2a6999473a6",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "typer_holdout",
+      "repo": "tiangolo/typer",
+      "ref": "3a3bd0f20a417835d4b4505a0bf834620e024cdb",
+      "categories": ["cli", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "litestar_holdout",
+      "repo": "litestar-org/litestar",
+      "ref": "505365ad320b5a69dbdf6f9350c4ba32beae474d",
+      "categories": ["web", "src_layout", "multi_package", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "markupsafe_holdout",
+      "repo": "pallets/markupsafe",
+      "ref": "b2e4d9c7687be25695fffbe93a37622302b24fb1",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "src_layout", "native_extension", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "pyupgrade_holdout",
+      "repo": "asottile/pyupgrade",
+      "ref": "d9946e8ab925973cd9e338d847cf0ff2a3e227ec",
+      "checkout_repository_tests": true,
+      "categories": ["cli", "flat_layout", "tox_or_nox"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "tox_holdout",
+      "repo": "tox-dev/tox",
+      "ref": "e93e023d4777ac95b504a3817d44f7de43faf6ff",
+      "categories": ["cli", "src_layout", "tox_or_nox", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "nox_holdout",
+      "repo": "wntrblm/nox",
+      "ref": "22f1d1f82530663bbc0c005ca73d76668ec4d85f",
+      "categories": ["cli", "src_layout", "tox_or_nox", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "yarl_holdout",
+      "repo": "aio-libs/yarl",
+      "ref": "95ffe170da46bb851e7aafbf3ccb2360f58ef3af",
+      "categories": ["small_library", "src_layout", "native_extension", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "schedule_holdout",
+      "repo": "dbader/schedule",
+      "ref": "82a43db1b938d8fdf60103bd41f329e06c8d3651",
+      "checkout_repository_tests": true,
+      "categories": ["small_library", "flat_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "test_execution_probe"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "sqlfluff_holdout",
+      "repo": "sqlfluff/sqlfluff",
+      "ref": "978dfbe3da1c5b589a308339331eb28b94945cb0",
+      "categories": ["cli", "data_processing", "src_layout", "multi_package", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "textual_holdout",
+      "repo": "Textualize/textual",
+      "ref": "06dbeef4bb70fb718236aa418ed658ef4667a126",
+      "categories": ["cli", "ui_framework", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "kedro_holdout",
+      "repo": "kedro-org/kedro",
+      "ref": "ba94d5248e6d48d4bbca3f51db770a79e18498dc",
+      "categories": ["cli", "data_processing", "src_layout", "multi_package", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "accelerate_holdout",
+      "repo": "huggingface/accelerate",
+      "ref": "665444ceb62211f2b410d0d0fdb4bc013c5effdf",
+      "categories": ["cli", "machine_learning", "src_layout", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "polars_holdout",
+      "repo": "pola-rs/polars",
+      "ref": "52525377b5de7596e45a4a0aef3c80b59cc68ee7",
+      "categories": ["data_processing", "multi_package", "native_extension", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    },
+    {
+      "name": "dask_holdout",
+      "repo": "dask/dask",
+      "ref": "aac2ce21714d556d748951814622a8ea76f5a042",
+      "categories": ["data_processing", "multi_package", "modern_pyproject"],
+      "scenario_tags": ["v2_unfamiliar_holdout", "pinned_sha", "static_and_environment_diagnosis"],
+      "expected_status": "pass",
+      "metric_thresholds": {"imported_source_count": 1, "repository_compatibility_artifact_present": 1}
+    }
+  ]
+}

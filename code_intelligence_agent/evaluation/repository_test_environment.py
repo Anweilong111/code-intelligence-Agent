@@ -10,6 +10,10 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from code_intelligence_agent.evaluation.repository_compatibility import (
+    assess_repository_compatibility,
+)
+
 
 def plan_repository_test_environment(
     repository_profile: dict[str, Any],
@@ -24,6 +28,17 @@ def plan_repository_test_environment(
     command = str(repository_profile.get("recommended_test_command") or "").strip()
     root_path = Path(repository_root) if repository_root is not None else None
     root_present = bool(root_path and root_path.exists() and root_path.is_dir())
+    compatibility = _dict(repository_profile.get("compatibility_assessment"))
+    if not compatibility or (
+        root_present and not bool(compatibility.get("repository_root_present"))
+    ):
+        compatibility = assess_repository_compatibility(
+            repository_profile,
+            repository_root=root_path if root_present else None,
+        )
+    python_compatibility = _dict(compatibility.get("python"))
+    dependency_access = _dict(compatibility.get("dependency_access"))
+    install_policy = _dict(compatibility.get("install_policy"))
     missing_config_files = (
         _missing_config_files(config_files, root_path) if root_present and root_path else []
     )
@@ -58,6 +73,12 @@ def plan_repository_test_environment(
     if not command:
         status = "skipped"
         reason = "no_recommended_test_command"
+    elif str(python_compatibility.get("status") or "") == "incompatible":
+        status = "warning"
+        reason = "python_version_incompatible"
+    elif _int(dependency_access.get("blocker_count")) > 0:
+        status = "warning"
+        reason = "dependency_access_blocker"
     elif tool_status.get("available") is False:
         status = "warning"
         reason = "test_tool_missing"
@@ -81,6 +102,23 @@ def plan_repository_test_environment(
         "test_tool_available": tool_status.get("available"),
         "test_tool_check": tool_status,
         "missing_config_files": missing_config_files,
+        "repository_compatibility": compatibility,
+        "python_compatibility_status": str(
+            python_compatibility.get("status") or "unknown"
+        ),
+        "python_compatibility_reason": str(
+            python_compatibility.get("reason") or ""
+        ),
+        "dependency_access_status": str(
+            dependency_access.get("status") or "unknown"
+        ),
+        "dependency_access_blockers": [
+            str(item) for item in _list(dependency_access.get("blockers"))
+        ],
+        "install_risk": str(install_policy.get("risk") or "unknown"),
+        "install_auto_execution_allowed": bool(
+            install_policy.get("auto_execution_allowed", False)
+        ),
         "pytest_configuration": pytest_config,
         "pytest_config_source_count": _int(pytest_config.get("source_count", 0)),
         "pytest_config_addopts": [
@@ -143,6 +181,19 @@ def render_repository_test_environment_markdown(payload: dict[str, Any]) -> str:
             f"`{_markdown_cell(payload.get('recommended_install_command') or 'none')}`"
         ),
         f"- Install Reason: `{_markdown_cell(payload.get('install_command_reason') or 'none')}`",
+        f"- Install Risk: `{_markdown_cell(payload.get('install_risk') or 'unknown')}`",
+        (
+            "- Install Auto Execution Allowed: "
+            f"{str(bool(payload.get('install_auto_execution_allowed'))).lower()}"
+        ),
+        (
+            "- Python Compatibility: "
+            f"`{_markdown_cell(payload.get('python_compatibility_status') or 'unknown')}`"
+        ),
+        (
+            "- Dependency Access Blockers: "
+            f"{', '.join(str(item) for item in _list(payload.get('dependency_access_blockers'))) or 'none'}"
+        ),
         f"- Repository Root: `{_markdown_cell(payload.get('repository_root') or 'none')}`",
         f"- Repository Root Present: {str(bool(payload.get('repository_root_present'))).lower()}",
         f"- Test Module: `{_markdown_cell(payload.get('test_module') or 'none')}`",

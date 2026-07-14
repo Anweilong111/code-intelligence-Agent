@@ -6,21 +6,37 @@ from code_intelligence_agent.core.ast_analyzer import ASTAnalyzer
 from code_intelligence_agent.core.models import RepoParseResult
 
 
-DEFAULT_EXCLUDED_DIRS = {
+ALWAYS_EXCLUDED_DIRS = {
     ".git",
     ".hg",
     ".mypy_cache",
+    ".nox",
     ".pytest_cache",
     ".ruff_cache",
     ".source_cache",
+    ".svn",
     ".tox",
     ".venv",
     "__pycache__",
+    "node_modules",
+    "site-packages",
+}
+
+ROOT_ONLY_EXCLUDED_DIRS = {
     "build",
     "dist",
-    "node_modules",
+    "env",
     "venv",
 }
+
+DEFAULT_EXCLUDED_DIRS = ALWAYS_EXCLUDED_DIRS | ROOT_ONLY_EXCLUDED_DIRS
+
+
+def is_default_excluded_repo_path(parts: tuple[str, ...] | list[str]) -> bool:
+    normalized = tuple(str(part).lower() for part in parts if str(part))
+    if any(part in ALWAYS_EXCLUDED_DIRS for part in normalized):
+        return True
+    return bool(normalized and normalized[0] in ROOT_ONLY_EXCLUDED_DIRS)
 
 
 class RepoParser:
@@ -30,7 +46,10 @@ class RepoParser:
         excluded_dirs: set[str] | None = None,
     ) -> None:
         self.analyzer = analyzer or ASTAnalyzer()
-        self.excluded_dirs = excluded_dirs or DEFAULT_EXCLUDED_DIRS
+        self._uses_default_exclusions = excluded_dirs is None
+        self.excluded_dirs = (
+            set(DEFAULT_EXCLUDED_DIRS) if excluded_dirs is None else set(excluded_dirs)
+        )
 
     def parse(self, path: str | Path) -> RepoParseResult:
         root = Path(path)
@@ -52,7 +71,14 @@ class RepoParser:
     def _iter_python_files(self, root: Path) -> list[Path]:
         candidates = []
         for file_path in root.rglob("*.py"):
-            if any(part in self.excluded_dirs for part in file_path.parts):
+            relative_parts = file_path.relative_to(root).parts
+            if self._uses_default_exclusions and is_default_excluded_repo_path(
+                relative_parts
+            ):
+                continue
+            if not self._uses_default_exclusions and any(
+                part in self.excluded_dirs for part in relative_parts
+            ):
                 continue
             candidates.append(file_path)
         return sorted(candidates)

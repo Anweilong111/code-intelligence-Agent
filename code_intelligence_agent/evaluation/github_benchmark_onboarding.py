@@ -66,6 +66,10 @@ from code_intelligence_agent.evaluation.repository_test_command import (
     validate_repository_test_command,
     write_repository_test_command_artifacts,
 )
+from code_intelligence_agent.evaluation.repository_compatibility import (
+    assess_repository_compatibility,
+    write_repository_compatibility_artifacts,
+)
 from code_intelligence_agent.evaluation.repository_test_dynamic_evidence import (
     build_repository_test_dynamic_evidence,
     write_repository_test_dynamic_evidence_artifacts,
@@ -454,6 +458,7 @@ def onboard_from_discovery(
     repository_checkout_timeout: int = 120,
     repository_checkout_depth: int = 1,
     repository_checkout_runner=None,
+    repository_checkout_archive_opener=None,
     repository_test_environment_setup_runner=None,
     repository_test_execution_runner=None,
     repository_test_retry_execution_runner=None,
@@ -531,6 +536,7 @@ def onboard_from_discovery(
                 depth=repository_checkout_depth,
                 timeout=repository_checkout_timeout,
                 runner=repository_checkout_runner,
+                archive_opener=repository_checkout_archive_opener,
             )
             if repository_checkout.get("status") == "pass":
                 checkout_source_root = str(
@@ -608,6 +614,15 @@ def onboard_from_discovery(
         import_payload,
         sampled_sources=_list(limited_sources_payload.get("sources")),
     )
+    repository_compatibility = assess_repository_compatibility(
+        repository_profile,
+        repository_root=effective_repository_config_root,
+        repository_execution_root=effective_repository_test_root or "",
+    )
+    repository_profile = {
+        **repository_profile,
+        "compatibility_assessment": repository_compatibility,
+    }
     import_report_path = output_root / "source_import.json"
     import_markdown_path = output_root / "source_import.md"
     sources_path = output_root / "sources.json"
@@ -764,6 +779,12 @@ def onboard_from_discovery(
         "source_cache_dir": str(cache_root),
     }
     output_paths.update(early_output_paths)
+    output_paths.update(
+        write_repository_compatibility_artifacts(
+            repository_compatibility,
+            output_root,
+        )
+    )
     if dependency_import_report is not None:
         output_paths["dependency_source_import_json"] = str(
             dependency_import_report_path
@@ -6409,10 +6430,7 @@ def _is_preferred_mining_source(source: Any) -> bool:
         for part in directory_parts
     ):
         return False
-    if any(
-        part in {"build", "dist", "site-packages", "migrations"}
-        for part in directory_parts
-    ):
+    if _is_generated_source_directory(directory_parts):
         return False
     return True
 
@@ -6516,7 +6534,11 @@ def _source_recipe_evidence_score(
         + str(source_dict.get("target_path", ""))
     ).lower()
     score = _recipe_path_score(path_text, selected_recipes)
-    source_text = _read_source_text_for_selection(source_dict, source_cache_dir)
+    source_text = _read_source_text_for_selection(
+        source_dict,
+        source_cache_dir,
+        allow_remote=False,
+    )
     if source_text:
         score += _recipe_content_score(source_text.lower(), selected_recipes)
     return score
@@ -6559,12 +6581,15 @@ def _source_layout_score(source: dict[str, Any]) -> int:
         for part in directory_parts
     ):
         score -= 40
-    if any(
-        part in {"build", "dist", "site-packages", "migrations"}
-        for part in directory_parts
-    ):
+    if _is_generated_source_directory(directory_parts):
         score -= 80
     return score
+
+
+def _is_generated_source_directory(directory_parts: list[str]) -> bool:
+    if any(part in {"site-packages", "migrations"} for part in directory_parts):
+        return True
+    return bool(directory_parts and directory_parts[0] in {"build", "dist"})
 
 
 def _looks_like_package_dir(value: str) -> bool:
@@ -6670,7 +6695,11 @@ def _recipe_content_score(source_text: str, recipes: set[str]) -> int:
 def _read_source_text_for_selection(
     source: dict[str, Any],
     source_cache_dir: str | Path | None,
+    *,
+    allow_remote: bool = True,
 ) -> str:
+    if not allow_remote and not _source_is_locally_materialized(source):
+        return ""
     try:
         fetch_source = source_from_dict(source)
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -6684,6 +6713,16 @@ def _read_source_text_for_selection(
             return written[0].read_text(encoding="utf-8", errors="ignore")
     except Exception:
         return ""
+
+
+def _source_is_locally_materialized(source: dict[str, Any]) -> bool:
+    raw_url = str(source.get("raw_url") or "").strip()
+    if not raw_url or _looks_like_remote_url(raw_url):
+        return False
+    try:
+        return Path(raw_url).is_file()
+    except OSError:
+        return False
 
 
 def _source_diversity_gain(

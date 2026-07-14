@@ -1,0 +1,67 @@
+{
+  "schema_version": "phase6_unfamiliar_repository_metrics_v1",
+  "recorded_at": "2026-07-14",
+  "dataset": "datasets/github_cases/v2_unfamiliar_python_repositories_20.json",
+  "selection": {
+    "role": "unfamiliar_holdout",
+    "repository_count": 20,
+    "unique_repository_count": 20,
+    "fixed_sha_count": 20,
+    "execution_checkout_authorized_count": 7
+  },
+  "suite": {
+    "passed": true,
+    "agent_passed_count": 20,
+    "agent_failed_count": 0,
+    "expectation_passed_count": 20,
+    "expectation_failed_count": 0,
+    "metric_check_count": 40,
+    "metric_check_failed_count": 0,
+    "artifact_inventory_pass_count": 20,
+    "acceptance_gate_pass_count": 20,
+    "api_rate_limit_checkout_fallback_count": 9,
+    "static_intelligence_status_counts": {
+      "analysis_ready": 4,
+      "source_inventory_ready": 16
+    },
+    "analysis_stage_counts": {
+      "phase1_repo_understanding": 16,
+      "phase2_static_graph_fault_localization": 4
+    }
+  },
+  "outcome_evaluation": {
+    "passed": true,
+    "structured_report_rate": 1.0,
+    "static_analysis_success_rate": 1.0,
+    "source_root_discovery_rate": 1.0,
+    "test_command_discovery_rate": 0.6,
+    "test_start_rate": 0.35,
+    "blocker_classification_rate": 1.0,
+    "test_failure_layer_classification_rate": 1.0,
+    "outcome_counts": {
+      "partial": 13,
+      "success": 7
+    },
+    "started_test_failure_layer_counts": {
+      "environment": 6
+    }
+  },
+  "timing": {
+    "elapsed_ms_semantics": "report_reuse_overhead",
+    "end_to_end_elapsed_available": false,
+    "reason": "The final suite aggregates existing reports; comparable cold and warm end-to-end latency is deferred to Phase 7."
+  },
+  "verification": {
+    "focused_test_count": 284,
+    "focused_test_elapsed_seconds": 126.4,
+    "full_test_count": 1223,
+    "full_test_elapsed_seconds": 855.94,
+    "failure_count": 0
+  },
+  "claim_boundaries": [
+    "success means static analysis plus an actually started and explicitly terminated test process",
+    "success does not mean repository tests passed or a defect was repaired",
+    "partial means static analysis completed without a started test process",
+    "the holdout evaluates public Python repository intake and diagnosis, not arbitrary languages"
+  ]
+}

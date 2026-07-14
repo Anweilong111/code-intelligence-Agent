@@ -20,6 +20,7 @@ from code_intelligence_agent.evaluation.github_benchmark_onboarding import (
     _repository_test_evidence_readiness,
     _repository_test_regression_validation_command,
     _repository_test_manifest_evidence,
+    _select_source_subset,
     build_repository_config_snapshot,
     evaluate_onboarding_quality_gate,
     main as onboarding_main,
@@ -148,6 +149,15 @@ def test_onboarding_from_discovery_writes_benchmark_artifacts():
         assert len(catalog_payload["candidates"]) == 1
         assert Path(report.output_paths["sources"]).exists()
         assert Path(report.output_paths["source_mining_markdown"]).exists()
+        assert Path(report.output_paths["repository_compatibility_json"]).exists()
+        assert Path(report.output_paths["repository_compatibility_markdown"]).exists()
+        assert report.repository_profile["scope_status"] == "supported"
+        assert report.repository_profile["compatibility_assessment"]["status"] == (
+            "partial"
+        )
+        assert report.repository_profile["compatibility_assessment"][
+            "termination_reason"
+        ] == "test_command:no_recommended_test_command"
         assert Path(report.output_paths["selection_audit_json"]).exists()
         assert Path(report.output_paths["selection_audit_markdown"]).exists()
         assert Path(report.output_paths["diagnostics_json"]).exists()
@@ -2641,6 +2651,37 @@ def test_onboarding_source_limit_prefers_recipe_hits_before_path_order():
         assert sources_payload["sources"][0]["source_path"] == (
             "src/click/z_formatting.py"
         )
+
+
+def test_remote_source_preselection_does_not_fetch_every_candidate(monkeypatch):
+    def fail_if_fetched(*args, **kwargs):
+        raise AssertionError("remote content must not be fetched during preselection")
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.evaluation.github_benchmark_onboarding."
+        "GitHubBenchmarkFetcher.fetch_sources",
+        fail_if_fetched,
+    )
+    sources = [
+        {
+            "owner": "example",
+            "repo": "project",
+            "ref": "a" * 40,
+            "source_path": f"src/project/module_{index}.py",
+            "target_path": f"project/module_{index}.py",
+        }
+        for index in range(100)
+    ]
+
+    selected = _select_source_subset(
+        sources,
+        12,
+        recipes=["missing_len_zero_guard"],
+        source_cache_dir=None,
+    )
+
+    assert len(selected) == 12
+    assert all(str(item["source_path"]).startswith("src/project/") for item in selected)
 
 
 def test_onboarding_source_limit_prefers_package_code_over_tests():

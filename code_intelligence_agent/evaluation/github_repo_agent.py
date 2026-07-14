@@ -411,11 +411,46 @@ def render_github_repo_agent_markdown(report: GitHubRepoAgentReport) -> str:
             "- API Rate Limit Checkout Fallback: "
             f"{str(bool(summary.get('discovery_api_rate_limit_checkout_fallback', False))).lower()}"
         ),
+        (
+            "- API Rate Limit Checkout Mode: "
+            f"`{_markdown_cell(summary.get('discovery_api_rate_limit_checkout_mode') or 'none')}`"
+        ),
         f"- Output Dir: `{report.output_dir}`",
         f"- Preset: `{report.preset}`",
         f"- Status: `{report.status}`",
         f"- Discovery Items: {_int(summary.get('discovery_items', 0))}",
         f"- Imported Sources: {_int(summary.get('imported_sources', 0))}",
+        (
+            "- Repository Scope: "
+            f"`{_markdown_cell(summary.get('repository_scope_status') or 'unknown')}`/"
+            f"`{_markdown_cell(summary.get('repository_scope_reason') or 'unknown')}`"
+        ),
+        (
+            "- Repository Compatibility: "
+            f"`{_markdown_cell(summary.get('repository_compatibility_status') or 'unknown')}`/"
+            f"`{_markdown_cell(summary.get('repository_compatibility_termination_reason') or 'none')}`"
+        ),
+        (
+            "- Repository Source Roots: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(summary.get('repository_source_roots'))) or 'none')}"
+        ),
+        (
+            "- Repository Test Roots: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(summary.get('repository_test_roots'))) or 'none')}"
+        ),
+        (
+            "- Repository Python Compatibility: "
+            f"`{_markdown_cell(summary.get('repository_python_compatibility_status') or 'unknown')}`"
+        ),
+        (
+            "- Repository Install Policy: "
+            f"risk=`{_markdown_cell(summary.get('repository_install_risk') or 'unknown')}`, "
+            f"auto={str(bool(summary.get('repository_install_auto_execution_allowed', False))).lower()}"
+        ),
+        (
+            "- Repository Dependency Access Blockers: "
+            f"{_markdown_cell(', '.join(str(item) for item in _list(summary.get('repository_dependency_access_blockers'))) or 'none')}"
+        ),
         f"- Selected Sources: {_int(summary.get('selected_sources', 0))}",
         f"- Generated Candidates: {_int(summary.get('generated_candidates', 0))}",
         (
@@ -1667,22 +1702,60 @@ def _run_onboarding_tree(
                 requested_urls=[],
                 **_onboard_from_discovery_kwargs(kwargs),
             )
-        if not _should_attempt_rate_limit_checkout_fallback(kwargs):
-            raise
+        execution_checkout_requested = _should_attempt_rate_limit_checkout_fallback(
+            kwargs
+        )
         fallback = _checkout_seed_discovery_payload_for_repo(owner, repo, ref, exc)
+        fallback_discovery = _dict(fallback.get("discovery"))
+        fallback_discovery["api_rate_limit_checkout_mode"] = (
+            "test_execution" if execution_checkout_requested else "source_only"
+        )
+        fallback_discovery["api_rate_limit_original_checkout_requested"] = (
+            execution_checkout_requested
+        )
+        fallback["discovery"] = fallback_discovery
         fallback_ref = str(fallback.get("ref") or ref or "")
         fallback_kwargs = _onboard_from_discovery_kwargs(kwargs)
         fallback_kwargs["checkout_repository_tests"] = True
-        return onboard_from_discovery(
+        archive_opener = kwargs.get("opener")
+        if callable(archive_opener):
+            fallback_kwargs["repository_checkout_archive_opener"] = archive_opener
+        if not execution_checkout_requested:
+            # The archive is materialized only to recover source discovery. Do not
+            # turn an API fallback into implicit execution of untrusted repo code.
+            fallback_kwargs.update(
+                {
+                    "run_repository_test_command": False,
+                    "run_repository_test_environment_setup": False,
+                    "run_repository_test_retry": False,
+                    "run_repository_test_retry_prerequisites": False,
+                    "auto_repository_test_retry": False,
+                }
+            )
+        fallback_source_kind = (
+            "github-api-rate-limit-checkout"
+            if execution_checkout_requested
+            else "github-api-rate-limit-source-checkout"
+        )
+        fallback_report = onboard_from_discovery(
             fallback,
             output_root,
-            source=f"github-api-rate-limit-checkout:{owner}/{repo}@{fallback_ref or 'default'}",
+            source=f"{fallback_source_kind}:{owner}/{repo}@{fallback_ref or 'default'}",
             owner=owner,
             repo=repo,
             ref=fallback_ref or ref,
             requested_urls=[],
             **fallback_kwargs,
         )
+        fallback_checkout = _dict(fallback_report.repository_checkout)
+        if (
+            not execution_checkout_requested
+            and fallback_checkout
+            and str(fallback_checkout.get("status") or "") != "pass"
+            and fallback_report.imported_source_count == 0
+        ):
+            raise exc
+        return fallback_report
 
 
 def _run_onboarding_tree_with_ref_fallback(
@@ -2303,6 +2376,8 @@ def _build_fetch_error_report(
         "discovery_api_rate_limit_checkout_fallback": False,
         "discovery_api_rate_limit_status_code": None,
         "discovery_api_rate_limit_remaining": "",
+        "discovery_api_rate_limit_checkout_mode": "",
+        "discovery_api_rate_limit_original_checkout_requested": False,
         "repository_ref": "",
         "requested_ref": "",
         "ref_source": "",
@@ -2656,6 +2731,18 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         onboarding.get("repository_test_setup_doctor")
     ) or _dict(run_config.get("repository_test_setup_doctor"))
     repository_profile = _dict(onboarding.get("repository_profile"))
+    repository_compatibility = _dict(
+        repository_profile.get("compatibility_assessment")
+    )
+    repository_compatibility_python = _dict(
+        repository_compatibility.get("python")
+    )
+    repository_compatibility_dependency = _dict(
+        repository_compatibility.get("dependency_access")
+    )
+    repository_compatibility_install = _dict(
+        repository_compatibility.get("install_policy")
+    )
     test_command_candidates = _list(repository_profile.get("test_command_candidates"))
     top_test_command_candidate = _dict(
         test_command_candidates[0] if test_command_candidates else {}
@@ -2817,6 +2904,15 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
         "discovery_api_rate_limit_remaining": str(
             discovery_metadata.get("api_rate_limit_remaining") or ""
         ),
+        "discovery_api_rate_limit_checkout_mode": str(
+            discovery_metadata.get("api_rate_limit_checkout_mode") or ""
+        ),
+        "discovery_api_rate_limit_original_checkout_requested": bool(
+            discovery_metadata.get(
+                "api_rate_limit_original_checkout_requested",
+                False,
+            )
+        ),
         "repository_ref": str(discovery_metadata.get("ref") or ""),
         "requested_ref": str(discovery_metadata.get("requested_ref") or ""),
         "ref_source": str(discovery_metadata.get("ref_source") or ""),
@@ -2889,6 +2985,52 @@ def _agent_summary(onboarding: dict[str, Any]) -> dict[str, Any]:
             remediation_plan.get("manual_action_count", 0)
         ),
         "repository_profile": repository_profile,
+        "repository_scope_status": str(
+            repository_profile.get("scope_status") or "unknown"
+        ),
+        "repository_scope_reason": str(
+            repository_profile.get("scope_reason") or ""
+        ),
+        "repository_scope_blocker": str(
+            repository_profile.get("scope_blocker") or ""
+        ),
+        "repository_discovered_python_source_count": _int(
+            repository_profile.get("discovered_python_source_count", 0)
+        ),
+        "repository_source_roots": [
+            str(item) for item in _list(repository_profile.get("source_roots"))
+        ],
+        "repository_test_roots": [
+            str(item) for item in _list(repository_profile.get("test_roots"))
+        ],
+        "repository_compatibility_status": str(
+            repository_compatibility.get("status") or "unknown"
+        ),
+        "repository_compatibility_termination_reason": str(
+            repository_compatibility.get("termination_reason") or ""
+        ),
+        "repository_compatibility_primary_blocker": str(
+            repository_compatibility.get("primary_blocker") or ""
+        ),
+        "repository_python_compatibility_status": str(
+            repository_compatibility_python.get("status") or "unknown"
+        ),
+        "repository_dependency_access_blockers": [
+            str(item)
+            for item in _list(repository_compatibility_dependency.get("blockers"))
+        ],
+        "repository_install_risk": str(
+            repository_compatibility_install.get("risk") or "unknown"
+        ),
+        "repository_install_auto_execution_allowed": bool(
+            repository_compatibility_install.get("auto_execution_allowed", False)
+        ),
+        "repository_compatibility_json": str(
+            output_paths.get("repository_compatibility_json") or ""
+        ),
+        "repository_compatibility_markdown": str(
+            output_paths.get("repository_compatibility_markdown") or ""
+        ),
         "test_source_count": _int(repository_profile.get("test_source_count", 0)),
         "test_framework_signals": [
             str(item) for item in _list(repository_profile.get("test_framework_signals"))
@@ -3830,7 +3972,11 @@ def _static_intelligence_summary(
     quality_score = _float(summary.get("quality_score", 0.0)) or _float(
         mining_quality.get("quality_score", 0.0)
     )
-    if imported_sources <= 0:
+    if str(summary.get("repository_scope_status") or "") == "unsupported_scope":
+        status = "blocked"
+        level = "unsupported_scope"
+        reason = "no_python_sources_discovered"
+    elif imported_sources <= 0:
         status = "blocked"
         level = "no_python_sources"
         reason = "no_imported_sources"
@@ -3903,6 +4049,8 @@ def _static_intelligence_next_action(
     summary: dict[str, Any],
 ) -> str:
     if status == "blocked":
+        if str(summary.get("repository_scope_status") or "") == "unsupported_scope":
+            return "Select a Python repository or provide a Python subproject path."
         return "Adjust include/exclude filters or target prefix so Python sources can be imported."
     if total_signals <= 0:
         return "Inspect source_mining.md recipe misses, then broaden recipes or target prefix."
@@ -3943,6 +4091,9 @@ def _agent_execution_plan(summary: dict[str, Any]) -> list[dict[str, Any]]:
         summary.get("repository_test_repair_summary_conclusion") or ""
     )
     repair_patch_path = str(summary.get("repository_test_repair_patch_path") or "")
+    unsupported_scope = (
+        str(summary.get("repository_scope_status") or "") == "unsupported_scope"
+    )
     return [
         _agent_plan_row(
             "source_discovery",
@@ -3951,10 +4102,18 @@ def _agent_execution_plan(summary: dict[str, Any]) -> list[dict[str, Any]]:
                 f"discovery={discovery_items}, imported={imported_sources}, "
                 f"selected={selected_sources}"
             ),
-            blocker="none" if imported_sources > 0 else "source:no_python_sources",
+            blocker=(
+                "none"
+                if imported_sources > 0
+                else "unsupported_scope"
+                if unsupported_scope
+                else "source:no_python_sources"
+            ),
             next_action=(
                 "Proceed to benchmarkization."
                 if imported_sources > 0
+                else "Select a Python repository or provide a Python subproject path."
+                if unsupported_scope
                 else "Adjust repository include/exclude filters or select a Python repository."
             ),
         ),

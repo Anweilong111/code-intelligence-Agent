@@ -4028,6 +4028,15 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         "discovery_api_rate_limit_remaining": str(
             summary.get("discovery_api_rate_limit_remaining") or ""
         ),
+        "discovery_api_rate_limit_checkout_mode": str(
+            summary.get("discovery_api_rate_limit_checkout_mode") or ""
+        ),
+        "discovery_api_rate_limit_original_checkout_requested": bool(
+            summary.get(
+                "discovery_api_rate_limit_original_checkout_requested",
+                False,
+            )
+        ),
         "static_intelligence_status": str(
             summary.get("static_intelligence_status") or ""
         ),
@@ -4039,6 +4048,42 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         ),
         "selected_source_count": selected_source_count,
         "imported_source_count": _int(summary.get("imported_source_count", 0)),
+        "repository_scope_status": str(
+            summary.get("repository_scope_status") or "unknown"
+        ),
+        "repository_discovered_python_source_count": _int(
+            summary.get("repository_discovered_python_source_count", 0)
+        ),
+        "repository_source_root_count": len(
+            _list(summary.get("repository_source_roots"))
+        ),
+        "repository_test_root_count": len(
+            _list(summary.get("repository_test_roots"))
+        ),
+        "repository_compatibility_status": str(
+            summary.get("repository_compatibility_status") or "unknown"
+        ),
+        "repository_compatibility_termination_reason": str(
+            summary.get("repository_compatibility_termination_reason") or ""
+        ),
+        "repository_compatibility_primary_blocker": str(
+            summary.get("repository_compatibility_primary_blocker") or ""
+        ),
+        "repository_python_compatibility_status": str(
+            summary.get("repository_python_compatibility_status") or "unknown"
+        ),
+        "repository_dependency_access_blocker_count": len(
+            _list(summary.get("repository_dependency_access_blockers"))
+        ),
+        "repository_install_risk": str(
+            summary.get("repository_install_risk") or "unknown"
+        ),
+        "repository_install_auto_execution_allowed": bool(
+            summary.get("repository_install_auto_execution_allowed", False)
+        ),
+        "repository_compatibility_artifact_present": bool(
+            _json_artifact_payload(summary.get("repository_compatibility_json"))
+        ),
         "selected_signal_count": _int(summary.get("selected_signal_count", 0)),
         "total_signal_count": _int(summary.get("total_signal_count", 0)),
         "agent_invocation_include_count": invocation_include_count,
@@ -4172,6 +4217,15 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         ),
         "planned_repository_test_result_status": str(
             planned_test_result_status
+        ),
+        "planned_repository_test_failure_category": str(
+            summary.get("planned_repository_test_failure_category")
+            or test_execution_result.get("failure_category")
+            or ""
+        ),
+        "planned_repository_test_result_executed": bool(
+            summary.get("planned_repository_test_result_executed", False)
+            or test_execution_result.get("executed", False)
         ),
         "planned_repository_test_result_passed": planned_test_result_passed,
         "planned_repository_test_result_failed": planned_test_result_failed,

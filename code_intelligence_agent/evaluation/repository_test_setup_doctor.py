@@ -439,6 +439,8 @@ def _setup_check(
     signals: dict[str, Any],
 ) -> dict[str, Any]:
     failure_category = str(signals.get("setup_install_failure_category") or "")
+    if failure_category.lower() in {"none", "n/a", "not_applicable"}:
+        failure_category = ""
     if failure_category:
         return _check(
             "environment_setup",
