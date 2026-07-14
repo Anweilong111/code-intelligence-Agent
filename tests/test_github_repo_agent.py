@@ -1301,6 +1301,7 @@ def test_github_repo_agent_forwards_phase3_repository_test_options(monkeypatch):
             patch_judge_mode="llm",
             run_repository_test_command=False,
             run_repository_test_environment_setup=True,
+            repository_test_environment_setup_mode="runner_probe",
             run_repository_test_retry=True,
             run_repository_test_retry_prerequisites=True,
             auto_repository_test_retry=True,
@@ -1325,6 +1326,9 @@ def test_github_repo_agent_forwards_phase3_repository_test_options(monkeypatch):
         assert captured["patch_judge_mode"] == "llm"
         assert captured["run_repository_test_command"] is False
         assert captured["run_repository_test_environment_setup"] is True
+        assert captured["repository_test_environment_setup_mode"] == (
+            "runner_probe"
+        )
         assert captured["run_repository_test_retry"] is True
         assert captured["run_repository_test_retry_prerequisites"] is True
         assert captured["auto_repository_test_retry"] is True

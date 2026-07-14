@@ -86,6 +86,7 @@ def run_github_repo_intelligence(
     patch_judge_mode: str = "none",
     run_repository_test_command: bool = True,
     run_repository_test_environment_setup: bool = False,
+    repository_test_environment_setup_mode: str = "project",
     run_repository_test_retry: bool = False,
     run_repository_test_retry_prerequisites: bool = False,
     auto_repository_test_retry: bool = False,
@@ -145,6 +146,9 @@ def run_github_repo_intelligence(
         "patch_judge_mode": patch_judge_mode,
         "run_repository_test_command": run_repository_test_command,
         "run_repository_test_environment_setup": run_repository_test_environment_setup,
+        "repository_test_environment_setup_mode": (
+            repository_test_environment_setup_mode
+        ),
         "run_repository_test_retry": run_repository_test_retry,
         "run_repository_test_retry_prerequisites": run_repository_test_retry_prerequisites,
         "auto_repository_test_retry": auto_repository_test_retry,
@@ -261,6 +265,9 @@ def run_github_repo_intelligence(
         patch_judge_mode=patch_judge_mode,
         run_repository_test_command=run_repository_test_command,
         run_repository_test_environment_setup=run_repository_test_environment_setup,
+        repository_test_environment_setup_mode=(
+            repository_test_environment_setup_mode
+        ),
         run_repository_test_retry=run_repository_test_retry,
         run_repository_test_retry_prerequisites=(
             run_repository_test_retry_prerequisites
@@ -318,6 +325,7 @@ def _agent_invocation_summary(
     patch_judge_mode: str,
     run_repository_test_command: bool,
     run_repository_test_environment_setup: bool,
+    repository_test_environment_setup_mode: str,
     run_repository_test_retry: bool,
     run_repository_test_retry_prerequisites: bool,
     auto_repository_test_retry: bool,
@@ -378,6 +386,9 @@ def _agent_invocation_summary(
         "run_repository_test_command": bool(run_repository_test_command),
         "run_repository_test_environment_setup": bool(
             run_repository_test_environment_setup
+        ),
+        "repository_test_environment_setup_mode": str(
+            repository_test_environment_setup_mode or "project"
         ),
         "run_repository_test_retry": bool(run_repository_test_retry),
         "run_repository_test_retry_prerequisites": bool(
@@ -4694,6 +4705,27 @@ def github_repo_intelligence_summary(
         "repository_test_environment_setup_reason": str(
             summary.get("repository_test_environment_setup_reason") or ""
         ),
+        "repository_test_environment_setup_mode": str(
+            summary.get("repository_test_environment_setup_mode") or ""
+        ),
+        "repository_test_environment_setup_test_module": str(
+            summary.get("repository_test_environment_setup_test_module") or ""
+        ),
+        "repository_test_environment_setup_repository_code_install_requested": bool(
+            summary.get(
+                "repository_test_environment_setup_repository_code_install_requested",
+                False,
+            )
+        ),
+        "repository_test_environment_setup_repository_dependency_install_requested": bool(
+            summary.get(
+                "repository_test_environment_setup_repository_dependency_install_requested",
+                False,
+            )
+        ),
+        "repository_test_environment_setup_safety_boundary": str(
+            summary.get("repository_test_environment_setup_safety_boundary") or ""
+        ),
         "repository_test_environment_setup_supported": bool(
             summary.get("repository_test_environment_setup_supported", False)
         ),
@@ -4702,6 +4734,24 @@ def github_repo_intelligence_summary(
         ),
         "repository_test_environment_setup_result_reason": str(
             summary.get("repository_test_environment_setup_result_reason") or ""
+        ),
+        "repository_test_environment_setup_result_executed": bool(
+            summary.get(
+                "repository_test_environment_setup_result_executed",
+                False,
+            )
+        ),
+        "planned_repository_test_result_executed": bool(
+            summary.get("planned_repository_test_result_executed", False)
+        ),
+        "planned_repository_test_result_status": str(
+            summary.get("planned_repository_test_result_status") or ""
+        ),
+        "planned_repository_test_python_executable": str(
+            summary.get("planned_repository_test_python_executable") or ""
+        ),
+        "planned_repository_test_python_source": str(
+            summary.get("planned_repository_test_python_source") or ""
         ),
         "repository_test_timeout_narrowing_json": str(
             report.output_paths.get("repository_test_timeout_narrowing_json") or ""
@@ -12408,6 +12458,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--no-repository-test-command", action="store_true")
     parser.add_argument("--run-repository-test-environment-setup", action="store_true")
+    parser.add_argument(
+        "--repository-test-environment-setup-mode",
+        choices=["project", "runner_probe"],
+        default="project",
+    )
     parser.add_argument("--run-repository-test-retry", action="store_true")
     parser.add_argument(
         "--run-repository-test-retry-prerequisites",
@@ -12507,6 +12562,9 @@ def main(argv: list[str] | None = None, opener=None) -> None:
         run_repository_test_command=not args.no_repository_test_command,
         run_repository_test_environment_setup=(
             args.run_repository_test_environment_setup
+        ),
+        repository_test_environment_setup_mode=(
+            args.repository_test_environment_setup_mode
         ),
         run_repository_test_retry=args.run_repository_test_retry,
         run_repository_test_retry_prerequisites=(

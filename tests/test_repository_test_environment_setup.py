@@ -378,6 +378,7 @@ def test_repository_test_environment_setup_skips_without_install_command(tmp_pat
     assert payload["status"] == "skipped"
     assert payload["reason"] == "no_install_command"
     assert payload["install_command_supported"] is False
+    assert payload["repository_dependency_install_requested"] is False
 
 
 def test_repository_test_environment_setup_execution_skips_by_default(tmp_path):
@@ -436,6 +437,103 @@ def test_repository_test_environment_setup_execution_runs_create_and_install(tmp
     assert "Repository Test Environment Setup Result" in markdown
     assert Path(paths["repository_test_environment_setup_result_json"]).exists()
     assert Path(paths["repository_test_environment_setup_result_markdown"]).exists()
+
+
+def test_repository_test_environment_setup_runner_probe_installs_only_pytest(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "pyproject.toml").write_text(
+        "[build-system]\nrequires = ['setuptools']\n",
+        encoding="utf-8",
+    )
+
+    payload = plan_repository_test_environment_setup(
+        {
+            "recommended_install_command": "python -m pip install -e .[test]",
+            "install_command_reason": "editable_project_with_test_extra",
+            "dependency_files": ["pyproject.toml"],
+            "dependency_access_blockers": ["credential_reference:PRIVATE_INDEX_TOKEN"],
+            "test_module": "tox",
+            "test_tool_available": False,
+            "repository_compatibility": {
+                "install_policy": {
+                    "risk": "high",
+                    "reasons": ["repository-local build hook"],
+                    "requires_explicit_authorization": True,
+                    "auto_execution_allowed": False,
+                }
+            },
+        },
+        output_dir=tmp_path / "out",
+        repository_root=repo,
+        setup_mode="runner-probe",
+    )
+    markdown = render_repository_test_environment_setup_markdown(payload)
+
+    assert payload["status"] == "pass"
+    assert payload["reason"] == "runner_probe_setup_plan_built"
+    assert payload["setup_mode"] == "runner_probe"
+    assert payload["test_module"] == "pytest"
+    assert payload["install_command_args"][-1] == "pytest"
+    assert "-e" not in payload["install_command_args"]
+    assert ".[test]" not in payload["install_command_args"]
+    assert payload["repository_code_install_requested"] is False
+    assert payload["repository_dependency_install_requested"] is False
+    assert payload["install_requires_repository_root"] is False
+    assert payload["install_risk"] == "low"
+    assert payload["install_requires_explicit_authorization"] is False
+    assert payload["project_install_augmented"] is False
+    assert "Runner Probe" not in markdown
+    assert "runner_probe" in markdown
+    assert "Repository Code Install Requested: false" in markdown
+
+
+def test_repository_test_environment_setup_rejects_unknown_mode(tmp_path):
+    try:
+        plan_repository_test_environment_setup(
+            {"recommended_install_command": "python -m pip install pytest"},
+            output_dir=tmp_path / "out",
+            setup_mode="unbounded",
+        )
+    except ValueError as exc:
+        assert "unsupported repository test environment setup mode" in str(exc)
+    else:
+        raise AssertionError("unknown setup mode must be rejected")
+
+
+def test_repository_test_environment_setup_runner_probe_execution_is_auditable(
+    tmp_path,
+):
+    calls = []
+
+    def fake_runner(command, cwd, capture_output, text, timeout, check, env):
+        del capture_output, text, timeout, check, env
+        calls.append((command, cwd))
+        return subprocess.CompletedProcess(command, 0, "ok", "")
+
+    plan = plan_repository_test_environment_setup(
+        {
+            "recommended_install_command": "python -m pip install -e .",
+            "test_module": "tox",
+        },
+        output_dir=tmp_path / "out",
+        setup_mode="runner_probe",
+    )
+
+    payload = execute_repository_test_environment_setup(
+        plan,
+        enabled=True,
+        runner=fake_runner,
+    )
+
+    assert payload["status"] == "pass"
+    assert payload["setup_mode"] == "runner_probe"
+    assert payload["test_module"] == "pytest"
+    assert payload["repository_code_install_requested"] is False
+    assert payload["repository_dependency_install_requested"] is False
+    assert payload["install_command_args"][-1] == "pytest"
+    assert len(calls) == 2
+    assert calls[1][1] is None
 
 
 def test_repository_test_environment_setup_execution_records_install_failure(tmp_path):

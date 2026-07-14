@@ -333,6 +333,40 @@ def test_repository_test_execution_result_classifies_missing_dependency(tmp_path
     assert "Diagnostic Summary" in markdown
 
 
+def test_repository_test_execution_result_classifies_missing_native_extension(
+    tmp_path,
+):
+    def missing_native_extension_runner(*args, **kwargs):
+        del args, kwargs
+        return subprocess.CompletedProcess(
+            ["python", "-m", "pytest"],
+            4,
+            "",
+            (
+                "ImportError while loading conftest 'tests/conftest.py'.\n"
+                "E   UserWarning: Polars binary is missing!\n"
+            ),
+        )
+
+    payload = execute_repository_test_plan(
+        {
+            "recommended_execution_command": "python -m pytest -q tests",
+            "recommended_execution_level": "narrow",
+            "recommended_execution_risk": "low",
+            "recommended_execution_runner": "pytest",
+            "executable_now": True,
+        },
+        repository_root=tmp_path,
+        runner=missing_native_extension_runner,
+    )
+
+    assert payload["status"] == "fail"
+    assert payload["failure_category"] == "missing_native_extension"
+    assert "binary is missing" in payload["failure_signal"].lower()
+    assert "compiled native extension" in payload["diagnostic_summary"]
+    assert any("native extension" in action for action in payload["next_actions"])
+
+
 def test_repository_test_execution_result_classifies_missing_test_runner(tmp_path):
     def missing_runner_runner(*args, **kwargs):
         del args, kwargs

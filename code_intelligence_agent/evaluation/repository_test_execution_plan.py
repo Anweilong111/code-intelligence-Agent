@@ -21,6 +21,15 @@ def plan_repository_test_execution(
     setup = _dict(repository_test_environment_setup)
     setup_result = _dict(repository_test_environment_setup_result)
     prepared_test_runner = _prepared_test_runner(setup, setup_result)
+    runner_probe_setup_required = str(setup.get("setup_mode") or "") == (
+        "runner_probe"
+    )
+    runner_probe_setup_ready = bool(
+        runner_probe_setup_required and prepared_test_runner == "pytest"
+    )
+    runner_probe_setup_not_ready = bool(
+        runner_probe_setup_required and not runner_probe_setup_ready
+    )
     test_module = _test_module(command) or str(environment.get("test_module") or "")
     pytest_config = _dict(environment.get("pytest_configuration"))
     pytest_addopts = _safe_pytest_addopts(_list(pytest_config.get("addopts")))
@@ -119,6 +128,7 @@ def plan_repository_test_execution(
         has_execution_seed
         and root_present
         and bool(candidates)
+        and not runner_probe_setup_not_ready
         and not selected_tool_missing
         and not working_dir_missing
         and not missing_selected_paths
@@ -131,6 +141,9 @@ def plan_repository_test_execution(
     elif not root_present:
         status = "warning"
         reason = "full_repo_not_materialized"
+    elif runner_probe_setup_not_ready:
+        status = "warning"
+        reason = "runner_probe_setup_not_ready"
     elif planned_runner_unprepared:
         status = "warning"
         reason = "planned_runner_not_prepared"
@@ -175,6 +188,8 @@ def plan_repository_test_execution(
         "runner_fallback_from": str(runner_fallback.get("from") or ""),
         "runner_fallback_to": str(runner_fallback.get("to") or ""),
         "prepared_test_runner": prepared_test_runner,
+        "runner_probe_setup_required": runner_probe_setup_required,
+        "runner_probe_setup_ready": runner_probe_setup_ready,
         "planned_runner_prepared": not planned_runner_unprepared,
         "repository_root": str(root_path) if root_path is not None else "",
         "repository_root_present": root_present,
@@ -391,6 +406,20 @@ def _candidate_commands(
         ci_command_candidates=ci_command_candidates,
         fallback_working_dir=fallback_working_dir,
     )
+    if prepared_test_runner == "pytest" and not any(
+        str(spec.get("runner") or "") == "pytest" for spec in command_specs
+    ):
+        command_specs.append(
+            {
+                "command": "python -m pytest -q",
+                "runner": "pytest",
+                "source": "prepared_runner_probe",
+                "profile_rank": len(command_specs) + 1,
+                "profile_reason": "isolated_pytest_runner_prepared",
+                "profile_confidence": 0.70,
+                "working_dir": fallback_working_dir,
+            }
+        )
     for spec in command_specs:
         working_dir = str(spec.get("working_dir") or "")
         spec_selected_paths = _paths_for_working_dir(selected_paths, working_dir)
@@ -1215,6 +1244,11 @@ def _next_actions(
     if reason == "selected_working_dir_missing":
         actions.append(
             "Verify monorepo subproject checkout paths because the selected working directory is missing."
+        )
+    if reason == "runner_probe_setup_not_ready":
+        actions.append(
+            "Do not fall back to the current interpreter; resolve the isolated "
+            "runner-probe setup blocker before executing repository tests."
         )
     if planned_environment_variables:
         actions.append(

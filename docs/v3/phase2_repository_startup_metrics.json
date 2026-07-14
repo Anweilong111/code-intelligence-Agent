@@ -1,0 +1,89 @@
+{
+  "schema_version": "v3_phase2_repository_startup_metrics_v1",
+  "recorded_at": "2026-07-15",
+  "status": "pass",
+  "dataset": "datasets/github_cases/v3_fixed_sha_repository_startup_20.json",
+  "paired_baseline_dataset": "datasets/github_cases/v2_unfamiliar_python_repositories_20.json",
+  "selection": {
+    "role": "paired_v2_v3_startup_comparison",
+    "repository_count": 20,
+    "unique_repository_count": 20,
+    "fixed_sha_count": 20,
+    "same_repository_sha_pairs_as_v2": true,
+    "execution_checkout_authorized_count": 20
+  },
+  "protocol": {
+    "setup_mode": "runner_probe",
+    "isolated_environment": "venv",
+    "installed_runner": "pytest",
+    "repository_code_install_allowed": false,
+    "repository_dependency_install_allowed": false,
+    "test_timeout_seconds": 8,
+    "minimum_started_and_terminated": 14,
+    "host_interpreter_fallback_allowed_when_setup_not_ready": false
+  },
+  "evaluation": {
+    "passed": true,
+    "acceptance_check_count": 14,
+    "acceptance_checks_passed": 14,
+    "structured_report_count": 20,
+    "runner_probe_report_count": 20,
+    "test_command_discovery_count": 20,
+    "setup_execution_count": 19,
+    "started_and_terminated_count": 19,
+    "started_and_terminated_rate": 0.95,
+    "isolated_venv_started_count": 19,
+    "repository_code_install_requested_count": 0,
+    "repository_dependency_install_requested_count": 0,
+    "not_started_count": 1,
+    "classified_not_started_blocker_count": 1,
+    "started_failure_count": 18,
+    "classified_started_failure_layer_count": 18,
+    "started_failure_layer_counts": {
+      "environment": 18
+    },
+    "test_process_status_counts": {
+      "pass": 1,
+      "fail": 18,
+      "skipped": 1
+    },
+    "failure_category_counts": {
+      "missing_dependency": 14,
+      "missing_native_extension": 1,
+      "pytest_collection_error": 1,
+      "command_usage_error": 1,
+      "timeout": 1,
+      "not_executed": 1,
+      "none": 1
+    },
+    "runner_fallback_counts": {
+      "tox_to_pytest": 7,
+      "nox_to_pytest": 2
+    },
+    "not_started_case": {
+      "repository": "tiangolo/typer",
+      "reason": "environment:python_version_incompatible"
+    }
+  },
+  "paired_baseline_comparison": {
+    "v2_started_and_terminated_count": 7,
+    "v2_started_and_terminated_rate": 0.35,
+    "v3_started_and_terminated_count": 19,
+    "v3_started_and_terminated_rate": 0.95,
+    "count_difference": 12,
+    "rate_difference": 0.6,
+    "protocols_identical": false,
+    "warning": "V2 authorized test checkout for 7 cases; V3 authorizes all 20 and uses an isolated pytest runner probe. Every comparison must report this protocol change."
+  },
+  "timing": {
+    "comparable_end_to_end_timing_available": false,
+    "reason": "The final suite aggregation reused existing reports; its elapsed time is report-reuse overhead rather than cold repository analysis time."
+  },
+  "claim_boundaries": [
+    "A success means a real pytest process started from the isolated venv and terminated with an explicit status.",
+    "A success does not mean the repository test suite passed, a defect was localized, or a patch was verified.",
+    "The runner probe intentionally does not install repository code or project dependencies.",
+    "The V2-to-V3 difference is not an unchanged-protocol algorithm uplift.",
+    "This phase does not call a live LLM or report a model repair rate."
+  ]
+}

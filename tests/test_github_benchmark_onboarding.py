@@ -1256,6 +1256,7 @@ def test_onboarding_can_checkout_repository_before_test_command():
             checkout_repository_tests=True,
             repository_checkout_runner=fake_checkout_runner,
             run_repository_test_environment_setup=True,
+            repository_test_environment_setup_mode="runner_probe",
             repository_test_environment_setup_runner=fake_setup_runner,
             repository_test_execution_runner=fake_test_runner,
             repository_checkout_timeout=10,
@@ -1334,6 +1335,13 @@ def test_onboarding_can_checkout_repository_before_test_command():
             "patch_candidates_not_ready"
         )
         assert report.repository_test_environment_setup["status"] == "pass"
+        assert report.repository_test_environment_setup["setup_mode"] == (
+            "runner_probe"
+        )
+        assert report.repository_test_environment_setup["test_module"] == "pytest"
+        assert report.repository_test_environment_setup[
+            "repository_code_install_requested"
+        ] is False
         assert report.repository_test_environment_setup[
             "install_command_supported"
         ] is True
@@ -1347,6 +1355,9 @@ def test_onboarding_can_checkout_repository_before_test_command():
         ] == 0
         assert report.generated_candidate_count == 1
         assert run_config["actions"]["checkout_repository_tests"] is True
+        assert run_config["actions"][
+            "repository_test_environment_setup_mode"
+        ] == "runner_probe"
         assert run_config["repository_checkout"]["status"] == "pass"
         assert run_config["repository_checkout_sources"]["present"] is True
         assert run_config["repository_checkout_sources"]["included_file_count"] >= 3
@@ -1426,6 +1437,9 @@ def test_onboarding_can_checkout_repository_before_test_command():
         ).exists()
         assert checkout_commands
         assert len(setup_commands) == 2
+        assert setup_commands[1][0][-1] == "pytest"
+        assert "-e" not in setup_commands[1][0]
+        assert setup_commands[1][1] is None
         assert len(planned_execution_commands) == 1
         assert planned_execution_commands[0][0][0] == (
             report.repository_test_environment_setup["venv_python"]
@@ -3093,9 +3107,10 @@ def test_onboarding_cli_smoke_preset_runs_end_to_end_artifacts():
             "run_quality_gate": True,
             "run_showcase_lite": True,
             "run_smoke_validation": True,
-            "run_repository_test_command": True,
-            "run_repository_test_environment_setup": False,
-            "run_repository_test_retry": False,
+                "run_repository_test_command": True,
+                "run_repository_test_environment_setup": False,
+                "repository_test_environment_setup_mode": "project",
+                "run_repository_test_retry": False,
             "run_repository_test_retry_prerequisites": False,
             "auto_repository_test_retry": False,
             "auto_repository_test_retry_max_risk": "low",
@@ -3184,9 +3199,10 @@ def test_onboarding_cli_mining_preset_skips_benchmark_requirement():
             "run_quality_gate": True,
             "run_showcase_lite": True,
             "run_smoke_validation": False,
-            "run_repository_test_command": True,
-            "run_repository_test_environment_setup": False,
-            "run_repository_test_retry": False,
+                "run_repository_test_command": True,
+                "run_repository_test_environment_setup": False,
+                "repository_test_environment_setup_mode": "project",
+                "run_repository_test_retry": False,
             "run_repository_test_retry_prerequisites": False,
             "auto_repository_test_retry": False,
             "auto_repository_test_retry_max_risk": "low",

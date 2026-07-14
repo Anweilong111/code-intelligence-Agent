@@ -6201,6 +6201,9 @@ def test_intelligence_suite_applies_agent_auto_execution_profile_to_command():
             "repository_patch_candidate_variant_allowlist": [
                 "insert_len_zero_guard"
             ],
+            "run_repository_test_environment_setup": True,
+            "repository_test_environment_setup_mode": "runner_probe",
+            "repository_test_environment_setup_timeout": 45,
             "prefer_cached_discovery": True,
         }
     )
@@ -6222,6 +6225,13 @@ def test_intelligence_suite_applies_agent_auto_execution_profile_to_command():
     assert "--repository-patch-candidate-variant" in command_args
     assert "insert_len_zero_guard" in command_args
     assert "--prefer-cached-discovery" in command_args
+    assert "--run-repository-test-environment-setup" in command_args
+    assert command_args[
+        command_args.index("--repository-test-environment-setup-mode") + 1
+    ] == "runner_probe"
+    assert command_args[
+        command_args.index("--repository-test-environment-setup-timeout") + 1
+    ] == "45"
     assert "--auto-controller-actions" in command_args
     assert command_args[
         command_args.index("--auto-controller-max-actions") + 1

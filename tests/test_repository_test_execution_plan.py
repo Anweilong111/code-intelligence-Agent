@@ -268,6 +268,111 @@ def test_repository_test_execution_plan_keeps_tox_full_command():
     assert payload["executable_now"] is False
 
 
+def test_repository_test_execution_plan_uses_prepared_pytest_runner_probe(tmp_path):
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_sample.py").write_text(
+        "def test_smoke():\n    assert True\n",
+        encoding="utf-8",
+    )
+
+    payload = plan_repository_test_execution(
+        {
+            "recommended_test_command": "python -m tox",
+            "test_source_paths": ["tests/test_sample.py"],
+            "test_command_candidates": [
+                {
+                    "rank": 1,
+                    "command": "python -m tox",
+                    "runner": "tox",
+                    "confidence": 0.9,
+                    "reason": "tox_ini_detected",
+                }
+            ],
+        },
+        repository_test_environment={
+            "status": "warning",
+            "reason": "test_tool_missing",
+            "test_module": "tox",
+            "test_tool_available": False,
+        },
+        repository_test_environment_setup={
+            "status": "pass",
+            "setup_mode": "runner_probe",
+            "test_module": "pytest",
+        },
+        repository_test_environment_setup_result={
+            "status": "pass",
+            "executed": True,
+            "setup_mode": "runner_probe",
+            "test_module": "pytest",
+        },
+        repository_root=tmp_path,
+    )
+
+    assert payload["status"] == "pass"
+    assert payload["prepared_test_runner"] == "pytest"
+    assert payload["recommended_execution_runner"] == "pytest"
+    assert payload["recommended_execution_level"] == "narrow"
+    assert payload["recommended_execution_command"] == (
+        "python -m pytest -q tests/test_sample.py"
+    )
+    assert payload["recommended_execution_source"] == "prepared_runner_probe"
+    assert payload["runner_fallback_used"] is True
+    assert payload["runner_fallback_reason"] == "missing_runner:tox"
+    assert payload["executable_now"] is True
+    assert any(
+        candidate["runner"] == "tox" for candidate in payload["candidate_commands"]
+    )
+
+
+def test_repository_test_execution_plan_blocks_unprepared_runner_probe(tmp_path):
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_sample.py").write_text(
+        "def test_smoke():\n    assert True\n",
+        encoding="utf-8",
+    )
+
+    payload = plan_repository_test_execution(
+        {
+            "recommended_test_command": "python -m pytest",
+            "test_source_paths": ["tests/test_sample.py"],
+        },
+        repository_test_environment={
+            "status": "warning",
+            "reason": "python_version_incompatible",
+            "test_module": "pytest",
+            "test_tool_available": True,
+        },
+        repository_test_environment_setup={
+            "status": "warning",
+            "reason": "python_version_incompatible",
+            "setup_mode": "runner_probe",
+            "test_module": "pytest",
+        },
+        repository_test_environment_setup_result={
+            "status": "skipped",
+            "executed": False,
+            "reason": "setup_plan_not_ready",
+            "setup_mode": "runner_probe",
+            "test_module": "pytest",
+        },
+        repository_root=tmp_path,
+    )
+
+    assert payload["status"] == "warning"
+    assert payload["reason"] == "runner_probe_setup_not_ready"
+    assert payload["runner_probe_setup_required"] is True
+    assert payload["runner_probe_setup_ready"] is False
+    assert payload["prepared_test_runner"] == ""
+    assert payload["executable_now"] is False
+    assert any(
+        "Do not fall back to the current interpreter" in action
+        for action in payload["next_actions"]
+    )
+
+
 def test_repository_test_execution_plan_uses_pytest_fallback_when_tox_missing(tmp_path):
     tests_dir = tmp_path / "tests"
     tests_dir.mkdir()

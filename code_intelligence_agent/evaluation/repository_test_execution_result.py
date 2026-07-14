@@ -501,6 +501,20 @@ def _diagnose_execution_result(
                 "Rerun with --run-repository-test-environment-setup after dependency planning succeeds.",
             ],
         }
+    missing_native_extension = _missing_native_extension_signal(combined)
+    if missing_native_extension:
+        return {
+            "failure_category": "missing_native_extension",
+            "failure_signal": missing_native_extension,
+            "diagnostic_summary": (
+                "Repository imports reached a package that requires a compiled "
+                "native extension, but the binary artifact is unavailable."
+            ),
+            "next_actions": [
+                "Build or install the repository's native extension in a compatible isolated environment.",
+                "Do not classify this startup failure as an application-code defect.",
+            ],
+        }
     missing_fixture = _missing_pytest_fixture_name(combined)
     if missing_fixture:
         plugin_hint = _pytest_fixture_plugin_hint(missing_fixture)
@@ -713,6 +727,21 @@ def _missing_module_name(text: str) -> str:
         match = re.search(pattern, text)
         if match:
             return match.group(1)
+    return ""
+
+
+def _missing_native_extension_signal(text: str) -> str:
+    patterns = (
+        r"[^\n]*binary is missing![^\n]*",
+        r"[^\n]*DLL load failed[^\n]*",
+        r"[^\n]*cannot open shared object file[^\n]*",
+        r"[^\n]*undefined symbol[^\n]*",
+        r"[^\n]*native extension[^\n]*(?:missing|not found|unavailable)[^\n]*",
+    )
+    for pattern in patterns:
+        line = _first_matching_regex_line(text, pattern)
+        if line:
+            return line
     return ""
 
 

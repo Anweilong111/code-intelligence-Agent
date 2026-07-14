@@ -19,6 +19,31 @@ Evidence: [Phase 1 protocol](docs/v3/phase1_real_bug_benchmark_protocol.md),
 [accepted catalog](docs/v3/phase1_real_bug_catalog.md), and
 [environment profiles](docs/v3/phase1_environment_profiles.md).
 
+## V3 Repository Startup Status
+
+Phase 2 is complete for the fixed 20-repository startup protocol:
+
+- All 20 fixed-SHA repositories produced structured Agent reports and a test
+  command; 19/20 started and explicitly terminated a real pytest process.
+- Every started process used a repository-specific virtual environment. The
+  runner probe installed only pytest: it requested 0 repository code installs
+  and 0 repository dependency installs.
+- The remaining Typer case was intentionally not started because the current
+  Python 3.13 runtime violates the repository constraint. The execution planner
+  now refuses to fall back to the host interpreter when isolated setup is not
+  ready.
+- Of the 19 started processes, one passed and 18 ended with classified
+  environment-layer outcomes. This is expected because the probe does not
+  install project dependencies; it measures safe process startup, not suite
+  correctness or repair success.
+- The paired V2 baseline was 7/20 and V3 is 19/20, but V3 authorizes checkout for
+  all 20 cases and uses a new isolated-runner protocol. The +12-case result must
+  always be reported together with that protocol-change warning.
+
+Evidence: [Phase 2 protocol](docs/v3/phase2_repository_startup_protocol.md),
+[machine-readable metrics](docs/v3/phase2_repository_startup_metrics.json), and
+[verification record](docs/v3/phase2_verification.md).
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

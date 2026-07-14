@@ -137,6 +137,9 @@ def run_github_repo_agent_suite(
                     "run_repository_test_environment_setup",
                     False,
                 ),
+                repository_test_environment_setup_mode=str(
+                    options.get("repository_test_environment_setup_mode") or "project"
+                ),
                 run_repository_test_retry=_bool_option(
                     options,
                     "run_repository_test_retry",
@@ -2733,6 +2736,13 @@ def _command_args(repo: str, output_dir: Path, options: dict[str, Any]) -> list[
                     str(options["repository_test_environment_setup_timeout"]),
                 ]
             )
+    if options.get("repository_test_environment_setup_mode") is not None:
+        args.extend(
+            [
+                "--repository-test-environment-setup-mode",
+                str(options["repository_test_environment_setup_mode"]),
+            ]
+        )
     if _bool_option(options, "run_repository_test_retry", False):
         args.append("--run-repository-test-retry")
     if _bool_option(options, "run_repository_test_retry_prerequisites", False):

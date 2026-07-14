@@ -18,6 +18,7 @@ _ENVIRONMENT_FAILURE_CATEGORIES = {
     "framework_configuration_error",
     "import_path_error",
     "missing_dependency",
+    "missing_native_extension",
     "missing_pytest_fixture",
     "missing_test_runner",
     "no_tests_collected",

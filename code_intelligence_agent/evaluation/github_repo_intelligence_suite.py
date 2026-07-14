@@ -297,6 +297,10 @@ def run_github_repo_intelligence_suite(
                         "run_repository_test_environment_setup",
                         False,
                     ),
+                    repository_test_environment_setup_mode=str(
+                        options.get("repository_test_environment_setup_mode")
+                        or "project"
+                    ),
                     run_repository_test_retry=_bool_option(
                         options,
                         "run_repository_test_retry",
@@ -4243,6 +4247,45 @@ def _suite_metric_snapshot(summary: dict[str, Any]) -> dict[str, Any]:
         "repository_test_environment_reason": str(
             summary.get("repository_test_environment_reason") or ""
         ),
+        "repository_test_environment_setup_status": str(
+            summary.get("repository_test_environment_setup_status") or ""
+        ),
+        "repository_test_environment_setup_mode": str(
+            summary.get("repository_test_environment_setup_mode") or ""
+        ),
+        "repository_test_environment_setup_test_module": str(
+            summary.get("repository_test_environment_setup_test_module") or ""
+        ),
+        "repository_test_environment_setup_executed": bool(
+            summary.get(
+                "repository_test_environment_setup_result_executed",
+                False,
+            )
+        ),
+        "repository_test_environment_setup_result_status": str(
+            summary.get("repository_test_environment_setup_result_status") or ""
+        ),
+        "repository_test_environment_setup_repository_code_install_requested": bool(
+            summary.get(
+                "repository_test_environment_setup_repository_code_install_requested",
+                False,
+            )
+        ),
+        "repository_test_environment_setup_repository_dependency_install_requested": bool(
+            summary.get(
+                "repository_test_environment_setup_repository_dependency_install_requested",
+                False,
+            )
+        ),
+        "repository_test_environment_setup_safety_boundary": str(
+            summary.get("repository_test_environment_setup_safety_boundary") or ""
+        ),
+        "planned_repository_test_python_executable": str(
+            summary.get("planned_repository_test_python_executable") or ""
+        ),
+        "planned_repository_test_python_source": str(
+            summary.get("planned_repository_test_python_source") or ""
+        ),
         "repository_test_environment_diagnosed": bool(
             str(summary.get("repository_test_environment_status") or "")
         ),
@@ -5840,6 +5883,24 @@ def _command_args(repo: str, output_dir: Path, options: dict[str, Any]) -> list[
         args.append("--checkout-repository-tests")
     if _bool_option(options, "prefer_cached_discovery", False):
         args.append("--prefer-cached-discovery")
+    if _bool_option(options, "run_repository_test_environment_setup", False):
+        args.append("--run-repository-test-environment-setup")
+    if options.get("repository_test_environment_setup_mode") is not None:
+        args.extend(
+            [
+                "--repository-test-environment-setup-mode",
+                str(options.get("repository_test_environment_setup_mode")),
+            ]
+        )
+    if options.get("repository_test_environment_setup_timeout") is not None:
+        args.extend(
+            [
+                "--repository-test-environment-setup-timeout",
+                str(options.get("repository_test_environment_setup_timeout")),
+            ]
+        )
+    if _bool_option(options, "run_repository_test_retry", False):
+        args.append("--run-repository-test-retry")
     if _bool_option(options, "run_repository_test_retry_prerequisites", False):
         args.append("--run-repository-test-retry-prerequisites")
     if _bool_option(options, "auto_repository_test_retry", False):

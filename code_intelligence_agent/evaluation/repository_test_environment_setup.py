@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Any
 
 
+SUPPORTED_REPOSITORY_TEST_ENVIRONMENT_SETUP_MODES = {"project", "runner_probe"}
+RUNNER_PROBE_TEST_MODULE = "pytest"
+
+
 def plan_repository_test_environment_setup(
     repository_test_environment: dict[str, Any],
     *,
@@ -18,7 +22,9 @@ def plan_repository_test_environment_setup(
     repository_root: str | Path | None = None,
     venv_name: str = ".repo_test_venv",
     allow_high_risk_install: bool = False,
+    setup_mode: str = "project",
 ) -> dict[str, Any]:
+    normalized_setup_mode = _normalize_setup_mode(setup_mode)
     environment = _dict(repository_test_environment)
     install_command = str(environment.get("recommended_install_command") or "").strip()
     root_value = repository_root or environment.get("repository_root") or None
@@ -44,46 +50,79 @@ def plan_repository_test_environment_setup(
     venv_path = output_root / venv_name
     venv_python = _venv_python_path(venv_path)
     create_args = [sys.executable, "-m", "venv", str(venv_path)]
-    install_args, install_reason = _venv_install_args(
-        install_command,
-        venv_python=venv_python,
-    )
-    additional_runner_modules = _additional_test_runner_modules(
-        environment,
-        install_args,
-    )
-    install_args = _augment_pip_install_args(
-        install_args,
-        additional_runner_modules,
-    )
-    pytest_plugin_candidates, pytest_plugin_candidate_sources = (
-        _pytest_plugin_dependency_candidates(
+    if normalized_setup_mode == "runner_probe":
+        install_args = [
+            str(venv_python),
+            "-m",
+            "pip",
+            "install",
+            RUNNER_PROBE_TEST_MODULE,
+        ]
+        install_reason = "runner_probe_pytest_only"
+        additional_runner_modules: list[str] = []
+        pytest_plugin_candidates: list[str] = []
+        pytest_plugin_candidate_sources: list[dict[str, str]] = []
+        pytest_plugin_specs: list[str] = []
+        pytest_plugin_sources: list[dict[str, str]] = []
+        project_metadata_files = _local_project_metadata_files(environment)
+        project_install_augmented = False
+        install_risk = "low"
+        effective_install_policy = {
+            "risk": "low",
+            "reasons": [
+                "Runner probe installs only pytest into an isolated virtual environment."
+            ],
+            "requires_explicit_authorization": False,
+            "auto_execution_allowed": True,
+        }
+    else:
+        install_args, install_reason = _venv_install_args(
+            install_command,
+            venv_python=venv_python,
+        )
+        additional_runner_modules = _additional_test_runner_modules(
             environment,
             install_args,
-            repository_root=root_path if root_present else None,
         )
-    )
-    pytest_plugin_specs, pytest_plugin_sources = _pytest_plugin_dependency_specs_to_install(
-        pytest_plugin_candidates,
-        pytest_plugin_candidate_sources,
-    )
-    install_args = _augment_pip_install_args(
-        install_args,
-        pytest_plugin_specs,
-    )
-    project_metadata_files = _local_project_metadata_files(environment)
-    project_install_augmented = _should_augment_with_editable_project_install(
-        environment,
-        install_args,
-        project_metadata_files,
-    )
-    if project_install_augmented:
-        install_args = _augment_pip_install_args(install_args, ["-e", "."])
+        install_args = _augment_pip_install_args(
+            install_args,
+            additional_runner_modules,
+        )
+        pytest_plugin_candidates, pytest_plugin_candidate_sources = (
+            _pytest_plugin_dependency_candidates(
+                environment,
+                install_args,
+                repository_root=root_path if root_present else None,
+            )
+        )
+        pytest_plugin_specs, pytest_plugin_sources = (
+            _pytest_plugin_dependency_specs_to_install(
+                pytest_plugin_candidates,
+                pytest_plugin_candidate_sources,
+            )
+        )
+        install_args = _augment_pip_install_args(
+            install_args,
+            pytest_plugin_specs,
+        )
+        project_metadata_files = _local_project_metadata_files(environment)
+        project_install_augmented = _should_augment_with_editable_project_install(
+            environment,
+            install_args,
+            project_metadata_files,
+        )
+        if project_install_augmented:
+            install_args = _augment_pip_install_args(install_args, ["-e", "."])
+        effective_install_policy = install_policy
     root_required = _install_requires_repository_root(install_args)
     missing_config_files = _list(environment.get("missing_config_files"))
     status = "pass"
-    reason = "environment_setup_plan_built"
-    if not install_command:
+    reason = (
+        "runner_probe_setup_plan_built"
+        if normalized_setup_mode == "runner_probe"
+        else "environment_setup_plan_built"
+    )
+    if normalized_setup_mode == "project" and not install_command:
         status = "skipped"
         reason = "no_install_command"
     elif not install_args:
@@ -92,10 +131,14 @@ def plan_repository_test_environment_setup(
     elif python_compatibility_status == "incompatible":
         status = "warning"
         reason = "python_version_incompatible"
-    elif dependency_access_blockers:
+    elif normalized_setup_mode == "project" and dependency_access_blockers:
         status = "warning"
         reason = "dependency_access_blocker"
-    elif install_risk == "high" and not allow_high_risk_install:
+    elif (
+        normalized_setup_mode == "project"
+        and install_risk == "high"
+        and not allow_high_risk_install
+    ):
         status = "warning"
         reason = "high_risk_install_requires_authorization"
     elif root_required and not root_present:
@@ -107,6 +150,25 @@ def plan_repository_test_environment_setup(
     return {
         "status": status,
         "reason": reason,
+        "setup_mode": normalized_setup_mode,
+        "setup_intent": (
+            "isolated_test_runner_probe"
+            if normalized_setup_mode == "runner_probe"
+            else "repository_project_environment"
+        ),
+        "repository_code_install_requested": bool(
+            _pip_install_mentions_local_project(install_args)
+        ),
+        "repository_dependency_install_requested": bool(
+            normalized_setup_mode == "project" and install_args
+        ),
+        "install_command_overridden": normalized_setup_mode == "runner_probe",
+        "safety_boundary": (
+            "Installs only pytest into an isolated venv; repository imports and "
+            "tests may still execute in the separately authorized test step."
+            if normalized_setup_mode == "runner_probe"
+            else "Project dependency installation may execute package build hooks."
+        ),
         "isolation_mode": "venv",
         "venv_path": str(venv_path),
         "venv_python": str(venv_python),
@@ -118,14 +180,14 @@ def plan_repository_test_environment_setup(
         "install_command_translation_reason": install_reason,
         "install_risk": install_risk,
         "install_risk_reasons": [
-            str(item) for item in _list(install_policy.get("reasons"))
+            str(item) for item in _list(effective_install_policy.get("reasons"))
         ],
         "install_requires_explicit_authorization": bool(
-            install_policy.get("requires_explicit_authorization", False)
+            effective_install_policy.get("requires_explicit_authorization", False)
         ),
         "high_risk_install_authorized": bool(allow_high_risk_install),
         "install_auto_execution_allowed": bool(
-            install_policy.get("auto_execution_allowed", False)
+            effective_install_policy.get("auto_execution_allowed", False)
         ),
         "python_compatibility_status": python_compatibility_status,
         "dependency_access_blockers": dependency_access_blockers,
@@ -151,7 +213,11 @@ def plan_repository_test_environment_setup(
         "install_requires_repository_root": root_required,
         "repository_root": str(root_path) if root_path is not None else "",
         "repository_root_present": root_present,
-        "test_module": str(environment.get("test_module") or ""),
+        "test_module": (
+            RUNNER_PROBE_TEST_MODULE
+            if normalized_setup_mode == "runner_probe"
+            else str(environment.get("test_module") or "")
+        ),
         "test_tool_available": environment.get("test_tool_available"),
         "dependency_files": _list(environment.get("dependency_files")),
         "missing_config_files": missing_config_files,
@@ -172,6 +238,17 @@ def render_repository_test_environment_setup_markdown(payload: dict[str, Any]) -
         "",
         f"- Status: `{_markdown_cell(payload.get('status', ''))}`",
         f"- Reason: `{_markdown_cell(payload.get('reason', ''))}`",
+        f"- Setup Mode: `{_markdown_cell(payload.get('setup_mode') or 'project')}`",
+        f"- Setup Intent: `{_markdown_cell(payload.get('setup_intent') or 'none')}`",
+        (
+            "- Repository Code Install Requested: "
+            f"{str(bool(payload.get('repository_code_install_requested'))).lower()}"
+        ),
+        (
+            "- Repository Dependency Install Requested: "
+            f"{str(bool(payload.get('repository_dependency_install_requested'))).lower()}"
+        ),
+        f"- Safety Boundary: {_markdown_cell(payload.get('safety_boundary') or 'none')}",
         f"- Isolation Mode: `{_markdown_cell(payload.get('isolation_mode', ''))}`",
         f"- Venv Path: `{_markdown_cell(payload.get('venv_path') or 'none')}`",
         f"- Venv Python: `{_markdown_cell(payload.get('venv_python') or 'none')}`",
@@ -458,6 +535,16 @@ def render_repository_test_environment_setup_result_markdown(
         f"- Status: `{_markdown_cell(payload.get('status', ''))}`",
         f"- Executed: {str(bool(payload.get('executed', False))).lower()}",
         f"- Reason: `{_markdown_cell(payload.get('reason', ''))}`",
+        f"- Setup Mode: `{_markdown_cell(payload.get('setup_mode') or 'project')}`",
+        f"- Test Module: `{_markdown_cell(payload.get('test_module') or 'none')}`",
+        (
+            "- Repository Code Install Requested: "
+            f"{str(bool(payload.get('repository_code_install_requested'))).lower()}"
+        ),
+        (
+            "- Repository Dependency Install Requested: "
+            f"{str(bool(payload.get('repository_dependency_install_requested'))).lower()}"
+        ),
         f"- Message: {_markdown_cell(payload.get('message', ''))}",
         f"- Venv Path: `{_markdown_cell(payload.get('venv_path') or 'none')}`",
         f"- Create Executed: {str(bool(payload.get('create_executed', False))).lower()}",
@@ -568,6 +655,13 @@ def _venv_install_args(
     if managed:
         return managed
     return [], "unsupported"
+
+
+def _normalize_setup_mode(value: str) -> str:
+    normalized = str(value or "project").strip().lower().replace("-", "_")
+    if normalized not in SUPPORTED_REPOSITORY_TEST_ENVIRONMENT_SETUP_MODES:
+        raise ValueError(f"unsupported repository test environment setup mode: {value}")
+    return normalized
 
 
 def _managed_project_install_args(
@@ -1035,6 +1129,15 @@ def _execution_result(
         "executed": True,
         "reason": reason,
         "message": message,
+        "setup_mode": str(plan.get("setup_mode") or "project"),
+        "test_module": str(plan.get("test_module") or ""),
+        "repository_code_install_requested": bool(
+            plan.get("repository_code_install_requested", False)
+        ),
+        "repository_dependency_install_requested": bool(
+            plan.get("repository_dependency_install_requested", False)
+        ),
+        "safety_boundary": str(plan.get("safety_boundary") or ""),
         "venv_path": str(plan.get("venv_path") or ""),
         "venv_python": str(plan.get("venv_python") or ""),
         "create_command_args": _list(create.get("args")),
@@ -1080,6 +1183,15 @@ def _execution_skipped(
         "executed": False,
         "reason": reason,
         "message": message,
+        "setup_mode": str(plan.get("setup_mode") or "project"),
+        "test_module": str(plan.get("test_module") or ""),
+        "repository_code_install_requested": bool(
+            plan.get("repository_code_install_requested", False)
+        ),
+        "repository_dependency_install_requested": bool(
+            plan.get("repository_dependency_install_requested", False)
+        ),
+        "safety_boundary": str(plan.get("safety_boundary") or ""),
         "venv_path": str(plan.get("venv_path") or ""),
         "venv_python": str(plan.get("venv_python") or ""),
         "create_command_args": _list(plan.get("venv_create_args")),

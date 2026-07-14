@@ -984,6 +984,7 @@ def test_repo_agent_suite_reports_mixed_expected_results():
                             "repository_test_failure_overlay_candidate_limit": 3,
                             "dependency_max_depth": 2,
                             "run_repository_test_environment_setup": True,
+                            "repository_test_environment_setup_mode": "project",
                             "repository_test_environment_setup_timeout": 11,
                             "checkout_repository_tests": True,
                             "repository_checkout_timeout": 9,
@@ -1250,6 +1251,10 @@ def test_repo_agent_suite_reports_mixed_expected_results():
             "--run-repository-test-environment-setup"
             in report.runs[0].command_args
         )
+        setup_mode_index = report.runs[0].command_args.index(
+            "--repository-test-environment-setup-mode"
+        )
+        assert report.runs[0].command_args[setup_mode_index + 1] == "project"
         assert (
             "--repository-test-environment-setup-timeout"
             in report.runs[0].command_args

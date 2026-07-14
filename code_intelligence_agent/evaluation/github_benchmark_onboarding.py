@@ -438,6 +438,7 @@ def onboard_from_discovery(
     run_smoke_validation: bool = False,
     run_repository_test_command: bool = True,
     run_repository_test_environment_setup: bool = False,
+    repository_test_environment_setup_mode: str = "project",
     run_repository_test_retry: bool = False,
     run_repository_test_retry_prerequisites: bool = False,
     auto_repository_test_retry: bool = False,
@@ -824,6 +825,7 @@ def onboard_from_discovery(
             setup_environment,
             output_dir=output_root,
             repository_root=effective_repository_test_root,
+            setup_mode=repository_test_environment_setup_mode,
         )
         output_paths.update(
             write_repository_test_environment_setup_artifacts(
@@ -1529,6 +1531,9 @@ def onboard_from_discovery(
         run_smoke_validation=run_smoke_validation,
         run_repository_test_command=run_repository_test_command,
         run_repository_test_environment_setup=run_repository_test_environment_setup,
+        repository_test_environment_setup_mode=(
+            repository_test_environment_setup_mode
+        ),
         run_repository_test_retry=run_repository_test_retry,
         run_repository_test_retry_prerequisites=run_repository_test_retry_prerequisites,
         auto_repository_test_retry=auto_repository_test_retry,
@@ -1615,6 +1620,7 @@ def onboard_tree(
     run_smoke_validation: bool = False,
     run_repository_test_command: bool = True,
     run_repository_test_environment_setup: bool = False,
+    repository_test_environment_setup_mode: str = "project",
     run_repository_test_retry: bool = False,
     run_repository_test_retry_prerequisites: bool = False,
     auto_repository_test_retry: bool = False,
@@ -1680,6 +1686,9 @@ def onboard_tree(
         run_smoke_validation=run_smoke_validation,
         run_repository_test_command=run_repository_test_command,
         run_repository_test_environment_setup=run_repository_test_environment_setup,
+        repository_test_environment_setup_mode=(
+            repository_test_environment_setup_mode
+        ),
         run_repository_test_retry=run_repository_test_retry,
         run_repository_test_retry_prerequisites=run_repository_test_retry_prerequisites,
         auto_repository_test_retry=auto_repository_test_retry,
@@ -4299,6 +4308,7 @@ def build_onboarding_run_config(
     run_smoke_validation: bool,
     run_repository_test_command: bool,
     run_repository_test_environment_setup: bool,
+    repository_test_environment_setup_mode: str = "project",
     run_repository_test_retry: bool,
     run_repository_test_retry_prerequisites: bool,
     auto_repository_test_retry: bool,
@@ -4414,6 +4424,9 @@ def build_onboarding_run_config(
             "run_smoke_validation": run_smoke_validation,
             "run_repository_test_command": run_repository_test_command,
             "run_repository_test_environment_setup": run_repository_test_environment_setup,
+            "repository_test_environment_setup_mode": (
+                repository_test_environment_setup_mode
+            ),
             "run_repository_test_retry": run_repository_test_retry,
             "run_repository_test_retry_prerequisites": (
                 run_repository_test_retry_prerequisites
@@ -6018,6 +6031,7 @@ def _onboard_fetch_report(
     run_smoke_validation: bool,
     run_repository_test_command: bool,
     run_repository_test_environment_setup: bool,
+    repository_test_environment_setup_mode: str = "project",
     run_repository_test_retry: bool,
     run_repository_test_retry_prerequisites: bool,
     auto_repository_test_retry: bool,
@@ -6077,6 +6091,9 @@ def _onboard_fetch_report(
         run_smoke_validation=run_smoke_validation,
         run_repository_test_command=run_repository_test_command,
         run_repository_test_environment_setup=run_repository_test_environment_setup,
+        repository_test_environment_setup_mode=(
+            repository_test_environment_setup_mode
+        ),
         run_repository_test_retry=run_repository_test_retry,
         run_repository_test_retry_prerequisites=run_repository_test_retry_prerequisites,
         auto_repository_test_retry=auto_repository_test_retry,

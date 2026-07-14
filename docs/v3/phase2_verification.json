@@ -1,0 +1,86 @@
+{
+  "schema_version": "3.0",
+  "phase": "phase2_isolated_repository_test_startup",
+  "status": "pass",
+  "verified_on": "2026-07-15",
+  "runtime": {
+    "python_implementation": "CPython",
+    "python_version": "3.13.12",
+    "platform": "Windows"
+  },
+  "dataset": {
+    "manifest": "datasets/github_cases/v3_fixed_sha_repository_startup_20.json",
+    "manifest_sha256": "254a5bce76aacd661a97b3b9bd31227c8b6f34bae1d9b79ebdacc4f607143379",
+    "repository_count": 20,
+    "unique_repository_count": 20,
+    "fixed_sha_count": 20,
+    "paired_with_v2": true
+  },
+  "startup_evaluation": {
+    "command": "python -m code_intelligence_agent.evaluation.v3_repository_startup_evaluation datasets/github_cases/v3_fixed_sha_repository_startup_20.json outputs_v3/phase2/repository_startup_20/github_repo_intelligence_suite.json outputs_v3/phase2/repository_startup_evaluation --baseline-metrics docs/v2/phase6_unfamiliar_repository_metrics.json --minimum-started 14 --require-success",
+    "status": "pass",
+    "acceptance_checks_passed": 14,
+    "acceptance_check_count": 14,
+    "structured_report_count": 20,
+    "test_command_discovery_count": 20,
+    "started_and_terminated_count": 19,
+    "case_count": 20,
+    "started_and_terminated_rate": 0.95,
+    "minimum_started_and_terminated": 14,
+    "isolated_venv_started_count": 19,
+    "repository_code_install_requested_count": 0,
+    "repository_dependency_install_requested_count": 0,
+    "classified_not_started_blocker_count": 1,
+    "classified_started_failure_layer_count": 18
+  },
+  "paired_baseline": {
+    "v2_started_and_terminated_count": 7,
+    "v2_case_count": 20,
+    "v2_rate": 0.35,
+    "v3_started_and_terminated_count": 19,
+    "v3_case_count": 20,
+    "v3_rate": 0.95,
+    "count_difference": 12,
+    "rate_difference": 0.6,
+    "protocols_identical": false
+  },
+  "integrity_fixes": [
+    {
+      "case": "tiangolo/typer",
+      "finding": "An unready isolated runner probe fell back to the host interpreter.",
+      "resolution": "The execution plan is non-executable when runner_probe setup is not ready.",
+      "final_blocker": "environment:python_version_incompatible"
+    },
+    {
+      "case": "pola-rs/polars",
+      "finding": "A missing native binary was classified as a generic command failure.",
+      "resolution": "The execution classifier emits missing_native_extension.",
+      "final_failure_category": "missing_native_extension"
+    }
+  ],
+  "focused_tests": {
+    "command": "python -m pytest -q tests/test_github_benchmark_onboarding.py tests/test_github_repo_agent.py tests/test_github_repo_agent_suite.py tests/test_github_repo_intelligence.py tests/test_github_repo_intelligence_suite.py tests/test_repository_test_environment_setup.py tests/test_repository_test_execution_plan.py tests/test_repository_test_execution_result.py tests/test_unfamiliar_repository_evaluation.py tests/test_v3_repository_startup_evaluation.py",
+    "passed": 299,
+    "failed": 0,
+    "duration_seconds": 188.55
+  },
+  "full_test_suite": {
+    "command": "python -m pytest -q",
+    "passed": 1280,
+    "failed": 0,
+    "duration_seconds": 667.9
+  },
+  "release_hygiene": {
+    "command": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs_v3/phase2_release_hygiene_final --root . --require-pass --format json",
+    "status": "pass",
+    "passed_checks": 5,
+    "check_count": 5,
+    "candidate_file_count": 465,
+    "raw_api_key_findings": 0
+  },
+  "file_hashes": {
+    "docs/v3/phase2_repository_startup_metrics.json": "54336fff54c4663a75f25283109addcaa262f1c2748ca18f44574780370473a2",
+    "code_intelligence_agent/evaluation/v3_repository_startup_evaluation.py": "c338caf2f1262c13a6570d88da85abdd13fc2c5f236fe385c6bed57b7d08dd81"
+  },
+  "boundary": "Phase 2 proves isolated test-process startup and blocker classification. It does not prove test-suite correctness, fault localization, live-LLM repair, or verified patch success."
+}
