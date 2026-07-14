@@ -1,0 +1,657 @@
+{
+  "schema_version": 1,
+  "suite_name": "v2_evidence_memory_controlled_cases",
+  "status": "pass",
+  "reason": "all_memory_ablation_expectations_met",
+  "case_count": 8,
+  "run_count": 16,
+  "metrics": {
+    "without_memory": {
+      "run_count": 8,
+      "task_completion_rate": 0.125,
+      "expected_memory_recall": 0.0,
+      "constraint_preservation_rate": 0.0,
+      "failed_patch_avoidance_rate": 0.0,
+      "repeated_failed_patch_rate": 1.0,
+      "stale_memory_reuse_rate": 0.0,
+      "average_retrieved_record_count": 0.0,
+      "average_prompt_chars": 2.0,
+      "average_runtime_ms": 0.015938
+    },
+    "with_memory": {
+      "run_count": 8,
+      "task_completion_rate": 1.0,
+      "expected_memory_recall": 1.0,
+      "constraint_preservation_rate": 1.0,
+      "failed_patch_avoidance_rate": 1.0,
+      "repeated_failed_patch_rate": 0.0,
+      "stale_memory_reuse_rate": 0.0,
+      "average_retrieved_record_count": 1.0,
+      "average_prompt_chars": 710.125,
+      "average_runtime_ms": 0.227687
+    }
+  },
+  "acceptance_gates": {
+    "memory_completes_all_controlled_tasks": true,
+    "memory_improves_task_completion": true,
+    "memory_preserves_all_controlled_constraints": true,
+    "memory_avoids_all_known_failed_patches": true,
+    "memory_does_not_reuse_stale_repo_evidence": true,
+    "disabled_ablation_retrieves_no_records": true
+  },
+  "runs": [
+    {
+      "case": "preserve_public_api_constraint",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_constraint_api"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "constraints": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 0,
+      "constraint_case": true,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0262,
+      "discarded_counts": {}
+    },
+    {
+      "case": "preserve_public_api_constraint",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_constraint_api"
+      ],
+      "expected_memory_ids": [
+        "mem_constraint_api"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "constraints": true
+      },
+      "policy_hints": {
+        "constraints": [
+          "do not modify public API"
+        ],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "constraints": [
+            "mem_constraint_api"
+          ]
+        }
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 2,
+      "constraint_case": true,
+      "constraint_preserved": true,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 642,
+      "runtime_ms": 0.1915,
+      "discarded_counts": {}
+    },
+    {
+      "case": "avoid_failed_patch_fingerprint",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_failed_patch_1"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "failed_patch_fingerprints": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": true,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": true,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0185,
+      "discarded_counts": {}
+    },
+    {
+      "case": "avoid_failed_patch_fingerprint",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_failed_patch_1"
+      ],
+      "expected_memory_ids": [
+        "mem_failed_patch_1"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "failed_patch_fingerprints": true
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [
+          "diff-fp-1"
+        ],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "failed_patch_fingerprints": [
+            "mem_failed_patch_1"
+          ]
+        }
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 2,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": true,
+      "failed_patch_avoided": true,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 754,
+      "runtime_ms": 0.1415,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_explicit_repair_strategy",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_strategy_guard"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "repair_strategy_preferences": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0149,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_explicit_repair_strategy",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_strategy_guard"
+      ],
+      "expected_memory_ids": [
+        "mem_strategy_guard"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "repair_strategy_preferences": true
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [
+          "prefer guard clause"
+        ],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "strategies": [
+            "mem_strategy_guard"
+          ]
+        }
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 2,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 622,
+      "runtime_ms": 0.5133,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_repository_test_command",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_test_command"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "test_commands": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0161,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_repository_test_command",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_test_command"
+      ],
+      "expected_memory_ids": [
+        "mem_test_command"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "test_commands": true
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [
+          "python -m pytest tests"
+        ],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "test_commands": [
+            "mem_test_command"
+          ]
+        }
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 2,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 692,
+      "runtime_ms": 0.1298,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_current_blocker",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_blocker_dependency"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "blockers": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0125,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_current_blocker",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_blocker_dependency"
+      ],
+      "expected_memory_ids": [
+        "mem_blocker_dependency"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "blockers": true
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [
+          "missing_dependency"
+        ],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "blockers": [
+            "mem_blocker_dependency"
+          ]
+        }
+      },
+      "required_fact_count": 2,
+      "recalled_fact_count": 2,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 712,
+      "runtime_ms": 0.414,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_verified_cross_repo_pattern",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "pattern_missing_key"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {},
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 1,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0157,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reuse_verified_cross_repo_pattern",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "pattern_missing_key"
+      ],
+      "expected_memory_ids": [
+        "pattern_missing_key"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {},
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [
+          {
+            "failure_type": "missing_key",
+            "target_shape": "load_user",
+            "generator": "hybrid",
+            "repair_outcome": "sandbox_verified"
+          }
+        ],
+        "source_memory_ids": {
+          "verified_patterns": [
+            "pattern_missing_key"
+          ]
+        }
+      },
+      "required_fact_count": 1,
+      "recalled_fact_count": 1,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 1,
+      "prompt_chars": 842,
+      "runtime_ms": 0.1328,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reject_stale_repository_version",
+      "mode": "without_memory",
+      "task_completed": true,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [],
+      "expected_excluded_ids": [
+        "mem_old_ref_patch"
+      ],
+      "hint_checks": {},
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 0,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0104,
+      "discarded_counts": {}
+    },
+    {
+      "case": "reject_stale_repository_version",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [],
+      "expected_excluded_ids": [
+        "mem_old_ref_patch"
+      ],
+      "hint_checks": {},
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 0,
+      "recalled_fact_count": 0,
+      "constraint_case": false,
+      "constraint_preserved": false,
+      "failed_patch_case": false,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0902,
+      "discarded_counts": {
+        "stale_repository_version": 1
+      }
+    },
+    {
+      "case": "combined_constraint_and_patch_history",
+      "mode": "without_memory",
+      "task_completed": false,
+      "selected_memory_ids": [],
+      "expected_memory_ids": [
+        "mem_constraint_combined",
+        "mem_failed_patch_combined"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "constraints": false,
+        "failed_patch_fingerprints": false
+      },
+      "policy_hints": {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {}
+      },
+      "required_fact_count": 4,
+      "recalled_fact_count": 0,
+      "constraint_case": true,
+      "constraint_preserved": false,
+      "failed_patch_case": true,
+      "failed_patch_avoided": false,
+      "repeated_failed_patch": true,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 0,
+      "prompt_chars": 2,
+      "runtime_ms": 0.0132,
+      "discarded_counts": {}
+    },
+    {
+      "case": "combined_constraint_and_patch_history",
+      "mode": "with_memory",
+      "task_completed": true,
+      "selected_memory_ids": [
+        "mem_constraint_combined",
+        "mem_failed_patch_combined"
+      ],
+      "expected_memory_ids": [
+        "mem_constraint_combined",
+        "mem_failed_patch_combined"
+      ],
+      "expected_excluded_ids": [],
+      "hint_checks": {
+        "constraints": true,
+        "failed_patch_fingerprints": true
+      },
+      "policy_hints": {
+        "constraints": [
+          "preserve public signature"
+        ],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [
+          "diff-combined"
+        ],
+        "test_commands": [],
+        "blockers": [],
+        "verified_repair_patterns": [],
+        "source_memory_ids": {
+          "constraints": [
+            "mem_constraint_combined"
+          ],
+          "failed_patch_fingerprints": [
+            "mem_failed_patch_combined"
+          ]
+        }
+      },
+      "required_fact_count": 4,
+      "recalled_fact_count": 4,
+      "constraint_case": true,
+      "constraint_preserved": true,
+      "failed_patch_case": true,
+      "failed_patch_avoided": true,
+      "repeated_failed_patch": false,
+      "stale_memory_reuse_count": 0,
+      "retrieved_record_count": 2,
+      "prompt_chars": 1415,
+      "runtime_ms": 0.2084,
+      "discarded_counts": {}
+    }
+  ],
+  "limitations": [
+    "The suite measures structured retrieval and policy-hint utility, not live-model reasoning quality.",
+    "Cross-repo patterns are eligible only when their source validation authority is sandbox pytest."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "phase": "phase7_system_evaluation",
+  "status": "pass",
+  "evaluation_commit": "a47e37b564b7f9271faac981e4b6437e2fcbd17f",
+  "recorded_date": "2026-07-14",
+  "focused_regression": {
+    "command": "python -m pytest -q tests/test_memory_ablation_evaluation.py tests/test_planner_strategy_evaluation.py tests/test_localization_split_evaluation.py tests/test_patch_strategy_evaluation.py tests/test_budget_ablation_evaluation.py tests/test_system_evaluation.py",
+    "passed": 12,
+    "failed": 0,
+    "duration_seconds": 44.69
+  },
+  "full_regression": {
+    "command": "python -m pytest -q",
+    "passed": 1226,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 1186.59
+  },
+  "artifact_validation": {
+    "phase7_status": "pass",
+    "required_comparison_count": 8,
+    "required_comparisons_complete": 8,
+    "absolute_workspace_paths_found": 0,
+    "api_keys_found": 0
+  }
+}

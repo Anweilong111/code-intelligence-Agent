@@ -512,6 +512,60 @@ environment/code failure layer。这里的 `success` 只表示“静态分析完
 `docs/v2/phase6_unfamiliar_repository_robustness.md`，机器可读指标位于
 `docs/v2/phase6_unfamiliar_repository_metrics.json`。
 
+### V2 系统评估与消融
+
+Phase 7 从固定实现提交 `a47e37b` 运行统一评估，覆盖以下八组对照：
+
+- Rule / LLM / Hybrid Patch。
+- Rule / LLM / Hybrid Planner。
+- Fusion / Without Graph。
+- Fusion / Without Dynamic Evidence。
+- With / Without Memory。
+- With / Without Reflection。
+- Top-k context 为 1、3、5。
+- action budget 和 candidate budget 为 1、2、3。
+
+主要结果如下：
+
+- 20 个 test + blind localization case 上，Fusion 的 Top-1/Top-3/Top-5/MRR/MAP
+  均为 `1.0000`；移除 GraphScore 或动态证据后仍为 `1.0000`。当前数据集以规则可检测
+  mutation 为主，因此只能得出“无回归”，不能宣称 graph 或 dynamic evidence 带来提升。
+- 3 个受控补丁案例中，Rule、LLM、Hybrid 的 verified repair rate 分别为
+  `0.3333`、`1.0000`、`1.0000`；LLM/Hybrid 的 reflection recovery rate 为
+  `0.3333`。这些 LLM 输出来自确定性离线 fixture，只验证生成、归因、安全门、反思和
+  pytest sandbox 契约，不代表 live model 修复率。
+- 14 个 Planner case、42 次运行中，三种 Planner 的任务完成率、最终已注册动作率和
+  blocker 分类准确率均为 `1.0000`。LLM 与 Hybrid 各记录 1,560 个 fixture token 和
+  `$0.0156` 受控成本估计；所有非法或低置信度提议都经过 Safety Gate 或 fallback。
+- 8 个 Memory case 中，受控任务完成率从 `0.1250` 提升到 `1.0000`，重复失败补丁率从
+  `1.0000` 降到 `0.0000`。该结果衡量结构化检索和 policy hints，不代表模型推理能力。
+- 单案例敏感性实验中，reflection 从 0 轮增加到 1 轮后完成 verified repair；目标函数位于
+  rank 3 时，Top-k=1 失败而 Top-k=3/5 成功；candidate budget=1/2 失败而 3 成功；
+  三步控制器任务在 action budget=1/2 时如实停止，budget=3 时完成，已注册动作率
+  `1.0000`、重复动作率 `0.0000`。
+- V1 与 V2 只在相同 localization split 上做量化比较，15 个可比指标 delta 均为
+  `0.0000`；不同 case/protocol 的 repair 指标明确标记为不可比较，不计算虚假 uplift。
+
+一键复现统一评估并发布紧凑 artifact：
+
+```powershell
+python -m code_intelligence_agent.evaluation.system_evaluation `
+  outputs_v2/phase7 `
+  --repository-root . `
+  --publication-dir docs/v2/phase7_artifacts `
+  --format markdown `
+  --require-pass
+```
+
+主报告位于
+[`docs/v2/phase7_artifacts/phase7_system_evaluation.md`](docs/v2/phase7_artifacts/phase7_system_evaluation.md)，
+机器可读汇总位于
+[`docs/v2/phase7_artifacts/phase7_system_metrics.json`](docs/v2/phase7_artifacts/phase7_system_metrics.json)。
+报告内的每项结论均链接到 Planner、Memory、Localization、Patch 和 Budget 原始 artifact，
+失败运行保留在原始分母中。Phase 7 聚焦测试为 `12 passed in 44.69s`，完整回归为
+`1226 passed in 1186.59s`；验收记录位于
+[`docs/v2/phase7_verification.md`](docs/v2/phase7_verification.md)。
+
 分析一个公开 GitHub 仓库：
 
 Repair strategy memory:

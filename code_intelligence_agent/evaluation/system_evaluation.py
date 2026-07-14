@@ -644,6 +644,7 @@ def publish_phase7_artifacts(
 def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
     metrics = _dict(payload.get("core_metrics"))
     localization = _dict(metrics.get("localization"))
+    comparisons = _dict(payload.get("required_comparisons"))
     lines = [
         "# Phase 7 System Evaluation and Ablation",
         "",
@@ -686,6 +687,38 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
             )
             + " |",
             "",
+            "## Localization Signal Ablations",
+            "",
+            "| Profile | Top-1 | Top-3 | Top-5 | MRR | MAP | Mean Latency ms |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    graph_comparison = _dict(comparisons.get("graph"))
+    dynamic_comparison = _dict(comparisons.get("dynamic_evidence"))
+    for label, item_value in (
+        ("fusion", graph_comparison.get("with_graph")),
+        ("without_graph", graph_comparison.get("without_graph")),
+        ("without_dynamic", dynamic_comparison.get("without_dynamic")),
+    ):
+        item = _dict(item_value)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    label,
+                    _number(item.get("top1")),
+                    _number(item.get("top3")),
+                    _number(item.get("top5")),
+                    _number(item.get("mrr")),
+                    _number(item.get("map")),
+                    _number(item.get("mean_localization_latency_ms")),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
             "## Patch Strategies",
             "",
             "| Mode | Candidate Success | AST Valid | Safety Pass | Test Pass | Regression Safe | Verified | Reflection Recovery | Runtime ms |",
@@ -716,8 +749,8 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
             "",
             "## Planner Strategies",
             "",
-            "| Mode | Completion | Invalid Actions | Blocker Accuracy | Avg Actions | Runtime ms | Tokens | Cost USD | Repeated Action |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| Mode | Completion | Valid Action | Invalid Proposals | Blocker Accuracy | Avg Actions | Runtime ms | Tokens | Cost USD | Repeated Action |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for mode, item_value in _dict(metrics.get("planner")).items():
@@ -728,6 +761,7 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
                 [
                     mode,
                     _number(item.get("task_completion_rate")),
+                    _number(item.get("valid_action_rate")),
                     str(item.get("invalid_action_count", 0)),
                     _number(item.get("blocker_identification_accuracy")),
                     _number(item.get("average_action_count")),
@@ -735,6 +769,90 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
                     str(item.get("llm_total_tokens", 0)),
                     f"{float(item.get('llm_estimated_cost_usd', 0.0)):.8f}",
                     _number(item.get("repeated_action_rate", 0.0)),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Memory Ablation",
+            "",
+            "| Mode | Completion | Recall | Constraint Preservation | Failed Patch Avoidance | Repeated Failed Patch | Prompt Chars | Runtime ms |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for mode, item_value in _dict(metrics.get("memory")).items():
+        item = _dict(item_value)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    mode,
+                    _number(item.get("task_completion_rate")),
+                    _number(item.get("expected_memory_recall")),
+                    _number(item.get("constraint_preservation_rate")),
+                    _number(item.get("failed_patch_avoidance_rate")),
+                    _number(item.get("repeated_failed_patch_rate")),
+                    _number(item.get("average_prompt_chars")),
+                    _number(item.get("average_runtime_ms")),
+                ]
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Patch Budget Ablations",
+            "",
+            "| Dimension | Value | Candidates | Target Pass | Regression Safe | Verified | Reflection Recovery | Runtime ms |",
+            "| --- | ---: | ---: | --- | --- | --- | --- | ---: |",
+        ]
+    )
+    budget_dimensions = _dict(metrics.get("budgets"))
+    for dimension in ("reflection", "candidate_budget", "top_k_context"):
+        for row_value in _list(_dict(budget_dimensions.get(dimension)).get("runs")):
+            row = _dict(row_value)
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        dimension,
+                        str(row.get("value", 0)),
+                        str(row.get("candidate_count", 0)),
+                        str(bool(row.get("targeted_test_passed"))).lower(),
+                        str(bool(row.get("regression_safe"))).lower(),
+                        str(bool(row.get("verified_repair"))).lower(),
+                        str(bool(row.get("reflection_recovered"))).lower(),
+                        _number(row.get("runtime_ms")),
+                    ]
+                )
+                + " |"
+            )
+    lines.extend(
+        [
+            "",
+            "## Action Budget Ablation",
+            "",
+            "| Budget | Completed | Actions | Valid Action | Repeated Action | Stop Reason | Runtime ms |",
+            "| ---: | --- | ---: | ---: | ---: | --- | ---: |",
+        ]
+    )
+    for row_value in _list(
+        _dict(budget_dimensions.get("action_budget")).get("runs")
+    ):
+        row = _dict(row_value)
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row.get("action_budget", 0)),
+                    str(bool(row.get("task_completed"))).lower(),
+                    str(row.get("action_count", 0)),
+                    _number(row.get("valid_action_rate")),
+                    _number(row.get("repeated_action_rate")),
+                    str(row.get("stop_reason") or ""),
+                    _number(row.get("runtime_ms")),
                 ]
             )
             + " |"
@@ -753,6 +871,8 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
             f"{_number(row.get('v1'))} | {_number(row.get('v2'))} | "
             f"{_number(row.get('delta'))} |"
         )
+    lines.extend(["", "## Conclusions", ""])
+    lines.extend(f"- {item}" for item in _phase7_conclusions(payload))
     lines.extend(["", "## Failure Accounting", ""])
     for key, value in _dict(payload.get("failure_accounting")).items():
         lines.append(f"- `{key}`: {value}")
@@ -766,6 +886,87 @@ def render_phase7_system_evaluation(payload: dict[str, Any]) -> str:
             f"[Markdown]({_artifact_markdown_link(item.get('markdown', ''))})"
         )
     return "\n".join(lines) + "\n"
+
+
+def _phase7_conclusions(payload: dict[str, Any]) -> list[str]:
+    comparisons = _dict(payload.get("required_comparisons"))
+    graph = _dict(comparisons.get("graph"))
+    dynamic = _dict(comparisons.get("dynamic_evidence"))
+    fusion = _dict(graph.get("with_graph"))
+    without_graph = _dict(graph.get("without_graph"))
+    without_dynamic = _dict(dynamic.get("without_dynamic"))
+    memory = _dict(_dict(comparisons.get("memory")).get("results"))
+    without_memory = _dict(memory.get("without_memory"))
+    with_memory = _dict(memory.get("with_memory"))
+    patch = _dict(_dict(comparisons.get("patch_strategy")).get("results"))
+    planner = _dict(_dict(comparisons.get("planner_strategy")).get("results"))
+    budgets = _dict(payload.get("core_metrics")).get("budgets")
+    dimensions = _dict(budgets)
+    candidate_success = _first_success_value(
+        _list(_dict(dimensions.get("candidate_budget")).get("runs")),
+        "value",
+        "verified_repair",
+    )
+    top_k_success = _first_success_value(
+        _list(_dict(dimensions.get("top_k_context")).get("runs")),
+        "value",
+        "verified_repair",
+    )
+    action_success = _first_success_value(
+        _list(_dict(dimensions.get("action_budget")).get("runs")),
+        "action_budget",
+        "task_completed",
+    )
+    return [
+        (
+            "Removing GraphScore changed Top-1 by "
+            f"{float(without_graph.get('top1', 0.0)) - float(fusion.get('top1', 0.0)):.4f} "
+            "on this rule-detectable mutation benchmark; no graph uplift is claimed."
+        ),
+        (
+            "Removing SBFL, TestFailureScore, and StackTraceScore changed Top-1 by "
+            f"{float(without_dynamic.get('top1', 0.0)) - float(fusion.get('top1', 0.0)):.4f}; "
+            "the current benchmark does not demonstrate dynamic-evidence uplift."
+        ),
+        (
+            "Structured memory changed controlled task completion from "
+            f"{float(without_memory.get('task_completion_rate', 0.0)):.4f} to "
+            f"{float(with_memory.get('task_completion_rate', 0.0)):.4f} and repeated "
+            "failed-patch rate from "
+            f"{float(without_memory.get('repeated_failed_patch_rate', 0.0)):.4f} to "
+            f"{float(with_memory.get('repeated_failed_patch_rate', 0.0)):.4f}."
+        ),
+        (
+            "Controlled verified-repair rates were rule="
+            f"{float(_dict(patch.get('rule')).get('verified_repair_rate', 0.0)):.4f}, "
+            "LLM="
+            f"{float(_dict(patch.get('llm')).get('verified_repair_rate', 0.0)):.4f}, "
+            "and hybrid="
+            f"{float(_dict(patch.get('hybrid')).get('verified_repair_rate', 0.0)):.4f}; "
+            "these deterministic fixtures validate orchestration, not live-model quality."
+        ),
+        (
+            "All planner modes selected a valid registered action in the controlled suite; "
+            f"LLM and hybrid each consumed {int(_dict(planner.get('llm')).get('llm_total_tokens', 0))} "
+            "fixture tokens while rule planning consumed none."
+        ),
+        (
+            "In the controlled sensitivity cases, the first verified candidate budget was "
+            f"{candidate_success}, the first successful Top-k context was {top_k_success}, "
+            f"and the first completing action budget was {action_success}."
+        ),
+        "V2 preserved V1 Top-1/Top-3/Top-5/MRR/MAP on all comparable localization splits; incompatible repair protocols are not reported as uplift.",
+    ]
+
+
+def _first_success_value(
+    rows: list[Any], value_key: str, success_key: str
+) -> Any:
+    for row_value in rows:
+        row = _dict(row_value)
+        if bool(row.get(success_key)):
+            return row.get(value_key)
+    return "none"
 
 
 def main(argv: list[str] | None = None) -> None:

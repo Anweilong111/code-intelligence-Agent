@@ -1,0 +1,2971 @@
+{
+  "schema_version": 1,
+  "phase": "phase7_system_evaluation",
+  "status": "pass",
+  "reason": "all_phase7_evaluation_contracts_met",
+  "recorded_at": "2026-07-14T13:59:53.686823+00:00",
+  "protocol": {
+    "evaluation_code_commit": "a47e37b564b7f9271faac981e4b6437e2fcbd17f",
+    "working_tree_clean": true,
+    "dataset_split_policy": {
+      "localization": {
+        "validation": {
+          "source_groups": [
+            "python/cpython"
+          ],
+          "max_cases": 15
+        },
+        "test": {
+          "source_groups": [
+            "TheAlgorithms/Python"
+          ],
+          "max_cases": 10
+        },
+        "blind": {
+          "source_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "max_cases": 10
+        }
+      },
+      "weight_selection": "validation_only",
+      "evaluation": [
+        "test",
+        "blind"
+      ],
+      "unfamiliar_repositories": "20_repository_holdout_not_used_in_phases_1_to_5"
+    },
+    "datasets": [
+      {
+        "path": "datasets/planner_evaluation/v2_planner_controlled_cases.json",
+        "sha256": "8d2bfaf86135e43e0723305d33edf54999b1a3ec1b86d750a19c7c45c1babb8f",
+        "bytes": 6057
+      },
+      {
+        "path": "datasets/memory_evaluation/v2_memory_ablation_cases.json",
+        "sha256": "8c83ce568a9d76a2a7251958151c1e7a6625005a7a1269be05b77b329728c0c7",
+        "bytes": 9281
+      },
+      {
+        "path": "datasets/localization_v2/split_protocol.json",
+        "sha256": "3bb179fd496854c697b9c0e9928dcf511aca2d22332e58dcbc62a8767f676935",
+        "bytes": 602
+      },
+      {
+        "path": "datasets/github_cases/mutation_templates.example.json",
+        "sha256": "8989db5b6507663c549dc9ba390864dccc5288ff4f97e690941ec11810194cbe",
+        "bytes": 136012
+      },
+      {
+        "path": "datasets/patch_evaluation/v2_patch_strategy_controlled_cases.json",
+        "sha256": "9fc886f7f318d2abfe041c2604129c9550662be5f07a33e2fe867bb280a51fcd",
+        "bytes": 3975
+      },
+      {
+        "path": "datasets/system_evaluation/v2_system_ablation_cases.json",
+        "sha256": "e9dd732dc731b321137c4cf3eb0e8da8fac966e6eb2392636265ab2efb3eb1b6",
+        "bytes": 3294
+      },
+      {
+        "path": "datasets/github_cases/v2_unfamiliar_python_repositories_20.json",
+        "sha256": "4f8fa305cafdad65acfdf84e6962613d745728698bbe64c99f3b9b06fba276ae",
+        "bytes": 10949
+      },
+      {
+        "path": "docs/baseline/baseline_metrics.json",
+        "sha256": "6f6f036befda06393f78b91b2ef6b90bc2fef7772efc4f2ea3a2a65ef7ccbe11",
+        "bytes": 6977
+      },
+      {
+        "path": "docs/v2/phase6_unfamiliar_repository_metrics.json",
+        "sha256": "186ee08e2361f1cf05d9544c568f08c52cf0400182041e898b55e0f76543bb62",
+        "bytes": 2258
+      }
+    ],
+    "localization_source_refs": [
+      {
+        "repo": "TheAlgorithms/Python",
+        "ref": "6c0462028f547fc905a4d9a8cc956daed8a00cd8",
+        "content_sha256_verified": true
+      },
+      {
+        "repo": "pallets/click",
+        "ref": "8.1.7",
+        "content_sha256_verified": true
+      },
+      {
+        "repo": "pytest-dev/pluggy",
+        "ref": "7fce99cb955846901b22b051909aa4f30dc16128",
+        "content_sha256_verified": true
+      },
+      {
+        "repo": "python/cpython",
+        "ref": "v3.12.0",
+        "content_sha256_verified": true
+      }
+    ],
+    "unfamiliar_repository_commits": [
+      {
+        "repo": "pypa/build",
+        "commit": "c9bd978417971295d5a7b057519f75bf79d6f6a9"
+      },
+      {
+        "repo": "pypa/packaging",
+        "commit": "9d0ec47b36a1bcdf705b397b84cd89272410a00d"
+      },
+      {
+        "repo": "jazzband/pip-tools",
+        "commit": "57637dbf08aeefe88fec7786bcd07cf111f9f662"
+      },
+      {
+        "repo": "python-attrs/attrs",
+        "commit": "d544dd2dacb4cbd660891e323ad92751ba65b4e0"
+      },
+      {
+        "repo": "python-trio/trio",
+        "commit": "5a5111bba2b26da5668c27ee1824e890f5753c3d"
+      },
+      {
+        "repo": "more-itertools/more-itertools",
+        "commit": "da37f9de442b69fbcaa9f54fb042c2a6999473a6"
+      },
+      {
+        "repo": "tiangolo/typer",
+        "commit": "3a3bd0f20a417835d4b4505a0bf834620e024cdb"
+      },
+      {
+        "repo": "litestar-org/litestar",
+        "commit": "505365ad320b5a69dbdf6f9350c4ba32beae474d"
+      },
+      {
+        "repo": "pallets/markupsafe",
+        "commit": "b2e4d9c7687be25695fffbe93a37622302b24fb1"
+      },
+      {
+        "repo": "asottile/pyupgrade",
+        "commit": "d9946e8ab925973cd9e338d847cf0ff2a3e227ec"
+      },
+      {
+        "repo": "tox-dev/tox",
+        "commit": "e93e023d4777ac95b504a3817d44f7de43faf6ff"
+      },
+      {
+        "repo": "wntrblm/nox",
+        "commit": "22f1d1f82530663bbc0c005ca73d76668ec4d85f"
+      },
+      {
+        "repo": "aio-libs/yarl",
+        "commit": "95ffe170da46bb851e7aafbf3ccb2360f58ef3af"
+      },
+      {
+        "repo": "dbader/schedule",
+        "commit": "82a43db1b938d8fdf60103bd41f329e06c8d3651"
+      },
+      {
+        "repo": "sqlfluff/sqlfluff",
+        "commit": "978dfbe3da1c5b589a308339331eb28b94945cb0"
+      },
+      {
+        "repo": "Textualize/textual",
+        "commit": "06dbeef4bb70fb718236aa418ed658ef4667a126"
+      },
+      {
+        "repo": "kedro-org/kedro",
+        "commit": "ba94d5248e6d48d4bbca3f51db770a79e18498dc"
+      },
+      {
+        "repo": "huggingface/accelerate",
+        "commit": "665444ceb62211f2b410d0d0fdb4bc013c5effdf"
+      },
+      {
+        "repo": "pola-rs/polars",
+        "commit": "52525377b5de7596e45a4a0aef3c80b59cc68ee7"
+      },
+      {
+        "repo": "dask/dask",
+        "commit": "aac2ce21714d556d748951814622a8ea76f5a042"
+      }
+    ],
+    "models": {
+      "planner": {
+        "provider": "controlled",
+        "model": "planner-evaluation",
+        "temperature": 0,
+        "usage": "deterministic schema and safety contract"
+      },
+      "patch": {
+        "provider": "controlled",
+        "model": "sequence-fixture-v1",
+        "temperature": 0,
+        "usage": "deterministic generation and reflection contract"
+      },
+      "live_provider": {
+        "executed": false,
+        "reason": "live_model_quality_outside_deterministic_phase7_acceptance"
+      }
+    },
+    "prompt_contracts": {
+      "planner": {
+        "callable": "code_intelligence_agent.agents.controller._llm_replan_prompt",
+        "sha256": "d8d3b910c5625f1ba8a3bd03051bfd32058b5234088af6927301cf6eb62645da"
+      },
+      "patch_generation": {
+        "callable": "code_intelligence_agent.agents.llm_patch_generator.build_patch_prompt",
+        "sha256": "70116b40099f4cb85a8244d0c32bfa0a063739a0ed33b5b4ac3f3649073a58c3"
+      },
+      "patch_reflection": {
+        "callable": "code_intelligence_agent.agents.llm_patch_generator.build_reflection_prompt",
+        "sha256": "d678a74c2dde495b257121c98b9937d448c5c3d1b3f24dcaf2c1cf491d3713e7"
+      }
+    },
+    "run_date_utc": "2026-07-14"
+  },
+  "component_status": {
+    "planner": true,
+    "memory": true,
+    "localization": true,
+    "patch": true,
+    "budgets": true,
+    "phase6": true
+  },
+  "required_comparisons": {
+    "patch_strategy": {
+      "label": "Rule Patch vs LLM Patch vs Hybrid Patch",
+      "results": {
+        "rule": {
+          "run_count": 3,
+          "candidate_generation_success_rate": 0.3333,
+          "candidate_count": 2,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_pass_rate": 0.3333,
+          "regression_safe_patch_rate": 0.3333,
+          "verified_repair_rate": 0.3333,
+          "reflection_recovery_rate": 0.0,
+          "attribution_consistency_rate": 1.0,
+          "generator_wins": {
+            "rule": 1
+          },
+          "average_runtime_ms": 1280.2533
+        },
+        "llm": {
+          "run_count": 3,
+          "candidate_generation_success_rate": 1.0,
+          "candidate_count": 3,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_pass_rate": 1.0,
+          "regression_safe_patch_rate": 1.0,
+          "verified_repair_rate": 1.0,
+          "reflection_recovery_rate": 0.3333,
+          "attribution_consistency_rate": 1.0,
+          "generator_wins": {
+            "llm": 3
+          },
+          "average_runtime_ms": 3327.4613
+        },
+        "hybrid": {
+          "run_count": 3,
+          "candidate_generation_success_rate": 1.0,
+          "candidate_count": 5,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_pass_rate": 1.0,
+          "regression_safe_patch_rate": 1.0,
+          "verified_repair_rate": 1.0,
+          "reflection_recovery_rate": 0.3333,
+          "attribution_consistency_rate": 1.0,
+          "generator_wins": {
+            "llm": 2,
+            "rule": 1
+          },
+          "average_runtime_ms": 3574.8704
+        }
+      },
+      "artifact": "docs/v2/phase7_artifacts/patch_strategy_evaluation.json"
+    },
+    "planner_strategy": {
+      "label": "Rule Planner vs LLM Planner vs Hybrid Planner",
+      "results": {
+        "rule": {
+          "run_count": 14,
+          "task_completion_rate": 1.0,
+          "invalid_action_count": 0,
+          "valid_action_rate": 1.0,
+          "repeated_action_rate": 0.0,
+          "average_action_count": 1.0,
+          "blocker_identification_accuracy": 1.0,
+          "average_runtime_ms": 0.7791,
+          "llm_total_tokens": 0,
+          "llm_estimated_cost_usd": 0.0,
+          "safety_gate_rejection_count": 0,
+          "fallback_count": 0
+        },
+        "llm": {
+          "run_count": 14,
+          "task_completion_rate": 1.0,
+          "invalid_action_count": 2,
+          "valid_action_rate": 1.0,
+          "repeated_action_rate": 0.0,
+          "average_action_count": 1.0,
+          "blocker_identification_accuracy": 1.0,
+          "average_runtime_ms": 1.6716,
+          "llm_total_tokens": 1560,
+          "llm_estimated_cost_usd": 0.0156,
+          "safety_gate_rejection_count": 8,
+          "fallback_count": 11
+        },
+        "hybrid": {
+          "run_count": 14,
+          "task_completion_rate": 1.0,
+          "invalid_action_count": 2,
+          "valid_action_rate": 1.0,
+          "repeated_action_rate": 0.0,
+          "average_action_count": 1.0,
+          "blocker_identification_accuracy": 1.0,
+          "average_runtime_ms": 1.6754,
+          "llm_total_tokens": 1560,
+          "llm_estimated_cost_usd": 0.0156,
+          "safety_gate_rejection_count": 9,
+          "fallback_count": 12
+        }
+      },
+      "artifact": "docs/v2/phase7_artifacts/planner_strategy_evaluation.json"
+    },
+    "graph": {
+      "label": "With Graph vs Without Graph",
+      "with_graph": {
+        "profile": "fusion",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 3,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "TheAlgorithms/Python",
+            "train_groups": [
+              "pallets/click",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 19.0052,
+        "case_count": 20,
+        "pareto_optimal": true,
+        "dominates_count": 3,
+        "dominated_by_count": 0
+      },
+      "without_graph": {
+        "profile": "without_graph",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.0,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 3,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "TheAlgorithms/Python",
+            "train_groups": [
+              "pallets/click",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 19.0052,
+        "case_count": 20,
+        "pareto_optimal": true,
+        "dominates_count": 3,
+        "dominated_by_count": 0
+      },
+      "artifact": "docs/v2/phase7_artifacts/localization_split_evaluation.json"
+    },
+    "dynamic_evidence": {
+      "label": "With Dynamic Evidence vs Without Dynamic Evidence",
+      "with_dynamic": {
+        "profile": "fusion",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 3,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "TheAlgorithms/Python",
+            "train_groups": [
+              "pallets/click",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 19.0052,
+        "case_count": 20,
+        "pareto_optimal": true,
+        "dominates_count": 3,
+        "dominated_by_count": 0
+      },
+      "without_dynamic": {
+        "profile": "without_dynamic",
+        "coverage_weights": {
+          "sbfl": 0.0,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 3,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "TheAlgorithms/Python",
+            "train_groups": [
+              "pallets/click",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 10,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "TheAlgorithms/Python",
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 15,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 19.0052,
+        "case_count": 20,
+        "pareto_optimal": true,
+        "dominates_count": 3,
+        "dominated_by_count": 0
+      },
+      "artifact": "docs/v2/phase7_artifacts/localization_split_evaluation.json"
+    },
+    "memory": {
+      "label": "With Memory vs Without Memory",
+      "results": {
+        "without_memory": {
+          "run_count": 8,
+          "task_completion_rate": 0.125,
+          "expected_memory_recall": 0.0,
+          "constraint_preservation_rate": 0.0,
+          "failed_patch_avoidance_rate": 0.0,
+          "repeated_failed_patch_rate": 1.0,
+          "stale_memory_reuse_rate": 0.0,
+          "average_retrieved_record_count": 0.0,
+          "average_prompt_chars": 2.0,
+          "average_runtime_ms": 0.015938
+        },
+        "with_memory": {
+          "run_count": 8,
+          "task_completion_rate": 1.0,
+          "expected_memory_recall": 1.0,
+          "constraint_preservation_rate": 1.0,
+          "failed_patch_avoidance_rate": 1.0,
+          "repeated_failed_patch_rate": 0.0,
+          "stale_memory_reuse_rate": 0.0,
+          "average_retrieved_record_count": 1.0,
+          "average_prompt_chars": 710.125,
+          "average_runtime_ms": 0.227687
+        }
+      },
+      "artifact": "docs/v2/phase7_artifacts/memory_ablation_evaluation.json"
+    },
+    "reflection": {
+      "label": "With Reflection vs Without Reflection",
+      "results": [
+        {
+          "dimension": "reflection_rounds",
+          "value": 0,
+          "case": "semantic_parse_port_reflection",
+          "candidate_count": 1,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": false,
+          "regression_safe": false,
+          "verified_repair": false,
+          "reflection_recovered": false,
+          "generator": "",
+          "runtime_ms": 530.1712,
+          "raw_run": {
+            "case": "semantic_parse_port_reflection",
+            "category": "llm_reflection",
+            "patch_mode": "llm",
+            "status": "fail",
+            "reason": "no_candidate_passed_repository_tests",
+            "candidate_count": 1,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 1,
+            "safety_pass_candidate_count": 1,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 1
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": false,
+            "full_regression_status": "skipped",
+            "verified_repair": false,
+            "verification_claim": "no_passing_candidate",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "",
+            "best_rule_id": "",
+            "best_generator": "",
+            "best_generator_family": "",
+            "attribution_consistent": true,
+            "expected": {
+              "candidate_generated": true,
+              "targeted_test_passed": true,
+              "verified_repair": true,
+              "reflection_recovered": true
+            },
+            "expectation_matched": false,
+            "experiment_overrides": {
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 3,
+            "reflection_rounds": 0,
+            "runtime_ms": 530.1712
+          }
+        },
+        {
+          "dimension": "reflection_rounds",
+          "value": 1,
+          "case": "semantic_parse_port_reflection",
+          "candidate_count": 1,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": true,
+          "regression_safe": true,
+          "verified_repair": true,
+          "reflection_recovered": true,
+          "generator": "llm",
+          "runtime_ms": 3534.4359,
+          "raw_run": {
+            "case": "semantic_parse_port_reflection",
+            "category": "llm_reflection",
+            "patch_mode": "llm",
+            "status": "pass",
+            "reason": "patch_validation_reflection_success",
+            "candidate_count": 1,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 1,
+            "safety_pass_candidate_count": 1,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 1
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": true,
+            "full_regression_status": "pass",
+            "verified_repair": true,
+            "verification_claim": "verified_repair",
+            "reflection_recovered": true,
+            "reflection_candidate_count": 1,
+            "best_candidate_id": "sample.py::parse_port::llm_refine::1",
+            "best_rule_id": "llm_reflection_patch",
+            "best_generator": "llm_reflection",
+            "best_generator_family": "llm",
+            "attribution_consistent": true,
+            "expected": {
+              "candidate_generated": true,
+              "targeted_test_passed": true,
+              "verified_repair": true,
+              "reflection_recovered": true
+            },
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "reflection_rounds": 1
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 3,
+            "reflection_rounds": 1,
+            "runtime_ms": 3534.4359
+          }
+        }
+      ],
+      "artifact": "docs/v2/phase7_artifacts/budget_ablation_evaluation.json"
+    },
+    "top_k_context": {
+      "label": "Top-k Context Sizes",
+      "results": [
+        {
+          "dimension": "top_k_context",
+          "value": 1,
+          "case": "semantic_top_k_context",
+          "candidate_count": 0,
+          "candidate_generation_success": false,
+          "ast_valid_patch_rate": 0.0,
+          "safety_gate_pass_rate": 0.0,
+          "targeted_test_passed": false,
+          "regression_safe": false,
+          "verified_repair": false,
+          "reflection_recovered": false,
+          "generator": "",
+          "runtime_ms": 17.4947,
+          "raw_run": {
+            "case": "semantic_top_k_context",
+            "category": "top_k_context",
+            "patch_mode": "llm",
+            "status": "skipped",
+            "reason": "patch_candidates_not_ready",
+            "candidate_count": 0,
+            "candidate_generated": false,
+            "ast_valid_candidate_count": 0,
+            "safety_pass_candidate_count": 0,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 0
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": false,
+            "full_regression_status": "skipped",
+            "verified_repair": false,
+            "verification_claim": "validation_not_run",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "",
+            "best_rule_id": "",
+            "best_generator": "",
+            "best_generator_family": "",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "top_k_functions": 1,
+              "candidate_limit": 1,
+              "validation_limit": 1,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 1,
+            "candidate_limit": 1,
+            "reflection_rounds": 0,
+            "runtime_ms": 17.4947
+          }
+        },
+        {
+          "dimension": "top_k_context",
+          "value": 3,
+          "case": "semantic_top_k_context",
+          "candidate_count": 1,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": true,
+          "regression_safe": true,
+          "verified_repair": true,
+          "reflection_recovered": false,
+          "generator": "llm",
+          "runtime_ms": 2650.875,
+          "raw_run": {
+            "case": "semantic_top_k_context",
+            "category": "top_k_context",
+            "patch_mode": "llm",
+            "status": "pass",
+            "reason": "patch_validation_success",
+            "candidate_count": 1,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 1,
+            "safety_pass_candidate_count": 1,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 1
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": true,
+            "full_regression_status": "pass",
+            "verified_repair": true,
+            "verification_claim": "verified_repair",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "sample.py::normalize::llm::0",
+            "best_rule_id": "llm_patch",
+            "best_generator": "llm",
+            "best_generator_family": "llm",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "top_k_functions": 3,
+              "candidate_limit": 1,
+              "validation_limit": 1,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 3,
+            "candidate_limit": 1,
+            "reflection_rounds": 0,
+            "runtime_ms": 2650.875
+          }
+        },
+        {
+          "dimension": "top_k_context",
+          "value": 5,
+          "case": "semantic_top_k_context",
+          "candidate_count": 1,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": true,
+          "regression_safe": true,
+          "verified_repair": true,
+          "reflection_recovered": false,
+          "generator": "llm",
+          "runtime_ms": 3011.1816,
+          "raw_run": {
+            "case": "semantic_top_k_context",
+            "category": "top_k_context",
+            "patch_mode": "llm",
+            "status": "pass",
+            "reason": "patch_validation_success",
+            "candidate_count": 1,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 1,
+            "safety_pass_candidate_count": 1,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 1
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": true,
+            "full_regression_status": "pass",
+            "verified_repair": true,
+            "verification_claim": "verified_repair",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "sample.py::normalize::llm::0",
+            "best_rule_id": "llm_patch",
+            "best_generator": "llm",
+            "best_generator_family": "llm",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "top_k_functions": 5,
+              "candidate_limit": 1,
+              "validation_limit": 1,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 1,
+            "reflection_rounds": 0,
+            "runtime_ms": 3011.1816
+          }
+        }
+      ],
+      "artifact": "docs/v2/phase7_artifacts/budget_ablation_evaluation.json"
+    },
+    "action_and_candidate_budget": {
+      "label": "Action Budget and Candidate Budget",
+      "action_results": [
+        {
+          "case": "three_step_repair_evaluation",
+          "action_budget": 1,
+          "task_completed": false,
+          "selected_actions": [
+            "generate_llm_patch_candidates"
+          ],
+          "required_action_sequence": [
+            "generate_llm_patch_candidates",
+            "run_patch_reflection_loop",
+            "run_search_and_ablation_evaluation"
+          ],
+          "action_count": 1,
+          "valid_action_rate": 1.0,
+          "invalid_action_count": 0,
+          "repeated_action_count": 0,
+          "repeated_action_rate": 0.0,
+          "all_actions_registered": true,
+          "stop_reason": "action_budget_exhausted",
+          "runtime_ms": 0.8284,
+          "llm_total_tokens": 0,
+          "llm_estimated_cost_usd": 0.0,
+          "trace": [
+            {
+              "iteration": 1,
+              "observe": {
+                "stage": "phase2_dynamic_fault_localization",
+                "blocker": ""
+              },
+              "plan": {
+                "selected_action": "generate_llm_patch_candidates",
+                "expected_action": "generate_llm_patch_candidates",
+                "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase3_patch_validation",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": true
+              }
+            }
+          ]
+        },
+        {
+          "case": "three_step_repair_evaluation",
+          "action_budget": 2,
+          "task_completed": false,
+          "selected_actions": [
+            "generate_llm_patch_candidates",
+            "run_patch_reflection_loop"
+          ],
+          "required_action_sequence": [
+            "generate_llm_patch_candidates",
+            "run_patch_reflection_loop",
+            "run_search_and_ablation_evaluation"
+          ],
+          "action_count": 2,
+          "valid_action_rate": 1.0,
+          "invalid_action_count": 0,
+          "repeated_action_count": 0,
+          "repeated_action_rate": 0.0,
+          "all_actions_registered": true,
+          "stop_reason": "action_budget_exhausted",
+          "runtime_ms": 1.4161,
+          "llm_total_tokens": 0,
+          "llm_estimated_cost_usd": 0.0,
+          "trace": [
+            {
+              "iteration": 1,
+              "observe": {
+                "stage": "phase2_dynamic_fault_localization",
+                "blocker": ""
+              },
+              "plan": {
+                "selected_action": "generate_llm_patch_candidates",
+                "expected_action": "generate_llm_patch_candidates",
+                "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase3_patch_validation",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": true
+              }
+            },
+            {
+              "iteration": 2,
+              "observe": {
+                "stage": "phase3_patch_validation",
+                "blocker": "patch_validation_not_repair_ready:no_candidate_passed"
+              },
+              "plan": {
+                "selected_action": "run_patch_reflection_loop",
+                "expected_action": "run_patch_reflection_loop",
+                "reason": "Patch validation produced candidate evidence, but the repair is not fully verified; run reflection before advancing."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase3_patch_validation",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": true
+              }
+            }
+          ]
+        },
+        {
+          "case": "three_step_repair_evaluation",
+          "action_budget": 3,
+          "task_completed": true,
+          "selected_actions": [
+            "generate_llm_patch_candidates",
+            "run_patch_reflection_loop",
+            "run_search_and_ablation_evaluation"
+          ],
+          "required_action_sequence": [
+            "generate_llm_patch_candidates",
+            "run_patch_reflection_loop",
+            "run_search_and_ablation_evaluation"
+          ],
+          "action_count": 3,
+          "valid_action_rate": 1.0,
+          "invalid_action_count": 0,
+          "repeated_action_count": 0,
+          "repeated_action_rate": 0.0,
+          "all_actions_registered": true,
+          "stop_reason": "task_completed",
+          "runtime_ms": 2.3217,
+          "llm_total_tokens": 0,
+          "llm_estimated_cost_usd": 0.0,
+          "trace": [
+            {
+              "iteration": 1,
+              "observe": {
+                "stage": "phase2_dynamic_fault_localization",
+                "blocker": ""
+              },
+              "plan": {
+                "selected_action": "generate_llm_patch_candidates",
+                "expected_action": "generate_llm_patch_candidates",
+                "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase3_patch_validation",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": true
+              }
+            },
+            {
+              "iteration": 2,
+              "observe": {
+                "stage": "phase3_patch_validation",
+                "blocker": "patch_validation_not_repair_ready:no_candidate_passed"
+              },
+              "plan": {
+                "selected_action": "run_patch_reflection_loop",
+                "expected_action": "run_patch_reflection_loop",
+                "reason": "Patch validation produced candidate evidence, but the repair is not fully verified; run reflection before advancing."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase3_patch_validation",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": true
+              }
+            },
+            {
+              "iteration": 3,
+              "observe": {
+                "stage": "phase3_patch_validation",
+                "blocker": ""
+              },
+              "plan": {
+                "selected_action": "run_search_and_ablation_evaluation",
+                "expected_action": "run_search_and_ablation_evaluation",
+                "reason": "Patch validation is ready; evaluate search strategy and ablations."
+              },
+              "act": {
+                "registered": true,
+                "executable_now": true,
+                "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                "controlled_tool_outcome": "completed"
+              },
+              "verify": {
+                "valid_action": true,
+                "next_stage": "phase4_evaluation_complete",
+                "progress": true
+              },
+              "reflect": {
+                "status": "verified_progress",
+                "replan": false
+              }
+            }
+          ]
+        }
+      ],
+      "candidate_results": [
+        {
+          "dimension": "candidate_budget",
+          "value": 1,
+          "case": "semantic_candidate_budget",
+          "candidate_count": 1,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": false,
+          "regression_safe": false,
+          "verified_repair": false,
+          "reflection_recovered": false,
+          "generator": "",
+          "runtime_ms": 476.3803,
+          "raw_run": {
+            "case": "semantic_candidate_budget",
+            "category": "candidate_budget",
+            "patch_mode": "llm",
+            "status": "fail",
+            "reason": "no_candidate_passed_repository_tests",
+            "candidate_count": 1,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 1,
+            "safety_pass_candidate_count": 1,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 1
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": false,
+            "full_regression_status": "skipped",
+            "verified_repair": false,
+            "verification_claim": "no_passing_candidate",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "",
+            "best_rule_id": "",
+            "best_generator": "",
+            "best_generator_family": "",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "candidate_limit": 1,
+              "validation_limit": 1,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 1,
+            "reflection_rounds": 0,
+            "runtime_ms": 476.3803
+          }
+        },
+        {
+          "dimension": "candidate_budget",
+          "value": 2,
+          "case": "semantic_candidate_budget",
+          "candidate_count": 2,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": false,
+          "regression_safe": false,
+          "verified_repair": false,
+          "reflection_recovered": false,
+          "generator": "",
+          "runtime_ms": 930.0522,
+          "raw_run": {
+            "case": "semantic_candidate_budget",
+            "category": "candidate_budget",
+            "patch_mode": "llm",
+            "status": "fail",
+            "reason": "no_candidate_passed_repository_tests",
+            "candidate_count": 2,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 2,
+            "safety_pass_candidate_count": 2,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 2
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": false,
+            "full_regression_status": "skipped",
+            "verified_repair": false,
+            "verification_claim": "no_passing_candidate",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "",
+            "best_rule_id": "",
+            "best_generator": "",
+            "best_generator_family": "",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "candidate_limit": 2,
+              "validation_limit": 2,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 2,
+            "reflection_rounds": 0,
+            "runtime_ms": 930.0522
+          }
+        },
+        {
+          "dimension": "candidate_budget",
+          "value": 3,
+          "case": "semantic_candidate_budget",
+          "candidate_count": 3,
+          "candidate_generation_success": true,
+          "ast_valid_patch_rate": 1.0,
+          "safety_gate_pass_rate": 1.0,
+          "targeted_test_passed": true,
+          "regression_safe": true,
+          "verified_repair": true,
+          "reflection_recovered": false,
+          "generator": "llm",
+          "runtime_ms": 3962.4329,
+          "raw_run": {
+            "case": "semantic_candidate_budget",
+            "category": "candidate_budget",
+            "patch_mode": "llm",
+            "status": "pass",
+            "reason": "patch_validation_success",
+            "candidate_count": 3,
+            "candidate_generated": true,
+            "ast_valid_candidate_count": 3,
+            "safety_pass_candidate_count": 3,
+            "generator_counts": {
+              "rule": 0,
+              "llm": 3
+            },
+            "generation_strategy": "llm_only",
+            "generation_order": [
+              "llm"
+            ],
+            "targeted_test_passed": true,
+            "full_regression_status": "pass",
+            "verified_repair": true,
+            "verification_claim": "verified_repair",
+            "reflection_recovered": false,
+            "reflection_candidate_count": 0,
+            "best_candidate_id": "sample.py::normalize::llm::2",
+            "best_rule_id": "llm_patch",
+            "best_generator": "llm",
+            "best_generator_family": "llm",
+            "attribution_consistent": true,
+            "expected": {},
+            "expectation_matched": true,
+            "experiment_overrides": {
+              "candidate_limit": 3,
+              "validation_limit": 3,
+              "reflection_rounds": 0
+            },
+            "top_k_functions": 5,
+            "candidate_limit": 3,
+            "reflection_rounds": 0,
+            "runtime_ms": 3962.4329
+          }
+        }
+      ],
+      "artifact": "docs/v2/phase7_artifacts/budget_ablation_evaluation.json"
+    }
+  },
+  "comparison_complete": {
+    "patch_strategy": true,
+    "planner_strategy": true,
+    "graph": true,
+    "dynamic_evidence": true,
+    "memory": true,
+    "reflection": true,
+    "top_k_context": true,
+    "action_and_candidate_budget": true
+  },
+  "core_metrics": {
+    "localization": {
+      "case_count": 20,
+      "top1": 1.0,
+      "top3": 1.0,
+      "top5": 1.0,
+      "mrr": 1.0,
+      "map": 1.0,
+      "mean_localization_latency_ms": 19.0052
+    },
+    "patch": {
+      "rule": {
+        "run_count": 3,
+        "candidate_generation_success_rate": 0.3333,
+        "candidate_count": 2,
+        "ast_valid_patch_rate": 1.0,
+        "safety_gate_pass_rate": 1.0,
+        "targeted_test_pass_rate": 0.3333,
+        "regression_safe_patch_rate": 0.3333,
+        "verified_repair_rate": 0.3333,
+        "reflection_recovery_rate": 0.0,
+        "attribution_consistency_rate": 1.0,
+        "generator_wins": {
+          "rule": 1
+        },
+        "average_runtime_ms": 1280.2533
+      },
+      "llm": {
+        "run_count": 3,
+        "candidate_generation_success_rate": 1.0,
+        "candidate_count": 3,
+        "ast_valid_patch_rate": 1.0,
+        "safety_gate_pass_rate": 1.0,
+        "targeted_test_pass_rate": 1.0,
+        "regression_safe_patch_rate": 1.0,
+        "verified_repair_rate": 1.0,
+        "reflection_recovery_rate": 0.3333,
+        "attribution_consistency_rate": 1.0,
+        "generator_wins": {
+          "llm": 3
+        },
+        "average_runtime_ms": 3327.4613
+      },
+      "hybrid": {
+        "run_count": 3,
+        "candidate_generation_success_rate": 1.0,
+        "candidate_count": 5,
+        "ast_valid_patch_rate": 1.0,
+        "safety_gate_pass_rate": 1.0,
+        "targeted_test_pass_rate": 1.0,
+        "regression_safe_patch_rate": 1.0,
+        "verified_repair_rate": 1.0,
+        "reflection_recovery_rate": 0.3333,
+        "attribution_consistency_rate": 1.0,
+        "generator_wins": {
+          "llm": 2,
+          "rule": 1
+        },
+        "average_runtime_ms": 3574.8704
+      }
+    },
+    "planner": {
+      "rule": {
+        "run_count": 14,
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 0,
+        "valid_action_rate": 1.0,
+        "repeated_action_rate": 0.0,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 0.7791,
+        "llm_total_tokens": 0,
+        "llm_estimated_cost_usd": 0.0,
+        "safety_gate_rejection_count": 0,
+        "fallback_count": 0
+      },
+      "llm": {
+        "run_count": 14,
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 2,
+        "valid_action_rate": 1.0,
+        "repeated_action_rate": 0.0,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 1.6716,
+        "llm_total_tokens": 1560,
+        "llm_estimated_cost_usd": 0.0156,
+        "safety_gate_rejection_count": 8,
+        "fallback_count": 11
+      },
+      "hybrid": {
+        "run_count": 14,
+        "task_completion_rate": 1.0,
+        "invalid_action_count": 2,
+        "valid_action_rate": 1.0,
+        "repeated_action_rate": 0.0,
+        "average_action_count": 1.0,
+        "blocker_identification_accuracy": 1.0,
+        "average_runtime_ms": 1.6754,
+        "llm_total_tokens": 1560,
+        "llm_estimated_cost_usd": 0.0156,
+        "safety_gate_rejection_count": 9,
+        "fallback_count": 12
+      }
+    },
+    "memory": {
+      "without_memory": {
+        "run_count": 8,
+        "task_completion_rate": 0.125,
+        "expected_memory_recall": 0.0,
+        "constraint_preservation_rate": 0.0,
+        "failed_patch_avoidance_rate": 0.0,
+        "repeated_failed_patch_rate": 1.0,
+        "stale_memory_reuse_rate": 0.0,
+        "average_retrieved_record_count": 0.0,
+        "average_prompt_chars": 2.0,
+        "average_runtime_ms": 0.015938
+      },
+      "with_memory": {
+        "run_count": 8,
+        "task_completion_rate": 1.0,
+        "expected_memory_recall": 1.0,
+        "constraint_preservation_rate": 1.0,
+        "failed_patch_avoidance_rate": 1.0,
+        "repeated_failed_patch_rate": 0.0,
+        "stale_memory_reuse_rate": 0.0,
+        "average_retrieved_record_count": 1.0,
+        "average_prompt_chars": 710.125,
+        "average_runtime_ms": 0.227687
+      }
+    },
+    "budgets": {
+      "reflection": {
+        "independent_variable": "reflection_rounds",
+        "runs": [
+          {
+            "dimension": "reflection_rounds",
+            "value": 0,
+            "case": "semantic_parse_port_reflection",
+            "candidate_count": 1,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": false,
+            "regression_safe": false,
+            "verified_repair": false,
+            "reflection_recovered": false,
+            "generator": "",
+            "runtime_ms": 530.1712,
+            "raw_run": {
+              "case": "semantic_parse_port_reflection",
+              "category": "llm_reflection",
+              "patch_mode": "llm",
+              "status": "fail",
+              "reason": "no_candidate_passed_repository_tests",
+              "candidate_count": 1,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 1,
+              "safety_pass_candidate_count": 1,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 1
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": false,
+              "full_regression_status": "skipped",
+              "verified_repair": false,
+              "verification_claim": "no_passing_candidate",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "",
+              "best_rule_id": "",
+              "best_generator": "",
+              "best_generator_family": "",
+              "attribution_consistent": true,
+              "expected": {
+                "candidate_generated": true,
+                "targeted_test_passed": true,
+                "verified_repair": true,
+                "reflection_recovered": true
+              },
+              "expectation_matched": false,
+              "experiment_overrides": {
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 3,
+              "reflection_rounds": 0,
+              "runtime_ms": 530.1712
+            }
+          },
+          {
+            "dimension": "reflection_rounds",
+            "value": 1,
+            "case": "semantic_parse_port_reflection",
+            "candidate_count": 1,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": true,
+            "regression_safe": true,
+            "verified_repair": true,
+            "reflection_recovered": true,
+            "generator": "llm",
+            "runtime_ms": 3534.4359,
+            "raw_run": {
+              "case": "semantic_parse_port_reflection",
+              "category": "llm_reflection",
+              "patch_mode": "llm",
+              "status": "pass",
+              "reason": "patch_validation_reflection_success",
+              "candidate_count": 1,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 1,
+              "safety_pass_candidate_count": 1,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 1
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": true,
+              "full_regression_status": "pass",
+              "verified_repair": true,
+              "verification_claim": "verified_repair",
+              "reflection_recovered": true,
+              "reflection_candidate_count": 1,
+              "best_candidate_id": "sample.py::parse_port::llm_refine::1",
+              "best_rule_id": "llm_reflection_patch",
+              "best_generator": "llm_reflection",
+              "best_generator_family": "llm",
+              "attribution_consistent": true,
+              "expected": {
+                "candidate_generated": true,
+                "targeted_test_passed": true,
+                "verified_repair": true,
+                "reflection_recovered": true
+              },
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "reflection_rounds": 1
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 3,
+              "reflection_rounds": 1,
+              "runtime_ms": 3534.4359
+            }
+          }
+        ]
+      },
+      "candidate_budget": {
+        "independent_variable": "candidate_limit",
+        "runs": [
+          {
+            "dimension": "candidate_budget",
+            "value": 1,
+            "case": "semantic_candidate_budget",
+            "candidate_count": 1,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": false,
+            "regression_safe": false,
+            "verified_repair": false,
+            "reflection_recovered": false,
+            "generator": "",
+            "runtime_ms": 476.3803,
+            "raw_run": {
+              "case": "semantic_candidate_budget",
+              "category": "candidate_budget",
+              "patch_mode": "llm",
+              "status": "fail",
+              "reason": "no_candidate_passed_repository_tests",
+              "candidate_count": 1,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 1,
+              "safety_pass_candidate_count": 1,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 1
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": false,
+              "full_regression_status": "skipped",
+              "verified_repair": false,
+              "verification_claim": "no_passing_candidate",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "",
+              "best_rule_id": "",
+              "best_generator": "",
+              "best_generator_family": "",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "candidate_limit": 1,
+                "validation_limit": 1,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 1,
+              "reflection_rounds": 0,
+              "runtime_ms": 476.3803
+            }
+          },
+          {
+            "dimension": "candidate_budget",
+            "value": 2,
+            "case": "semantic_candidate_budget",
+            "candidate_count": 2,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": false,
+            "regression_safe": false,
+            "verified_repair": false,
+            "reflection_recovered": false,
+            "generator": "",
+            "runtime_ms": 930.0522,
+            "raw_run": {
+              "case": "semantic_candidate_budget",
+              "category": "candidate_budget",
+              "patch_mode": "llm",
+              "status": "fail",
+              "reason": "no_candidate_passed_repository_tests",
+              "candidate_count": 2,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 2,
+              "safety_pass_candidate_count": 2,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 2
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": false,
+              "full_regression_status": "skipped",
+              "verified_repair": false,
+              "verification_claim": "no_passing_candidate",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "",
+              "best_rule_id": "",
+              "best_generator": "",
+              "best_generator_family": "",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "candidate_limit": 2,
+                "validation_limit": 2,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 2,
+              "reflection_rounds": 0,
+              "runtime_ms": 930.0522
+            }
+          },
+          {
+            "dimension": "candidate_budget",
+            "value": 3,
+            "case": "semantic_candidate_budget",
+            "candidate_count": 3,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": true,
+            "regression_safe": true,
+            "verified_repair": true,
+            "reflection_recovered": false,
+            "generator": "llm",
+            "runtime_ms": 3962.4329,
+            "raw_run": {
+              "case": "semantic_candidate_budget",
+              "category": "candidate_budget",
+              "patch_mode": "llm",
+              "status": "pass",
+              "reason": "patch_validation_success",
+              "candidate_count": 3,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 3,
+              "safety_pass_candidate_count": 3,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 3
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": true,
+              "full_regression_status": "pass",
+              "verified_repair": true,
+              "verification_claim": "verified_repair",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "sample.py::normalize::llm::2",
+              "best_rule_id": "llm_patch",
+              "best_generator": "llm",
+              "best_generator_family": "llm",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "candidate_limit": 3,
+                "validation_limit": 3,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 3,
+              "reflection_rounds": 0,
+              "runtime_ms": 3962.4329
+            }
+          }
+        ]
+      },
+      "top_k_context": {
+        "independent_variable": "top_k_functions",
+        "runs": [
+          {
+            "dimension": "top_k_context",
+            "value": 1,
+            "case": "semantic_top_k_context",
+            "candidate_count": 0,
+            "candidate_generation_success": false,
+            "ast_valid_patch_rate": 0.0,
+            "safety_gate_pass_rate": 0.0,
+            "targeted_test_passed": false,
+            "regression_safe": false,
+            "verified_repair": false,
+            "reflection_recovered": false,
+            "generator": "",
+            "runtime_ms": 17.4947,
+            "raw_run": {
+              "case": "semantic_top_k_context",
+              "category": "top_k_context",
+              "patch_mode": "llm",
+              "status": "skipped",
+              "reason": "patch_candidates_not_ready",
+              "candidate_count": 0,
+              "candidate_generated": false,
+              "ast_valid_candidate_count": 0,
+              "safety_pass_candidate_count": 0,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 0
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": false,
+              "full_regression_status": "skipped",
+              "verified_repair": false,
+              "verification_claim": "validation_not_run",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "",
+              "best_rule_id": "",
+              "best_generator": "",
+              "best_generator_family": "",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "top_k_functions": 1,
+                "candidate_limit": 1,
+                "validation_limit": 1,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 1,
+              "candidate_limit": 1,
+              "reflection_rounds": 0,
+              "runtime_ms": 17.4947
+            }
+          },
+          {
+            "dimension": "top_k_context",
+            "value": 3,
+            "case": "semantic_top_k_context",
+            "candidate_count": 1,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": true,
+            "regression_safe": true,
+            "verified_repair": true,
+            "reflection_recovered": false,
+            "generator": "llm",
+            "runtime_ms": 2650.875,
+            "raw_run": {
+              "case": "semantic_top_k_context",
+              "category": "top_k_context",
+              "patch_mode": "llm",
+              "status": "pass",
+              "reason": "patch_validation_success",
+              "candidate_count": 1,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 1,
+              "safety_pass_candidate_count": 1,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 1
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": true,
+              "full_regression_status": "pass",
+              "verified_repair": true,
+              "verification_claim": "verified_repair",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "sample.py::normalize::llm::0",
+              "best_rule_id": "llm_patch",
+              "best_generator": "llm",
+              "best_generator_family": "llm",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "top_k_functions": 3,
+                "candidate_limit": 1,
+                "validation_limit": 1,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 3,
+              "candidate_limit": 1,
+              "reflection_rounds": 0,
+              "runtime_ms": 2650.875
+            }
+          },
+          {
+            "dimension": "top_k_context",
+            "value": 5,
+            "case": "semantic_top_k_context",
+            "candidate_count": 1,
+            "candidate_generation_success": true,
+            "ast_valid_patch_rate": 1.0,
+            "safety_gate_pass_rate": 1.0,
+            "targeted_test_passed": true,
+            "regression_safe": true,
+            "verified_repair": true,
+            "reflection_recovered": false,
+            "generator": "llm",
+            "runtime_ms": 3011.1816,
+            "raw_run": {
+              "case": "semantic_top_k_context",
+              "category": "top_k_context",
+              "patch_mode": "llm",
+              "status": "pass",
+              "reason": "patch_validation_success",
+              "candidate_count": 1,
+              "candidate_generated": true,
+              "ast_valid_candidate_count": 1,
+              "safety_pass_candidate_count": 1,
+              "generator_counts": {
+                "rule": 0,
+                "llm": 1
+              },
+              "generation_strategy": "llm_only",
+              "generation_order": [
+                "llm"
+              ],
+              "targeted_test_passed": true,
+              "full_regression_status": "pass",
+              "verified_repair": true,
+              "verification_claim": "verified_repair",
+              "reflection_recovered": false,
+              "reflection_candidate_count": 0,
+              "best_candidate_id": "sample.py::normalize::llm::0",
+              "best_rule_id": "llm_patch",
+              "best_generator": "llm",
+              "best_generator_family": "llm",
+              "attribution_consistent": true,
+              "expected": {},
+              "expectation_matched": true,
+              "experiment_overrides": {
+                "top_k_functions": 5,
+                "candidate_limit": 1,
+                "validation_limit": 1,
+                "reflection_rounds": 0
+              },
+              "top_k_functions": 5,
+              "candidate_limit": 1,
+              "reflection_rounds": 0,
+              "runtime_ms": 3011.1816
+            }
+          }
+        ]
+      },
+      "action_budget": {
+        "independent_variable": "max_actions",
+        "runs": [
+          {
+            "case": "three_step_repair_evaluation",
+            "action_budget": 1,
+            "task_completed": false,
+            "selected_actions": [
+              "generate_llm_patch_candidates"
+            ],
+            "required_action_sequence": [
+              "generate_llm_patch_candidates",
+              "run_patch_reflection_loop",
+              "run_search_and_ablation_evaluation"
+            ],
+            "action_count": 1,
+            "valid_action_rate": 1.0,
+            "invalid_action_count": 0,
+            "repeated_action_count": 0,
+            "repeated_action_rate": 0.0,
+            "all_actions_registered": true,
+            "stop_reason": "action_budget_exhausted",
+            "runtime_ms": 0.8284,
+            "llm_total_tokens": 0,
+            "llm_estimated_cost_usd": 0.0,
+            "trace": [
+              {
+                "iteration": 1,
+                "observe": {
+                  "stage": "phase2_dynamic_fault_localization",
+                  "blocker": ""
+                },
+                "plan": {
+                  "selected_action": "generate_llm_patch_candidates",
+                  "expected_action": "generate_llm_patch_candidates",
+                  "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase3_patch_validation",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": true
+                }
+              }
+            ]
+          },
+          {
+            "case": "three_step_repair_evaluation",
+            "action_budget": 2,
+            "task_completed": false,
+            "selected_actions": [
+              "generate_llm_patch_candidates",
+              "run_patch_reflection_loop"
+            ],
+            "required_action_sequence": [
+              "generate_llm_patch_candidates",
+              "run_patch_reflection_loop",
+              "run_search_and_ablation_evaluation"
+            ],
+            "action_count": 2,
+            "valid_action_rate": 1.0,
+            "invalid_action_count": 0,
+            "repeated_action_count": 0,
+            "repeated_action_rate": 0.0,
+            "all_actions_registered": true,
+            "stop_reason": "action_budget_exhausted",
+            "runtime_ms": 1.4161,
+            "llm_total_tokens": 0,
+            "llm_estimated_cost_usd": 0.0,
+            "trace": [
+              {
+                "iteration": 1,
+                "observe": {
+                  "stage": "phase2_dynamic_fault_localization",
+                  "blocker": ""
+                },
+                "plan": {
+                  "selected_action": "generate_llm_patch_candidates",
+                  "expected_action": "generate_llm_patch_candidates",
+                  "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase3_patch_validation",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": true
+                }
+              },
+              {
+                "iteration": 2,
+                "observe": {
+                  "stage": "phase3_patch_validation",
+                  "blocker": "patch_validation_not_repair_ready:no_candidate_passed"
+                },
+                "plan": {
+                  "selected_action": "run_patch_reflection_loop",
+                  "expected_action": "run_patch_reflection_loop",
+                  "reason": "Patch validation produced candidate evidence, but the repair is not fully verified; run reflection before advancing."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase3_patch_validation",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": true
+                }
+              }
+            ]
+          },
+          {
+            "case": "three_step_repair_evaluation",
+            "action_budget": 3,
+            "task_completed": true,
+            "selected_actions": [
+              "generate_llm_patch_candidates",
+              "run_patch_reflection_loop",
+              "run_search_and_ablation_evaluation"
+            ],
+            "required_action_sequence": [
+              "generate_llm_patch_candidates",
+              "run_patch_reflection_loop",
+              "run_search_and_ablation_evaluation"
+            ],
+            "action_count": 3,
+            "valid_action_rate": 1.0,
+            "invalid_action_count": 0,
+            "repeated_action_count": 0,
+            "repeated_action_rate": 0.0,
+            "all_actions_registered": true,
+            "stop_reason": "task_completed",
+            "runtime_ms": 2.3217,
+            "llm_total_tokens": 0,
+            "llm_estimated_cost_usd": 0.0,
+            "trace": [
+              {
+                "iteration": 1,
+                "observe": {
+                  "stage": "phase2_dynamic_fault_localization",
+                  "blocker": ""
+                },
+                "plan": {
+                  "selected_action": "generate_llm_patch_candidates",
+                  "expected_action": "generate_llm_patch_candidates",
+                  "reason": "Dynamic localization is available; patch generation and validation are the next repair step. Patch generation mode is `llm`; AgentController must invoke `controlled/planner-evaluation` for LLM candidates and keep all generated patches behind AST/scope/safety gates and sandbox pytest validation."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase3_patch_validation",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": true
+                }
+              },
+              {
+                "iteration": 2,
+                "observe": {
+                  "stage": "phase3_patch_validation",
+                  "blocker": "patch_validation_not_repair_ready:no_candidate_passed"
+                },
+                "plan": {
+                  "selected_action": "run_patch_reflection_loop",
+                  "expected_action": "run_patch_reflection_loop",
+                  "reason": "Patch validation produced candidate evidence, but the repair is not fully verified; run reflection before advancing."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase3_patch_validation",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": true
+                }
+              },
+              {
+                "iteration": 3,
+                "observe": {
+                  "stage": "phase3_patch_validation",
+                  "blocker": ""
+                },
+                "plan": {
+                  "selected_action": "run_search_and_ablation_evaluation",
+                  "expected_action": "run_search_and_ablation_evaluation",
+                  "reason": "Patch validation is ready; evaluate search strategy and ablations."
+                },
+                "act": {
+                  "registered": true,
+                  "executable_now": true,
+                  "execution_mode": "controlled_state_transition_with_real_controller_and_action_registry",
+                  "controlled_tool_outcome": "completed"
+                },
+                "verify": {
+                  "valid_action": true,
+                  "next_stage": "phase4_evaluation_complete",
+                  "progress": true
+                },
+                "reflect": {
+                  "status": "verified_progress",
+                  "replan": false
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "unfamiliar_repositories": {
+      "repository_count": null,
+      "structured_report_rate": 1.0,
+      "static_analysis_completion_rate": 1.0,
+      "test_process_start_rate": 0.35,
+      "blocker_classification_rate": 1.0
+    }
+  },
+  "uncertainty": {
+    "method": "percentile_bootstrap",
+    "confidence_level": 0.95,
+    "bootstrap_samples": 1000,
+    "seed": 1729,
+    "planner_task_completion": {
+      "hybrid": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      },
+      "llm": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      },
+      "rule": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      }
+    },
+    "planner_blocker_accuracy": {
+      "hybrid": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      },
+      "llm": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      },
+      "rule": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 14
+      }
+    },
+    "patch_verified_repair": {
+      "hybrid": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 3
+      },
+      "llm": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 3
+      },
+      "rule": {
+        "mean": 0.333333,
+        "lower": 0.0,
+        "upper": 1.0,
+        "sample_count": 3
+      }
+    },
+    "patch_regression_safe": {
+      "hybrid": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 3
+      },
+      "llm": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 3
+      },
+      "rule": {
+        "mean": 0.333333,
+        "lower": 0.0,
+        "upper": 1.0,
+        "sample_count": 3
+      }
+    },
+    "memory_task_completion": {
+      "with_memory": {
+        "mean": 1.0,
+        "lower": 1.0,
+        "upper": 1.0,
+        "sample_count": 8
+      },
+      "without_memory": {
+        "mean": 0.125,
+        "lower": 0.0,
+        "upper": 0.375,
+        "sample_count": 8
+      }
+    }
+  },
+  "v1_v2_comparison": {
+    "baseline_ref": "v1-baseline",
+    "rows": [
+      {
+        "scope": "localization_validation",
+        "metric": "top1",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_validation",
+        "metric": "top3",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_validation",
+        "metric": "top5",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_validation",
+        "metric": "mrr",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_validation",
+        "metric": "map",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_test",
+        "metric": "top1",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_test",
+        "metric": "top3",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_test",
+        "metric": "top5",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_test",
+        "metric": "mrr",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_test",
+        "metric": "map",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_blind",
+        "metric": "top1",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_blind",
+        "metric": "top3",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_blind",
+        "metric": "top5",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_blind",
+        "metric": "mrr",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      },
+      {
+        "scope": "localization_blind",
+        "metric": "map",
+        "v1": 1.0,
+        "v2": 1.0,
+        "delta": 0.0,
+        "comparable": true,
+        "reason": "same_cases_and_frozen_split_protocol"
+      }
+    ],
+    "non_comparable_rows": [
+      {
+        "scope": "repair",
+        "metric": "v1_pass_at_1_vs_v2_controlled_verified_repair",
+        "v1": 0.0,
+        "v2": null,
+        "delta": null,
+        "comparable": false,
+        "reason": "different_case_sets_and_protocols"
+      },
+      {
+        "scope": "reflection",
+        "metric": "v1_reflection_uplift_vs_v2_controlled_reflection",
+        "v1": 0.1333,
+        "v2": null,
+        "delta": null,
+        "comparable": false,
+        "reason": "different_case_sets_and_reflection_authority"
+      }
+    ],
+    "interpretation": "V2 preserves V1 localization metrics on the same split protocol; repair uplift is not claimed across incompatible benchmarks."
+  },
+  "failure_accounting": {
+    "planner_expectation_failures": 0,
+    "memory_task_failures": 7,
+    "patch_unverified_runs": 2,
+    "budget_expected_non_success_runs": 6,
+    "phase6_partial_repositories": 13,
+    "phase6_failed_test_processes": 6,
+    "policy": "Failures remain in raw artifacts and are included in denominators."
+  },
+  "acceptance_gates": {
+    "all_required_comparisons_present": true,
+    "all_component_evaluations_passed": true,
+    "localization_uses_validation_test_blind_split": true,
+    "fixed_dataset_hashes_recorded": true,
+    "v1_v2_quantified_comparison_present": true,
+    "raw_artifacts_linked": true
+  },
+  "artifacts": {
+    "planner": {
+      "json": "docs/v2/phase7_artifacts/planner_strategy_evaluation.json",
+      "markdown": "docs/v2/phase7_artifacts/planner_strategy_evaluation.md"
+    },
+    "memory": {
+      "json": "docs/v2/phase7_artifacts/memory_ablation_evaluation.json",
+      "markdown": "docs/v2/phase7_artifacts/memory_ablation_evaluation.md"
+    },
+    "localization": {
+      "json": "docs/v2/phase7_artifacts/localization_split_evaluation.json",
+      "markdown": "docs/v2/phase7_artifacts/localization_split_evaluation.md"
+    },
+    "patch": {
+      "json": "docs/v2/phase7_artifacts/patch_strategy_evaluation.json",
+      "markdown": "docs/v2/phase7_artifacts/patch_strategy_evaluation.md"
+    },
+    "budgets": {
+      "json": "docs/v2/phase7_artifacts/budget_ablation_evaluation.json",
+      "markdown": "docs/v2/phase7_artifacts/budget_ablation_evaluation.md"
+    },
+    "system": {
+      "json": "docs/v2/phase7_artifacts/phase7_system_metrics.json",
+      "markdown": "docs/v2/phase7_artifacts/phase7_system_evaluation.md"
+    }
+  },
+  "claim_boundaries": [
+    "Controlled LLM fixtures measure orchestration, schema, safety, attribution, reflection, and budget behavior; they do not estimate live-model quality.",
+    "Localization uses mutation cases with rule-detectable faults; equal fusion and rule-only scores do not prove fusion superiority.",
+    "Phase 6 success means static analysis completed and an authorized test process started and terminated; it does not mean tests passed or a repair succeeded.",
+    "Patch success is counted only when targeted and full regression pytest pass; LLM Judge is never success authority.",
+    "V1 and V2 repair metrics with different datasets are marked non-comparable rather than reported as uplift."
+  ]
+}

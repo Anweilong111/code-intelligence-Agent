@@ -1,0 +1,1868 @@
+{
+  "schema_version": "2.0",
+  "status": "pass",
+  "reason": "evidence_v2_meets_v1_non_regression_gate",
+  "selection_scope": "validation_only",
+  "selected_profile": {
+    "profile": "evidence_v2_default",
+    "coverage_weights": {
+      "sbfl": 0.22,
+      "graph": 0.18,
+      "static": 0.15,
+      "semantic": 0.05,
+      "llm": 0.05,
+      "risk": 0.05,
+      "test_failure": 0.15,
+      "traceback": 0.1,
+      "complexity": 0.05,
+      "change_history": 0.05
+    },
+    "static_only_weights": {
+      "sbfl": 0.0,
+      "graph": 0.25,
+      "static": 0.45,
+      "semantic": 0.1,
+      "llm": 0.05,
+      "risk": 0.05,
+      "test_failure": 0.0,
+      "traceback": 0.0,
+      "complexity": 0.1,
+      "change_history": 0.05
+    },
+    "validation_score": 1.0,
+    "robust_validation_score": 1.0,
+    "source_group_count": 1,
+    "min_source_group_cases": 15,
+    "source_groups": {
+      "python/cpython": {
+        "case_count": 15,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "validation_score": 1.0
+      }
+    },
+    "holdout_splits": [],
+    "max_top1_gap": 0.0,
+    "max_map_gap": 0.0,
+    "top1": 1.0,
+    "top3": 1.0,
+    "top5": 1.0,
+    "mrr": 1.0,
+    "map": 1.0,
+    "ndcg_at_3": 1.0,
+    "mean_exam_score": 0.0,
+    "mean_localization_latency_ms": 270.4395,
+    "case_count": 15,
+    "pareto_optimal": true,
+    "dominates_count": 0,
+    "dominated_by_count": 0
+  },
+  "candidate_profile_count": 4,
+  "split_results": {
+    "validation": {
+      "split": "validation",
+      "manifest": "./outputs_v2/phase7/localization/splits/validation.json",
+      "case_count": 15,
+      "v1": {
+        "profile": "legacy_v1",
+        "coverage_weights": {
+          "sbfl": 0.3,
+          "graph": 0.25,
+          "static": 0.15,
+          "semantic": 0.1,
+          "llm": 0.15,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.2,
+          "static": 0.6,
+          "semantic": 0.1,
+          "llm": 0.1,
+          "risk": 0.0,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 1,
+        "min_source_group_cases": 15,
+        "source_groups": {
+          "python/cpython": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 195.4342,
+        "case_count": 15,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "v2": {
+        "profile": "evidence_v2_default",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 1,
+        "min_source_group_cases": 15,
+        "source_groups": {
+          "python/cpython": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 270.4395,
+        "case_count": 15,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "metric_deltas": {
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0
+      },
+      "non_regression": true
+    },
+    "test": {
+      "split": "test",
+      "manifest": "./outputs_v2/phase7/localization/splits/test.json",
+      "case_count": 10,
+      "v1": {
+        "profile": "legacy_v1",
+        "coverage_weights": {
+          "sbfl": 0.3,
+          "graph": 0.25,
+          "static": 0.15,
+          "semantic": 0.1,
+          "llm": 0.15,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.2,
+          "static": 0.6,
+          "semantic": 0.1,
+          "llm": 0.1,
+          "risk": 0.0,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 1,
+        "min_source_group_cases": 10,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 3.6325,
+        "case_count": 10,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "v2": {
+        "profile": "evidence_v2_default",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 1,
+        "min_source_group_cases": 10,
+        "source_groups": {
+          "TheAlgorithms/Python": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 3.9316,
+        "case_count": 10,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "metric_deltas": {
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0
+      },
+      "non_regression": true
+    },
+    "blind": {
+      "split": "blind",
+      "manifest": "./outputs_v2/phase7/localization/splits/blind.json",
+      "case_count": 10,
+      "v1": {
+        "profile": "legacy_v1",
+        "coverage_weights": {
+          "sbfl": 0.3,
+          "graph": 0.25,
+          "static": 0.15,
+          "semantic": 0.1,
+          "llm": 0.15,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.2,
+          "static": 0.6,
+          "semantic": 0.1,
+          "llm": 0.1,
+          "risk": 0.0,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 2,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 34.5571,
+        "case_count": 10,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "v2": {
+        "profile": "evidence_v2_default",
+        "coverage_weights": {
+          "sbfl": 0.22,
+          "graph": 0.18,
+          "static": 0.15,
+          "semantic": 0.05,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.15,
+          "traceback": 0.1,
+          "complexity": 0.05,
+          "change_history": 0.05
+        },
+        "static_only_weights": {
+          "sbfl": 0.0,
+          "graph": 0.25,
+          "static": 0.45,
+          "semantic": 0.1,
+          "llm": 0.05,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.1,
+          "change_history": 0.05
+        },
+        "validation_score": 1.0,
+        "robust_validation_score": 1.0,
+        "source_group_count": 2,
+        "min_source_group_cases": 5,
+        "source_groups": {
+          "pallets/click": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "pytest-dev/pluggy": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          }
+        },
+        "holdout_splits": [
+          {
+            "holdout_group": "pallets/click",
+            "train_groups": [
+              "pytest-dev/pluggy"
+            ],
+            "train_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          },
+          {
+            "holdout_group": "pytest-dev/pluggy",
+            "train_groups": [
+              "pallets/click"
+            ],
+            "train_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "holdout_metrics": {
+              "case_count": 5,
+              "top1": 1.0,
+              "top3": 1.0,
+              "top5": 1.0,
+              "mrr": 1.0,
+              "map": 1.0,
+              "ndcg_at_3": 1.0,
+              "mean_exam_score": 0.0,
+              "validation_score": 1.0
+            },
+            "top1_gap": 0.0,
+            "map_gap": 0.0
+          }
+        ],
+        "max_top1_gap": 0.0,
+        "max_map_gap": 0.0,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "mean_exam_score": 0.0,
+        "mean_localization_latency_ms": 27.3592,
+        "case_count": 10,
+        "pareto_optimal": true,
+        "dominates_count": 0,
+        "dominated_by_count": 0
+      },
+      "metric_deltas": {
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0
+      },
+      "non_regression": true
+    }
+  },
+  "ablation_scope": [
+    "test",
+    "blind"
+  ],
+  "ablation_results": [
+    {
+      "profile": "rule_only",
+      "coverage_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 1.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 1.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "validation_score": 1.0,
+      "robust_validation_score": 1.0,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        }
+      ],
+      "max_top1_gap": 0.0,
+      "max_map_gap": 0.0,
+      "top1": 1.0,
+      "top3": 1.0,
+      "top5": 1.0,
+      "mrr": 1.0,
+      "map": 1.0,
+      "ndcg_at_3": 1.0,
+      "mean_exam_score": 0.0,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": true,
+      "dominates_count": 3,
+      "dominated_by_count": 0
+    },
+    {
+      "profile": "without_graph",
+      "coverage_weights": {
+        "sbfl": 0.22,
+        "graph": 0.0,
+        "static": 0.15,
+        "semantic": 0.05,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.15,
+        "traceback": 0.1,
+        "complexity": 0.05,
+        "change_history": 0.05
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 0.45,
+        "semantic": 0.1,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.1,
+        "change_history": 0.05
+      },
+      "validation_score": 1.0,
+      "robust_validation_score": 1.0,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        }
+      ],
+      "max_top1_gap": 0.0,
+      "max_map_gap": 0.0,
+      "top1": 1.0,
+      "top3": 1.0,
+      "top5": 1.0,
+      "mrr": 1.0,
+      "map": 1.0,
+      "ndcg_at_3": 1.0,
+      "mean_exam_score": 0.0,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": true,
+      "dominates_count": 3,
+      "dominated_by_count": 0
+    },
+    {
+      "profile": "without_dynamic",
+      "coverage_weights": {
+        "sbfl": 0.0,
+        "graph": 0.18,
+        "static": 0.15,
+        "semantic": 0.05,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.05,
+        "change_history": 0.05
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.25,
+        "static": 0.45,
+        "semantic": 0.1,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.1,
+        "change_history": 0.05
+      },
+      "validation_score": 1.0,
+      "robust_validation_score": 1.0,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        }
+      ],
+      "max_top1_gap": 0.0,
+      "max_map_gap": 0.0,
+      "top1": 1.0,
+      "top3": 1.0,
+      "top5": 1.0,
+      "mrr": 1.0,
+      "map": 1.0,
+      "ndcg_at_3": 1.0,
+      "mean_exam_score": 0.0,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": true,
+      "dominates_count": 3,
+      "dominated_by_count": 0
+    },
+    {
+      "profile": "fusion",
+      "coverage_weights": {
+        "sbfl": 0.22,
+        "graph": 0.18,
+        "static": 0.15,
+        "semantic": 0.05,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.15,
+        "traceback": 0.1,
+        "complexity": 0.05,
+        "change_history": 0.05
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.25,
+        "static": 0.45,
+        "semantic": 0.1,
+        "llm": 0.05,
+        "risk": 0.05,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.1,
+        "change_history": 0.05
+      },
+      "validation_score": 1.0,
+      "robust_validation_score": 1.0,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 1.0,
+          "ndcg_at_3": 1.0,
+          "mean_exam_score": 0.0,
+          "validation_score": 1.0
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 1.0,
+            "ndcg_at_3": 1.0,
+            "mean_exam_score": 0.0,
+            "validation_score": 1.0
+          },
+          "top1_gap": 0.0,
+          "map_gap": 0.0
+        }
+      ],
+      "max_top1_gap": 0.0,
+      "max_map_gap": 0.0,
+      "top1": 1.0,
+      "top3": 1.0,
+      "top5": 1.0,
+      "mrr": 1.0,
+      "map": 1.0,
+      "ndcg_at_3": 1.0,
+      "mean_exam_score": 0.0,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": true,
+      "dominates_count": 3,
+      "dominated_by_count": 0
+    },
+    {
+      "profile": "graph_only",
+      "coverage_weights": {
+        "sbfl": 0.0,
+        "graph": 1.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 1.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "validation_score": 0.7716,
+      "robust_validation_score": 0.6564,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 1.0,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 1.0,
+          "map": 0.9833,
+          "ndcg_at_3": 0.992,
+          "mean_exam_score": 0.0,
+          "validation_score": 0.9942
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 0.2,
+          "top3": 0.8,
+          "top5": 0.8,
+          "mrr": 0.4222,
+          "map": 0.4222,
+          "ndcg_at_3": 0.5,
+          "mean_exam_score": 0.1414,
+          "validation_score": 0.464
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 0.4,
+          "top3": 0.8,
+          "top5": 1.0,
+          "mrr": 0.64,
+          "map": 0.64,
+          "ndcg_at_3": 0.6524,
+          "mean_exam_score": 0.1333,
+          "validation_score": 0.6338
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 0.3,
+            "top3": 0.8,
+            "top5": 0.9,
+            "mrr": 0.5311,
+            "map": 0.5311,
+            "ndcg_at_3": 0.5762,
+            "mean_exam_score": 0.1373,
+            "validation_score": 0.5489
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 1.0,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 1.0,
+            "map": 0.9833,
+            "ndcg_at_3": 0.992,
+            "mean_exam_score": 0.0,
+            "validation_score": 0.9942
+          },
+          "top1_gap": -0.7,
+          "map_gap": -0.4522
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.8,
+            "top3": 0.9333,
+            "top5": 1.0,
+            "mrr": 0.88,
+            "map": 0.8689,
+            "ndcg_at_3": 0.8788,
+            "mean_exam_score": 0.0444,
+            "validation_score": 0.8741
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.2,
+            "top3": 0.8,
+            "top5": 0.8,
+            "mrr": 0.4222,
+            "map": 0.4222,
+            "ndcg_at_3": 0.5,
+            "mean_exam_score": 0.1414,
+            "validation_score": 0.464
+          },
+          "top1_gap": 0.6,
+          "map_gap": 0.4467
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.7333,
+            "top3": 0.9333,
+            "top5": 0.9333,
+            "mrr": 0.8074,
+            "map": 0.7963,
+            "ndcg_at_3": 0.828,
+            "mean_exam_score": 0.0471,
+            "validation_score": 0.8175
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.4,
+            "top3": 0.8,
+            "top5": 1.0,
+            "mrr": 0.64,
+            "map": 0.64,
+            "ndcg_at_3": 0.6524,
+            "mean_exam_score": 0.1333,
+            "validation_score": 0.6338
+          },
+          "top1_gap": 0.3333,
+          "map_gap": 0.1563
+        }
+      ],
+      "max_top1_gap": 0.7,
+      "max_map_gap": 0.4522,
+      "top1": 0.65,
+      "top3": 0.9,
+      "top5": 0.95,
+      "mrr": 0.7656,
+      "map": 0.7572,
+      "ndcg_at_3": 0.7841,
+      "mean_exam_score": 0.0687,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": false,
+      "dominates_count": 1,
+      "dominated_by_count": 4
+    },
+    {
+      "profile": "dynamic_only",
+      "coverage_weights": {
+        "sbfl": 0.45,
+        "graph": 0.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.35,
+        "traceback": 0.2,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "validation_score": 0.6415,
+      "robust_validation_score": 0.4952,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 0.9,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 0.95,
+          "map": 0.9167,
+          "ndcg_at_3": 0.9244,
+          "mean_exam_score": 0.05,
+          "validation_score": 0.934
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 0.0,
+          "top3": 0.4,
+          "top5": 0.8,
+          "mrr": 0.29,
+          "map": 0.29,
+          "ndcg_at_3": 0.2262,
+          "mean_exam_score": 0.1469,
+          "validation_score": 0.2729
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 0.0,
+          "top3": 0.8,
+          "top5": 1.0,
+          "mrr": 0.4167,
+          "map": 0.4167,
+          "ndcg_at_3": 0.4786,
+          "mean_exam_score": 0.1778,
+          "validation_score": 0.4252
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 0.0,
+            "top3": 0.6,
+            "top5": 0.9,
+            "mrr": 0.3533,
+            "map": 0.3533,
+            "ndcg_at_3": 0.3524,
+            "mean_exam_score": 0.1623,
+            "validation_score": 0.349
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 0.9,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 0.95,
+            "map": 0.9167,
+            "ndcg_at_3": 0.9244,
+            "mean_exam_score": 0.05,
+            "validation_score": 0.934
+          },
+          "top1_gap": -0.9,
+          "map_gap": -0.5634
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.6,
+            "top3": 0.9333,
+            "top5": 1.0,
+            "mrr": 0.7722,
+            "map": 0.75,
+            "ndcg_at_3": 0.7758,
+            "mean_exam_score": 0.0926,
+            "validation_score": 0.7644
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.0,
+            "top3": 0.4,
+            "top5": 0.8,
+            "mrr": 0.29,
+            "map": 0.29,
+            "ndcg_at_3": 0.2262,
+            "mean_exam_score": 0.1469,
+            "validation_score": 0.2729
+          },
+          "top1_gap": 0.6,
+          "map_gap": 0.46
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.6,
+            "top3": 0.8,
+            "top5": 0.9333,
+            "mrr": 0.73,
+            "map": 0.7078,
+            "ndcg_at_3": 0.6917,
+            "mean_exam_score": 0.0823,
+            "validation_score": 0.7137
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.0,
+            "top3": 0.8,
+            "top5": 1.0,
+            "mrr": 0.4167,
+            "map": 0.4167,
+            "ndcg_at_3": 0.4786,
+            "mean_exam_score": 0.1778,
+            "validation_score": 0.4252
+          },
+          "top1_gap": 0.6,
+          "map_gap": 0.2911
+        }
+      ],
+      "max_top1_gap": 0.9,
+      "max_map_gap": 0.5634,
+      "top1": 0.45,
+      "top3": 0.8,
+      "top5": 0.95,
+      "mrr": 0.6517,
+      "map": 0.635,
+      "ndcg_at_3": 0.6384,
+      "mean_exam_score": 0.1062,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": false,
+      "dominates_count": 0,
+      "dominated_by_count": 5
+    },
+    {
+      "profile": "llm_only",
+      "coverage_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 1.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "static_only_weights": {
+        "sbfl": 0.0,
+        "graph": 0.0,
+        "static": 0.0,
+        "semantic": 0.0,
+        "llm": 1.0,
+        "risk": 0.0,
+        "test_failure": 0.0,
+        "traceback": 0.0,
+        "complexity": 0.0,
+        "change_history": 0.0
+      },
+      "validation_score": 0.4374,
+      "robust_validation_score": 0.3482,
+      "source_group_count": 3,
+      "min_source_group_cases": 5,
+      "source_groups": {
+        "TheAlgorithms/Python": {
+          "case_count": 10,
+          "top1": 0.4,
+          "top3": 1.0,
+          "top5": 1.0,
+          "mrr": 0.7,
+          "map": 0.6976,
+          "ndcg_at_3": 0.7604,
+          "mean_exam_score": 0.2476,
+          "validation_score": 0.6991
+        },
+        "pallets/click": {
+          "case_count": 5,
+          "top1": 0.0,
+          "top3": 0.0,
+          "top5": 0.0,
+          "mrr": 0.0993,
+          "map": 0.0993,
+          "ndcg_at_3": 0.0,
+          "mean_exam_score": 0.5178,
+          "validation_score": 0.0738
+        },
+        "pytest-dev/pluggy": {
+          "case_count": 5,
+          "top1": 0.0,
+          "top3": 0.4,
+          "top5": 0.8,
+          "mrr": 0.3122,
+          "map": 0.3122,
+          "ndcg_at_3": 0.2524,
+          "mean_exam_score": 0.3778,
+          "validation_score": 0.2777
+        }
+      },
+      "holdout_splits": [
+        {
+          "holdout_group": "TheAlgorithms/Python",
+          "train_groups": [
+            "pallets/click",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 10,
+            "top1": 0.0,
+            "top3": 0.2,
+            "top5": 0.4,
+            "mrr": 0.2058,
+            "map": 0.2058,
+            "ndcg_at_3": 0.1262,
+            "mean_exam_score": 0.4478,
+            "validation_score": 0.1757
+          },
+          "holdout_metrics": {
+            "case_count": 10,
+            "top1": 0.4,
+            "top3": 1.0,
+            "top5": 1.0,
+            "mrr": 0.7,
+            "map": 0.6976,
+            "ndcg_at_3": 0.7604,
+            "mean_exam_score": 0.2476,
+            "validation_score": 0.6991
+          },
+          "top1_gap": -0.4,
+          "map_gap": -0.4918
+        },
+        {
+          "holdout_group": "pallets/click",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pytest-dev/pluggy"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.2667,
+            "top3": 0.8,
+            "top5": 0.9333,
+            "mrr": 0.5707,
+            "map": 0.5692,
+            "ndcg_at_3": 0.5911,
+            "mean_exam_score": 0.291,
+            "validation_score": 0.5586
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.0,
+            "top3": 0.0,
+            "top5": 0.0,
+            "mrr": 0.0993,
+            "map": 0.0993,
+            "ndcg_at_3": 0.0,
+            "mean_exam_score": 0.5178,
+            "validation_score": 0.0738
+          },
+          "top1_gap": 0.2667,
+          "map_gap": 0.4699
+        },
+        {
+          "holdout_group": "pytest-dev/pluggy",
+          "train_groups": [
+            "TheAlgorithms/Python",
+            "pallets/click"
+          ],
+          "train_metrics": {
+            "case_count": 15,
+            "top1": 0.2667,
+            "top3": 0.6667,
+            "top5": 0.6667,
+            "mrr": 0.4998,
+            "map": 0.4982,
+            "ndcg_at_3": 0.5069,
+            "mean_exam_score": 0.3377,
+            "validation_score": 0.4907
+          },
+          "holdout_metrics": {
+            "case_count": 5,
+            "top1": 0.0,
+            "top3": 0.4,
+            "top5": 0.8,
+            "mrr": 0.3122,
+            "map": 0.3122,
+            "ndcg_at_3": 0.2524,
+            "mean_exam_score": 0.3778,
+            "validation_score": 0.2777
+          },
+          "top1_gap": 0.2667,
+          "map_gap": 0.186
+        }
+      ],
+      "max_top1_gap": 0.4,
+      "max_map_gap": 0.4918,
+      "top1": 0.2,
+      "top3": 0.6,
+      "top5": 0.7,
+      "mrr": 0.4529,
+      "map": 0.4517,
+      "ndcg_at_3": 0.4433,
+      "mean_exam_score": 0.3477,
+      "mean_localization_latency_ms": 19.0052,
+      "case_count": 20,
+      "pareto_optimal": false,
+      "dominates_count": 0,
+      "dominated_by_count": 4
+    }
+  ],
+  "llm_signal_available": false,
+  "non_regression_passed": true,
+  "protocol": {
+    "schema_version": "2.0",
+    "description": "Repository-disjoint protocol for Evidence V2 localization weight selection, test evaluation, and blind evaluation.",
+    "source_template": "../github_cases/mutation_templates.example.json",
+    "splits": {
+      "validation": {
+        "source_groups": [
+          "python/cpython"
+        ],
+        "max_cases": 15
+      },
+      "test": {
+        "source_groups": [
+          "TheAlgorithms/Python"
+        ],
+        "max_cases": 10
+      },
+      "blind": {
+        "source_groups": [
+          "pallets/click",
+          "pytest-dev/pluggy"
+        ],
+        "max_cases": 10
+      }
+    }
+  },
+  "artifacts": {
+    "json": "./outputs_v2/phase7/localization/localization_split_evaluation.json",
+    "markdown": "./outputs_v2/phase7/localization/localization_split_evaluation.md"
+  }
+}
