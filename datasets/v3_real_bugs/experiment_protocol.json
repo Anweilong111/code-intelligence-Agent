@@ -1,0 +1,183 @@
+{
+  "schema_version": "3.0",
+  "protocol_name": "code-intelligence-agent-v3-real-bug-repair",
+  "frozen_at": "2026-07-14",
+  "baseline": {
+    "tag": "v2-baseline",
+    "commit_sha": "cf571489ac35c4dfcff44d7def0c9310b8206b2b",
+    "test_count": 1234,
+    "test_status": "pass"
+  },
+  "runtime": {
+    "controller_python": "3.13.12",
+    "benchmark_default_python": "3.11",
+    "case_python_override_policy": "allowed_only_when_pinned_by_case_manifest_and_repository_metadata",
+    "requirements_path": "requirements-dev.txt",
+    "requirements_sha256": "18d19a0704ae981f2f26e7f3fe5239433971fbd477c3bcca00fe71cbc2c0cbea",
+    "repository_revision_policy": "full_40_character_sha_only",
+    "environment_isolation": "one_environment_per_repository_commit_and_python_fingerprint"
+  },
+  "model": {
+    "provider": "deepseek",
+    "model_id": "deepseek-v4-pro",
+    "api_base": "https://api.deepseek.com",
+    "endpoint": "/chat/completions",
+    "temperature": 0,
+    "max_output_tokens": 32768,
+    "thinking": "enabled",
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 300,
+    "api_key_source": "environment_only",
+    "api_key_env_names": [
+      "CIA_LLM_API_KEY",
+      "DEEPSEEK_API_KEY"
+    ],
+    "provider_retry": {
+      "maximum_retries": 2,
+      "retryable_categories": [
+        "network",
+        "timeout",
+        "rate_limit",
+        "http_5xx"
+      ],
+      "backoff_seconds": [
+        2,
+        8
+      ]
+    },
+    "model_catalog_source": "https://api-docs.deepseek.com/api/list-models"
+  },
+  "randomness": {
+    "rule_trials": 1,
+    "llm_trials": 3,
+    "hybrid_trials": 3,
+    "seed": null,
+    "seed_policy": "not_claimed_because_provider_seed_support_is_not_part_of_the_frozen_contract",
+    "independence_unit": "case_strategy_trial",
+    "provider_retry_creates_new_trial": false,
+    "share_candidate_history_between_trials": false,
+    "reflection_history_scope": "current_trial_only",
+    "maximum_reflection_rounds": 2,
+    "pass_at_k_policy": "a_case_succeeds_at_k_when_any_of_the_first_k_independent_trials_has_a_verified_repair"
+  },
+  "pricing": {
+    "snapshot_id": "deepseek-v4-pro-2026-07-14",
+    "as_of": "2026-07-14",
+    "currency": "USD",
+    "unit": "per_million_tokens",
+    "cache_hit_input_usd_per_million_tokens": 0.003625,
+    "cache_miss_input_usd_per_million_tokens": 0.435,
+    "output_usd_per_million_tokens": 0.87,
+    "source_urls": [
+      "https://api-docs.deepseek.com/quick_start/pricing",
+      "https://api-docs.deepseek.com/api/list-models"
+    ],
+    "cost_policy": "use_provider_token_counts_and_preserve_cache_hit_and_cache_miss_input_tokens_separately"
+  },
+  "prompts": [
+    {
+      "id": "patch_generation_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/patch_generation_v3.txt",
+      "sha256": "c5898a77322fc5aa1394cc538c97bde51bda31affcde0f0610eba80231259c47"
+    },
+    {
+      "id": "reflection_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/reflection_v3.txt",
+      "sha256": "0778d16ec733db013a30567626b0de50524de5c7398530f932d2a8428bd0faa2"
+    },
+    {
+      "id": "planner_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/planner_v3.txt",
+      "sha256": "c6d2ca2b7a0f26c7bad2b28ddefad06017ab12a6a0ab9f258685f141bcf5d771"
+    },
+    {
+      "id": "localization_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/localization_v3.txt",
+      "sha256": "1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86"
+    },
+    {
+      "id": "judge_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/judge_v3.txt",
+      "sha256": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88"
+    }
+  ],
+  "success_authority": {
+    "llm_judge_is_authoritative": false,
+    "required_for_verified_repair": [
+      "ast_valid",
+      "safety_gate_pass",
+      "targeted_tests_pass",
+      "full_regression_pass",
+      "applicable_semantic_validation_pass"
+    ],
+    "without_complete_oracle": "unverified_suggestion",
+    "reflection_success_definition": "verified_repair_from_candidate_with_reflection_round_greater_than_zero"
+  },
+  "attribution": {
+    "rule": "one_deterministic_strategy_run_per_case_with_zero_model_tokens_and_cost",
+    "llm": "winning_candidate_generator_family_must_be_llm",
+    "hybrid": "credit_success_to_the_generator_family_of_the_verified_winning_candidate",
+    "direct_success": "verified_candidate_with_reflection_round_zero",
+    "reflection_recovery": "verified_candidate_with_reflection_round_at_least_one_and_failed_parent",
+    "provider_retry": "record_inside_the_same_trial_and_never_count_as_an_independent_trial"
+  },
+  "failure_taxonomy": {
+    "provider": [
+      "authentication",
+      "authorization",
+      "rate_limit",
+      "network",
+      "timeout",
+      "invalid_provider_response",
+      "model_unavailable"
+    ],
+    "environment": [
+      "dependency_install",
+      "python_version",
+      "test_discovery",
+      "test_process",
+      "resource_limit",
+      "unsafe_build_hook"
+    ],
+    "application": [
+      "localization",
+      "generation",
+      "syntax",
+      "safety",
+      "targeted_test",
+      "full_regression",
+      "semantic_validation",
+      "controller"
+    ],
+    "denominator_policy": "retain_every_case_and_report_provider_environment_and_application_failures_separately"
+  },
+  "required_metrics": [
+    "pass_at_1",
+    "pass_at_3",
+    "ast_valid_rate",
+    "safety_pass_rate",
+    "targeted_test_pass_rate",
+    "full_regression_pass_rate",
+    "verified_repair_rate",
+    "reflection_recovery_rate",
+    "token_usage",
+    "actual_cost_usd",
+    "latency_ms"
+  ],
+  "safety": {
+    "gold_patch_in_model_context": false,
+    "fix_commit_content_in_model_context": false,
+    "test_answer_in_model_context": false,
+    "repository_text_is_untrusted": true,
+    "free_form_shell": false,
+    "registered_actions_only": true,
+    "raw_provider_response_in_run_record": false,
+    "model_may_override_safety_controller": false
+  },
+  "protocol_sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445"
+}

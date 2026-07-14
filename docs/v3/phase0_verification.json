@@ -1,0 +1,59 @@
+{
+  "schema_version": "3.0",
+  "phase": "phase0_experiment_protocol",
+  "status": "pass",
+  "verified_on": "2026-07-14",
+  "baseline": {
+    "tag": "v2-baseline",
+    "commit_sha": "cf571489ac35c4dfcff44d7def0c9310b8206b2b",
+    "tag_matches": true
+  },
+  "protocol": {
+    "path": "datasets/v3_real_bugs/experiment_protocol.json",
+    "sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+    "validation_status": "pass",
+    "validation_errors": 0,
+    "frozen_prompt_count": 5,
+    "run_record_schema_version": "3.0"
+  },
+  "focused_tests": {
+    "command": "python -m pytest -q tests/test_v1_baseline.py tests/test_v3_experiment_protocol.py tests/test_release_hygiene_audit.py",
+    "passed": 17,
+    "failed": 0,
+    "duration_seconds": 1.79
+  },
+  "full_test_suite": {
+    "command": "python -m pytest -q",
+    "passed": 1244,
+    "failed": 0,
+    "duration_seconds": 883.25
+  },
+  "release_hygiene": {
+    "command": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs_v3/phase0_release_hygiene --root . --format json --require-pass",
+    "status": "pass",
+    "passed_checks": 5,
+    "check_count": 5,
+    "raw_api_key_findings": 0
+  },
+  "resolved_regressions": [
+    {
+      "observed_run": "first_phase0_full_regression",
+      "result": "1243_passed_1_failed",
+      "cause": "The V1 baseline test fixture constructed an old .gitignore without the newly required outputs_v3 entry.",
+      "resolution": "Updated the test fixture to match the current release-hygiene contract and reran the complete suite.",
+      "product_behavior_affected": false
+    }
+  ],
+  "acceptance": {
+    "baseline_tag_frozen": true,
+    "model_and_pricing_snapshot_frozen": true,
+    "prompt_hashes_frozen": true,
+    "trial_independence_enforced": true,
+    "rule_llm_hybrid_attribution_enforced": true,
+    "provider_and_environment_failures_separated": true,
+    "verified_repair_requires_authoritative_validation": true,
+    "raw_provider_payloads_forbidden_in_run_records": true,
+    "api_keys_environment_only": true
+  },
+  "boundary": "Phase 0 freezes and validates the experiment contract. It does not call a live model and does not claim a real repair rate."
+}

@@ -25,7 +25,7 @@ def test_release_hygiene_audit_passes_current_git_candidate_set():
 
 def test_release_hygiene_audit_detects_secrets_outputs_and_bad_public_docs(tmp_path):
     (tmp_path / ".gitignore").write_text(
-        "outputs/\noutputs_v2/\noutputs_demo/\noutputs_smoke/\noutputs_live/\n"
+            "outputs/\noutputs_v2/\noutputs_v3/\noutputs_demo/\noutputs_smoke/\noutputs_live/\n"
         "htmlcov/\n.pytest_cache/\n*.docx\n.env\n.env.*\n",
         encoding="utf-8",
     )
