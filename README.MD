@@ -1,5 +1,24 @@
 # Code Intelligence Agent
 
+## V3 Real-Bug Benchmark Status
+
+V3 is upgrading the evaluation from deterministic offline fixtures to real
+Python defects, real failing tests, and later live-LLM repair trials. Phase 1 is
+complete at the data/oracle level:
+
+- 25 fixed-SHA BugsInPy cases imported from 6 repositories with 0 import errors.
+- 20 cases independently satisfy bug-target failure, fix-target pass, and fixed
+  full-regression pass; 5 cases remain explicit rejections.
+- 8 exact Windows CPython/dependency profiles bind all 25 cases.
+- Raw checkouts and test logs remain ignored; committed cases contain checksummed
+  evidence summaries without local absolute paths.
+- These numbers do not represent a live-LLM repair rate. Rule/LLM/Hybrid trials,
+  pass@1/pass@3, token cost, latency, and reflection recovery are Phase 3 work.
+
+Evidence: [Phase 1 protocol](docs/v3/phase1_real_bug_benchmark_protocol.md),
+[accepted catalog](docs/v3/phase1_real_bug_catalog.md), and
+[environment profiles](docs/v3/phase1_environment_profiles.md).
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

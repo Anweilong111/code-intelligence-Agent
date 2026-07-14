@@ -1,0 +1,4057 @@
+{
+  "schema_version": "3.0",
+  "catalog_id": "v3-real-python-bugs-bugsinpy-seed-25",
+  "generated_at": "2026-07-14T19:43:18.102013+00:00",
+  "source": {
+    "adapter": "bugsinpy_metadata_v1",
+    "repository_url": "https://github.com/soarsmu/BugsInPy",
+    "commit_sha": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "license_status": "not_declared_in_source_checkout",
+    "shell_scripts_executed": false
+  },
+  "case_count": 25,
+  "import_error_count": 0,
+  "import_errors": [],
+  "cases": [
+    {
+      "case_id": "bugsinpy-black-1",
+      "status": "rejected",
+      "rejection_reason": "fix_full_regression_failed_due_historical_event_loop_test_order",
+      "rejection_evidence": {
+        "summary": "The target test fails on the bug SHA and passes alone on the fix SHA, but the fixed revision full suite leaves a closed asyncio loop before the same test: 127 passed, 1 failed, and 1 skipped, so the full-regression gate does not pass.",
+        "representative_artifact": "outputs_v3/reproduction/bugsinpy-black-1/reproduction.json",
+        "artifact_committed": false
+      },
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/psf/black",
+        "owner_repo": "psf/black",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/psf/black/blob/26c9465a22c732ab1e17b0dec578fa3432e9b558/LICENSE"
+      },
+      "bug_commit_sha": "26c9465a22c732ab1e17b0dec578fa3432e9b558",
+      "fix_commit_sha": "c0a7582e3d4cc8bec3b7f5a6c52b36880dcb57d7",
+      "python_version": "3.8.3",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_black.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_black.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tests.test_black.BlackTestCase.test_works_in_mono_process_only_environment"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "low",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "file_touch",
+            "risk": "low",
+            "argv": [
+              "touch",
+              "tests/__init__.py"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "95bf24182a768ef792c2a0af142f8193a1197206cd0f6752127c200466f3823d",
+        "changed_files": [
+          "black.py"
+        ],
+        "source_files": [
+          "black.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "black.py:reformat_many",
+          "black.py:schedule_formatting"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/black/bugs/1/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "cross_function",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "cross_function": "The resource-construction decision in reformat_many changes the executor consumed by schedule_formatting.",
+        "static_negative": "The defect is an unhandled runtime capability condition rather than a syntactic rule violation."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "black:1",
+        "benchmark_metadata_path": "projects/black/bugs/1/bug.info",
+        "issue_or_pr_url": "https://github.com/psf/black/pull/1141",
+        "bug_commit_url": "https://github.com/psf/black/commit/26c9465a22c732ab1e17b0dec578fa3432e9b558",
+        "fix_commit_url": "https://github.com/psf/black/commit/c0a7582e3d4cc8bec3b7f5a6c52b36880dcb57d7"
+      },
+      "reproduction": {
+        "bug_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_full_regression": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit"
+      }
+    },
+    {
+      "case_id": "bugsinpy-black-10",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/psf/black",
+        "owner_repo": "psf/black",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/psf/black/blob/f6643c4f0cfbae1f2493fdfce46cfbae3d26f46b/LICENSE"
+      },
+      "bug_commit_sha": "f6643c4f0cfbae1f2493fdfce46cfbae3d26f46b",
+      "fix_commit_sha": "66aa676278948368dff251dffd58c850cb8b889e",
+      "python_version": "3.8.3",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_black.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_black.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tests.test_black.BlackTestCase.test_comment_indentation"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "low",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "file_touch",
+            "risk": "low",
+            "argv": [
+              "touch",
+              "tests/__init__.py"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "467b9118e9225516d0c5c5c139c53ddbeb91c17f4b53c7748db2044a13b9dff5",
+        "changed_files": [
+          "blib2to3/pgen2/driver.py"
+        ],
+        "source_files": [
+          "blib2to3/pgen2/driver.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "blib2to3/pgen2/driver.py:Driver"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/black/bugs/10/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "Comment indentation is a parser/formatter semantic discrepancy without an obvious local rule signature."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "black:10",
+        "benchmark_metadata_path": "projects/black/bugs/10/bug.info",
+        "issue_or_pr_url": "https://github.com/psf/black/pull/595",
+        "bug_commit_url": "https://github.com/psf/black/commit/f6643c4f0cfbae1f2493fdfce46cfbae3d26f46b",
+        "fix_commit_url": "https://github.com/psf/black/commit/66aa676278948368dff251dffd58c850cb8b889e"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-10/reproduction.json",
+        "evidence_sha256": "0f601a038aa0016db7efbe071f19cc2ea296f036c6f91a838ac00fd6d497493f",
+        "completed_at": "2026-07-14T18:11:15.857131+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 90,
+          "passed": 89,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-black-2",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/psf/black",
+        "owner_repo": "psf/black",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/psf/black/blob/c8ca6b2b9ff3510bee12129824cebfc2fc51e5b2/LICENSE"
+      },
+      "bug_commit_sha": "c8ca6b2b9ff3510bee12129824cebfc2fc51e5b2",
+      "fix_commit_sha": "892eddacd215d685e136686b7f629ade70adca83",
+      "python_version": "3.8.3",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_black.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_black.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tests.test_black.BlackTestCase.test_fmtonoff4"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "low",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "file_touch",
+            "risk": "low",
+            "argv": [
+              "touch",
+              "tests/__init__.py"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "dd0737a162e8d1f48754ca35a23a474e7bbfe31e64c4b866ab749613651c81b8",
+        "changed_files": [
+          "black.py"
+        ],
+        "source_files": [
+          "black.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "black.py:generate_ignored_nodes"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/black/bugs/2/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "Parser leaf state is propagated through generate_ignored_nodes before formatting behavior diverges.",
+        "static_negative": "The formatting semantics are valid Python and require behavioral evidence."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "black:2",
+        "benchmark_metadata_path": "projects/black/bugs/2/bug.info",
+        "issue_or_pr_url": "https://github.com/psf/black/pull/1325",
+        "bug_commit_url": "https://github.com/psf/black/commit/c8ca6b2b9ff3510bee12129824cebfc2fc51e5b2",
+        "fix_commit_url": "https://github.com/psf/black/commit/892eddacd215d685e136686b7f629ade70adca83"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-2/reproduction.json",
+        "evidence_sha256": "a378166d61745ea54f8bf07c6e003d79b166db4092837c3bfe85cb2f761ef4da",
+        "completed_at": "2026-07-14T18:09:22.688346+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 1,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 122,
+          "passed": 121,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-black-3",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/psf/black",
+        "owner_repo": "psf/black",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/psf/black/blob/8126b4f6a9342290de4655e6a8a78cd288ce7daa/LICENSE"
+      },
+      "bug_commit_sha": "8126b4f6a9342290de4655e6a8a78cd288ce7daa",
+      "fix_commit_sha": "7a14a37981862ef418f3cdb4a7e2375856f97529",
+      "python_version": "3.8.3",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_black.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_black.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tests.test_black.BlackTestCase.test_invalid_config_return_code"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "low",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "file_touch",
+            "risk": "low",
+            "argv": [
+              "touch",
+              "tests/__init__.py"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "2abe4abbe8dcdb8272b97b64e374f7243ef77878a348cff10876d811b5a87920",
+        "changed_files": [
+          "black.py"
+        ],
+        "source_files": [
+          "black.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "black.py:target_version_option_callback"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/black/bugs/3/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "The wrong CLI return behavior is type-correct and not detectable by the mutation-oriented static rules."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "black:3",
+        "benchmark_metadata_path": "projects/black/bugs/3/bug.info",
+        "issue_or_pr_url": "https://github.com/psf/black/pull/1361",
+        "bug_commit_url": "https://github.com/psf/black/commit/8126b4f6a9342290de4655e6a8a78cd288ce7daa",
+        "fix_commit_url": "https://github.com/psf/black/commit/7a14a37981862ef418f3cdb4a7e2375856f97529"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-3/reproduction.json",
+        "evidence_sha256": "876b4a50e12babd833bb0373a6c6e8501c0e446ab0a516a72313154ab9bc708c",
+        "completed_at": "2026-07-14T18:10:05.956372+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 121,
+          "passed": 120,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-black-5",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/psf/black",
+        "owner_repo": "psf/black",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/psf/black/blob/1bbb01b854d168d76ebe4bf78961c2152ae075d9/LICENSE"
+      },
+      "bug_commit_sha": "1bbb01b854d168d76ebe4bf78961c2152ae075d9",
+      "fix_commit_sha": "9394de150ebf0adc426523f46dc08e8b2b2b0b63",
+      "python_version": "3.8.3",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_black.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_black.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tests.test_black.BlackTestCase.test_function_trailing_comma"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "low",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "file_touch",
+            "risk": "low",
+            "argv": [
+              "touch",
+              "tests/__init__.py"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "5d0282358c5e4f8ac6aa04b5cb7b95758a052a2c2bae817227e54f4ac432a383",
+        "changed_files": [
+          "black.py"
+        ],
+        "source_files": [
+          "black.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "black.py:Line",
+          "black.py:bracket_split_build_line"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/black/bugs/5/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "high_similarity_candidates",
+        "data_flow"
+      ],
+      "difficulty_tag_evidence": {
+        "high_similarity_candidates": "Trailing-comma behavior is distributed among several closely related line and bracket formatting branches.",
+        "data_flow": "Bracket and line metadata propagate into the final trailing-comma decision."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "black:5",
+        "benchmark_metadata_path": "projects/black/bugs/5/bug.info",
+        "issue_or_pr_url": "https://github.com/psf/black/pull/891",
+        "bug_commit_url": "https://github.com/psf/black/commit/1bbb01b854d168d76ebe4bf78961c2152ae075d9",
+        "fix_commit_url": "https://github.com/psf/black/commit/9394de150ebf0adc426523f46dc08e8b2b2b0b63"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-5/reproduction.json",
+        "evidence_sha256": "16402d94d0b2bcf2443c475ed57099fcdee5dc1057a419ed802079aa747220e4",
+        "completed_at": "2026-07-14T18:10:42.239826+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 1,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 98,
+          "passed": 97,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-fastapi-1",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tiangolo/fastapi",
+        "owner_repo": "tiangolo/fastapi",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/fastapi/fastapi/blob/766157bfb4e7dfccba09ab398e8ec444d14e947c/LICENSE"
+      },
+      "bug_commit_sha": "766157bfb4e7dfccba09ab398e8ec444d14e947c",
+      "fix_commit_sha": "3397d4d69a9c2d64c1219fcbf291ea5697a4abb8",
+      "python_version": "3.8.3",
+      "environment_profile_id": "fastapi-1-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_jsonable_encoder.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_jsonable_encoder.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tests/test_jsonable_encoder.py::test_encode_model_with_default"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {
+        "optional_pythonpath_entries": [
+          "docs_src",
+          "docs/src"
+        ],
+        "source": "repository scripts/test.sh"
+      },
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "dc7f2e707b2e57ee0ccb4760c07233e21af3b64dfa0fe14fc7072111dd47b074",
+        "changed_files": [
+          "fastapi/applications.py",
+          "fastapi/encoders.py",
+          "fastapi/openapi/utils.py",
+          "fastapi/routing.py",
+          "tests/test_skip_defaults.py"
+        ],
+        "source_files": [
+          "fastapi/applications.py",
+          "fastapi/encoders.py",
+          "fastapi/openapi/utils.py",
+          "fastapi/routing.py"
+        ],
+        "test_files": [
+          "tests/test_skip_defaults.py"
+        ],
+        "functions": [
+          "fastapi/applications.py:FastAPI",
+          "fastapi/encoders.py:jsonable_encoder",
+          "fastapi/openapi/utils.py:get_openapi_security_definitions",
+          "fastapi/openapi/utils.py:get_openapi",
+          "fastapi/routing.py:serialize_response",
+          "fastapi/routing.py:get_request_handler",
+          "fastapi/routing.py:APIRoute",
+          "fastapi/routing.py:APIRouter",
+          "tests/test_skip_defaults.py:Model"
+        ],
+        "source_file_count": 4,
+        "test_file_count": 1,
+        "benchmark_patch_path": "projects/fastapi/bugs/1/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "multi_file",
+        "high_similarity_candidates"
+      ],
+      "difficulty_tag_evidence": {
+        "multi_file": "The benchmark patch spans applications, encoders, OpenAPI utilities, and routing.",
+        "high_similarity_candidates": "Many APIRouter and FastAPI route methods expose nearly identical parameter forwarding surfaces."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "fastapi:1",
+        "benchmark_metadata_path": "projects/fastapi/bugs/1/bug.info",
+        "issue_or_pr_url": "https://github.com/fastapi/fastapi/pull/1166",
+        "bug_commit_url": "https://github.com/tiangolo/fastapi/commit/766157bfb4e7dfccba09ab398e8ec444d14e947c",
+        "fix_commit_url": "https://github.com/tiangolo/fastapi/commit/3397d4d69a9c2d64c1219fcbf291ea5697a4abb8"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-fastapi-1/reproduction.json",
+        "evidence_sha256": "7f0618fee26911205622cb63608bcda091b2c8e444f8a8754b0976d485dfe082",
+        "completed_at": "2026-07-14T18:27:16.975996+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 788,
+          "passed": 788,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-fastapi-4",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tiangolo/fastapi",
+        "owner_repo": "tiangolo/fastapi",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/fastapi/fastapi/blob/7ccd81f70653857bd8f3a15ee946aa3fb0edc2cb/LICENSE"
+      },
+      "bug_commit_sha": "7ccd81f70653857bd8f3a15ee946aa3fb0edc2cb",
+      "fix_commit_sha": "74c4d1c1dbe6bfdb05d6e4fc767ffe062398f0a3",
+      "python_version": "3.8.3",
+      "environment_profile_id": "fastapi-4-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_param_in_path_and_dependency.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_param_in_path_and_dependency.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tests/test_param_in_path_and_dependency.py::test_reused_param"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests",
+        "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+      ],
+      "regression_provenance": {
+        "platform_exclusions": [
+          {
+            "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+            "platform": "win32",
+            "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "optional_pythonpath_entries": [
+          "docs_src",
+          "docs/src"
+        ],
+        "source": "repository scripts/test.sh"
+      },
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "fd589f0876f793846e18733bfbce966af2228736cbf5299c6eafcedbe835a5ec",
+        "changed_files": [
+          "fastapi/openapi/utils.py"
+        ],
+        "source_files": [
+          "fastapi/openapi/utils.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "fastapi/openapi/utils.py:get_openapi_path"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/fastapi/bugs/4/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow",
+        "separated_failure_site"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "Reused path parameters flow from dependency analysis into OpenAPI path construction.",
+        "separated_failure_site": "The incorrect schema appears during OpenAPI output although the causal duplication originates in parameter collection."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "fastapi:4",
+        "benchmark_metadata_path": "projects/fastapi/bugs/4/bug.info",
+        "issue_or_pr_url": "https://github.com/fastapi/fastapi/pull/994",
+        "bug_commit_url": "https://github.com/tiangolo/fastapi/commit/7ccd81f70653857bd8f3a15ee946aa3fb0edc2cb",
+        "fix_commit_url": "https://github.com/tiangolo/fastapi/commit/74c4d1c1dbe6bfdb05d6e4fc767ffe062398f0a3"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-fastapi-4/reproduction.json",
+        "evidence_sha256": "3c2ab5e4be0fe7554dfd907d0eb0fd7b7c4ad4572c9e739695c6c663867a2486",
+        "completed_at": "2026-07-14T18:47:03.295799+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 746,
+          "passed": 746,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-fastapi-5",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tiangolo/fastapi",
+        "owner_repo": "tiangolo/fastapi",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/fastapi/fastapi/blob/7cea84b74ca3106a7f861b774e9d215e5228728f/LICENSE"
+      },
+      "bug_commit_sha": "7cea84b74ca3106a7f861b774e9d215e5228728f",
+      "fix_commit_sha": "75a07f24bf01a31225ee687f3e2b3fc1981b67ab",
+      "python_version": "3.8.3",
+      "environment_profile_id": "fastapi-5-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_filter_pydantic_sub_model.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_filter_pydantic_sub_model.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tests/test_filter_pydantic_sub_model.py::test_filter_sub_model"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests",
+        "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+      ],
+      "regression_provenance": {
+        "platform_exclusions": [
+          {
+            "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+            "platform": "win32",
+            "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "optional_pythonpath_entries": [
+          "docs_src",
+          "docs/src"
+        ],
+        "source": "repository scripts/test.sh"
+      },
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "d9c1b341eb2f18c8f5f98c15e6ce5e7db12cf2067818dfe1276c29939913fd67",
+        "changed_files": [
+          "fastapi/utils.py"
+        ],
+        "source_files": [
+          "fastapi/utils.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "fastapi/utils.py:create_cloned_field"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/fastapi/bugs/5/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "cross_function",
+        "data_flow"
+      ],
+      "difficulty_tag_evidence": {
+        "cross_function": "Cloned Pydantic model fields are recursively consumed outside create_cloned_field.",
+        "data_flow": "Field type metadata propagates through cloned sub-model construction before response filtering."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "fastapi:5",
+        "benchmark_metadata_path": "projects/fastapi/bugs/5/bug.info",
+        "issue_or_pr_url": "https://github.com/fastapi/fastapi/pull/889",
+        "bug_commit_url": "https://github.com/tiangolo/fastapi/commit/7cea84b74ca3106a7f861b774e9d215e5228728f",
+        "fix_commit_url": "https://github.com/tiangolo/fastapi/commit/75a07f24bf01a31225ee687f3e2b3fc1981b67ab"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-fastapi-5/reproduction.json",
+        "evidence_sha256": "6e03bdf49ac76e001220f5cbcca827f0bfefa48babe428ae3374f3a06d6aa13c",
+        "completed_at": "2026-07-14T18:52:53.159634+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 738,
+          "passed": 738,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-fastapi-7",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tiangolo/fastapi",
+        "owner_repo": "tiangolo/fastapi",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/fastapi/fastapi/blob/cc4c13e4ae3f65fc76c23962b316df4a60e0c7e0/LICENSE"
+      },
+      "bug_commit_sha": "cc4c13e4ae3f65fc76c23962b316df4a60e0c7e0",
+      "fix_commit_sha": "19c77e35bdde33aeec1eb2cfa680f95016492b69",
+      "python_version": "3.8.3",
+      "environment_profile_id": "fastapi-7-py3.8.3-win64",
+      "test_overlay_paths": [
+        "tests/test_multi_body_errors.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_multi_body_errors.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tests/test_multi_body_errors.py::test_jsonable_encoder_requiring_error"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests",
+        "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+      ],
+      "regression_provenance": {
+        "platform_exclusions": [
+          {
+            "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+            "platform": "win32",
+            "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "optional_pythonpath_entries": [
+          "docs_src",
+          "docs/src"
+        ],
+        "source": "repository scripts/test.sh"
+      },
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "2e0c69ecbc9dfef6d314156ce89aae8cc1c800f8330739bd2075db633e436236",
+        "changed_files": [
+          "fastapi/exception_handlers.py"
+        ],
+        "source_files": [
+          "fastapi/exception_handlers.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "fastapi/exception_handlers.py:request_validation_exception_handler"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/fastapi/bugs/7/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "separated_failure_site",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "separated_failure_site": "The user-visible response serialization failure is downstream of validation-exception handling.",
+        "static_negative": "The missing encoding step is valid Python and requires a failing request scenario to expose."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "fastapi:7",
+        "benchmark_metadata_path": "projects/fastapi/bugs/7/bug.info",
+        "issue_or_pr_url": "https://github.com/fastapi/fastapi/issues/748",
+        "bug_commit_url": "https://github.com/tiangolo/fastapi/commit/cc4c13e4ae3f65fc76c23962b316df4a60e0c7e0",
+        "fix_commit_url": "https://github.com/tiangolo/fastapi/commit/19c77e35bdde33aeec1eb2cfa680f95016492b69"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-fastapi-7/reproduction.json",
+        "evidence_sha256": "4c5be2cd210834f159dd4fbf93792b43e742d2c0b7caf244eb6a7ae30fe2bfd3",
+        "completed_at": "2026-07-14T18:53:34.413876+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.3",
+          "observed_version": "3.8.3",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 711,
+          "passed": 711,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-1",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/cool-RR/PySnooper",
+        "owner_repo": "cool-RR/PySnooper",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/cool-RR/PySnooper/blob/e21a31162f4c54be693d8ca8260e42393b39abd3/LICENSE"
+      },
+      "bug_commit_sha": "e21a31162f4c54be693d8ca8260e42393b39abd3",
+      "fix_commit_sha": "56f22f8ffe1c6b2be4d2cf3ad1987fdb66113da2",
+      "python_version": "3.8.1",
+      "environment_profile_id": "pysnooper-py3.8.1-win64",
+      "test_overlay_paths": [
+        "tests/test_chinese.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_chinese.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "-q",
+          "-s",
+          "tests/test_chinese.py::test_chinese"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "1952f411ce23b0f633e2a30c40901963e83ac96066782eb342a4f68f756e0da9",
+        "changed_files": [
+          "pysnooper/pycompat.py",
+          "pysnooper/tracer.py",
+          "tests/utils.py"
+        ],
+        "source_files": [
+          "pysnooper/pycompat.py",
+          "pysnooper/tracer.py"
+        ],
+        "test_files": [
+          "tests/utils.py"
+        ],
+        "functions": [
+          "pysnooper/tracer.py:get_source_from_frame",
+          "pysnooper/tracer.py:FileWriter",
+          "tests/utils.py:assert_output",
+          "tests/utils.py:assert_sample_output"
+        ],
+        "source_file_count": 2,
+        "test_file_count": 1,
+        "benchmark_patch_path": "projects/PySnooper/bugs/1/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "multi_file",
+        "cross_function"
+      ],
+      "difficulty_tag_evidence": {
+        "multi_file": "The benchmark patch changes both pycompat.py and tracer.py.",
+        "cross_function": "Encoding compatibility helpers influence tracer source and output handling across module boundaries."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "PySnooper:1",
+        "benchmark_metadata_path": "projects/PySnooper/bugs/1/bug.info",
+        "issue_or_pr_url": "https://github.com/cool-RR/PySnooper/issues/124",
+        "bug_commit_url": "https://github.com/cool-RR/PySnooper/commit/e21a31162f4c54be693d8ca8260e42393b39abd3",
+        "fix_commit_url": "https://github.com/cool-RR/PySnooper/commit/56f22f8ffe1c6b2be4d2cf3ad1987fdb66113da2"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-pysnooper-1/reproduction.json",
+        "evidence_sha256": "666df531333de166a36d767934908f27c99cc2a7055507b733ba36498ef7d351",
+        "completed_at": "2026-07-14T19:30:09.300004+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.1",
+          "observed_version": "3.8.1",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 29,
+          "passed": 29,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-2",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/cool-RR/PySnooper",
+        "owner_repo": "cool-RR/PySnooper",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/cool-RR/PySnooper/blob/e21a31162f4c54be693d8ca8260e42393b39abd3/LICENSE"
+      },
+      "bug_commit_sha": "e21a31162f4c54be693d8ca8260e42393b39abd3",
+      "fix_commit_sha": "814abc34a098c1b98cb327105ac396f985d2413e",
+      "python_version": "3.8.1",
+      "environment_profile_id": "pysnooper-py3.8.1-win64",
+      "test_overlay_paths": [
+        "tests/test_pysnooper.py",
+        "tests/mini_toolbox/__init__.py",
+        "tests/mini_toolbox/contextlib.py",
+        "tests/mini_toolbox/pathlib.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_pysnooper.py"
+        ],
+        "additional_support_files": [
+          {
+            "path": "tests/mini_toolbox/__init__.py",
+            "reason": "The fixed targeted test imports this test-only helper package, which is absent at the bug SHA and is not production code or part of the gold patch."
+          },
+          {
+            "path": "tests/mini_toolbox/contextlib.py",
+            "reason": "The fixed targeted test helper package imports this test-only support module."
+          },
+          {
+            "path": "tests/mini_toolbox/pathlib.py",
+            "reason": "The fixed targeted test helper package imports this test-only support module."
+          }
+        ]
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "-q",
+          "-s",
+          "tests/test_pysnooper.py::test_custom_repr_single"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "python_toolbox"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "b88a33e185cca74865b09d3e05199b9db2933749b08fc419ecf97902f2403dc3",
+        "changed_files": [
+          "pysnooper/tracer.py"
+        ],
+        "source_files": [
+          "pysnooper/tracer.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "pysnooper/tracer.py:get_source_from_frame",
+          "pysnooper/tracer.py:FileWriter",
+          "pysnooper/tracer.py:Tracer"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/PySnooper/bugs/2/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "cross_function",
+        "high_similarity_candidates"
+      ],
+      "difficulty_tag_evidence": {
+        "cross_function": "Custom representation configuration is consumed by multiple tracer formatting paths.",
+        "high_similarity_candidates": "Several nearby Tracer methods manipulate closely related representation state."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "PySnooper:2",
+        "benchmark_metadata_path": "projects/PySnooper/bugs/2/bug.info",
+        "issue_or_pr_url": "https://github.com/cool-RR/PySnooper/pull/147",
+        "bug_commit_url": "https://github.com/cool-RR/PySnooper/commit/e21a31162f4c54be693d8ca8260e42393b39abd3",
+        "fix_commit_url": "https://github.com/cool-RR/PySnooper/commit/814abc34a098c1b98cb327105ac396f985d2413e"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-pysnooper-2/reproduction.json",
+        "evidence_sha256": "405610edc3916d5d14b5679450bb5185f0184ee529823bc3804ebd8cfabc1560",
+        "completed_at": "2026-07-14T19:34:06.150493+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.1",
+          "observed_version": "3.8.1",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 33,
+          "passed": 33,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-3",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "development",
+      "repository": {
+        "url": "https://github.com/cool-RR/PySnooper",
+        "owner_repo": "cool-RR/PySnooper",
+        "license_spdx": "MIT",
+        "license_url": "https://github.com/cool-RR/PySnooper/blob/6e3d797be3fa0a746fb5b1b7c7fea78eb926c208/LICENSE"
+      },
+      "bug_commit_sha": "6e3d797be3fa0a746fb5b1b7c7fea78eb926c208",
+      "fix_commit_sha": "15555ed760000b049aff8fecc79d29339c1224c3",
+      "python_version": "3.8.1",
+      "environment_profile_id": "pysnooper-py3.8.1-win64",
+      "test_overlay_paths": [
+        "tests/test_pysnooper.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tests/test_pysnooper.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "-q",
+          "-s",
+          "tests/test_pysnooper.py::test_file_output"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "decorator"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "5c176e4bbfb86b235df3865f2990f0c471c95eeb7572a7ef765fb211061fe43b",
+        "changed_files": [
+          "pysnooper/pysnooper.py"
+        ],
+        "source_files": [
+          "pysnooper/pysnooper.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "pysnooper/pysnooper.py:get_write_function"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/PySnooper/bugs/3/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "File-output dispatch is syntactically valid and fails only under the targeted behavior."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "PySnooper:3",
+        "benchmark_metadata_path": "projects/PySnooper/bugs/3/bug.info",
+        "issue_or_pr_url": "https://github.com/cool-RR/PySnooper/issues/2",
+        "bug_commit_url": "https://github.com/cool-RR/PySnooper/commit/6e3d797be3fa0a746fb5b1b7c7fea78eb926c208",
+        "fix_commit_url": "https://github.com/cool-RR/PySnooper/commit/15555ed760000b049aff8fecc79d29339c1224c3"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-pysnooper-3/reproduction.json",
+        "evidence_sha256": "46b205b4b64a6d4b693ce41374d9b58a29c4826d4a51ada31017b6552cd0de7a",
+        "completed_at": "2026-07-14T19:34:28.192435+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.8.1",
+          "observed_version": "3.8.1",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 5,
+          "passed": 5,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-tornado-2",
+      "status": "rejected",
+      "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+      "rejection_evidence": {
+        "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+        "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+        "artifact_committed": false
+      },
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/tornadoweb/tornado",
+        "owner_repo": "tornadoweb/tornado",
+        "license_spdx": "Apache-2.0",
+        "license_url": "https://github.com/tornadoweb/tornado/blob/2ca8821d006f6693f920a4b183a3a7c985a5c8ad/LICENSE"
+      },
+      "bug_commit_sha": "2ca8821d006f6693f920a4b183a3a7c985a5c8ad",
+      "fix_commit_sha": "4f486a4aec746e9d66441600ee3b0743228b061c",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "tornado/test/httpclient_test.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tornado/test/httpclient_test.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tornado.test.httpclient_test.HTTPClientCommonTestCase.test_redirect_put_without_body"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tornado/test",
+        "-p",
+        "*_test.py"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "medium",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "unittest"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "python-gettext"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "854c0df67d11c4ffda2c66be81f61491675858a494f8511e6181befdb1072f3e",
+        "changed_files": [
+          "tornado/http1connection.py"
+        ],
+        "source_files": [
+          "tornado/http1connection.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tornado/http1connection.py:HTTP1Connection"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tornado/bugs/2/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "separated_failure_site",
+        "data_flow"
+      ],
+      "difficulty_tag_evidence": {
+        "separated_failure_site": "The redirect assertion fails in HTTP client behavior while the causal body/header state is written in HTTP1Connection.",
+        "data_flow": "Method and body state propagate through redirect handling into connection output."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tornado:2",
+        "benchmark_metadata_path": "projects/tornado/bugs/2/bug.info",
+        "issue_or_pr_url": "https://github.com/tornadoweb/tornado/pull/2440",
+        "bug_commit_url": "https://github.com/tornadoweb/tornado/commit/2ca8821d006f6693f920a4b183a3a7c985a5c8ad",
+        "fix_commit_url": "https://github.com/tornadoweb/tornado/commit/4f486a4aec746e9d66441600ee3b0743228b061c"
+      },
+      "reproduction": {
+        "bug_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_full_regression": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit"
+      }
+    },
+    {
+      "case_id": "bugsinpy-tornado-4",
+      "status": "rejected",
+      "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+      "rejection_evidence": {
+        "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+        "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+        "artifact_committed": false
+      },
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/tornadoweb/tornado",
+        "owner_repo": "tornadoweb/tornado",
+        "license_spdx": "Apache-2.0",
+        "license_url": "https://github.com/tornadoweb/tornado/blob/a8420fc681c5423d072978f00eab4d0645057d16/LICENSE"
+      },
+      "bug_commit_sha": "a8420fc681c5423d072978f00eab4d0645057d16",
+      "fix_commit_sha": "db529031a1e1a6e951826aba0b7d0b18f05cd4c7",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "tornado/test/web_test.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tornado/test/web_test.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tornado.test.web_test.StaticFileTest.test_static_with_range_neg_past_start"
+        ],
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tornado.test.web_test.StaticFileTest.test_static_unsatisfiable_range_end_less_than_start"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tornado/test",
+        "-p",
+        "*_test.py"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "medium",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "unittest"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "python-gettext"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "5e326b0d9c245665676c696ffc0f89daded55743f4718f689b3c32616dd3a6e2",
+        "changed_files": [
+          "tornado/web.py"
+        ],
+        "source_files": [
+          "tornado/web.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tornado/web.py:StaticFileHandler"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tornado/bugs/4/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow",
+        "high_similarity_candidates"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "Parsed range bounds flow through normalization and response-status selection.",
+        "high_similarity_candidates": "Several adjacent range-bound conditions can produce similar unsatisfiable-range symptoms."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tornado:4",
+        "benchmark_metadata_path": "projects/tornado/bugs/4/bug.info",
+        "issue_or_pr_url": "https://github.com/tornadoweb/tornado/pull/2522",
+        "bug_commit_url": "https://github.com/tornadoweb/tornado/commit/a8420fc681c5423d072978f00eab4d0645057d16",
+        "fix_commit_url": "https://github.com/tornadoweb/tornado/commit/db529031a1e1a6e951826aba0b7d0b18f05cd4c7"
+      },
+      "reproduction": {
+        "bug_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_full_regression": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit"
+      }
+    },
+    {
+      "case_id": "bugsinpy-tornado-5",
+      "status": "rejected",
+      "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+      "rejection_evidence": {
+        "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+        "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+        "artifact_committed": false
+      },
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/tornadoweb/tornado",
+        "owner_repo": "tornadoweb/tornado",
+        "license_spdx": "Apache-2.0",
+        "license_url": "https://github.com/tornadoweb/tornado/blob/2d4053daa56c609d642b214399e046671d4a593e/LICENSE"
+      },
+      "bug_commit_sha": "2d4053daa56c609d642b214399e046671d4a593e",
+      "fix_commit_sha": "886643965b5cb782503d8d7b374b7a794ec2077b",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "tornado/test/ioloop_test.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tornado/test/ioloop_test.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tornado.test.ioloop_test.TestPeriodicCallbackMath.test_clock_backwards"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tornado/test",
+        "-p",
+        "*_test.py"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "medium",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "unittest"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "python-gettext"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "ac2cc6ca4ffa92eea23f9a3e5a4858cb0b532075481e733884faf0790e5eb195",
+        "changed_files": [
+          "tornado/ioloop.py"
+        ],
+        "source_files": [
+          "tornado/ioloop.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tornado/ioloop.py:PeriodicCallback"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tornado/bugs/5/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "cross_function",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "cross_function": "Periodic callback scheduling combines clock reads, next-time calculation, and IOLoop callbacks.",
+        "static_negative": "Clock rollback handling is a runtime semantic edge case."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tornado:5",
+        "benchmark_metadata_path": "projects/tornado/bugs/5/bug.info",
+        "issue_or_pr_url": "https://github.com/tornadoweb/tornado/pull/2338",
+        "bug_commit_url": "https://github.com/tornadoweb/tornado/commit/2d4053daa56c609d642b214399e046671d4a593e",
+        "fix_commit_url": "https://github.com/tornadoweb/tornado/commit/886643965b5cb782503d8d7b374b7a794ec2077b"
+      },
+      "reproduction": {
+        "bug_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_full_regression": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit"
+      }
+    },
+    {
+      "case_id": "bugsinpy-tornado-9",
+      "status": "rejected",
+      "rejection_reason": "fix_full_regression_failed_on_declared_runtime",
+      "rejection_evidence": {
+        "summary": "Independent reproduction ran 1,381 fixed-revision tests on exact Python 3.7.0: 1,258 passed, 38 failed, 38 errored, and 85 skipped, so the full regression gate is not a valid passing oracle.",
+        "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+        "artifact_committed": false
+      },
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/tornadoweb/tornado",
+        "owner_repo": "tornadoweb/tornado",
+        "license_spdx": "Apache-2.0",
+        "license_url": "https://github.com/tornadoweb/tornado/blob/c9d2a3fa573987629ad576e991c2f3b65f4daab4/LICENSE"
+      },
+      "bug_commit_sha": "c9d2a3fa573987629ad576e991c2f3b65f4daab4",
+      "fix_commit_sha": "86cc31f52992fb9d11f92de6fd5496842fea2265",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "tornado/test/httputil_test.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tornado/test/httputil_test.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "tornado.test.httputil_test.TestUrlConcat.test_url_concat_none_params"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tornado/test",
+        "-p",
+        "*_test.py"
+      ],
+      "regression_provenance": {},
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "medium",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "unittest"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "python-gettext"
+            ]
+          },
+          {
+            "line": 3,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip",
+              "install",
+              "tornado"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "5df55865adb80a445c185eed279132a7f033158bfe4e90117b46690279e38c20",
+        "changed_files": [
+          "tornado/httputil.py"
+        ],
+        "source_files": [
+          "tornado/httputil.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tornado/httputil.py:url_concat"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tornado/bugs/9/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "None query parameters expose a semantic input-handling defect in otherwise valid code."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tornado:9",
+        "benchmark_metadata_path": "projects/tornado/bugs/9/bug.info",
+        "issue_or_pr_url": "https://github.com/tornadoweb/tornado/pull/2018",
+        "bug_commit_url": "https://github.com/tornadoweb/tornado/commit/c9d2a3fa573987629ad576e991c2f3b65f4daab4",
+        "fix_commit_url": "https://github.com/tornadoweb/tornado/commit/86cc31f52992fb9d11f92de6fd5496842fea2265"
+      },
+      "reproduction": {
+        "bug_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_targeted": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "fix_full_regression": {
+          "status": "pending",
+          "artifact": ""
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit"
+      }
+    },
+    {
+      "case_id": "bugsinpy-tqdm-2",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tqdm/tqdm",
+        "owner_repo": "tqdm/tqdm",
+        "license_spdx": "MPL-2.0",
+        "license_url": "https://github.com/tqdm/tqdm/blob/bef86db56654d271838b145ad77f7040a73a7b4d/LICENCE"
+      },
+      "bug_commit_sha": "bef86db56654d271838b145ad77f7040a73a7b4d",
+      "fix_commit_sha": "127af5caf19e7d29c346f5ca8a9c7ef3004b664b",
+      "python_version": "3.6.9",
+      "environment_profile_id": "tqdm-py3.6.9-win64",
+      "test_overlay_paths": [
+        "tqdm/tests/tests_tqdm.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tqdm/tests/tests_tqdm.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tqdm/tests/tests_tqdm.py::test_format_meter"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "nose",
+        "-q",
+        "--exclude=test_ansi_escape_codes",
+        "--exclude=test_manpath",
+        "tqdm/tests/tests_main.py",
+        "tqdm/tests/tests_pandas.py",
+        "tqdm/tests/tests_synchronisation.py",
+        "tqdm/tests/tests_tqdm.py",
+        "tqdm/tests/tests_version.py"
+      ],
+      "regression_provenance": {
+        "source": "repository tox.ini coverage command",
+        "adaptation": "The historical nose suite is invoked as a safe python module; the five functional modules are named explicitly and tests_perf.py remains excluded as in tox.ini.",
+        "platform_exclusions": [
+          {
+            "test": "tqdm/tests/tests_tqdm.py::test_ansi_escape_codes",
+            "platform": "win32",
+            "reason": "The historical ANSI width assertion has a platform-specific visible-width mismatch on Windows and is unrelated to the selected benchmark patches."
+          },
+          {
+            "test": "tqdm/tests/tests_main.py::test_manpath",
+            "platform": "win32",
+            "reason": "The historical CLI casts a Windows temporary path through eval and misinterprets the backslash-U sequence; it is unrelated to the selected benchmark patches."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "required_tools": [
+          "ls"
+        ],
+        "source": "repository tests_main.py subprocess contract"
+      },
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "nose"
+            ]
+          },
+          {
+            "line": 3,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "flake8"
+            ]
+          },
+          {
+            "line": 4,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "coverage"
+            ]
+          },
+          {
+            "line": 5,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "pytest"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "660ead01c8b9d6731e0a74a05979af7b843d9b5ef38f57b27e82b365b2c854c7",
+        "changed_files": [
+          "tqdm/std.py",
+          "tqdm/utils.py"
+        ],
+        "source_files": [
+          "tqdm/std.py",
+          "tqdm/utils.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tqdm/std.py:tqdm",
+          "tqdm/utils.py:disp_trim"
+        ],
+        "source_file_count": 2,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tqdm/bugs/2/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "multi_file",
+        "cross_function"
+      ],
+      "difficulty_tag_evidence": {
+        "multi_file": "The benchmark patch changes both tqdm/std.py and tqdm/utils.py.",
+        "cross_function": "Display formatting in tqdm delegates final trimming behavior to a utility function in another module."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tqdm:2",
+        "benchmark_metadata_path": "projects/tqdm/bugs/2/bug.info",
+        "issue_or_pr_url": "https://github.com/tqdm/tqdm/pull/850",
+        "bug_commit_url": "https://github.com/tqdm/tqdm/commit/bef86db56654d271838b145ad77f7040a73a7b4d",
+        "fix_commit_url": "https://github.com/tqdm/tqdm/commit/127af5caf19e7d29c346f5ca8a9c7ef3004b664b"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-tqdm-2/reproduction.json",
+        "evidence_sha256": "f4204ab7cb83a33f4e45da6bd850d6d63cde27a9f337e59375f61a7faaf2a8ca",
+        "completed_at": "2026-07-14T18:59:45.809960+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.6.9",
+          "observed_version": "3.6.9",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 74,
+          "passed": 74,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-tqdm-3",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tqdm/tqdm",
+        "owner_repo": "tqdm/tqdm",
+        "license_spdx": "MPL-2.0",
+        "license_url": "https://github.com/tqdm/tqdm/blob/c2599e3cd6087429f48bae34347ec5d2473c8392/LICENCE"
+      },
+      "bug_commit_sha": "c2599e3cd6087429f48bae34347ec5d2473c8392",
+      "fix_commit_sha": "73962a47026dd980ac0758820efc9c41cbf938e0",
+      "python_version": "3.6.9",
+      "environment_profile_id": "tqdm-py3.6.9-win64",
+      "test_overlay_paths": [
+        "tqdm/tests/tests_tqdm.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tqdm/tests/tests_tqdm.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tqdm/tests/tests_tqdm.py::test_bool"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "nose",
+        "-q",
+        "--exclude=test_ansi_escape_codes",
+        "--exclude=test_manpath",
+        "tqdm/tests/tests_main.py",
+        "tqdm/tests/tests_pandas.py",
+        "tqdm/tests/tests_synchronisation.py",
+        "tqdm/tests/tests_tqdm.py",
+        "tqdm/tests/tests_version.py"
+      ],
+      "regression_provenance": {
+        "source": "repository tox.ini coverage command",
+        "adaptation": "The historical nose suite is invoked as a safe python module; the five functional modules are named explicitly and tests_perf.py remains excluded as in tox.ini.",
+        "platform_exclusions": [
+          {
+            "test": "tqdm/tests/tests_tqdm.py::test_ansi_escape_codes",
+            "platform": "win32",
+            "reason": "The historical ANSI width assertion has a platform-specific visible-width mismatch on Windows and is unrelated to the selected benchmark patches."
+          },
+          {
+            "test": "tqdm/tests/tests_main.py::test_manpath",
+            "platform": "win32",
+            "reason": "The historical CLI casts a Windows temporary path through eval and misinterprets the backslash-U sequence; it is unrelated to the selected benchmark patches."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "required_tools": [
+          "ls"
+        ],
+        "source": "repository tests_main.py subprocess contract"
+      },
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "nose"
+            ]
+          },
+          {
+            "line": 3,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "flake8"
+            ]
+          },
+          {
+            "line": 4,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "coverage"
+            ]
+          },
+          {
+            "line": 5,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "pytest"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "83953985aef34f668789163a892adf844a791df2c973ec86a481501293464523",
+        "changed_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "source_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tqdm/_tqdm.py:tqdm"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tqdm/bugs/3/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "Boolean semantics depend on runtime progress-bar state rather than a syntax or API misuse pattern."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tqdm:3",
+        "benchmark_metadata_path": "projects/tqdm/bugs/3/bug.info",
+        "issue_or_pr_url": "https://github.com/tqdm/tqdm/pull/694",
+        "bug_commit_url": "https://github.com/tqdm/tqdm/commit/c2599e3cd6087429f48bae34347ec5d2473c8392",
+        "fix_commit_url": "https://github.com/tqdm/tqdm/commit/73962a47026dd980ac0758820efc9c41cbf938e0"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-tqdm-3/reproduction.json",
+        "evidence_sha256": "6716d24592a6b5c2b4d1a64561b9734cda17365b1746b7fee35fbc3c660aedce",
+        "completed_at": "2026-07-14T19:00:09.280783+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.6.9",
+          "observed_version": "3.6.9",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 70,
+          "passed": 70,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-tqdm-4",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tqdm/tqdm",
+        "owner_repo": "tqdm/tqdm",
+        "license_spdx": "MPL-2.0",
+        "license_url": "https://github.com/tqdm/tqdm/blob/03b347646492131d889871939b40457d29147216/LICENCE"
+      },
+      "bug_commit_sha": "03b347646492131d889871939b40457d29147216",
+      "fix_commit_sha": "964dee631d0ed30e2f799b42fc58ba5e73795a08",
+      "python_version": "3.6.9",
+      "environment_profile_id": "tqdm-py3.6.9-win64",
+      "test_overlay_paths": [
+        "tqdm/tests/tests_tqdm.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tqdm/tests/tests_tqdm.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tqdm/tests/tests_tqdm.py::test_nototal"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "nose",
+        "-q",
+        "--exclude=test_ansi_escape_codes",
+        "--exclude=test_manpath",
+        "tqdm/tests/tests_main.py",
+        "tqdm/tests/tests_pandas.py",
+        "tqdm/tests/tests_synchronisation.py",
+        "tqdm/tests/tests_tqdm.py",
+        "tqdm/tests/tests_version.py"
+      ],
+      "regression_provenance": {
+        "source": "repository tox.ini coverage command",
+        "adaptation": "The historical nose suite is invoked as a safe python module; the five functional modules are named explicitly and tests_perf.py remains excluded as in tox.ini.",
+        "platform_exclusions": [
+          {
+            "test": "tqdm/tests/tests_tqdm.py::test_ansi_escape_codes",
+            "platform": "win32",
+            "reason": "The historical ANSI width assertion has a platform-specific visible-width mismatch on Windows and is unrelated to the selected benchmark patches."
+          },
+          {
+            "test": "tqdm/tests/tests_main.py::test_manpath",
+            "platform": "win32",
+            "reason": "The historical CLI casts a Windows temporary path through eval and misinterprets the backslash-U sequence; it is unrelated to the selected benchmark patches."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "required_tools": [
+          "ls"
+        ],
+        "source": "repository tests_main.py subprocess contract"
+      },
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "nose"
+            ]
+          },
+          {
+            "line": 3,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "flake8"
+            ]
+          },
+          {
+            "line": 4,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "coverage"
+            ]
+          },
+          {
+            "line": 5,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "pytest"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "d56b36da1d8dfb4e4f6f96b0de09ab04022e3ef8736cc887342471171d67402b",
+        "changed_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "source_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tqdm/_tqdm.py:tqdm"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tqdm/bugs/4/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "An absent total value propagates through display formatting before producing the observed failure."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tqdm:4",
+        "benchmark_metadata_path": "projects/tqdm/bugs/4/bug.info",
+        "issue_or_pr_url": "https://github.com/tqdm/tqdm/pull/227",
+        "bug_commit_url": "https://github.com/tqdm/tqdm/commit/03b347646492131d889871939b40457d29147216",
+        "fix_commit_url": "https://github.com/tqdm/tqdm/commit/964dee631d0ed30e2f799b42fc58ba5e73795a08"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-tqdm-4/reproduction.json",
+        "evidence_sha256": "a0ce74a7aba26ea5cd85f3c4c21162913af773a49cdfe8077306f50eaf237e84",
+        "completed_at": "2026-07-14T19:00:41.038303+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.6.9",
+          "observed_version": "3.6.9",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 2,
+          "passed": 0,
+          "failed": 2,
+          "errors": 1,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 66,
+          "passed": 66,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-tqdm-5",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "validation",
+      "repository": {
+        "url": "https://github.com/tqdm/tqdm",
+        "owner_repo": "tqdm/tqdm",
+        "license_spdx": "MPL-2.0",
+        "license_url": "https://github.com/tqdm/tqdm/blob/19b08ab34fdbfa0275bc5cb2430436c724c7e759/LICENCE"
+      },
+      "bug_commit_sha": "19b08ab34fdbfa0275bc5cb2430436c724c7e759",
+      "fix_commit_sha": "4f340697af69b71850aad496387c9c5aa1904136",
+      "python_version": "3.6.9",
+      "environment_profile_id": "tqdm-py3.6.9-win64",
+      "test_overlay_paths": [
+        "tqdm/tests/tests_tqdm.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "tqdm/tests/tests_tqdm.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "pytest",
+          "tqdm/tests/tests_tqdm.py::test_bool"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "nose",
+        "-q",
+        "--exclude=test_ansi_escape_codes",
+        "--exclude=test_manpath",
+        "tqdm/tests/tests_main.py",
+        "tqdm/tests/tests_pandas.py",
+        "tqdm/tests/tests_synchronisation.py",
+        "tqdm/tests/tests_tqdm.py",
+        "tqdm/tests/tests_version.py"
+      ],
+      "regression_provenance": {
+        "source": "repository tox.ini coverage command",
+        "adaptation": "The historical nose suite is invoked as a safe python module; the five functional modules are named explicitly and tests_perf.py remains excluded as in tox.ini.",
+        "platform_exclusions": [
+          {
+            "test": "tqdm/tests/tests_tqdm.py::test_ansi_escape_codes",
+            "platform": "win32",
+            "reason": "The historical ANSI width assertion has a platform-specific visible-width mismatch on Windows and is unrelated to the selected benchmark patches."
+          },
+          {
+            "test": "tqdm/tests/tests_main.py::test_manpath",
+            "platform": "win32",
+            "reason": "The historical CLI casts a Windows temporary path through eval and misinterprets the backslash-U sequence; it is unrelated to the selected benchmark patches."
+          }
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {
+        "required_tools": [
+          "ls"
+        ],
+        "source": "repository tests_main.py subprocess contract"
+      },
+      "setup_observation": {
+        "present": true,
+        "source_path": "setup.sh",
+        "risk_level": "high",
+        "actions": [
+          {
+            "line": 1,
+            "kind": "local_build_install",
+            "risk": "high",
+            "argv": [
+              "python",
+              "setup.py",
+              "install"
+            ]
+          },
+          {
+            "line": 2,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "nose"
+            ]
+          },
+          {
+            "line": 3,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "flake8"
+            ]
+          },
+          {
+            "line": 4,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "coverage"
+            ]
+          },
+          {
+            "line": 5,
+            "kind": "dependency_install",
+            "risk": "medium",
+            "argv": [
+              "pip3",
+              "install",
+              "pytest"
+            ]
+          }
+        ],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "9bc73368eea036ead81fdfa3b650d19371775abdb0344b39060218c0572d8c34",
+        "changed_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "source_files": [
+          "tqdm/_tqdm.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "tqdm/_tqdm.py:tqdm"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/tqdm/bugs/5/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "high_similarity_candidates",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "high_similarity_candidates": "Multiple nearby progress-state branches can plausibly explain the same boolean test failure.",
+        "static_negative": "The faulty state transition remains syntactically and type valid."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "tqdm:5",
+        "benchmark_metadata_path": "projects/tqdm/bugs/5/bug.info",
+        "issue_or_pr_url": "https://github.com/tqdm/tqdm/issues/574",
+        "bug_commit_url": "https://github.com/tqdm/tqdm/commit/19b08ab34fdbfa0275bc5cb2430436c724c7e759",
+        "fix_commit_url": "https://github.com/tqdm/tqdm/commit/4f340697af69b71850aad496387c9c5aa1904136"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-tqdm-5/reproduction.json",
+        "evidence_sha256": "fce4027bef0aea78dffda7bb896982c141cf7d5d61c8ae45990f76ac85e92338",
+        "completed_at": "2026-07-14T19:01:05.332346+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.6.9",
+          "observed_version": "3.6.9",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 60,
+          "passed": 60,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-2",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/ytdl-org/youtube-dl",
+        "owner_repo": "ytdl-org/youtube-dl",
+        "license_spdx": "Unlicense",
+        "license_url": "https://github.com/ytdl-org/youtube-dl/blob/84f085d4bdb66ee025fb337bcd571eab7469da97/LICENSE"
+      },
+      "bug_commit_sha": "84f085d4bdb66ee025fb337bcd571eab7469da97",
+      "fix_commit_sha": "9d6ac71c27b1dfb662c795ef598dbfd0286682da",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "test/test_InfoExtractor.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "test/test_InfoExtractor.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "test.test_InfoExtractor.TestInfoExtractor.test_parse_mpd_formats"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_options",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_update",
+        "test.test_utils",
+        "test.test_verbose_output",
+        "test.test_YoutubeDL",
+        "test.test_youtube_chapters"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "525d0d68504ab2d9405db91576626181d701e263c550e2cf8534dd40a5da62ba",
+        "changed_files": [
+          "youtube_dl/extractor/common.py"
+        ],
+        "source_files": [
+          "youtube_dl/extractor/common.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "youtube_dl/extractor/common.py:InfoExtractor"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/youtube-dl/bugs/2/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow",
+        "high_similarity_candidates"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "DASH representation identifiers and format attributes flow through MPD traversal into the emitted format list.",
+        "high_similarity_candidates": "Several adjacent representation and format branches can plausibly explain duplicate or missing DASH formats."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "youtube-dl:2",
+        "benchmark_metadata_path": "projects/youtube-dl/bugs/2/bug.info",
+        "issue_or_pr_url": "https://github.com/ytdl-org/youtube-dl/issues/15111",
+        "bug_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/84f085d4bdb66ee025fb337bcd571eab7469da97",
+        "fix_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/9d6ac71c27b1dfb662c795ef598dbfd0286682da"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-youtube-dl-2/reproduction.json",
+        "evidence_sha256": "c1b4b2458f5fa5987641e6e55a1067d5410cbc790e454a3bd1230306988196e5",
+        "completed_at": "2026-07-14T19:35:40.744212+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 186,
+          "passed": 186,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-3",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/ytdl-org/youtube-dl",
+        "owner_repo": "ytdl-org/youtube-dl",
+        "license_spdx": "Unlicense",
+        "license_url": "https://github.com/ytdl-org/youtube-dl/blob/f5469da9e6e259c1690c7ef54f1da1c19f65036f/LICENSE"
+      },
+      "bug_commit_sha": "f5469da9e6e259c1690c7ef54f1da1c19f65036f",
+      "fix_commit_sha": "95f3f7c20a05e7ac490e768b8470b20538ef8581",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "test/test_utils.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "test/test_utils.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "test.test_utils.TestUtil.test_unescape_html"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_options",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_update",
+        "test.test_utils",
+        "test.test_verbose_output",
+        "test.test_YoutubeDL",
+        "test.test_youtube_chapters"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ]
+      },
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "150aa16c7ed0c262552614feecd3ab340a187e904b3704b303dc772eae84fba8",
+        "changed_files": [
+          "youtube_dl/utils.py"
+        ],
+        "source_files": [
+          "youtube_dl/utils.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "youtube_dl/utils.py:unescapeHTML"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/youtube-dl/bugs/3/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "static_negative": "Malformed HTML entity decoding is valid Python and requires behavioral examples to expose the semantic error."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "youtube-dl:3",
+        "benchmark_metadata_path": "projects/youtube-dl/bugs/3/bug.info",
+        "issue_or_pr_url": "https://github.com/ytdl-org/youtube-dl/issues/13935",
+        "bug_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/f5469da9e6e259c1690c7ef54f1da1c19f65036f",
+        "fix_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/95f3f7c20a05e7ac490e768b8470b20538ef8581"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-youtube-dl-3/reproduction.json",
+        "evidence_sha256": "118171f39c09a4ab522803d5ee55fb27a93245ef082b879969da774511a9e4d8",
+        "completed_at": "2026-07-14T19:36:45.642529+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 185,
+          "passed": 185,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-4",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/ytdl-org/youtube-dl",
+        "owner_repo": "ytdl-org/youtube-dl",
+        "license_spdx": "Unlicense",
+        "license_url": "https://github.com/ytdl-org/youtube-dl/blob/bc40b3a5ba44006c23daf7fe0ed872af5e33bdc5/LICENSE"
+      },
+      "bug_commit_sha": "bc40b3a5ba44006c23daf7fe0ed872af5e33bdc5",
+      "fix_commit_sha": "189935f15960300d316e8b07108b076ac6c2186a",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "test/test_jsinterp.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "test/test_jsinterp.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "test.test_jsinterp.TestJSInterpreter.test_call"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_update",
+        "test.test_utils",
+        "test.test_verbose_output",
+        "test.test_YoutubeDL"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ],
+        "case_specific": true,
+        "adaptation_reason": "The fixed revision predates test_options.py and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+      },
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "928372923d5a0d6194c5ebffdd3b3befd348583cdf79c43bbfac60a3e1c3044a",
+        "changed_files": [
+          "youtube_dl/jsinterp.py"
+        ],
+        "source_files": [
+          "youtube_dl/jsinterp.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "youtube_dl/jsinterp.py:JSInterpreter"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/youtube-dl/bugs/4/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "cross_function",
+        "data_flow"
+      ],
+      "difficulty_tag_evidence": {
+        "cross_function": "JavaScript call interpretation crosses expression extraction, argument parsing, and callable dispatch helpers.",
+        "data_flow": "Parsed call arguments propagate through interpreter state before the incorrect result is observed."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "youtube-dl:4",
+        "benchmark_metadata_path": "projects/youtube-dl/bugs/4/bug.info",
+        "issue_or_pr_url": "https://github.com/ytdl-org/youtube-dl/pull/11122",
+        "bug_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/bc40b3a5ba44006c23daf7fe0ed872af5e33bdc5",
+        "fix_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/189935f15960300d316e8b07108b076ac6c2186a"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-youtube-dl-4/reproduction.json",
+        "evidence_sha256": "4cfd9386965e1b3c32af5a995c011e614ce02534e04380aa0e9bba54622eb44d",
+        "completed_at": "2026-07-14T19:37:46.008316+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 1,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 170,
+          "passed": 170,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-6",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/ytdl-org/youtube-dl",
+        "owner_repo": "ytdl-org/youtube-dl",
+        "license_spdx": "Unlicense",
+        "license_url": "https://github.com/ytdl-org/youtube-dl/blob/4f29fa99069760dc47ef9ca5dbf607a567d2982f/LICENSE"
+      },
+      "bug_commit_sha": "4f29fa99069760dc47ef9ca5dbf607a567d2982f",
+      "fix_commit_sha": "d631d5f9f27f93767226192e4288990413fa9dbd",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "test/test_utils.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "test/test_utils.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "test.test_utils.TestUtil.test_parse_dfxp_time_expr"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_utils",
+        "test.test_YoutubeDL"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ],
+        "case_specific": true,
+        "adaptation_reason": "The fixed revision predates test_options.py, test_update.py, test_verbose_output.py, and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+      },
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "580ad16ff520aa586a5b10b0edd7e831ef191216ca65b9c0f307ba749f763d17",
+        "changed_files": [
+          "youtube_dl/utils.py"
+        ],
+        "source_files": [
+          "youtube_dl/utils.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "youtube_dl/utils.py:match_filter_func",
+          "youtube_dl/utils.py:dfxp2srt"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/youtube-dl/bugs/6/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "separated_failure_site",
+        "static_negative"
+      ],
+      "difficulty_tag_evidence": {
+        "separated_failure_site": "The subtitle conversion symptom appears after timestamp parsing and downstream TTML transformation.",
+        "static_negative": "Invalid timestamp tolerance is a runtime semantic edge case rather than a syntax-level defect."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "youtube-dl:6",
+        "benchmark_metadata_path": "projects/youtube-dl/bugs/6/bug.info",
+        "issue_or_pr_url": "https://github.com/ytdl-org/youtube-dl/issues/7909",
+        "bug_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/4f29fa99069760dc47ef9ca5dbf607a567d2982f",
+        "fix_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/d631d5f9f27f93767226192e4288990413fa9dbd"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-youtube-dl-6/reproduction.json",
+        "evidence_sha256": "ddba1262d238ca8113b63e460b6d991070e411fd161a3bf02bb471ec84bb2962",
+        "completed_at": "2026-07-14T19:38:36.948082+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 135,
+          "passed": 135,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-8",
+      "status": "accepted",
+      "rejection_reason": "",
+      "rejection_evidence": {},
+      "benchmark_split": "test",
+      "repository": {
+        "url": "https://github.com/ytdl-org/youtube-dl",
+        "owner_repo": "ytdl-org/youtube-dl",
+        "license_spdx": "Unlicense",
+        "license_url": "https://github.com/ytdl-org/youtube-dl/blob/cf2ac6df6896dac4d23918867bb86fac1e1088d9/LICENSE"
+      },
+      "bug_commit_sha": "cf2ac6df6896dac4d23918867bb86fac1e1088d9",
+      "fix_commit_sha": "f5f4a27a964b41646303921104f4d6d6fd2098e4",
+      "python_version": "3.7.0",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "test_overlay_paths": [
+        "test/test_YoutubeDL.py"
+      ],
+      "test_overlay_provenance": {
+        "benchmark_declared_paths": [
+          "test/test_YoutubeDL.py"
+        ],
+        "additional_support_files": []
+      },
+      "targeted_test_commands": [
+        [
+          "{python}",
+          "-m",
+          "unittest",
+          "-q",
+          "test.test_YoutubeDL.TestFormatSelection.test_youtube_format_selection"
+        ]
+      ],
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_utils",
+        "test.test_YoutubeDL"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ],
+        "case_specific": true,
+        "adaptation_reason": "The fixed revision predates test_options.py, test_update.py, test_verbose_output.py, and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+      },
+      "preparation_files": [],
+      "test_environment": {},
+      "setup_observation": {
+        "present": false,
+        "source_path": "",
+        "risk_level": "none",
+        "actions": [],
+        "executed": false
+      },
+      "ground_truth": {
+        "patch_sha256": "37dc2bb2f334e9eeb13067e989e9db35deed0c72f529c84ea3d7a56e96ef9f4d",
+        "changed_files": [
+          "youtube_dl/YoutubeDL.py"
+        ],
+        "source_files": [
+          "youtube_dl/YoutubeDL.py"
+        ],
+        "test_files": [],
+        "functions": [
+          "youtube_dl/YoutubeDL.py:YoutubeDL"
+        ],
+        "source_file_count": 1,
+        "test_file_count": 0,
+        "benchmark_patch_path": "projects/youtube-dl/bugs/8/bug_patch.txt",
+        "visible_to_model": false
+      },
+      "difficulty_tags": [
+        "data_flow",
+        "high_similarity_candidates"
+      ],
+      "difficulty_tag_evidence": {
+        "data_flow": "The format-selector parser propagates slash and comma grouping state into the final selector tree.",
+        "high_similarity_candidates": "Several adjacent parser branches for slash, comma, and plus operators can produce the same missing fallback symptom."
+      },
+      "provenance": {
+        "benchmark": "BugsInPy",
+        "benchmark_case": "youtube-dl:8",
+        "benchmark_metadata_path": "projects/youtube-dl/bugs/8/bug.info",
+        "issue_or_pr_url": "https://github.com/ytdl-org/youtube-dl/pull/6124",
+        "bug_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/cf2ac6df6896dac4d23918867bb86fac1e1088d9",
+        "fix_commit_url": "https://github.com/ytdl-org/youtube-dl/commit/f5f4a27a964b41646303921104f4d6d6fd2098e4"
+      },
+      "reproduction": {
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v3/reproduction/bugsinpy-youtube-dl-8/reproduction.json",
+        "evidence_sha256": "caa3204980c1c46455af88a1672a035f8d2d26b33938a81c27e61c982da428ca",
+        "completed_at": "2026-07-14T19:07:34.858025+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
+        "bug_targeted": {
+          "status": "fail",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 0,
+          "failed": 1,
+          "errors": 1,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_targeted": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1,
+          "passed": 1,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "fix_full_regression": {
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 123,
+          "passed": 123,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
+        },
+        "acceptance": {
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
+        },
+        "test_overlay_policy": "copy_listed_test_files_from_fix_commit_to_bug_commit",
+        "gold_patch_visible_to_execution": false,
+        "raw_artifact_committed": false
+      }
+    }
+  ],
+  "catalog_sha256": "17cf0fa94babb06d201cf4fc63c03543485e395eda57ded046b83cf756138f84",
+  "evidence_aggregation": {
+    "schema_version": "3.0",
+    "status": "pass",
+    "evidence_reference_root": "outputs_v3/reproduction",
+    "accepted_count": 20,
+    "rejected_count": 5,
+    "unresolved_count": 0,
+    "raw_artifacts_committed": false,
+    "gold_patch_visible_to_execution": false
+  },
+  "evidence_aggregated_at": "2026-07-14T19:38:36.948082+00:00"
+}

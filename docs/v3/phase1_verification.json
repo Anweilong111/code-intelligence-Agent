@@ -1,0 +1,75 @@
+{
+  "schema_version": "3.0",
+  "phase": "phase1_real_python_bug_benchmark",
+  "status": "pass",
+  "verified_on": "2026-07-15",
+  "source": {
+    "benchmark": "BugsInPy",
+    "repository_url": "https://github.com/soarsmu/BugsInPy",
+    "commit_sha": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "shell_scripts_executed_by_importer": false
+  },
+  "catalog": {
+    "candidate_cases": 25,
+    "accepted_cases": 20,
+    "rejected_cases": 5,
+    "unresolved_cases": 0,
+    "repository_count": 6,
+    "import_errors": 0,
+    "catalog_validation_status": "pass",
+    "catalog_sha256": "17cf0fa94babb06d201cf4fc63c03543485e395eda57ded046b83cf756138f84",
+    "file_sha256": "6839848ae33660c5e52bad75acff737f895fe20cc1d6a6ae0d7574a9e048de54"
+  },
+  "reproduction": {
+    "bug_target_failure_required": true,
+    "fix_target_pass_required": true,
+    "fix_full_regression_pass_required": true,
+    "nonzero_test_count_required": true,
+    "exact_python_patch_version_required": true,
+    "fresh_bug_and_fix_checkouts_required": true,
+    "evidence_validation_status": "pass",
+    "raw_artifacts_committed": false,
+    "gold_patch_visible_to_execution": false
+  },
+  "environment_profiles": {
+    "status": "pass",
+    "profile_count": 8,
+    "bound_cases": 25,
+    "catalog_cases": 25,
+    "manifest_sha256": "5e8a4b6179094205c730d6118d6876026ed3e79631a284454cf8ffe1a5e778a2",
+    "file_sha256": "7421cfbc5fa3dc1d47b105eaf604f9d2b947574ece11cb141bf2492d439b01a6",
+    "runtime_directories_committed": false
+  },
+  "dataset_hashes": {
+    "datasets/v3_real_bugs/bugsinpy_selection.json": "3f3058013547a760fde9c15d94fc2e8c7785d8b58f02c90ef15fdffd61f3b6fc",
+    "datasets/v3_real_bugs/environment_profile_sources.json": "8f7fb7adb4b830984ba8eb247abdb30e5a69b1e8edd27657b29569bb55faf8bd",
+    "docs/v3/phase1_candidate_catalog.json": "bc9dc45168bbe1c5755762639a2403e0f8c20d4f159181574a44ad5008818f8f"
+  },
+  "focused_tests": {
+    "command": "python -m pytest -q tests/test_v3_environment_profiles.py tests/test_v3_real_bug_benchmark.py tests/test_v3_real_bug_evidence.py tests/test_v3_real_bug_reproduction.py",
+    "passed": 27,
+    "failed": 0,
+    "duration_seconds": 0.79
+  },
+  "full_test_suite": {
+    "command": "python -m pytest -q",
+    "passed": 1271,
+    "failed": 0,
+    "duration_seconds": 1231.14
+  },
+  "release_hygiene": {
+    "command": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs_v3/phase1_release_hygiene_final --root . --require-pass --format json",
+    "status": "pass",
+    "passed_checks": 5,
+    "check_count": 5,
+    "candidate_file_count": 458,
+    "raw_api_key_findings": 0
+  },
+  "resolved_integrity_issue": {
+    "case_id": "bugsinpy-pysnooper-2",
+    "cause": "A stale checkout had hidden three test-only helper files required by the fixed targeted test.",
+    "resolution": "Fresh checkout reset exposed the dependency; three reasoned fix-SHA helper overlays were added and checksummed before the case was rerun.",
+    "acceptance_gate_weakened": false
+  },
+  "boundary": "Phase 1 proves a reproducible real-bug benchmark and oracle. It does not call a live LLM and does not claim Rule, LLM, or Hybrid repair rates."
+}

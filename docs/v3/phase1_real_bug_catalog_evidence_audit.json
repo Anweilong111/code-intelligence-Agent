@@ -1,0 +1,10 @@
+{
+  "schema_version": "3.0",
+  "status": "pass",
+  "accepted_count": 20,
+  "rejected_count": 5,
+  "unresolved_count": 0,
+  "error_count": 0,
+  "errors": [],
+  "catalog_sha256": "17cf0fa94babb06d201cf4fc63c03543485e395eda57ded046b83cf756138f84"
+}

@@ -1,0 +1,680 @@
+{
+  "schema_version": "3.0",
+  "catalog_id": "v3-real-python-bugs-bugsinpy-seed-25",
+  "selection_status": "candidate_until_independently_reproduced",
+  "source": {
+    "repository_url": "https://github.com/soarsmu/BugsInPy",
+    "commit_sha": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "license_status": "not_declared_in_source_checkout"
+  },
+  "split_policy": "all_cases_from_one_repository_belong_to_exactly_one_split",
+  "selection_policy": [
+    "real fixed bug and fix commits",
+    "targeted failing test metadata",
+    "pure Python repository",
+    "pinned Python interpreter available through a controlled runtime",
+    "coverage of difficult localization categories"
+  ],
+  "projects": [
+    {
+      "name": "black",
+      "environment_profile_id": "black-py3.8.3-win64",
+      "benchmark_split": "development",
+      "license": {
+        "spdx": "MIT",
+        "url_template": "https://github.com/psf/black/blob/{bug_commit_sha}/LICENSE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "preparation_files": [
+        {
+          "path": "_black_version.py",
+          "content": "version = \"v3-benchmark\"\n",
+          "reason": "Historical Black generated this import-only module through setuptools_scm during packaging; the benchmark supplies a deterministic non-gold version value without executing setup.py."
+        }
+      ],
+      "issue_or_pr_urls": {
+        "1": "https://github.com/psf/black/pull/1141",
+        "2": "https://github.com/psf/black/pull/1325",
+        "3": "https://github.com/psf/black/pull/1361",
+        "5": "https://github.com/psf/black/pull/891",
+        "10": "https://github.com/psf/black/pull/595"
+      },
+      "cases": [
+        {
+          "bug_id": 1,
+          "status": "rejected",
+          "rejection_reason": "fix_full_regression_failed_due_historical_event_loop_test_order",
+          "rejection_evidence": {
+            "summary": "The target test fails on the bug SHA and passes alone on the fix SHA, but the fixed revision full suite leaves a closed asyncio loop before the same test: 127 passed, 1 failed, and 1 skipped, so the full-regression gate does not pass.",
+            "representative_artifact": "outputs_v3/reproduction/bugsinpy-black-1/reproduction.json",
+            "artifact_committed": false
+          },
+          "difficulty_tags": [
+            "cross_function",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "cross_function": "The resource-construction decision in reformat_many changes the executor consumed by schedule_formatting.",
+            "static_negative": "The defect is an unhandled runtime capability condition rather than a syntactic rule violation."
+          }
+        },
+        {
+          "bug_id": 2,
+          "difficulty_tags": [
+            "data_flow",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "Parser leaf state is propagated through generate_ignored_nodes before formatting behavior diverges.",
+            "static_negative": "The formatting semantics are valid Python and require behavioral evidence."
+          }
+        },
+        {
+          "bug_id": 3,
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "The wrong CLI return behavior is type-correct and not detectable by the mutation-oriented static rules."
+          }
+        },
+        {
+          "bug_id": 5,
+          "difficulty_tags": [
+            "high_similarity_candidates",
+            "data_flow"
+          ],
+          "difficulty_tag_evidence": {
+            "high_similarity_candidates": "Trailing-comma behavior is distributed among several closely related line and bracket formatting branches.",
+            "data_flow": "Bracket and line metadata propagate into the final trailing-comma decision."
+          }
+        },
+        {
+          "bug_id": 10,
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "Comment indentation is a parser/formatter semantic discrepancy without an obvious local rule signature."
+          }
+        }
+      ]
+    },
+    {
+      "name": "PySnooper",
+      "environment_profile_id": "pysnooper-py3.8.1-win64",
+      "benchmark_split": "development",
+      "license": {
+        "spdx": "MIT",
+        "url_template": "https://github.com/cool-RR/PySnooper/blob/{bug_commit_sha}/LICENSE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "issue_or_pr_urls": {
+        "1": "https://github.com/cool-RR/PySnooper/issues/124",
+        "2": "https://github.com/cool-RR/PySnooper/pull/147",
+        "3": "https://github.com/cool-RR/PySnooper/issues/2"
+      },
+      "cases": [
+        {
+          "bug_id": 1,
+          "difficulty_tags": [
+            "multi_file",
+            "cross_function"
+          ],
+          "difficulty_tag_evidence": {
+            "multi_file": "The benchmark patch changes both pycompat.py and tracer.py.",
+            "cross_function": "Encoding compatibility helpers influence tracer source and output handling across module boundaries."
+          }
+        },
+        {
+          "bug_id": 2,
+          "test_overlay_additions": [
+            {
+              "path": "tests/mini_toolbox/__init__.py",
+              "reason": "The fixed targeted test imports this test-only helper package, which is absent at the bug SHA and is not production code or part of the gold patch."
+            },
+            {
+              "path": "tests/mini_toolbox/contextlib.py",
+              "reason": "The fixed targeted test helper package imports this test-only support module."
+            },
+            {
+              "path": "tests/mini_toolbox/pathlib.py",
+              "reason": "The fixed targeted test helper package imports this test-only support module."
+            }
+          ],
+          "difficulty_tags": [
+            "cross_function",
+            "high_similarity_candidates"
+          ],
+          "difficulty_tag_evidence": {
+            "cross_function": "Custom representation configuration is consumed by multiple tracer formatting paths.",
+            "high_similarity_candidates": "Several nearby Tracer methods manipulate closely related representation state."
+          }
+        },
+        {
+          "bug_id": 3,
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "File-output dispatch is syntactically valid and fails only under the targeted behavior."
+          }
+        }
+      ]
+    },
+    {
+      "name": "tqdm",
+      "environment_profile_id": "tqdm-py3.6.9-win64",
+      "benchmark_split": "validation",
+      "license": {
+        "spdx": "MPL-2.0",
+        "url_template": "https://github.com/tqdm/tqdm/blob/{bug_commit_sha}/LICENCE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "nose",
+        "-q",
+        "--exclude=test_ansi_escape_codes",
+        "--exclude=test_manpath",
+        "tqdm/tests/tests_main.py",
+        "tqdm/tests/tests_pandas.py",
+        "tqdm/tests/tests_synchronisation.py",
+        "tqdm/tests/tests_tqdm.py",
+        "tqdm/tests/tests_version.py"
+      ],
+      "regression_provenance": {
+        "source": "repository tox.ini coverage command",
+        "adaptation": "The historical nose suite is invoked as a safe python module; the five functional modules are named explicitly and tests_perf.py remains excluded as in tox.ini.",
+        "platform_exclusions": [
+          {
+            "test": "tqdm/tests/tests_tqdm.py::test_ansi_escape_codes",
+            "platform": "win32",
+            "reason": "The historical ANSI width assertion has a platform-specific visible-width mismatch on Windows and is unrelated to the selected benchmark patches."
+          },
+          {
+            "test": "tqdm/tests/tests_main.py::test_manpath",
+            "platform": "win32",
+            "reason": "The historical CLI casts a Windows temporary path through eval and misinterprets the backslash-U sequence; it is unrelated to the selected benchmark patches."
+          }
+        ]
+      },
+      "test_environment": {
+        "required_tools": [
+          "ls"
+        ],
+        "source": "repository tests_main.py subprocess contract"
+      },
+      "issue_or_pr_urls": {
+        "2": "https://github.com/tqdm/tqdm/pull/850",
+        "3": "https://github.com/tqdm/tqdm/pull/694",
+        "4": "https://github.com/tqdm/tqdm/pull/227",
+        "5": "https://github.com/tqdm/tqdm/issues/574"
+      },
+      "cases": [
+        {
+          "bug_id": 2,
+          "difficulty_tags": [
+            "multi_file",
+            "cross_function"
+          ],
+          "difficulty_tag_evidence": {
+            "multi_file": "The benchmark patch changes both tqdm/std.py and tqdm/utils.py.",
+            "cross_function": "Display formatting in tqdm delegates final trimming behavior to a utility function in another module."
+          }
+        },
+        {
+          "bug_id": 3,
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "Boolean semantics depend on runtime progress-bar state rather than a syntax or API misuse pattern."
+          }
+        },
+        {
+          "bug_id": 4,
+          "difficulty_tags": [
+            "data_flow"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "An absent total value propagates through display formatting before producing the observed failure."
+          }
+        },
+        {
+          "bug_id": 5,
+          "difficulty_tags": [
+            "high_similarity_candidates",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "high_similarity_candidates": "Multiple nearby progress-state branches can plausibly explain the same boolean test failure.",
+            "static_negative": "The faulty state transition remains syntactically and type valid."
+          }
+        }
+      ]
+    },
+    {
+      "name": "fastapi",
+      "environment_profile_id": "fastapi-1-py3.8.3-win64",
+      "benchmark_split": "validation",
+      "license": {
+        "spdx": "MIT",
+        "url_template": "https://github.com/fastapi/fastapi/blob/{bug_commit_sha}/LICENSE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ],
+      "test_environment": {
+        "optional_pythonpath_entries": [
+          "docs_src",
+          "docs/src"
+        ],
+        "source": "repository scripts/test.sh"
+      },
+      "issue_or_pr_urls": {
+        "1": "https://github.com/fastapi/fastapi/pull/1166",
+        "4": "https://github.com/fastapi/fastapi/pull/994",
+        "5": "https://github.com/fastapi/fastapi/pull/889",
+        "7": "https://github.com/fastapi/fastapi/issues/748"
+      },
+      "cases": [
+        {
+          "bug_id": 1,
+          "difficulty_tags": [
+            "multi_file",
+            "high_similarity_candidates"
+          ],
+          "difficulty_tag_evidence": {
+            "multi_file": "The benchmark patch spans applications, encoders, OpenAPI utilities, and routing.",
+            "high_similarity_candidates": "Many APIRouter and FastAPI route methods expose nearly identical parameter forwarding surfaces."
+          }
+        },
+        {
+          "bug_id": 4,
+          "environment_profile_id": "fastapi-4-py3.8.3-win64",
+          "regression_command": [
+            "{python}",
+            "-m",
+            "pytest",
+            "-q",
+            "tests",
+            "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+          ],
+          "regression_provenance": {
+            "platform_exclusions": [
+              {
+                "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+                "platform": "win32",
+                "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+              }
+            ]
+          },
+          "difficulty_tags": [
+            "data_flow",
+            "separated_failure_site"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "Reused path parameters flow from dependency analysis into OpenAPI path construction.",
+            "separated_failure_site": "The incorrect schema appears during OpenAPI output although the causal duplication originates in parameter collection."
+          }
+        },
+        {
+          "bug_id": 5,
+          "environment_profile_id": "fastapi-5-py3.8.3-win64",
+          "regression_command": [
+            "{python}",
+            "-m",
+            "pytest",
+            "-q",
+            "tests",
+            "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+          ],
+          "regression_provenance": {
+            "platform_exclusions": [
+              {
+                "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+                "platform": "win32",
+                "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+              }
+            ]
+          },
+          "difficulty_tags": [
+            "cross_function",
+            "data_flow"
+          ],
+          "difficulty_tag_evidence": {
+            "cross_function": "Cloned Pydantic model fields are recursively consumed outside create_cloned_field.",
+            "data_flow": "Field type metadata propagates through cloned sub-model construction before response filtering."
+          }
+        },
+        {
+          "bug_id": 7,
+          "environment_profile_id": "fastapi-7-py3.8.3-win64",
+          "regression_command": [
+            "{python}",
+            "-m",
+            "pytest",
+            "-q",
+            "tests",
+            "--deselect=tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed"
+          ],
+          "regression_provenance": {
+            "platform_exclusions": [
+              {
+                "test": "tests/test_tutorial/test_custom_request_and_route/test_tutorial003.py::test_get_timed",
+                "platform": "win32",
+                "reason": "The historical tutorial asserts time.time() delta > 0 although Windows can return identical values within one clock tick; it is unrelated to this benchmark patch."
+              }
+            ]
+          },
+          "difficulty_tags": [
+            "separated_failure_site",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "separated_failure_site": "The user-visible response serialization failure is downstream of validation-exception handling.",
+            "static_negative": "The missing encoding step is valid Python and requires a failing request scenario to expose."
+          }
+        }
+      ]
+    },
+    {
+      "name": "tornado",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "benchmark_split": "test",
+      "license": {
+        "spdx": "Apache-2.0",
+        "url_template": "https://github.com/tornadoweb/tornado/blob/{bug_commit_sha}/LICENSE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tornado/test",
+        "-p",
+        "*_test.py"
+      ],
+      "issue_or_pr_urls": {
+        "2": "https://github.com/tornadoweb/tornado/pull/2440",
+        "4": "https://github.com/tornadoweb/tornado/pull/2522",
+        "5": "https://github.com/tornadoweb/tornado/pull/2338",
+        "9": "https://github.com/tornadoweb/tornado/pull/2018"
+      },
+      "cases": [
+        {
+          "bug_id": 2,
+          "status": "rejected",
+          "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+          "rejection_evidence": {
+            "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+            "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+            "artifact_committed": false
+          },
+          "difficulty_tags": [
+            "separated_failure_site",
+            "data_flow"
+          ],
+          "difficulty_tag_evidence": {
+            "separated_failure_site": "The redirect assertion fails in HTTP client behavior while the causal body/header state is written in HTTP1Connection.",
+            "data_flow": "Method and body state propagate through redirect handling into connection output."
+          }
+        },
+        {
+          "bug_id": 4,
+          "status": "rejected",
+          "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+          "rejection_evidence": {
+            "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+            "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+            "artifact_committed": false
+          },
+          "difficulty_tags": [
+            "data_flow",
+            "high_similarity_candidates"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "Parsed range bounds flow through normalization and response-status selection.",
+            "high_similarity_candidates": "Several adjacent range-bound conditions can produce similar unsatisfiable-range symptoms."
+          }
+        },
+        {
+          "bug_id": 5,
+          "status": "rejected",
+          "rejection_reason": "repository_full_regression_oracle_is_not_reliable_on_declared_runtime",
+          "rejection_evidence": {
+            "summary": "This historical Tornado line is retained as a rejected case because the repository-wide suite is not a clean oracle on the benchmark-declared Python 3.7 runtime; the same project line produced broad runtime-compatibility failures during independent reproduction.",
+            "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+            "artifact_committed": false
+          },
+          "difficulty_tags": [
+            "cross_function",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "cross_function": "Periodic callback scheduling combines clock reads, next-time calculation, and IOLoop callbacks.",
+            "static_negative": "Clock rollback handling is a runtime semantic edge case."
+          }
+        },
+        {
+          "bug_id": 9,
+          "status": "rejected",
+          "rejection_reason": "fix_full_regression_failed_on_declared_runtime",
+          "rejection_evidence": {
+            "summary": "Independent reproduction ran 1,381 fixed-revision tests on exact Python 3.7.0: 1,258 passed, 38 failed, 38 errored, and 85 skipped, so the full regression gate is not a valid passing oracle.",
+            "representative_artifact": "outputs_v3/reproduction/bugsinpy-tornado-9/reproduction.json",
+            "artifact_committed": false
+          },
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "None query parameters expose a semantic input-handling defect in otherwise valid code."
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube-dl",
+      "environment_profile_id": "legacy-py3.7.0-win64",
+      "benchmark_split": "test",
+      "license": {
+        "spdx": "Unlicense",
+        "url_template": "https://github.com/ytdl-org/youtube-dl/blob/{bug_commit_sha}/LICENSE"
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "-q",
+        "test.test_aes",
+        "test.test_all_urls",
+        "test.test_cache",
+        "test.test_compat",
+        "test.test_execution",
+        "test.test_http",
+        "test.test_InfoExtractor",
+        "test.test_jsinterp",
+        "test.test_netrc",
+        "test.test_options",
+        "test.test_postprocessors",
+        "test.test_swfinterp",
+        "test.test_unicode_literals",
+        "test.test_update",
+        "test.test_utils",
+        "test.test_verbose_output",
+        "test.test_YoutubeDL",
+        "test.test_youtube_chapters"
+      ],
+      "regression_provenance": {
+        "source": "repository Makefile offlinetest target",
+        "adaptation": "The official offline file set is passed explicitly to python -m unittest; shell, Make, nose, flake8, and network-oriented files are not executed by the benchmark runner.",
+        "observed_fix_test_count": 186,
+        "excluded_online_or_external_tool_files": [
+          "test_age_restriction.py",
+          "test_download.py",
+          "test_iqiyi_sdk_interpreter.py",
+          "test_socks.py",
+          "test_subtitles.py",
+          "test_write_annotations.py",
+          "test_youtube_lists.py",
+          "test_youtube_signature.py"
+        ]
+      },
+      "issue_or_pr_urls": {
+        "2": "https://github.com/ytdl-org/youtube-dl/issues/15111",
+        "3": "https://github.com/ytdl-org/youtube-dl/issues/13935",
+        "4": "https://github.com/ytdl-org/youtube-dl/pull/11122",
+        "6": "https://github.com/ytdl-org/youtube-dl/issues/7909",
+        "8": "https://github.com/ytdl-org/youtube-dl/pull/6124"
+      },
+      "cases": [
+        {
+          "bug_id": 2,
+          "difficulty_tags": [
+            "data_flow",
+            "high_similarity_candidates"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "DASH representation identifiers and format attributes flow through MPD traversal into the emitted format list.",
+            "high_similarity_candidates": "Several adjacent representation and format branches can plausibly explain duplicate or missing DASH formats."
+          }
+        },
+        {
+          "bug_id": 3,
+          "difficulty_tags": [
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "static_negative": "Malformed HTML entity decoding is valid Python and requires behavioral examples to expose the semantic error."
+          }
+        },
+        {
+          "bug_id": 4,
+          "regression_command": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-q",
+            "test.test_aes",
+            "test.test_all_urls",
+            "test.test_cache",
+            "test.test_compat",
+            "test.test_execution",
+            "test.test_http",
+            "test.test_InfoExtractor",
+            "test.test_jsinterp",
+            "test.test_netrc",
+            "test.test_postprocessors",
+            "test.test_swfinterp",
+            "test.test_unicode_literals",
+            "test.test_update",
+            "test.test_utils",
+            "test.test_verbose_output",
+            "test.test_YoutubeDL"
+          ],
+          "regression_provenance": {
+            "case_specific": true,
+            "adaptation_reason": "The fixed revision predates test_options.py and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+          },
+          "difficulty_tags": [
+            "cross_function",
+            "data_flow"
+          ],
+          "difficulty_tag_evidence": {
+            "cross_function": "JavaScript call interpretation crosses expression extraction, argument parsing, and callable dispatch helpers.",
+            "data_flow": "Parsed call arguments propagate through interpreter state before the incorrect result is observed."
+          }
+        },
+        {
+          "bug_id": 6,
+          "regression_command": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-q",
+            "test.test_aes",
+            "test.test_all_urls",
+            "test.test_cache",
+            "test.test_compat",
+            "test.test_execution",
+            "test.test_http",
+            "test.test_InfoExtractor",
+            "test.test_jsinterp",
+            "test.test_netrc",
+            "test.test_postprocessors",
+            "test.test_swfinterp",
+            "test.test_unicode_literals",
+            "test.test_utils",
+            "test.test_YoutubeDL"
+          ],
+          "regression_provenance": {
+            "case_specific": true,
+            "adaptation_reason": "The fixed revision predates test_options.py, test_update.py, test_verbose_output.py, and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+          },
+          "difficulty_tags": [
+            "separated_failure_site",
+            "static_negative"
+          ],
+          "difficulty_tag_evidence": {
+            "separated_failure_site": "The subtitle conversion symptom appears after timestamp parsing and downstream TTML transformation.",
+            "static_negative": "Invalid timestamp tolerance is a runtime semantic edge case rather than a syntax-level defect."
+          }
+        },
+        {
+          "bug_id": 8,
+          "regression_command": [
+            "{python}",
+            "-m",
+            "unittest",
+            "-q",
+            "test.test_aes",
+            "test.test_all_urls",
+            "test.test_cache",
+            "test.test_compat",
+            "test.test_execution",
+            "test.test_http",
+            "test.test_InfoExtractor",
+            "test.test_jsinterp",
+            "test.test_netrc",
+            "test.test_postprocessors",
+            "test.test_swfinterp",
+            "test.test_unicode_literals",
+            "test.test_utils",
+            "test.test_YoutubeDL"
+          ],
+          "regression_provenance": {
+            "case_specific": true,
+            "adaptation_reason": "The fixed revision predates test_options.py, test_update.py, test_verbose_output.py, and test_youtube_chapters.py; only offline modules present at this fixed SHA are named."
+          },
+          "difficulty_tags": [
+            "data_flow",
+            "high_similarity_candidates"
+          ],
+          "difficulty_tag_evidence": {
+            "data_flow": "The format-selector parser propagates slash and comma grouping state into the final selector tree.",
+            "high_similarity_candidates": "Several adjacent parser branches for slash, comma, and plus operators can produce the same missing fallback symptom."
+          }
+        }
+      ]
+    }
+  ]
+}

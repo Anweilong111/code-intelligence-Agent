@@ -1,0 +1,39 @@
+{
+  "schema_version": "3.0",
+  "status": "pass",
+  "case_count": 25,
+  "status_counts": {
+    "accepted": 0,
+    "candidate": 20,
+    "rejected": 5
+  },
+  "repository_count": 6,
+  "split_counts": {
+    "development": 8,
+    "test": 9,
+    "validation": 8
+  },
+  "covered_difficulty_tags": [
+    "cross_function",
+    "data_flow",
+    "high_similarity_candidates",
+    "multi_file",
+    "separated_failure_site",
+    "static_negative"
+  ],
+  "missing_required_difficulty_tags": [],
+  "repository_split_leakage": {},
+  "reused_bug_commits": {
+    "https://github.com/cool-RR/PySnooper@e21a31162f4c54be693d8ca8260e42393b39abd3": [
+      "bugsinpy-pysnooper-1",
+      "bugsinpy-pysnooper-2"
+    ]
+  },
+  "error_count": 0,
+  "warning_count": 1,
+  "errors": [],
+  "warnings": [
+    "shared_bug_commit_requires_grouped_analysis:https://github.com/cool-RR/PySnooper@e21a31162f4c54be693d8ca8260e42393b39abd3"
+  ],
+  "catalog_sha256": "b2b877143ef3cfbcdcf4c6e0b5680d72a3c659470582b495cbaa61f16b1f54bc"
+}

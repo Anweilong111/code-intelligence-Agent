@@ -1,0 +1,10 @@
+{
+  "schema_version": "3.0",
+  "status": "pass",
+  "error_count": 0,
+  "errors": [],
+  "profile_count": 8,
+  "bound_case_count": 25,
+  "catalog_case_count": 25,
+  "manifest_sha256": "5e8a4b6179094205c730d6118d6876026ed3e79631a284454cf8ffe1a5e778a2"
+}

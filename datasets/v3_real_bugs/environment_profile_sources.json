@@ -1,0 +1,81 @@
+{
+  "schema_version": "3.0",
+  "platform_scope": "win32-amd64",
+  "runtime_material_committed": false,
+  "dependency_capture": "python -m pip list --format=json",
+  "profiles": [
+    {
+      "profile_id": "black-py3.8.3-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.3",
+      "expected_python_version": "3.8.3",
+      "case_ids": [
+        "bugsinpy-black-1",
+        "bugsinpy-black-2",
+        "bugsinpy-black-3",
+        "bugsinpy-black-5",
+        "bugsinpy-black-10"
+      ]
+    },
+    {
+      "profile_id": "pysnooper-py3.8.1-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.1",
+      "expected_python_version": "3.8.1",
+      "case_ids": [
+        "bugsinpy-pysnooper-1",
+        "bugsinpy-pysnooper-2",
+        "bugsinpy-pysnooper-3"
+      ]
+    },
+    {
+      "profile_id": "legacy-py3.7.0-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.7.0",
+      "expected_python_version": "3.7.0",
+      "case_ids": [
+        "bugsinpy-tornado-2",
+        "bugsinpy-tornado-4",
+        "bugsinpy-tornado-5",
+        "bugsinpy-tornado-9",
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ]
+    },
+    {
+      "profile_id": "tqdm-py3.6.9-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.6.9",
+      "expected_python_version": "3.6.9",
+      "case_ids": [
+        "bugsinpy-tqdm-2",
+        "bugsinpy-tqdm-3",
+        "bugsinpy-tqdm-4",
+        "bugsinpy-tqdm-5"
+      ]
+    },
+    {
+      "profile_id": "fastapi-1-py3.8.3-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.3-fastapi",
+      "expected_python_version": "3.8.3",
+      "case_ids": ["bugsinpy-fastapi-1"]
+    },
+    {
+      "profile_id": "fastapi-4-py3.8.3-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.3-fastapi-4",
+      "expected_python_version": "3.8.3",
+      "case_ids": ["bugsinpy-fastapi-4"]
+    },
+    {
+      "profile_id": "fastapi-5-py3.8.3-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.3-fastapi-5",
+      "expected_python_version": "3.8.3",
+      "case_ids": ["bugsinpy-fastapi-5"]
+    },
+    {
+      "profile_id": "fastapi-7-py3.8.3-win64",
+      "runtime_relative_dir": "outputs_v3/runtimes/cpython-3.8.3-fastapi-7",
+      "expected_python_version": "3.8.3",
+      "case_ids": ["bugsinpy-fastapi-7"]
+    }
+  ]
+}
