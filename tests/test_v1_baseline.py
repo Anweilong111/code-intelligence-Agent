@@ -149,6 +149,7 @@ def _write_json(path: Path, payload: dict) -> Path:
 
 def _write_release_files(root: Path) -> None:
     (root / ".gitignore").write_text(
-        "outputs/\noutputs_smoke/\noutputs_live/\nhtmlcov/\n.pytest_cache/\n*.docx\n.env\n.env.*\n",
+        "outputs/\noutputs_v2/\noutputs_demo/\noutputs_smoke/\noutputs_live/\n"
+        "htmlcov/\n.pytest_cache/\n*.docx\n.env\n.env.*\n",
         encoding="utf-8",
     )
