@@ -21,6 +21,35 @@ def test_release_hygiene_audit_passes_current_git_candidate_set():
     assert audit["status"] == "pass"
     assert audit["failed_checks"] == []
     assert audit["candidate_file_count"] > 0
+    assert audit["candidate_source"] == "git"
+
+
+def test_release_hygiene_audit_scans_clean_snapshot_inside_another_repo(tmp_path):
+    parent = tmp_path / "parent"
+    snapshot = parent / "ignored" / "snapshot"
+    snapshot.mkdir(parents=True)
+    subprocess.run(
+        ["git", "init", "--quiet"],
+        cwd=parent,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (parent / ".gitignore").write_text("ignored/\n", encoding="utf-8")
+    (snapshot / ".gitignore").write_text(
+        "outputs/\noutputs_v2/\noutputs_v3/\noutputs_demo/\n"
+        "outputs_smoke/\noutputs_live/\nhtmlcov/\n.pytest_cache/\n"
+        "*.docx\n.env\n.env.*\n",
+        encoding="utf-8",
+    )
+    (snapshot / "README.MD").write_text("# Clean snapshot\n", encoding="utf-8")
+    (snapshot / "module.py").write_text("VALUE = 1\n", encoding="utf-8")
+
+    audit = build_release_hygiene_audit(snapshot)
+
+    assert audit["status"] == "pass"
+    assert audit["candidate_source"] == "filesystem_snapshot"
+    assert audit["candidate_file_count"] == 3
 
 
 def test_release_hygiene_audit_detects_secrets_outputs_and_bad_public_docs(tmp_path):

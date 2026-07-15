@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -75,14 +76,16 @@ def build_release_hygiene_audit(
     candidate_paths: list[str] | None = None,
 ) -> dict[str, Any]:
     root_path = Path(root).resolve()
-    candidates = (
-        _candidate_paths_from_git(root_path)
-        if candidate_paths is None
-        else [str(item).replace("\\", "/") for item in candidate_paths]
-    )
+    if candidate_paths is None:
+        candidates, candidate_source = _discover_candidate_paths(root_path)
+    else:
+        candidates = sorted(
+            {str(item).replace("\\", "/") for item in candidate_paths}
+        )
+        candidate_source = "explicit"
     checks = [
         _gitignore_check(root_path),
-        _tracked_cache_check(candidates),
+        _tracked_cache_check(candidates, candidate_source=candidate_source),
         _secret_check(root_path, candidates),
         _public_doc_boundary_check(root_path, candidates),
         _public_doc_tool_trace_check(root_path, candidates),
@@ -96,6 +99,7 @@ def build_release_hygiene_audit(
             else "release_hygiene_issues_found"
         ),
         "candidate_file_count": len(candidates),
+        "candidate_source": candidate_source,
         "check_count": len(checks),
         "passed_check_count": len(checks) - len(failed),
         "failed_check_count": len(failed),
@@ -111,6 +115,7 @@ def render_release_hygiene_audit_markdown(audit: dict[str, Any]) -> str:
         f"- Status: `{audit.get('status')}`",
         f"- Reason: `{audit.get('reason')}`",
         f"- Candidate Files: `{audit.get('candidate_file_count')}`",
+        f"- Candidate Source: `{audit.get('candidate_source') or 'unknown'}`",
         f"- Checks: `{audit.get('passed_check_count')}/{audit.get('check_count')}` pass",
         "",
         "| Check | Status | Evidence |",
@@ -154,7 +159,29 @@ def write_release_hygiene_audit_artifacts(
     }
 
 
-def _candidate_paths_from_git(root: Path) -> list[str]:
+def _discover_candidate_paths(root: Path) -> tuple[list[str], str]:
+    git_candidates = _candidate_paths_from_git(root)
+    if git_candidates is not None:
+        return git_candidates, "git"
+    return _candidate_paths_from_filesystem(root), "filesystem_snapshot"
+
+
+def _candidate_paths_from_git(root: Path) -> list[str] | None:
+    top_level = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if top_level.returncode != 0:
+        return None
+    try:
+        discovered_root = Path(top_level.stdout.strip()).resolve()
+    except (OSError, RuntimeError):
+        return None
+    if discovered_root != root:
+        return None
     completed = subprocess.run(
         [
             "git",
@@ -169,7 +196,7 @@ def _candidate_paths_from_git(root: Path) -> list[str]:
         check=False,
     )
     if completed.returncode != 0:
-        return []
+        return None
     return sorted(
         {
             line.strip().replace("\\", "/")
@@ -177,6 +204,24 @@ def _candidate_paths_from_git(root: Path) -> list[str]:
             if line.strip()
         }
     )
+
+
+def _candidate_paths_from_filesystem(root: Path) -> list[str]:
+    candidates = []
+    for current_root, directories, filenames in os.walk(root, followlinks=False):
+        current = Path(current_root)
+        directories[:] = [
+            name
+            for name in directories
+            if name != ".git" and not (current / name).is_symlink()
+        ]
+        for filename in filenames:
+            path = current / filename
+            try:
+                candidates.append(path.relative_to(root).as_posix())
+            except ValueError:
+                continue
+    return sorted(set(candidates))
 
 
 def _gitignore_check(root: Path) -> dict[str, Any]:
@@ -191,7 +236,11 @@ def _gitignore_check(root: Path) -> dict[str, Any]:
     )
 
 
-def _tracked_cache_check(candidates: list[str]) -> dict[str, Any]:
+def _tracked_cache_check(
+    candidates: list[str],
+    *,
+    candidate_source: str,
+) -> dict[str, Any]:
     offenders = [
         path
         for path in candidates
@@ -200,7 +249,7 @@ def _tracked_cache_check(candidates: list[str]) -> dict[str, Any]:
     return _check(
         "no_tracked_local_outputs_or_binary_docs",
         not offenders,
-        "git candidate set excludes local caches, outputs, coverage, and docx",
+        f"{candidate_source} candidate set excludes local caches, outputs, coverage, and docx",
         offenders,
     )
 
