@@ -1,0 +1,560 @@
+{
+  "schema_version": "v3_semantic_calibration_v1",
+  "semantic_schema_version": "v3_semantic_validation_v1",
+  "status": "pass",
+  "case_count": 2,
+  "requested_case_ids": [
+    "bugsinpy-pysnooper-1",
+    "bugsinpy-pysnooper-3"
+  ],
+  "missing_case_ids": [],
+  "pass_count": 2,
+  "false_rejection_count": 0,
+  "blocker_count": 0,
+  "reverse_mutation_count": 3,
+  "reverse_mutation_killed_count": 3,
+  "reverse_mutation_surviving_count": 0,
+  "cases": [
+    {
+      "case_id": "bugsinpy-pysnooper-1",
+      "repository": "cool-RR/PySnooper",
+      "benchmark_split": "development",
+      "status": "pass",
+      "semantic_status": "pass",
+      "source_file_count": 2,
+      "runtime_profile_id": "pysnooper-py3.8.1-win64",
+      "expected_python_version": "3.8.1",
+      "source_audit": {
+        "status": "pass",
+        "errors": [],
+        "files": [
+          {
+            "path": "pysnooper/pycompat.py",
+            "bug_source_sha256": "d440c7968d875422a519fdd8f1d4178649234ca3ab6d86f49b1a50452bcee934",
+            "fix_source_sha256": "c9aac248c28931440a3f8ad006dfe9293663619645c4e84d27d9f6781605a2e9",
+            "changed_line_count": 1
+          },
+          {
+            "path": "pysnooper/tracer.py",
+            "bug_source_sha256": "3683f5719a6b456d30a1789df8021cacc9a5b8d3d0bf7c0b094d4124874ffac6",
+            "fix_source_sha256": "62369618e036712a4d47a3d9e80d32311b17acada508a3c0cd66f8d56590e89c",
+            "changed_line_count": 5
+          }
+        ],
+        "ground_truth_source_files_used": true
+      },
+      "semantic_validation": {
+        "schema_version": "v3_semantic_validation_v1",
+        "status": "pass",
+        "reason": "all_required_semantic_gates_passed",
+        "claim_eligible": true,
+        "required_check_count": 6,
+        "passed_required_check_count": 6,
+        "failed_check_ids": [],
+        "blocker_check_ids": [],
+        "incomplete_check_ids": [],
+        "checks": [
+          {
+            "check_id": "api_contract_compatibility",
+            "status": "pass",
+            "required": true,
+            "reason": "api_and_type_contracts_compatible",
+            "changed_file_count": 2,
+            "removed_contracts": [],
+            "changed_contracts": [],
+            "added_contracts": [],
+            "signature_change_allowed": false,
+            "allowed_contract_changes": [],
+            "parse_errors": []
+          },
+          {
+            "check_id": "static_semantic_diff",
+            "status": "pass",
+            "required": true,
+            "reason": "static_semantic_checks_not_blocked",
+            "blocked_reasons": [],
+            "warning_count": 0,
+            "files": [
+              {
+                "status": "pass",
+                "blocked_reasons": [],
+                "warnings": [],
+                "risk_score": 0.0,
+                "old_summary": {
+                  "top_level_definitions": [],
+                  "top_level_assignments": [
+                    "PY3"
+                  ],
+                  "import_count": 4,
+                  "ast_node_count": 164
+                },
+                "new_summary": {
+                  "top_level_definitions": [],
+                  "top_level_assignments": [
+                    "PY2",
+                    "PY3"
+                  ],
+                  "import_count": 4,
+                  "ast_node_count": 171,
+                  "removed_definitions": []
+                },
+                "path": "pysnooper/pycompat.py",
+                "function_id": "pysnooper/pycompat.py::<module>",
+                "region_kind": "module"
+              },
+              {
+                "status": "pass",
+                "blocked_reasons": [],
+                "warnings": [],
+                "risk_score": 0.0,
+                "old_summary": {
+                  "top_level_definitions": [
+                    "FileWriter",
+                    "Tracer",
+                    "UnavailableSource",
+                    "get_local_reprs",
+                    "get_source_from_frame",
+                    "get_write_function"
+                  ],
+                  "top_level_assignments": [
+                    "ipython_filename_pattern",
+                    "source_cache",
+                    "thread_global"
+                  ],
+                  "import_count": 12,
+                  "ast_node_count": 1811
+                },
+                "new_summary": {
+                  "top_level_definitions": [
+                    "FileWriter",
+                    "Tracer",
+                    "UnavailableSource",
+                    "get_local_reprs",
+                    "get_source_from_frame",
+                    "get_write_function"
+                  ],
+                  "top_level_assignments": [
+                    "ipython_filename_pattern",
+                    "source_cache",
+                    "thread_global"
+                  ],
+                  "import_count": 12,
+                  "ast_node_count": 1820,
+                  "removed_definitions": []
+                },
+                "path": "pysnooper/tracer.py",
+                "function_id": "pysnooper/tracer.py::<module>",
+                "region_kind": "module"
+              }
+            ]
+          },
+          {
+            "check_id": "patched_workspace_consistency",
+            "status": "pass",
+            "required": true,
+            "reason": "candidate_reflected_and_cross_file_imports_consistent",
+            "edit_count": 2,
+            "changed_module_count": 2,
+            "cross_file_broken_import_count": 0,
+            "errors": [],
+            "parse_errors": [],
+            "import_scan_warnings": [],
+            "broken_imports": [],
+            "edits": [
+              {
+                "index": 0,
+                "path": "pysnooper/pycompat.py",
+                "region_kind": "module",
+                "replacement_reflected": true,
+                "replacement_occurrence_count": 1
+              },
+              {
+                "index": 1,
+                "path": "pysnooper/tracer.py",
+                "region_kind": "module",
+                "replacement_reflected": true,
+                "replacement_occurrence_count": 1
+              }
+            ]
+          },
+          {
+            "check_id": "patch_minimality",
+            "status": "pass",
+            "required": true,
+            "reason": "patch_within_static_minimality_budget",
+            "edit_count": 2,
+            "changed_file_count": 2,
+            "changed_line_count": 6,
+            "original_line_count": 448,
+            "minimality_score": 0.9125,
+            "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+            "errors": [],
+            "edits": [
+              {
+                "path": "pysnooper/pycompat.py",
+                "function_id": "pysnooper/pycompat.py::<module>",
+                "changed_lines": 1,
+                "original_lines": 55,
+                "line_change_ratio": 0.018182
+              },
+              {
+                "path": "pysnooper/tracer.py",
+                "function_id": "pysnooper/tracer.py::<module>",
+                "changed_lines": 5,
+                "original_lines": 393,
+                "line_change_ratio": 0.012723
+              }
+            ]
+          },
+          {
+            "check_id": "generated_boundary_property_probe",
+            "status": "not_applicable",
+            "required": false,
+            "reason": "no_supported_generated_boundary_probe",
+            "probe_count": 0,
+            "case_count": 0,
+            "probes": []
+          },
+          {
+            "check_id": "target_behavior_differential",
+            "status": "pass",
+            "required": true,
+            "reason": "bug_seed_fails_while_patched_target_passes",
+            "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+            "bug_seed_execution": {
+              "status": "fail",
+              "reason": "one_or_more_commands_failed",
+              "environment_blocker": false,
+              "result_count": 1,
+              "results": [
+                {
+                  "status": "fail",
+                  "returncode": 1,
+                  "test_count": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "timeout": false
+                }
+              ]
+            },
+            "patched_execution": {
+              "status": "pass",
+              "reason": "all_commands_passed",
+              "environment_blocker": false,
+              "result_count": 1,
+              "results": [
+                {
+                  "status": "pass",
+                  "returncode": 0,
+                  "test_count": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "timeout": false
+                }
+              ]
+            },
+            "patched_execution_reused": false
+          },
+          {
+            "check_id": "reverse_mutation_sensitivity",
+            "status": "pass",
+            "required": true,
+            "reason": "every_reverse_mutation_was_killed",
+            "mutation_count": 2,
+            "killed_mutation_count": 2,
+            "surviving_mutation_count": 0,
+            "mutations": [
+              {
+                "index": 0,
+                "path": "pysnooper/pycompat.py",
+                "status": "pass",
+                "reason": "reverse_mutation_killed_by_targeted_tests",
+                "killed_by": "targeted_tests",
+                "targeted": {
+                  "status": "fail",
+                  "reason": "one_or_more_commands_failed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "fail",
+                      "returncode": 4,
+                      "test_count": 1,
+                      "passed": 0,
+                      "failed": 1,
+                      "timeout": false
+                    }
+                  ]
+                }
+              },
+              {
+                "index": 1,
+                "path": "pysnooper/tracer.py",
+                "status": "pass",
+                "reason": "reverse_mutation_killed_by_targeted_tests",
+                "killed_by": "targeted_tests",
+                "targeted": {
+                  "status": "fail",
+                  "reason": "one_or_more_commands_failed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "fail",
+                      "returncode": 1,
+                      "test_count": 1,
+                      "passed": 0,
+                      "failed": 1,
+                      "timeout": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "check_id": "manifest_semantic_commands",
+            "status": "not_applicable",
+            "required": false,
+            "reason": "no_manifest_semantic_commands",
+            "commands": []
+          }
+        ],
+        "gold_patch_used": false,
+        "fix_commit_content_used": false,
+        "llm_judge_authoritative": false
+      },
+      "human_fix_oracle_used": true,
+      "gold_patch_visible_to_model": false,
+      "agent_repair_claim": false
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-3",
+      "repository": "cool-RR/PySnooper",
+      "benchmark_split": "development",
+      "status": "pass",
+      "semantic_status": "pass",
+      "source_file_count": 1,
+      "runtime_profile_id": "pysnooper-py3.8.1-win64",
+      "expected_python_version": "3.8.1",
+      "source_audit": {
+        "status": "pass",
+        "errors": [],
+        "files": [
+          {
+            "path": "pysnooper/pysnooper.py",
+            "bug_source_sha256": "847dc6fa9d23b59f88a512838fcb1eaad6316c5641893ebbc39676501e92decf",
+            "fix_source_sha256": "0e17c90da09bde8b9fd0df63df3a3fca4ea086b959cc4fd770cf92f8a69f0039",
+            "changed_line_count": 1
+          }
+        ],
+        "ground_truth_source_files_used": true
+      },
+      "semantic_validation": {
+        "schema_version": "v3_semantic_validation_v1",
+        "status": "pass",
+        "reason": "all_required_semantic_gates_passed",
+        "claim_eligible": true,
+        "required_check_count": 6,
+        "passed_required_check_count": 6,
+        "failed_check_ids": [],
+        "blocker_check_ids": [],
+        "incomplete_check_ids": [],
+        "checks": [
+          {
+            "check_id": "api_contract_compatibility",
+            "status": "pass",
+            "required": true,
+            "reason": "api_and_type_contracts_compatible",
+            "changed_file_count": 1,
+            "removed_contracts": [],
+            "changed_contracts": [],
+            "added_contracts": [],
+            "signature_change_allowed": false,
+            "allowed_contract_changes": [],
+            "parse_errors": []
+          },
+          {
+            "check_id": "static_semantic_diff",
+            "status": "pass",
+            "required": true,
+            "reason": "static_semantic_checks_not_blocked",
+            "blocked_reasons": [],
+            "warning_count": 0,
+            "files": [
+              {
+                "status": "pass",
+                "blocked_reasons": [],
+                "warnings": [],
+                "risk_score": 0.0,
+                "old_summary": {
+                  "top_level_definitions": [
+                    "get_write_function",
+                    "snoop"
+                  ],
+                  "top_level_assignments": [],
+                  "import_count": 11,
+                  "ast_node_count": 180
+                },
+                "new_summary": {
+                  "top_level_definitions": [
+                    "get_write_function",
+                    "snoop"
+                  ],
+                  "top_level_assignments": [],
+                  "import_count": 11,
+                  "ast_node_count": 180,
+                  "removed_definitions": []
+                },
+                "path": "pysnooper/pysnooper.py",
+                "function_id": "pysnooper/pysnooper.py::<module>",
+                "region_kind": "module"
+              }
+            ]
+          },
+          {
+            "check_id": "patched_workspace_consistency",
+            "status": "pass",
+            "required": true,
+            "reason": "candidate_reflected_and_cross_file_imports_consistent",
+            "edit_count": 1,
+            "changed_module_count": 1,
+            "cross_file_broken_import_count": 0,
+            "errors": [],
+            "parse_errors": [],
+            "import_scan_warnings": [],
+            "broken_imports": [],
+            "edits": [
+              {
+                "index": 0,
+                "path": "pysnooper/pysnooper.py",
+                "region_kind": "module",
+                "replacement_reflected": true,
+                "replacement_occurrence_count": 1
+              }
+            ]
+          },
+          {
+            "check_id": "patch_minimality",
+            "status": "pass",
+            "required": true,
+            "reason": "patch_within_static_minimality_budget",
+            "edit_count": 1,
+            "changed_file_count": 1,
+            "changed_line_count": 1,
+            "original_line_count": 74,
+            "minimality_score": 0.9875,
+            "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+            "errors": [],
+            "edits": [
+              {
+                "path": "pysnooper/pysnooper.py",
+                "function_id": "pysnooper/pysnooper.py::<module>",
+                "changed_lines": 1,
+                "original_lines": 74,
+                "line_change_ratio": 0.013514
+              }
+            ]
+          },
+          {
+            "check_id": "generated_boundary_property_probe",
+            "status": "not_applicable",
+            "required": false,
+            "reason": "no_supported_generated_boundary_probe",
+            "probe_count": 0,
+            "case_count": 0,
+            "probes": []
+          },
+          {
+            "check_id": "target_behavior_differential",
+            "status": "pass",
+            "required": true,
+            "reason": "bug_seed_fails_while_patched_target_passes",
+            "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+            "bug_seed_execution": {
+              "status": "fail",
+              "reason": "one_or_more_commands_failed",
+              "environment_blocker": false,
+              "result_count": 1,
+              "results": [
+                {
+                  "status": "fail",
+                  "returncode": 1,
+                  "test_count": 1,
+                  "passed": 0,
+                  "failed": 1,
+                  "timeout": false
+                }
+              ]
+            },
+            "patched_execution": {
+              "status": "pass",
+              "reason": "all_commands_passed",
+              "environment_blocker": false,
+              "result_count": 1,
+              "results": [
+                {
+                  "status": "pass",
+                  "returncode": 0,
+                  "test_count": 1,
+                  "passed": 1,
+                  "failed": 0,
+                  "timeout": false
+                }
+              ]
+            },
+            "patched_execution_reused": false
+          },
+          {
+            "check_id": "reverse_mutation_sensitivity",
+            "status": "pass",
+            "required": true,
+            "reason": "every_reverse_mutation_was_killed",
+            "mutation_count": 1,
+            "killed_mutation_count": 1,
+            "surviving_mutation_count": 0,
+            "mutations": [
+              {
+                "index": 0,
+                "path": "pysnooper/pysnooper.py",
+                "status": "pass",
+                "reason": "reverse_mutation_killed_by_targeted_tests",
+                "killed_by": "targeted_tests",
+                "targeted": {
+                  "status": "fail",
+                  "reason": "one_or_more_commands_failed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "fail",
+                      "returncode": 1,
+                      "test_count": 1,
+                      "passed": 0,
+                      "failed": 1,
+                      "timeout": false
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "check_id": "manifest_semantic_commands",
+            "status": "not_applicable",
+            "required": false,
+            "reason": "no_manifest_semantic_commands",
+            "commands": []
+          }
+        ],
+        "gold_patch_used": false,
+        "fix_commit_content_used": false,
+        "llm_judge_authoritative": false
+      },
+      "human_fix_oracle_used": true,
+      "gold_patch_visible_to_model": false,
+      "agent_repair_claim": false
+    }
+  ],
+  "claim_boundary": "Human fix content is used only to calibrate post-generation semantic validation. These results are not Agent-generated repairs, pass@k, or evidence available to localization, planning, or an LLM."
+}

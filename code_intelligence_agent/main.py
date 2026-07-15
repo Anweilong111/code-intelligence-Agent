@@ -40,6 +40,13 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_v3_semantic_evaluation(raw_argv):
+        from code_intelligence_agent.evaluation.v3_semantic_evaluation import (
+            main as v3_semantic_evaluation_main,
+        )
+
+        v3_semantic_evaluation_main(raw_argv[1:])
+        return
     if _should_route_to_v3_localization_evaluation(raw_argv):
         from code_intelligence_agent.evaluation.v3_localization_evaluation import (
             main as v3_localization_evaluation_main,
@@ -111,6 +118,14 @@ def _should_route_to_v3_localization_evaluation(argv: list[str]) -> bool:
         argv
         and argv[0]
         in {"v3-localization-eval", "v3-localization-evaluation"}
+    )
+
+
+def _should_route_to_v3_semantic_evaluation(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {"v3-semantic-eval", "v3-semantic-evaluation"}
     )
 
 

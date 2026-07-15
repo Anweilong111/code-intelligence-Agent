@@ -6,6 +6,7 @@ from code_intelligence_agent import main as cli_module
 from code_intelligence_agent.evaluation import github_repo_intelligence
 from code_intelligence_agent.evaluation import v3_localization_evaluation
 from code_intelligence_agent.evaluation import v3_repair_evaluation
+from code_intelligence_agent.evaluation import v3_semantic_evaluation
 
 
 def test_top_level_cli_keeps_local_static_analysis(tmp_path, capsys):
@@ -121,4 +122,32 @@ def test_top_level_cli_routes_v3_localization_evaluation(monkeypatch):
     assert captured["argv"] == [
         "outputs_v3/localization",
         "--no-runtime-coverage",
+    ]
+
+
+def test_top_level_cli_routes_v3_semantic_evaluation(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v3_semantic_evaluation_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v3_semantic_evaluation,
+        "main",
+        fake_v3_semantic_evaluation_main,
+    )
+
+    cli_module.main(
+        [
+            "v3-semantic-eval",
+            "outputs_v3/semantic",
+            "--case-id",
+            "bugsinpy-pysnooper-3",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "outputs_v3/semantic",
+        "--case-id",
+        "bugsinpy-pysnooper-3",
     ]

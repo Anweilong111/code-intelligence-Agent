@@ -34,11 +34,15 @@ TRIAL_IMPLEMENTATION_FILES = (
     "evaluation/repository_test_fault_localization.py",
     "evaluation/repository_test_patch_candidates.py",
     "evaluation/v3_real_bug_reproduction.py",
+    "evaluation/v3_experiment_protocol.py",
     "evaluation/v3_repair_evaluation.py",
     "evaluation/v3_repair_execution.py",
     "evaluation/v3_repair_orchestrator.py",
     "evaluation/v3_repair_scope.py",
     "evaluation/v3_repair_trial.py",
+    "evaluation/v3_semantic_validation.py",
+    "tools/boundary_probe.py",
+    "tools/boundary_probe_bootstrap.py",
     "tools/patch_safety.py",
     "tools/patch_validation.py",
     "tools/semantic_patch_validation.py",
@@ -527,6 +531,70 @@ def build_v3_repair_metrics(
             if str(_dict(record.get("validation")).get("full_regression") or "")
             in {"pass", "fail"}
         ]
+        semantic_records = [
+            record
+            for record in strategy_records
+            if str(_dict(record.get("validation")).get("semantic_validation") or "")
+            in {"pass", "fail"}
+        ]
+        semantic_attempted_records = [
+            record
+            for record in strategy_records
+            if str(_dict(record.get("validation")).get("semantic_validation") or "")
+            in {"pass", "fail", "blocker", "not_applicable"}
+        ]
+        semantic_details = [
+            _dict(_dict(record.get("validation")).get("semantic_validation_details"))
+            for record in strategy_records
+            if _dict(_dict(record.get("validation")).get("semantic_validation_details"))
+        ]
+        semantic_checks = [
+            _dict(check)
+            for details in semantic_details
+            for check in _list(details.get("checks"))
+        ]
+        api_contract_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "") == "api_contract_compatibility"
+            and str(check.get("status") or "") in {"pass", "fail"}
+        ]
+        workspace_consistency_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "")
+            == "patched_workspace_consistency"
+            and str(check.get("status") or "") in {"pass", "fail"}
+        ]
+        minimality_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "") == "patch_minimality"
+            and str(check.get("status") or "") in {"pass", "fail"}
+        ]
+        differential_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "")
+            == "target_behavior_differential"
+            and str(check.get("status") or "") in {"pass", "fail"}
+        ]
+        boundary_probe_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "")
+            == "generated_boundary_property_probe"
+        ]
+        manifest_semantic_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "") == "manifest_semantic_commands"
+        ]
+        reverse_mutation_checks = [
+            check
+            for check in semantic_checks
+            if str(check.get("check_id") or "") == "reverse_mutation_sensitivity"
+        ]
         failure_layers = Counter(
             str(_dict(record.get("failure")).get("layer") or "unknown")
             for record in strategy_records
@@ -593,6 +661,100 @@ def build_v3_repair_metrics(
                 len(regression_records),
             ),
             "full_regression_denominator": len(regression_records),
+            "semantic_validation_pass_rate": _ratio(
+                sum(
+                    str(_dict(record.get("validation")).get("semantic_validation"))
+                    == "pass"
+                    for record in semantic_records
+                ),
+                len(semantic_records),
+            ),
+            "semantic_validation_denominator": len(semantic_records),
+            "semantic_validation_attempted_denominator": len(
+                semantic_attempted_records
+            ),
+            "semantic_validation_blocker_count": sum(
+                str(_dict(record.get("validation")).get("semantic_validation"))
+                == "blocker"
+                for record in semantic_attempted_records
+            ),
+            "semantic_validation_not_applicable_count": sum(
+                str(_dict(record.get("validation")).get("semantic_validation"))
+                == "not_applicable"
+                for record in semantic_attempted_records
+            ),
+            "semantic_claim_eligible_record_count": sum(
+                details.get("claim_eligible") is True for details in semantic_details
+            ),
+            "semantic_claim_eligible_rate": _ratio(
+                sum(
+                    details.get("claim_eligible") is True
+                    for details in semantic_details
+                ),
+                len(semantic_attempted_records),
+            ),
+            "api_contract_pass_rate": _ratio(
+                sum(check.get("status") == "pass" for check in api_contract_checks),
+                len(api_contract_checks),
+            ),
+            "api_contract_denominator": len(api_contract_checks),
+            "workspace_consistency_pass_rate": _ratio(
+                sum(
+                    check.get("status") == "pass"
+                    for check in workspace_consistency_checks
+                ),
+                len(workspace_consistency_checks),
+            ),
+            "workspace_consistency_denominator": len(
+                workspace_consistency_checks
+            ),
+            "patch_minimality_pass_rate": _ratio(
+                sum(check.get("status") == "pass" for check in minimality_checks),
+                len(minimality_checks),
+            ),
+            "patch_minimality_denominator": len(minimality_checks),
+            "target_differential_pass_rate": _ratio(
+                sum(
+                    check.get("status") == "pass"
+                    for check in differential_checks
+                ),
+                len(differential_checks),
+            ),
+            "target_differential_denominator": len(differential_checks),
+            "generated_boundary_probe_count": sum(
+                _int(check.get("probe_count"), 0)
+                for check in boundary_probe_checks
+            ),
+            "generated_boundary_case_count": sum(
+                _int(check.get("case_count"), 0)
+                for check in boundary_probe_checks
+            ),
+            "manifest_semantic_command_count": sum(
+                len(_list(check.get("commands")))
+                for check in manifest_semantic_checks
+            ),
+            "reverse_mutation_count": sum(
+                _int(check.get("mutation_count"), 0)
+                for check in reverse_mutation_checks
+            ),
+            "reverse_mutation_kill_rate": _ratio(
+                sum(
+                    _int(check.get("killed_mutation_count"), 0)
+                    for check in reverse_mutation_checks
+                ),
+                sum(
+                    _int(check.get("mutation_count"), 0)
+                    for check in reverse_mutation_checks
+                ),
+            ),
+            "reverse_mutation_killed_count": sum(
+                _int(check.get("killed_mutation_count"), 0)
+                for check in reverse_mutation_checks
+            ),
+            "reverse_mutation_surviving_count": sum(
+                _int(check.get("surviving_mutation_count"), 0)
+                for check in reverse_mutation_checks
+            ),
             "token_usage": {
                 "input_tokens": sum(
                     _int(_dict(record.get("usage")).get("input_tokens"), 0)
@@ -737,8 +899,8 @@ def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:
         "",
         "## Strategy Metrics",
         "",
-        "| Strategy | pass@1 | pass@3 | Verified | Reflection | AST valid | Safety | Targeted | Regression | Cost USD |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Strategy | pass@1 | pass@3 | Verified | Reflection | AST valid | Safety | Targeted | Regression | Semantic claim | Mutation kill | Cost USD |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for strategy, value in _dict(result.get("metrics")).items():
         row = _dict(value)
@@ -751,6 +913,8 @@ def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:
             f"{_metric(row.get('safety_pass_rate'))} | "
             f"{_metric(row.get('targeted_test_pass_rate'))} | "
             f"{_metric(row.get('full_regression_pass_rate'))} | "
+            f"{_metric(row.get('semantic_claim_eligible_rate'))} | "
+            f"{_metric(row.get('reverse_mutation_kill_rate'))} | "
             f"{_float(row.get('actual_cost_usd'), 0.0):.6f} |"
         )
     lines.extend(

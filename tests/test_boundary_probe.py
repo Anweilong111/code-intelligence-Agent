@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from code_intelligence_agent.core.models import PatchCandidate
 from code_intelligence_agent.tools.boundary_probe import run_boundary_probe
 from code_intelligence_agent.tools.diff_utils import render_unified_diff
@@ -48,6 +50,40 @@ def test_boundary_probe_reports_unsupported_semantic_candidate():
 
     assert result.status == "not_run"
     assert result.reason == "no_supported_boundary_probe_for_candidate"
+
+
+def test_boundary_probe_uses_explicit_python_runtime():
+    result = run_boundary_probe(
+        _candidate(
+            rule_id="possible_index_overrun",
+            new_source=(
+                "def pairwise(values):\n"
+                "    return [values[index + 1] - values[index] "
+                "for index in range(len(values) - 1)]\n"
+            ),
+        ),
+        python_executable=sys.executable,
+    )
+
+    assert result.status == "pass"
+    assert result.command[0] == sys.executable
+
+
+def test_boundary_probe_reports_missing_pinned_runtime_as_blocker(tmp_path):
+    result = run_boundary_probe(
+        _candidate(
+            rule_id="possible_index_overrun",
+            new_source=(
+                "def pairwise(values):\n"
+                "    return [values[index + 1] - values[index] "
+                "for index in range(len(values) - 1)]\n"
+            ),
+        ),
+        python_executable=tmp_path / "missing-python",
+    )
+
+    assert result.status == "blocker"
+    assert result.reason == "boundary_probe_process_start_failed"
 
 
 def _candidate(*, rule_id: str, new_source: str) -> PatchCandidate:

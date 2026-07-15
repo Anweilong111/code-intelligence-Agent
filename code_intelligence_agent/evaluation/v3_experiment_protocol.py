@@ -434,6 +434,19 @@ def validate_run_record(
     semantic_status = str(validation.get("semantic_validation") or "")
     if semantic_status not in SEMANTIC_STATUSES:
         errors.append("validation.semantic_validation_is_invalid")
+    semantic_details = _dict(validation.get("semantic_validation_details"))
+    if semantic_status == "pass":
+        if not semantic_details:
+            errors.append("semantic_pass_requires_validation_details")
+        elif str(semantic_details.get("status") or "") != "pass":
+            errors.append("semantic_status_must_match_validation_details")
+        elif semantic_details.get("claim_eligible") is not True:
+            errors.append("semantic_pass_requires_claim_eligible_details")
+    elif semantic_details and str(semantic_details.get("status") or "") not in {
+        semantic_status,
+        "",
+    }:
+        errors.append("semantic_status_must_match_validation_details")
     if semantic_status == "not_applicable" and not str(
         validation.get("semantic_justification") or ""
     ):
@@ -450,8 +463,8 @@ def validate_run_record(
         for field in ("safety_gate", "targeted_tests", "full_regression"):
             if str(validation.get(field) or "") != "pass":
                 errors.append(f"verified_repair_requires_{field}_pass")
-        if semantic_status not in {"pass", "not_applicable"}:
-            errors.append("verified_repair_requires_semantic_validation")
+        if semantic_status != "pass":
+            errors.append("verified_repair_requires_semantic_validation_pass")
     direct_success = bool(outcome.get("direct_success", False))
     reflection_recovered = bool(outcome.get("reflection_recovered", False))
     if direct_success and reflection_round != 0:

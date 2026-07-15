@@ -80,6 +80,43 @@ Evidence: [Phase 4 protocol](docs/v3/phase4_fault_localization_protocol.md),
 [verification record](docs/v3/phase4_verification.md) pins the exact test counts,
 runtime, release gates, signal version, and artifact hashes.
 
+## V3 Patch Semantic Validation Status
+
+Phase 5 now prevents a targeted-test and regression pass from automatically
+becoming a verified-repair claim:
+
+- Required post-regression gates cover AST-derived API/type contracts, static
+  semantic risk, actual patched-workspace consistency, cross-file removed-symbol
+  imports, changed-line minimality, bug-versus-patch target behavior, and
+  per-edit reverse mutation.
+- Supported rule candidates receive deterministic generated boundary/property
+  probes. Benchmark-authored semantic commands are restricted to pinned
+  pytest/unittest module execution; unsupported probes remain explicitly
+  `not_applicable`.
+- A semantic failure is attributed to the semantic layer. A blocker or missing
+  required oracle returns an unverified suggestion. Only a complete semantic
+  pass can produce `verified_repair`.
+- Human-fix calibration on two real PySnooper defects accepted both known-correct
+  fixes with `0` false rejections and killed all `3/3` edit reversions. This is
+  validator calibration, not Agent-generated repair success or live-LLM pass@k.
+
+Reproduce with:
+
+```powershell
+python -m code_intelligence_agent v3-semantic-eval `
+  outputs_v3/phase5_semantic_calibration `
+  --case-id bugsinpy-pysnooper-1 `
+  --case-id bugsinpy-pysnooper-3 `
+  --release-docs-dir docs/v3 `
+  --require-pass
+```
+
+Evidence: [Phase 5 protocol](docs/v3/phase5_semantic_validation_protocol.md),
+[calibration report](docs/v3/phase5_semantic_calibration.md), and
+[machine-readable calibration](docs/v3/phase5_semantic_calibration.json). The
+[verification record](docs/v3/phase5_verification.md) pins the exact test,
+release-hygiene, calibration, limitation, and artifact-hash evidence.
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

@@ -57,6 +57,32 @@ def test_verified_llm_run_record_requires_every_authoritative_gate():
     assert audit["status"] == "fail"
     assert "verified_repair_requires_full_regression_pass" in audit["errors"]
 
+    record = _valid_record(protocol, mode="llm", family="llm")
+    record["validation"]["semantic_validation"] = "not_applicable"
+    record["validation"]["semantic_justification"] = "No complete oracle."
+    record["validation"].pop("semantic_validation_details", None)
+    audit = validate_run_record(record, protocol=protocol)
+    assert "verified_repair_requires_semantic_validation_pass" in audit["errors"]
+
+
+def test_semantic_pass_requires_auditable_claim_eligible_details():
+    protocol = load_experiment_protocol(PROTOCOL_PATH)
+    record = _valid_record(protocol, mode="llm", family="llm")
+    record["validation"]["semantic_validation"] = "pass"
+    record["validation"].pop("semantic_validation_details", None)
+
+    missing = validate_run_record(record, protocol=protocol)
+
+    assert "semantic_pass_requires_validation_details" in missing["errors"]
+    record["validation"]["semantic_validation_details"] = {
+        "status": "pass",
+        "claim_eligible": False,
+    }
+    ineligible = validate_run_record(record, protocol=protocol)
+    assert "semantic_pass_requires_claim_eligible_details" in ineligible["errors"]
+    record["validation"]["semantic_validation_details"]["claim_eligible"] = True
+    assert validate_run_record(record, protocol=protocol)["status"] == "pass"
+
 
 def test_rule_run_has_one_trial_zero_tokens_and_zero_cost():
     protocol = load_experiment_protocol(PROTOCOL_PATH)
@@ -275,8 +301,13 @@ def _valid_record(protocol: dict, *, mode: str, family: str) -> dict:
             "safety_gate": "pass",
             "targeted_tests": "pass",
             "full_regression": "pass",
-            "semantic_validation": "not_applicable",
-            "semantic_justification": "No optional semantic validator applies to this fixture.",
+            "semantic_validation": "pass",
+            "semantic_justification": "All required semantic gates passed.",
+            "semantic_validation_details": {
+                "status": "pass",
+                "claim_eligible": True,
+                "checks": [],
+            },
         },
         "outcome": {
             "status": "verified_repair",

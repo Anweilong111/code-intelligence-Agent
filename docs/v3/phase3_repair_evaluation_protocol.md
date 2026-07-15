@@ -176,10 +176,14 @@ Failures are assigned to the earliest authoritative layer:
 - `environment`: workspace, runtime, dependency, or test-process blocker;
 - `targeted_test`: observed defect remains or the target command fails;
 - `full_regression`: target passes but the complete regression fails;
-- `semantic_validation`: a later case-specific semantic oracle rejects a patch.
+- `semantic_validation`: the Phase 5 deterministic semantic gate rejects a
+  patch or lacks the evidence required for a verified-repair claim.
 
-Phase 3 records semantic validation as `not_applicable` when the case has no
-additional oracle. Phase 5 extends this gate before final release claims.
+Phase 5 now runs API/AST semantic checks, patched-workspace consistency,
+minimality, target differential execution, and reverse mutation after full
+regression. Case-specific boundary/property commands remain conditional; an
+incomplete required oracle yields `unverified_suggestion`, not a verified
+repair.
 
 ## Resume Semantics
 

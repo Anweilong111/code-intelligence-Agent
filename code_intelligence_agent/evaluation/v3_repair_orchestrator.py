@@ -837,6 +837,7 @@ def build_v3_rule_candidates(
             "allow_signature_change": allow_signature_change_for_rules(
                 [str(row.get("rule_id") or "")]
             ),
+            "semantic_rule_ids": [str(row.get("rule_id") or "")],
         }
         results.append(
             {

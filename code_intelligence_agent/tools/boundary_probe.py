@@ -38,6 +38,7 @@ def run_boundary_probe(
     candidate: PatchCandidate,
     *,
     timeout_seconds: float = 2.0,
+    python_executable: str | Path | None = None,
 ) -> BoundaryProbeResult:
     rule_id = _supported_rule_id(candidate)
     if not rule_id:
@@ -67,7 +68,11 @@ def run_boundary_probe(
     with tempfile.TemporaryDirectory(prefix="cia_boundary_probe_") as tmp_dir:
         payload_path = Path(tmp_dir) / "payload.json"
         payload_path.write_text(json.dumps(payload), encoding="utf-8")
-        command = [sys.executable, str(_BOOTSTRAP), str(payload_path)]
+        command = [
+            str(python_executable or sys.executable),
+            str(_BOOTSTRAP),
+            str(payload_path),
+        ]
         try:
             completed = subprocess.run(
                 command,
@@ -89,6 +94,18 @@ def run_boundary_probe(
                 command=tuple(command),
                 stdout_preview=str(exc.stdout or "")[-500:],
                 stderr_preview=str(exc.stderr or "")[-500:],
+            )
+        except OSError as exc:
+            return BoundaryProbeResult(
+                status="blocker",
+                reason="boundary_probe_process_start_failed",
+                rule_id=rule_id,
+                case_count=len(probe["cases"]),
+                forbidden_exceptions=tuple(probe["forbidden_exceptions"]),
+                timeout=False,
+                returncode=-1,
+                command=tuple(command),
+                stderr_preview=type(exc).__name__,
             )
         output = _last_json_object(completed.stdout)
         status = str(output.get("status") or "error")

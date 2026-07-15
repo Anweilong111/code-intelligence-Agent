@@ -26,6 +26,9 @@ from code_intelligence_agent.evaluation.v3_repair_trial import (
     apply_v3_patch_candidate,
     validate_v3_patch_candidate,
 )
+from code_intelligence_agent.evaluation.v3_semantic_validation import (
+    validate_v3_semantic_candidate,
+)
 
 
 def create_v3_repair_client(
@@ -193,6 +196,7 @@ def execute_v3_patch_candidate(
             application={"status": "not_run", "reason": "safety_rejected"},
             targeted={"status": "not_run", "reason": "safety_rejected"},
             regression={"status": "not_run", "reason": "safety_rejected"},
+            semantic={"status": "not_run", "reason": "safety_rejected"},
             validation_latency_ms=_elapsed_ms(started),
         )
 
@@ -216,6 +220,7 @@ def execute_v3_patch_candidate(
             application={"status": "not_run", "reason": "workspace_blocker"},
             targeted={"status": "not_run", "reason": "workspace_blocker"},
             regression={"status": "not_run", "reason": "workspace_blocker"},
+            semantic={"status": "not_run", "reason": "workspace_blocker"},
             validation_latency_ms=_elapsed_ms(started),
         )
 
@@ -251,6 +256,7 @@ def execute_v3_patch_candidate(
             application=application,
             targeted={"status": "not_run", "reason": "application_failed"},
             regression={"status": "not_run", "reason": "application_failed"},
+            semantic={"status": "not_run", "reason": "application_failed"},
             validation_latency_ms=_elapsed_ms(started),
         )
 
@@ -290,6 +296,7 @@ def execute_v3_patch_candidate(
             application=application,
             targeted=targeted,
             regression={"status": "not_run", "reason": "targeted_tests_failed"},
+            semantic={"status": "not_run", "reason": "targeted_tests_failed"},
             validation_latency_ms=_elapsed_ms(started),
         )
 
@@ -326,30 +333,60 @@ def execute_v3_patch_candidate(
             application=application,
             targeted=targeted,
             regression=regression,
+            semantic={"status": "not_run", "reason": "full_regression_failed"},
             validation_latency_ms=_elapsed_ms(started),
         )
 
+    semantic = validate_v3_semantic_candidate(
+        candidate,
+        editable_regions=workspace_regions,
+        seed_repository=seed_repository,
+        patched_repository=workspace_root,
+        case=case,
+        python_executable=python_executable,
+        targeted_timeout=targeted_timeout,
+        regression_timeout=regression_timeout,
+        patched_target_execution=targeted,
+    )
+    semantic_status = str(semantic.get("status") or "blocker")
+    semantic_reason = str(
+        semantic.get("reason") or "semantic_validation_result_missing"
+    )
+    if semantic_status == "pass":
+        outcome_status = "verified_repair"
+        failure_layer = "none"
+        failure_category = "none"
+        failure_reason = ""
+    elif semantic_status == "fail":
+        outcome_status = "failed"
+        failure_layer = "semantic_validation"
+        failure_category = semantic_reason
+        failure_reason = semantic_reason
+    else:
+        outcome_status = "unverified_suggestion"
+        failure_layer = "semantic_validation"
+        failure_category = semantic_reason
+        failure_reason = semantic_reason
     return _candidate_execution_result(
         validation={
             "ast_valid": True,
             "safety_gate": "pass",
             "targeted_tests": "pass",
             "full_regression": "pass",
-            "semantic_validation": "not_applicable",
-            "semantic_justification": (
-                "Phase 3 has no additional case-specific semantic validator; "
-                "targeted and full regression tests are authoritative here."
-            ),
+            "semantic_validation": semantic_status,
+            "semantic_justification": semantic_reason,
+            "semantic_validation_details": semantic,
         },
-        outcome_status="verified_repair",
-        failure_layer="none",
-        failure_category="none",
-        failure_reason="",
+        outcome_status=outcome_status,
+        failure_layer=failure_layer,
+        failure_category=failure_category,
+        failure_reason=failure_reason,
         safety=safety,
         workspace=workspace,
         application=application,
         targeted=targeted,
         regression=regression,
+        semantic=semantic,
         validation_latency_ms=_elapsed_ms(started),
     )
 
@@ -523,6 +560,7 @@ def write_v3_candidate_artifacts(
     validation_path = root / f"{safe_id}.validation.json"
     targeted_path = root / f"{safe_id}.targeted.json"
     regression_path = root / f"{safe_id}.regression.json"
+    semantic_path = root / f"{safe_id}.semantic.json"
     patch_path.write_text(str(safety.get("combined_diff") or ""), encoding="utf-8")
     validation_path.write_text(
         json.dumps(
@@ -547,11 +585,16 @@ def write_v3_candidate_artifacts(
         json.dumps(_dict(execution.get("regression")), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    semantic_path.write_text(
+        json.dumps(_dict(execution.get("semantic")), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     return {
         "patch": str(patch_path),
         "validation": str(validation_path),
         "targeted_test": str(targeted_path),
         "full_regression": str(regression_path),
+        "semantic_validation": str(semantic_path),
     }
 
 
@@ -571,6 +614,7 @@ def _candidate_execution_result(
     application: dict[str, Any],
     targeted: dict[str, Any],
     regression: dict[str, Any],
+    semantic: dict[str, Any],
     validation_latency_ms: int,
 ) -> dict[str, Any]:
     return {
@@ -584,6 +628,7 @@ def _candidate_execution_result(
         "application": application,
         "targeted": targeted,
         "regression": regression,
+        "semantic": semantic,
         "validation_latency_ms": validation_latency_ms,
     }
 

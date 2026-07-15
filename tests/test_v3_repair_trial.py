@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -40,6 +41,7 @@ from code_intelligence_agent.evaluation.v3_repair_evaluation import (
     run_v3_repair_evaluation,
 )
 from code_intelligence_agent.evaluation import v3_repair_evaluation as repair_eval
+from code_intelligence_agent.evaluation import v3_repair_execution as repair_execution
 from code_intelligence_agent.evaluation.v3_repair_scope import (
     select_v3_analysis_scope,
 )
@@ -709,6 +711,7 @@ def test_v3_repair_client_accepts_secondary_protocol_key_environment(
 
 def test_candidate_executes_targeted_and_full_regression_in_independent_workspace(
     tmp_path,
+    monkeypatch,
 ):
     seed = tmp_path / "seed"
     tests = seed / "tests"
@@ -779,11 +782,47 @@ def test_candidate_executes_targeted_and_full_regression_in_independent_workspac
     assert execution["outcome_status"] == "verified_repair", execution
     assert execution["validation"]["targeted_tests"] == "pass"
     assert execution["validation"]["full_regression"] == "pass"
-    assert execution["validation"]["semantic_validation"] == "not_applicable"
+    assert execution["validation"]["semantic_validation"] == "pass"
+    semantic = execution["semantic"]
+    assert semantic["claim_eligible"] is True
+    assert semantic["gold_patch_used"] is False
+    checks = {row["check_id"]: row for row in semantic["checks"]}
+    assert checks["api_contract_compatibility"]["status"] == "pass"
+    assert checks["patched_workspace_consistency"]["status"] == "pass"
+    assert checks["target_behavior_differential"]["status"] == "pass"
+    assert checks["target_behavior_differential"]["patched_execution_reused"] is True
+    assert checks["reverse_mutation_sensitivity"]["status"] == "pass"
+    assert checks["reverse_mutation_sensitivity"]["killed_mutation_count"] == 1
     assert execution["workspace"]["status"] == "pass"
     assert workspace.is_dir()
     assert "return 0" in (workspace / "calculator.py").read_text(encoding="utf-8")
     assert "return 0" not in (seed / "calculator.py").read_text(encoding="utf-8")
+
+    monkeypatch.setattr(
+        repair_execution,
+        "validate_v3_semantic_candidate",
+        lambda *args, **kwargs: {
+            "status": "fail",
+            "reason": "reverse_mutation_survived_complete_test_oracle",
+            "claim_eligible": False,
+            "checks": [],
+        },
+    )
+    rejected = execute_v3_patch_candidate(
+        response["candidate"],
+        editable_regions=regions,
+        seed_repository=seed,
+        trial_workspace=tmp_path / "trials" / "trial-1" / "candidate-2",
+        case=case,
+        python_executable=sys.executable,
+        targeted_timeout=30,
+        regression_timeout=30,
+    )
+    assert rejected["validation"]["targeted_tests"] == "pass"
+    assert rejected["validation"]["full_regression"] == "pass"
+    assert rejected["validation"]["semantic_validation"] == "fail"
+    assert rejected["outcome_status"] == "failed"
+    assert rejected["failure_layer"] == "semantic_validation"
 
 
 def test_trial_workspace_cannot_be_created_inside_seed_repository(tmp_path):
@@ -810,8 +849,13 @@ def test_run_record_from_real_candidate_execution_is_protocol_valid(tmp_path):
             "safety_gate": "pass",
             "targeted_tests": "pass",
             "full_regression": "pass",
-            "semantic_validation": "not_applicable",
-            "semantic_justification": "No Phase 3 case-specific semantic validator applies.",
+            "semantic_validation": "pass",
+            "semantic_justification": "All required semantic gates passed.",
+            "semantic_validation_details": {
+                "status": "pass",
+                "claim_eligible": True,
+                "checks": [],
+            },
         },
         "outcome_status": "verified_repair",
         "failure_layer": "none",
@@ -1158,6 +1202,91 @@ def test_repair_metrics_compute_pass_at_k_and_keep_failure_denominators():
     assert completeness["expected_trial_count"] == 6
 
 
+def test_repair_metrics_report_semantic_and_reverse_mutation_evidence():
+    root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    record = _evaluation_record(
+        protocol,
+        case=_case(),
+        trial_index=1,
+        verified=True,
+        reflection_round=0,
+    )
+    record["validation"]["semantic_validation"] = "pass"
+    record["validation"]["semantic_validation_details"] = {
+        "status": "pass",
+        "claim_eligible": True,
+        "checks": [
+            {
+                "check_id": "api_contract_compatibility",
+                "status": "pass",
+            },
+            {
+                "check_id": "patched_workspace_consistency",
+                "status": "pass",
+            },
+            {
+                "check_id": "patch_minimality",
+                "status": "pass",
+            },
+            {
+                "check_id": "target_behavior_differential",
+                "status": "pass",
+            },
+            {
+                "check_id": "generated_boundary_property_probe",
+                "status": "pass",
+                "probe_count": 1,
+                "case_count": 3,
+            },
+            {
+                "check_id": "manifest_semantic_commands",
+                "status": "pass",
+                "commands": [{"kind": "property", "status": "pass"}],
+            },
+            {
+                "check_id": "reverse_mutation_sensitivity",
+                "status": "pass",
+                "mutation_count": 2,
+                "killed_mutation_count": 2,
+                "surviving_mutation_count": 0,
+            },
+        ],
+    }
+    blocked = copy.deepcopy(record)
+    blocked["validation"]["semantic_validation"] = "blocker"
+    blocked["validation"]["semantic_validation_details"] = {
+        "status": "blocker",
+        "claim_eligible": False,
+        "checks": [],
+    }
+
+    metrics = build_v3_repair_metrics(
+        [record, blocked],
+        case_ids=["case-001"],
+        strategies=["llm"],
+        protocol=protocol,
+    )["llm"]
+
+    assert metrics["semantic_validation_pass_rate"] == 1.0
+    assert metrics["semantic_claim_eligible_record_count"] == 1
+    assert metrics["semantic_claim_eligible_rate"] == 0.5
+    assert metrics["semantic_validation_attempted_denominator"] == 2
+    assert metrics["semantic_validation_blocker_count"] == 1
+    assert metrics["api_contract_pass_rate"] == 1.0
+    assert metrics["workspace_consistency_pass_rate"] == 1.0
+    assert metrics["patch_minimality_pass_rate"] == 1.0
+    assert metrics["target_differential_pass_rate"] == 1.0
+    assert metrics["generated_boundary_probe_count"] == 1
+    assert metrics["generated_boundary_case_count"] == 3
+    assert metrics["manifest_semantic_command_count"] == 1
+    assert metrics["reverse_mutation_count"] == 2
+    assert metrics["reverse_mutation_kill_rate"] == 1.0
+    assert metrics["reverse_mutation_surviving_count"] == 0
+
+
 def test_resume_requires_the_current_trial_input_fingerprint(tmp_path):
     root = Path(__file__).resolve().parents[1]
     protocol = load_experiment_protocol(
@@ -1351,13 +1480,19 @@ def _evaluation_record(
         "safety_gate": "pass",
         "targeted_tests": "pass" if verified else "fail",
         "full_regression": "pass" if verified else "not_run",
-        "semantic_validation": "not_applicable" if verified else "not_run",
+        "semantic_validation": "pass" if verified else "not_run",
         "semantic_justification": (
-            "No Phase 3 case-specific semantic validator applies."
+            "All required semantic gates passed."
             if verified
             else "Targeted test failed."
         ),
     }
+    if verified:
+        validation["semantic_validation_details"] = {
+            "status": "pass",
+            "claim_eligible": True,
+            "checks": [],
+        }
     execution = {
         "validation": validation,
         "outcome_status": "verified_repair" if verified else "failed",

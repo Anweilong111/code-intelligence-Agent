@@ -1,0 +1,108 @@
+{
+  "schema_version": "v3_phase5_verification_v1",
+  "verified_at": "2026-07-15",
+  "status": "pass",
+  "phase": "Phase 5 patch semantic correctness",
+  "implementation": {
+    "semantic_schema_version": "v3_semantic_validation_v1",
+    "trial_implementation_sha256": "533b77f5a5aa2e840ad7d674aea4b3ef8c9e4764623cef60cd1aa0fe4e104bc2",
+    "post_regression_gate_enabled": true,
+    "verified_repair_requires_semantic_pass": true,
+    "missing_required_oracle_outcome": "unverified_suggestion",
+    "required_checks": [
+      "api_contract_compatibility",
+      "static_semantic_diff",
+      "patched_workspace_consistency",
+      "patch_minimality",
+      "target_behavior_differential",
+      "reverse_mutation_sensitivity"
+    ],
+    "conditional_checks": [
+      "generated_boundary_property_probe",
+      "manifest_semantic_commands"
+    ],
+    "gold_patch_used_by_agent_validator": false,
+    "llm_judge_authoritative": false
+  },
+  "calibration": {
+    "schema_version": "v3_semantic_calibration_v1",
+    "status": "pass",
+    "human_fix_case_count": 2,
+    "repositories": [
+      "cool-RR/PySnooper"
+    ],
+    "case_ids": [
+      "bugsinpy-pysnooper-1",
+      "bugsinpy-pysnooper-3"
+    ],
+    "source_edit_count": 3,
+    "semantic_pass_count": 2,
+    "false_rejection_count": 0,
+    "blocker_count": 0,
+    "reverse_mutation_count": 3,
+    "reverse_mutation_killed_count": 3,
+    "reverse_mutation_surviving_count": 0,
+    "generated_boundary_probe_count": 0,
+    "manifest_semantic_command_count": 0,
+    "human_fix_oracle_used": true,
+    "gold_patch_visible_to_model": false,
+    "agent_repair_claim": false
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "production_python_source_only_in_calibration": true,
+    "test_files_used_as_calibration_edits": 0,
+    "non_python_files_used_as_calibration_edits": 0,
+    "absolute_local_paths_in_committed_phase5_artifacts": 0,
+    "raw_api_keys_in_candidate_files": 0,
+    "release_artifact_lf_normalized": true,
+    "semantic_results_store_compact_test_outcomes_without_raw_subprocess_output": true
+  },
+  "tests": {
+    "phase5_and_repair_regression": {
+      "status": "pass",
+      "passed": 59,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 5.4
+    },
+    "all_v3": {
+      "status": "pass",
+      "passed": 99,
+      "skipped": 1,
+      "failed": 0,
+      "deselected": 1250,
+      "duration_seconds": 6.2
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1349,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 816.2
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 493
+    },
+    "skip_explanation": "The Windows host did not permit the unit test to create a symbolic link. Deterministic traversal rejection and runtime workspace symlink scans remain covered."
+  },
+  "artifacts": {
+    "phase5_semantic_calibration.json": "cdb71d73bc72b9ef5c0916b92a316ac09516a7fe82dbfec4049d4bc739ea562b",
+    "phase5_semantic_calibration.md": "a19c04579e7cd2994518f53a7a9d8a4e924a95b340131972cb2e706a217e5f71",
+    "phase5_semantic_validation_protocol.md": "ce670535f6f320ad8ff475e1b9404d5360e594ecf445c851d21e502e6559b68e",
+    "v3_semantic_validation.py": "f2b11ffd6aa793cfdd46994ee2219e0ed463244e0a0051afe51a7f7cb6e2341f",
+    "v3_semantic_evaluation.py": "236fede7074a3692e80904bdb24b5618d94779d0ae295c07deaf8c57f7f5febc"
+  },
+  "claim_boundaries": [
+    "The two human-fix cases calibrate validator false rejection; they are not Agent-generated repairs or pass@k trials.",
+    "The 3/3 result is a reverse-edit mutation kill rate, not a repository-wide mutation score.",
+    "Generated boundary/property probes were not applicable to the two calibration cases.",
+    "Static cross-file checks do not prove dynamic imports or arbitrary runtime exports correct.",
+    "The initial calibration contains two cases from one development repository.",
+    "The 120 paid live LLM and Hybrid trials remain pending until a fresh environment-injected key is available."
+  ]
+}
