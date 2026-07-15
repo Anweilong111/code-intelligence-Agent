@@ -51,17 +51,17 @@
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1374,
+      "passed": 1381,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 815.86
+      "duration_seconds": 775.87
     },
     "release_hygiene": {
       "status": "pass",
       "passed_checks": 5,
       "check_count": 5,
       "failed_checks": 0,
-      "candidate_file_count": 516
+      "candidate_file_count": 522
     },
     "skip_explanations": [
       "tests/test_runtime_security.py cannot create a symbolic link on this Windows host.",
@@ -82,16 +82,16 @@
     ]
   },
   "artifacts": {
-    "docs/v3/phase7_release_protocol.md": "2fccc8e9f1c7a17ea7bed96e86eacd4f0117d1cab6c011289f471d9c80347912",
+    "docs/v3/phase7_release_protocol.md": "c65f85fc163b602985033a72da49b6e9b78c0bda819419bd535639e72f4914c0",
     "docs/v3/phase7_unified_evaluation.json": "2330d952652f5e31dba09221843925b05269d77a711777be1274c67ab16063d1",
     "docs/v3/phase7_unified_evaluation.md": "d072db54180212b6e8d31a4551302d316ede61d02f4556b95eb714a746129c1b",
     "code_intelligence_agent/evaluation/v3_release_evaluation.py": "645b92efa7dca21384dbf7b5ffd6fe7350b29c9eaffd78ad1740726b1c122031",
     "code_intelligence_agent/evaluation/v3_repair_evaluation.py": "6dae48086cf707ac931d9878e7de7b1d675e8740583a86498cd5a674b9fc5759",
     "code_intelligence_agent/main.py": "0a7dddb1c6275f6b061c4f141365d7b0a0588470758bee9ad226a3258fffe490",
-    "tests/test_v3_release_evaluation.py": "ed6bb7ce5935915c36ce4b0445197eda165ba8559b325330a158c4b5e9e449ed",
+    "tests/test_v3_release_evaluation.py": "f4c9d1767823354c0368f05da0720ddfb4e6e29fbe406ff3ef5f555dc6f9956b",
     "tests/test_v3_repair_trial.py": "a11068bcc433bdd8bf37a08ab1657835ed28bc244fc70fa45d76cc0713794273",
     "docs/v3/phase5_verification.json": "fc26f223a1fc4370498bcec1f70c5d87362d12fc625a1cb3a349234a45e9bdd5",
-    "README.MD": "7c1d7770b97a79f76a5433f540585e3609bd8f2323ffc3a0d02fb39114825164"
+    "README.MD": "cbc843324700c7b3c341615828761ed190946d3daa03637d31515f758bc54acb"
   },
   "claim_boundaries": [
     "Phase 7 currently proves offline release readiness, not complete V3 repair performance.",

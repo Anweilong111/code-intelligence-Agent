@@ -36,8 +36,8 @@ changes make the raw V2 `7/20` and V3 `19/20` repository-start counts
 | --- | --- | ---: |
 | Focused Phase 7 and repair regression | 41 passed | 5.26 s |
 | V3, memory, security, and release regression | 154 passed, 2 skipped | 20.55 s |
-| Full pytest suite | 1374 passed, 2 skipped | 815.86 s |
-| Release hygiene | 5/5 checks, 516 candidate files | current candidate set |
+| Full pytest suite | 1381 passed, 2 skipped | 775.87 s |
+| Release hygiene | 5/5 checks, 522 candidate files | current candidate set |
 
 The two skips are explicit Windows-host limitations: this host cannot create
 the symbolic-link fixtures used by `tests/test_runtime_security.py` and

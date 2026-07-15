@@ -129,7 +129,7 @@ Measured evidence includes:
 - memory: controlled completion 0.4286 -> 1.0000 with zero stale,
   conflicting, or advisory execution;
 - security: 8/8 hostile fixtures rejected, isolated, or accurately reported;
-- latest full regression: 1374 passed, 2 explicit Windows symlink skips.
+- latest full regression: 1381 passed, 2 explicit Windows symlink skips.
 
 LLM/Hybrid repair, Reflection recovery, provider token usage, live cost, live
 latency, direct success examples, and Reflection success examples remain

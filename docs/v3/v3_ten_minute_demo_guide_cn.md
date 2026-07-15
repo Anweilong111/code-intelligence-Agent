@@ -228,7 +228,7 @@ candidate -> AST -> scope/signature/safety -> targeted tests
 
 ```text
 项目已经完成真实 benchmark、19/20 环境启动、困难定位、Rule 基线、语义门、
-记忆、安全和统一审计。当前完整回归是 1374 passed、2 个 Windows symlink
+记忆、安全和统一审计。当前完整回归是 1381 passed、2 个 Windows symlink
 fixture skip。剩余工作是 fresh key 下的 60 LLM + 60 Hybrid trial；完成前我
 不会在简历中写真实模型修复率。
 ```

@@ -195,6 +195,7 @@ V3 presentation and interview material:
 - [Architecture and Agent design](docs/v3/v3_architecture_and_agent_design_cn.md)
 - [10-minute demonstration guide](docs/v3/v3_ten_minute_demo_guide_cn.md)
 - [Chinese resume and interview pack](docs/career/v3_resume_interview_pack_cn.md)
+- [Clean-archive packaging verification](docs/v3/phase7_packaging_verification.md)
 
 These V3 documents use only committed evidence. Live LLM/Hybrid repair metrics
 remain pending until all 120 trials satisfy the frozen protocol and unified
