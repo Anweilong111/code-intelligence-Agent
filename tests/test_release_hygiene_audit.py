@@ -15,13 +15,15 @@ from code_intelligence_agent.evaluation.release_hygiene_audit import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_release_hygiene_audit_passes_current_git_candidate_set():
+def test_release_hygiene_audit_passes_current_release_candidate_set():
     audit = build_release_hygiene_audit(ROOT)
 
     assert audit["status"] == "pass"
     assert audit["failed_checks"] == []
     assert audit["candidate_file_count"] > 0
-    assert audit["candidate_source"] == "git"
+    assert audit["candidate_source"] == (
+        "git" if (ROOT / ".git").exists() else "filesystem_snapshot"
+    )
 
 
 def test_release_hygiene_audit_scans_clean_snapshot_inside_another_repo(tmp_path):
