@@ -44,12 +44,23 @@ def test_release_hygiene_audit_scans_clean_snapshot_inside_another_repo(tmp_path
     )
     (snapshot / "README.MD").write_text("# Clean snapshot\n", encoding="utf-8")
     (snapshot / "module.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (snapshot / "__pycache__").mkdir()
+    (snapshot / "__pycache__" / "module.pyc").write_bytes(b"runtime cache")
 
     audit = build_release_hygiene_audit(snapshot)
 
     assert audit["status"] == "pass"
     assert audit["candidate_source"] == "filesystem_snapshot"
     assert audit["candidate_file_count"] == 3
+
+    (snapshot / "packaged.pyc").write_bytes(b"packaged cache")
+    contaminated = build_release_hygiene_audit(snapshot)
+    checks = {item["name"]: item for item in contaminated["checks"]}
+
+    assert contaminated["status"] == "fail"
+    assert checks["no_tracked_local_outputs_or_binary_docs"]["offenders"] == [
+        "packaged.pyc"
+    ]
 
 
 def test_release_hygiene_audit_detects_secrets_outputs_and_bad_public_docs(tmp_path):

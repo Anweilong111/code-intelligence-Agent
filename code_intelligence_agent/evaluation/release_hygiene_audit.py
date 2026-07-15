@@ -68,6 +68,11 @@ TEXT_SUFFIXES = {
     ".yaml",
     ".yml",
 }
+FILESYSTEM_RUNTIME_CACHE_DIRS = {
+    ".git",
+    ".pytest_cache",
+    "__pycache__",
+}
 
 
 def build_release_hygiene_audit(
@@ -213,7 +218,8 @@ def _candidate_paths_from_filesystem(root: Path) -> list[str]:
         directories[:] = [
             name
             for name in directories
-            if name != ".git" and not (current / name).is_symlink()
+            if name not in FILESYSTEM_RUNTIME_CACHE_DIRS
+            and not (current / name).is_symlink()
         ]
         for filename in filenames:
             path = current / filename
