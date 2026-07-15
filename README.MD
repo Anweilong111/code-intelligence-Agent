@@ -190,6 +190,16 @@ Evidence: [Phase 7 protocol](docs/v3/phase7_release_protocol.md),
 test, hygiene, artifact-hash, and claim-boundary evidence is recorded in the
 [Phase 7 offline verification](docs/v3/phase7_offline_verification.md).
 
+V3 presentation and interview material:
+
+- [Architecture and Agent design](docs/v3/v3_architecture_and_agent_design_cn.md)
+- [10-minute demonstration guide](docs/v3/v3_ten_minute_demo_guide_cn.md)
+- [Chinese resume and interview pack](docs/career/v3_resume_interview_pack_cn.md)
+
+These V3 documents use only committed evidence. Live LLM/Hybrid repair metrics
+remain pending until all 120 trials satisfy the frozen protocol and unified
+release audit.
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

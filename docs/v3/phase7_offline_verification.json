@@ -91,7 +91,7 @@
     "tests/test_v3_release_evaluation.py": "ed6bb7ce5935915c36ce4b0445197eda165ba8559b325330a158c4b5e9e449ed",
     "tests/test_v3_repair_trial.py": "a11068bcc433bdd8bf37a08ab1657835ed28bc244fc70fa45d76cc0713794273",
     "docs/v3/phase5_verification.json": "fc26f223a1fc4370498bcec1f70c5d87362d12fc625a1cb3a349234a45e9bdd5",
-    "README.MD": "524a8f30a402aa8cbf9dc18f1cc9618a299d8d87bd0487b8fceb2ae1a93fc232"
+    "README.MD": "7c1d7770b97a79f76a5433f540585e3609bd8f2323ffc3a0d02fb39114825164"
   },
   "claim_boundaries": [
     "Phase 7 currently proves offline release readiness, not complete V3 repair performance.",
