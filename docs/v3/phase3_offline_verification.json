@@ -1,0 +1,132 @@
+{
+  "schema_version": "3.0",
+  "phase": "phase3_real_model_repair_evaluation",
+  "status": "partial",
+  "offline_foundation_status": "pass",
+  "live_model_status": "pending",
+  "verified_on": "2026-07-15",
+  "protocol": {
+    "path": "datasets/v3_real_bugs/experiment_protocol.json",
+    "sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+    "rule_trials_per_case": 1,
+    "llm_trials_per_case": 3,
+    "hybrid_trials_per_case": 3,
+    "maximum_reflection_rounds": 2
+  },
+  "preparation": {
+    "status": "pass",
+    "artifact": "outputs_v3/phase3_preparation_authoritative/evaluation.json",
+    "artifact_sha256": "02c0390bd11dd7247574b9bc165d5431b3dd156c92d57ede799f8f8c7465bc53",
+    "case_count": 20,
+    "prepared_case_count": 20,
+    "model_context_audits_passed": 20,
+    "analysis_scope_audits_passed": 20,
+    "ground_truth_source_file_count": 25,
+    "analysis_scope_source_file_hits": 25,
+    "editable_source_file_hits": 25,
+    "module_region_ground_truth_file_count": 7,
+    "ground_truth_used_for_selection_count": 0,
+    "ground_truth_visible_to_model_count": 0,
+    "absolute_path_context_findings": 0,
+    "relative_traversal_context_findings": 0,
+    "secret_like_context_findings": 0,
+    "unauthorized_localization_findings": 0,
+    "excluded_module_region_findings": 0,
+    "duration_seconds": 160.99
+  },
+  "rule_baseline": {
+    "status": "pass",
+    "artifact": "outputs_v3/phase3_rule_baseline_final/evaluation.json",
+    "artifact_sha256": "3c80b3d6509cf478561ca6cf7441a68494ffe1020d66de29ccd99d01cbeff4b5",
+    "markdown_sha256": "df12ac9513c4835b780844ef7479130eabb5b5f53792cdabc17aae838a07ac78",
+    "run_records_sha256": "20c66d77dbcb21b3ce650b09d00c4fdc73af73469c2ea62e1bc4c7a9c8c708ff",
+    "evaluation_id": "d4c62bba-f6c4-4256-8b28-4e45678dea0b",
+    "case_count": 20,
+    "expected_trial_count": 20,
+    "observed_trial_count": 20,
+    "run_record_count": 58,
+    "record_schema_errors": 0,
+    "pass_at_1": 0.0,
+    "pass_at_3": 0.0,
+    "verified_repair_rate": 0.0,
+    "ast_valid_rate": 0.924528,
+    "ast_valid_denominator": 53,
+    "safety_pass_rate": 0.924528,
+    "safety_denominator": 53,
+    "targeted_test_pass_rate": 0.0,
+    "targeted_test_denominator": 49,
+    "full_regression_pass_rate": null,
+    "full_regression_denominator": 0,
+    "test_file_modification_rejections": 0,
+    "provider_blocker_records": 0,
+    "environment_blocker_records": 0,
+    "trial_input_fingerprints_present": 20,
+    "resumed_trials": 0,
+    "token_usage": 0,
+    "actual_cost_usd": 0.0,
+    "duration_seconds": 392.78,
+    "failure_layers": {
+      "generation": 5,
+      "syntax": 4,
+      "targeted_test": 49
+    },
+    "failure_categories": {
+      "generation:no_rule_patch_candidates_generated": 5,
+      "syntax:invalid_python_ast": 4,
+      "targeted_test:test_assertion_failure": 49
+    }
+  },
+  "focused_tests": {
+    "command": "python -m pytest tests/test_v3_repair_trial.py tests/test_main_cli.py tests/test_llm_judge.py tests/test_v3_real_bug_reproduction.py tests/test_phase3_patch_and_sandbox.py tests/test_patch_validation.py tests/test_patch_safety_v2.py -q",
+    "passed": 113,
+    "failed": 0,
+    "duration_seconds": 16.57
+  },
+  "full_test_suite": {
+    "command": "python -m pytest -q",
+    "passed": 1314,
+    "failed": 0,
+    "duration_seconds": 782.79
+  },
+  "release_hygiene": {
+    "command": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs_v3/phase3_release_hygiene_final --root . --require-pass --format json",
+    "status": "pass",
+    "passed_checks": 5,
+    "check_count": 5,
+    "candidate_file_count": 474,
+    "raw_api_key_findings": 0
+  },
+  "resolved_integrity_issue": {
+    "cause": "Rule candidate limits were applied before test functions were excluded, allowing forbidden test edits to consume the bounded Rule budget.",
+    "resolution": "Test functions and test paths are removed from localization rankings before Rule generation, with a second post-generation guard and a candidate-limit regression test.",
+    "authoritative_artifact": "outputs_v3/phase3_rule_baseline_final/evaluation.json",
+    "superseded_diagnostic_artifact": "outputs_v3/phase3_rule_baseline/evaluation.json",
+    "acceptance_gate_weakened": false
+  },
+  "additional_integrity_controls": {
+    "model_context_privacy": "Absolute local paths and relative runtime traversal paths are redacted before model use and independently audited by JSON field location.",
+    "editable_scope": "Model-visible localization rows must map to controller-authorized function regions; module regions exclude tests, examples, docs, benchmarks, and profiling paths.",
+    "resume_integrity": "A prior trial is reusable only when protocol, bug SHA, evidence, localization, selected context, scope, and critical implementation hashes match.",
+    "parallelism": "Independent trials may run with a bounded worker count; each receives a distinct client, candidate history, workspace, attempt directory, and trial ID.",
+    "credential_resolution": "The client checks every API-key environment variable declared by the frozen protocol; raw credentials are never included in V3 RunRecords.",
+    "module_contract_safety": "Whole-module candidates preserve existing function, method, class-base, generic-parameter, and decorator contracts before sandbox execution.",
+    "model_request_audit": "RunRecords separate the frozen prompt-template hash from the complete request-prompt hash and record the provider-returned model identifier without storing raw private reasoning."
+  },
+  "pending_acceptance_work": {
+    "llm_trial_count": 60,
+    "hybrid_trial_count": 60,
+    "total_live_model_trials": 120,
+    "required_outputs": [
+      "pass_at_1",
+      "pass_at_3",
+      "verified_repair_rate",
+      "reflection_recovery_rate",
+      "token_usage",
+      "actual_cost_usd",
+      "latency",
+      "failure_taxonomy",
+      "winning_generator_attribution"
+    ]
+  },
+  "boundary": "The offline repair framework and Rule control are verified. Phase 3 is not complete and no real LLM or Hybrid repair rate is claimed until all 120 live-model trials finish."
+}

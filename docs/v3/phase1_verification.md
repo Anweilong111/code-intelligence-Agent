@@ -5,8 +5,8 @@
 - Source: BugsInPy `11c5f1eea954a42132cfd06bf257766a7963e0fd`
 - Catalog: `20 accepted / 5 rejected / 0 unresolved`
 - Environment profiles: `8`, binding `25/25` catalog cases
-- Focused tests: `27 passed`
-- Full regression: `1271 passed in 1231.14s`
+- Focused tests: `28 passed`
+- Full regression: `1314 passed in 782.79s`
 - Release hygiene: `5/5 pass`
 
 ## Acceptance Evidence
@@ -24,10 +24,15 @@ committed or exposed to execution.
 
 A fresh-checkout rerun invalidated an earlier PySnooper 2 result because the old
 directory contained test helper files that were not declared by BugsInPy's
-single-file metadata. The stale result was discarded. Three test-only helper
-files are now explicit, reasoned, checksummed overlays from the fix SHA, and the
-case passes all three gates from a clean checkout. No acceptance gate was
-weakened.
+single-file metadata. Black 2 and Black 5 exposed the same benchmark-integrity
+class through missing formatter fixtures. The stale evidence was discarded and
+all required test-only files are now explicit, reasoned, checksummed overlays
+from the fix SHA.
+
+Reproduction now rejects a bug-side `FileNotFoundError` as a benchmark-input
+blocker when the missing test path exists at the fix revision but is absent from
+the declared overlay. All three cases pass the unchanged failure/pass/regression
+gates from clean checkouts; no acceptance gate was weakened.
 
 ## Boundary
 

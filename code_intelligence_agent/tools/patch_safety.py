@@ -14,8 +14,12 @@ from code_intelligence_agent.search.candidate_diversity import (
     stable_source_fingerprint,
 )
 from code_intelligence_agent.tools.diff_utils import render_unified_diff
-from code_intelligence_agent.tools.patch_validation import validate_function_patch
+from code_intelligence_agent.tools.patch_validation import (
+    validate_function_patch,
+    validate_module_patch,
+)
 from code_intelligence_agent.tools.semantic_patch_validation import (
+    validate_semantic_module_patch,
     validate_semantic_patch,
 )
 
@@ -151,17 +155,31 @@ def evaluate_patch_safety(
     source: str = "unified_patch_safety_gate_v2",
 ) -> PatchSafetyDecision:
     active_policy = policy or PatchSafetyPolicy()
-    function_validation = validate_function_patch(
-        candidate.old_source,
-        candidate.new_source,
-        allow_signature_change=active_policy.allow_signature_change,
-        max_changed_lines=active_policy.max_changed_lines,
-        max_line_change_ratio=active_policy.max_line_change_ratio,
-    )
-    semantic_validation = validate_semantic_patch(
-        candidate.old_source,
-        candidate.new_source,
-    )
+    module_region = str(candidate.metadata.get("region_kind") or "") == "module"
+    if module_region:
+        function_validation = validate_module_patch(
+            candidate.old_source,
+            candidate.new_source,
+            allow_signature_change=active_policy.allow_signature_change,
+            max_changed_lines=active_policy.max_changed_lines,
+            max_line_change_ratio=active_policy.max_line_change_ratio,
+        )
+        semantic_validation = validate_semantic_module_patch(
+            candidate.old_source,
+            candidate.new_source,
+        )
+    else:
+        function_validation = validate_function_patch(
+            candidate.old_source,
+            candidate.new_source,
+            allow_signature_change=active_policy.allow_signature_change,
+            max_changed_lines=active_policy.max_changed_lines,
+            max_line_change_ratio=active_policy.max_line_change_ratio,
+        )
+        semantic_validation = validate_semantic_patch(
+            candidate.old_source,
+            candidate.new_source,
+        )
     relative_path = _normalized_relative_path(candidate.relative_file_path)
     path_authorized = _path_authorized(
         relative_path,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 from code_intelligence_agent.core.ast_analyzer import ASTAnalyzer
@@ -85,7 +86,11 @@ class RepoParser:
 
     def _parse_file(self, file_path: Path):
         source = file_path.read_text(encoding="utf-8")
-        return self.analyzer.analyze_file(file_path=file_path, source=source)
+        # Historical repositories can emit compile-time warnings while their AST is
+        # inspected. They are repository data, not diagnostics for this process.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            return self.analyzer.analyze_file(file_path=file_path, source=source)
 
 
 def repo_parser(path: str | Path) -> RepoParseResult:

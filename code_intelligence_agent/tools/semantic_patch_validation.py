@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import textwrap
+import warnings
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -95,15 +96,90 @@ def validate_semantic_patch(
     )
 
 
+def validate_semantic_module_patch(
+    old_source: str,
+    new_source: str,
+) -> SemanticPatchValidation:
+    old_tree = _parse_module(old_source)
+    new_tree = _parse_module(new_source)
+    if old_tree is None or new_tree is None:
+        return SemanticPatchValidation(
+            status="blocked",
+            blocked_reasons=["semantic_ast_unavailable"],
+            warnings=[],
+            risk_score=1.0,
+            old_summary={},
+            new_summary={},
+        )
+    old_summary = _module_summary(old_tree)
+    new_summary = _module_summary(new_tree)
+    removed_definitions = sorted(
+        set(old_summary["top_level_definitions"]).difference(
+            new_summary["top_level_definitions"]
+        )
+    )
+    blocked = ["top_level_definition_removed"] if removed_definitions else []
+    warnings = (
+        ["top_level_assignment_removed"]
+        if set(old_summary["top_level_assignments"]).difference(
+            new_summary["top_level_assignments"]
+        )
+        else []
+    )
+    new_summary["removed_definitions"] = removed_definitions
+    return SemanticPatchValidation(
+        status="blocked" if blocked else "warning" if warnings else "pass",
+        blocked_reasons=blocked,
+        warnings=warnings,
+        risk_score=round(0.55 * len(blocked) + 0.15 * len(warnings), 4),
+        old_summary=old_summary,
+        new_summary=new_summary,
+    )
+
+
 def _parse_function(source: str) -> ast.FunctionDef | ast.AsyncFunctionDef | None:
     try:
-        tree = ast.parse(textwrap.dedent(source).strip("\n"))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(textwrap.dedent(source).strip("\n"))
     except (SyntaxError, ValueError):
         return None
     if len(tree.body) != 1:
         return None
     node = tree.body[0]
     return node if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) else None
+
+
+def _parse_module(source: str) -> ast.Module | None:
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", SyntaxWarning)
+            return ast.parse(source)
+    except (SyntaxError, ValueError):
+        return None
+
+
+def _module_summary(node: ast.Module) -> dict[str, Any]:
+    definitions = [
+        item.name
+        for item in node.body
+        if isinstance(item, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+    ]
+    assignments: list[str] = []
+    for item in node.body:
+        if isinstance(item, (ast.Assign, ast.AnnAssign)):
+            targets = item.targets if isinstance(item, ast.Assign) else [item.target]
+            assignments.extend(
+                target.id for target in targets if isinstance(target, ast.Name)
+            )
+    return {
+        "top_level_definitions": sorted(definitions),
+        "top_level_assignments": sorted(assignments),
+        "import_count": sum(
+            isinstance(item, (ast.Import, ast.ImportFrom)) for item in node.body
+        ),
+        "ast_node_count": sum(1 for _ in ast.walk(node)),
+    }
 
 
 def _behavior_summary(

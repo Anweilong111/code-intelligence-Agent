@@ -6,6 +6,7 @@ import os
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -121,6 +122,11 @@ class OpenAICompatibleLLMClient:
         model_env: str = "CIA_LLM_MODEL",
         base_url_env: str = "CIA_LLM_BASE_URL",
         provider_env: str = "CIA_LLM_PROVIDER",
+        temperature: float = 0,
+        max_tokens: int | None = None,
+        response_format: dict[str, Any] | None = None,
+        thinking: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
         self.provider = _normalize_provider(
             provider or os.environ.get(provider_env) or "openai"
@@ -139,6 +145,13 @@ class OpenAICompatibleLLMClient:
         )
         self.timeout = _timeout_from_env(timeout_env, timeout)
         self.system_prompt = system_prompt or PATCH_SYSTEM_PROMPT
+        self.temperature = float(temperature)
+        if max_tokens is not None and max_tokens <= 0:
+            raise ValueError("max_tokens must be greater than zero")
+        self.max_tokens = max_tokens
+        self.response_format = dict(response_format) if response_format else None
+        self.thinking = _normalize_thinking(thinking)
+        self.reasoning_effort = _normalize_reasoning_effort(reasoning_effort)
         if not self.api_key:
             raise ValueError(f"{api_key_env} is required for LLM requests.")
         self.api_key_fingerprint = _api_key_fingerprint(self.api_key)
@@ -174,8 +187,16 @@ class OpenAICompatibleLLMClient:
                 },
                 {"role": "user", "content": prompt},
             ],
-            "temperature": 0,
+            "temperature": self.temperature,
         }
+        if self.max_tokens is not None:
+            payload["max_tokens"] = self.max_tokens
+        if self.response_format is not None:
+            payload["response_format"] = self.response_format
+        if self.thinking is not None:
+            payload["thinking"] = {"type": self.thinking}
+        if self.reasoning_effort is not None:
+            payload["reasoning_effort"] = self.reasoning_effort
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = tool_choice
@@ -191,8 +212,9 @@ class OpenAICompatibleLLMClient:
         )
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                response_text = response.read().decode("utf-8")
+                response_bytes = response.read()
         except urllib.error.HTTPError as exc:
+            error_body = _http_error_body(exc)
             metadata = self._request_metadata(
                 prompt=prompt,
                 text="",
@@ -201,7 +223,7 @@ class OpenAICompatibleLLMClient:
                 error_type=type(exc).__name__,
                 error_reason=f"http_{exc.code}",
                 http_status=exc.code,
-                response_preview=_preview_response_body(_http_error_body(exc)),
+                provider_payload=error_body,
             )
             raise LLMRequestError(
                 "http_error",
@@ -236,6 +258,8 @@ class OpenAICompatibleLLMClient:
                 f"LLM request exceeded {self.timeout}s timeout.",
                 metadata,
             ) from exc
+        try:
+            response_text = response_bytes.decode("utf-8")
         except UnicodeDecodeError as exc:
             metadata = self._request_metadata(
                 prompt=prompt,
@@ -244,6 +268,7 @@ class OpenAICompatibleLLMClient:
                 elapsed_ms=_elapsed_ms(started_at),
                 error_type=type(exc).__name__,
                 error_reason="invalid_text_response",
+                provider_payload=response_bytes,
             )
             raise LLMRequestError(
                 "invalid_text_response",
@@ -260,7 +285,7 @@ class OpenAICompatibleLLMClient:
                 elapsed_ms=_elapsed_ms(started_at),
                 error_type=type(exc).__name__,
                 error_reason="invalid_json_response",
-                response_preview=_preview_response_body(response_text),
+                provider_payload=response_text,
             )
             raise LLMRequestError(
                 "invalid_json_response",
@@ -323,7 +348,7 @@ class OpenAICompatibleLLMClient:
         error_type: str = "",
         error_reason: str = "",
         http_status: int | None = None,
-        response_preview: str = "",
+        provider_payload: str | bytes | None = None,
     ) -> dict[str, Any]:
         usage = _usage_summary(body, prompt=prompt, text=text)
         cost = _cost_estimate_from_env(usage)
@@ -333,27 +358,120 @@ class OpenAICompatibleLLMClient:
             "model": self.model,
             "base_url": self.base_url,
             "timeout_seconds": self.timeout,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "response_format": (
+                dict(self.response_format) if self.response_format else None
+            ),
+            "thinking": self.thinking,
+            "reasoning_effort": self.reasoning_effort,
             "latency_ms": elapsed_ms,
             "prompt_chars": len(prompt),
+            "prompt_sha256": _text_sha256(prompt),
+            "system_prompt_sha256": _text_sha256(self.system_prompt),
             "response_chars": len(text),
+            "response_sha256": _text_sha256(text),
             "usage": usage,
             "cost_estimate": cost,
             "api_key_present": bool(self.api_key),
             "api_key_fingerprint": self.api_key_fingerprint,
         }
-        if body is not None:
-            metadata["response_id"] = str(body.get("id") or "")
-            metadata["response_object"] = str(body.get("object") or "")
-            metadata["raw"] = body
+        metadata.update(_provider_response_metadata(body))
         if error_type:
             metadata["error_type"] = error_type
         if error_reason:
             metadata["error_reason"] = error_reason
         if http_status is not None:
             metadata["http_status"] = http_status
-        if response_preview:
-            metadata["response_preview"] = response_preview
+        if provider_payload is not None:
+            metadata.update(_provider_payload_audit(provider_payload))
         return metadata
+
+
+class RetryingLLMClient:
+    """Retry transient provider failures without creating a new repair trial."""
+
+    def __init__(
+        self,
+        client: LLMClient,
+        *,
+        max_retries: int = 2,
+        backoff_seconds: tuple[float, ...] = (1.0, 2.0),
+        sleeper: Callable[[float], None] = time.sleep,
+    ) -> None:
+        if max_retries < 0:
+            raise ValueError("max_retries must be non-negative")
+        if any(delay < 0 for delay in backoff_seconds):
+            raise ValueError("backoff_seconds must be non-negative")
+        self.client = client
+        self.max_retries = max_retries
+        self.backoff_seconds = backoff_seconds
+        self.sleeper = sleeper
+
+    def complete(self, prompt: str) -> LLMResponse:
+        return self._complete(lambda: self.client.complete(prompt))
+
+    def complete_with_tools(
+        self,
+        prompt: str,
+        tools: list[dict[str, Any]],
+        *,
+        tool_choice: str | dict[str, Any] = "auto",
+    ) -> LLMResponse:
+        complete_with_tools = getattr(self.client, "complete_with_tools", None)
+        if not callable(complete_with_tools):
+            raise TypeError("wrapped LLM client does not support tool calling")
+        return self._complete(
+            lambda: complete_with_tools(
+                prompt,
+                tools,
+                tool_choice=tool_choice,
+            )
+        )
+
+    def _complete(self, operation: Callable[[], LLMResponse]) -> LLMResponse:
+        retry_reasons: list[str] = []
+        retry_delays: list[float] = []
+        attempt_count = 0
+        while True:
+            attempt_count += 1
+            try:
+                response = operation()
+            except LLMRequestError as exc:
+                if (
+                    len(retry_reasons) >= self.max_retries
+                    or not _is_retryable_provider_error(exc)
+                ):
+                    metadata = dict(exc.metadata)
+                    metadata.update(
+                        _provider_retry_metadata(
+                            attempt_count=attempt_count,
+                            retry_reasons=retry_reasons,
+                            retry_delays=retry_delays,
+                        )
+                    )
+                    metadata["provider_terminal_error_reason"] = (
+                        _provider_error_reason(exc)
+                    )
+                    raise LLMRequestError(exc.reason, str(exc), metadata) from exc
+                delay = _retry_delay(
+                    retry_index=len(retry_reasons),
+                    backoff_seconds=self.backoff_seconds,
+                )
+                retry_reasons.append(_provider_error_reason(exc))
+                retry_delays.append(delay)
+                self.sleeper(delay)
+                continue
+
+            metadata = dict(response.metadata)
+            metadata.update(
+                _provider_retry_metadata(
+                    attempt_count=attempt_count,
+                    retry_reasons=retry_reasons,
+                    retry_delays=retry_delays,
+                )
+            )
+            return LLMResponse(text=response.text, metadata=metadata)
 
 
 def create_judge_client() -> OpenAICompatibleLLMClient:
@@ -629,6 +747,12 @@ def _usage_summary(
 ) -> dict[str, Any]:
     usage = body.get("usage") if isinstance(body, dict) else {}
     usage = usage if isinstance(usage, dict) else {}
+    prompt_details = usage.get("prompt_tokens_details")
+    prompt_details = prompt_details if isinstance(prompt_details, dict) else {}
+    completion_details = usage.get("completion_tokens_details")
+    completion_details = (
+        completion_details if isinstance(completion_details, dict) else {}
+    )
     prompt_tokens = _int_or_none(
         usage.get("prompt_tokens", usage.get("input_tokens"))
     )
@@ -643,10 +767,28 @@ def _usage_summary(
     estimated_prompt_tokens = _estimated_tokens(prompt)
     estimated_completion_tokens = _estimated_tokens(text)
     estimated_total_tokens = estimated_prompt_tokens + estimated_completion_tokens
+    prompt_cache_hit_tokens = _int_or_none(
+        usage.get(
+            "prompt_cache_hit_tokens",
+            prompt_details.get("cached_tokens"),
+        )
+    )
+    prompt_cache_miss_tokens = _int_or_none(
+        usage.get("prompt_cache_miss_tokens")
+    )
+    reasoning_tokens = _int_or_none(
+        completion_details.get(
+            "reasoning_tokens",
+            usage.get("reasoning_tokens"),
+        )
+    )
     return {
         "source": "provider_usage" if usage else "char_estimate",
         "prompt_tokens": prompt_tokens,
+        "prompt_cache_hit_tokens": prompt_cache_hit_tokens,
+        "prompt_cache_miss_tokens": prompt_cache_miss_tokens,
         "completion_tokens": completion_tokens,
+        "reasoning_tokens": reasoning_tokens,
         "total_tokens": total_tokens,
         "estimated_prompt_tokens": estimated_prompt_tokens,
         "estimated_completion_tokens": estimated_completion_tokens,
@@ -695,18 +837,91 @@ def _estimated_tokens(text: str) -> int:
     return max(1, (len(text) + 3) // 4)
 
 
-def _http_error_body(exc: urllib.error.HTTPError) -> str:
+def _http_error_body(exc: urllib.error.HTTPError) -> bytes:
     try:
-        return exc.read().decode("utf-8", errors="replace")
+        return exc.read()
     except Exception:
-        return ""
+        return b""
 
 
-def _preview_response_body(text: str, limit: int = 1000) -> str:
-    value = text if isinstance(text, str) else str(text)
-    if len(value) <= limit:
-        return value
-    return value[:limit] + "\n...[truncated]"
+def _provider_payload_audit(payload: str | bytes) -> dict[str, Any]:
+    encoded = payload.encode("utf-8") if isinstance(payload, str) else payload
+    return {
+        "provider_payload_bytes": len(encoded),
+        "provider_payload_sha256": f"sha256:{hashlib.sha256(encoded).hexdigest()}",
+    }
+
+
+def _provider_response_metadata(body: Any) -> dict[str, Any]:
+    if not isinstance(body, dict):
+        return {}
+    metadata: dict[str, Any] = {
+        "response_id": str(body.get("id") or ""),
+        "response_object": str(body.get("object") or ""),
+        "response_model": str(body.get("model") or ""),
+        "system_fingerprint": str(body.get("system_fingerprint") or ""),
+    }
+    created = _int_or_none(body.get("created"))
+    if created is not None:
+        metadata["response_created"] = created
+    choices = body.get("choices")
+    if not isinstance(choices, list):
+        return metadata
+    metadata["response_choice_count"] = len(choices)
+    if not choices or not isinstance(choices[0], dict):
+        return metadata
+    first_choice = choices[0]
+    metadata["finish_reason"] = str(first_choice.get("finish_reason") or "")
+    message = first_choice.get("message")
+    if not isinstance(message, dict):
+        return metadata
+    reasoning_content = message.get("reasoning_content")
+    if isinstance(reasoning_content, str):
+        metadata["reasoning_content_chars"] = len(reasoning_content)
+        metadata["reasoning_content_sha256"] = _text_sha256(reasoning_content)
+    return metadata
+
+
+def _provider_retry_metadata(
+    *,
+    attempt_count: int,
+    retry_reasons: list[str],
+    retry_delays: list[float],
+) -> dict[str, Any]:
+    return {
+        "provider_attempt_count": attempt_count,
+        "provider_retry_count": len(retry_reasons),
+        "provider_retry_reasons": list(retry_reasons),
+        "provider_retry_delays_seconds": list(retry_delays),
+    }
+
+
+def _provider_error_reason(exc: LLMRequestError) -> str:
+    value = exc.metadata.get("error_reason")
+    return str(value or exc.reason)
+
+
+def _is_retryable_provider_error(exc: LLMRequestError) -> bool:
+    if exc.reason in {"timeout", "url_error"}:
+        return True
+    status = _int_or_none(exc.metadata.get("http_status"))
+    return status == 408 or status == 429 or (status is not None and 500 <= status < 600)
+
+
+def _retry_delay(
+    *,
+    retry_index: int,
+    backoff_seconds: tuple[float, ...],
+) -> float:
+    if not backoff_seconds:
+        return 0.0
+    if retry_index < len(backoff_seconds):
+        return float(backoff_seconds[retry_index])
+    return float(backoff_seconds[-1])
+
+
+def _text_sha256(text: str) -> str:
+    return f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}"
 
 
 def _int_or_none(value: Any) -> int | None:
@@ -721,6 +936,26 @@ def _float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _normalize_thinking(value: str | None) -> str | None:
+    if value is None or not str(value).strip():
+        return None
+    normalized = str(value).strip().lower()
+    if normalized not in {"enabled", "disabled"}:
+        raise ValueError("thinking must be 'enabled' or 'disabled'")
+    return normalized
+
+
+def _normalize_reasoning_effort(value: str | None) -> str | None:
+    if value is None or not str(value).strip():
+        return None
+    normalized = str(value).strip().lower()
+    if normalized not in {"minimal", "low", "medium", "high", "max"}:
+        raise ValueError(
+            "reasoning_effort must be one of minimal, low, medium, high, or max"
+        )
+    return normalized
 
 
 def _normalize_provider(provider: str) -> str:

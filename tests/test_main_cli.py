@@ -4,6 +4,7 @@ import json
 
 from code_intelligence_agent import main as cli_module
 from code_intelligence_agent.evaluation import github_repo_intelligence
+from code_intelligence_agent.evaluation import v3_repair_evaluation
 
 
 def test_top_level_cli_keeps_local_static_analysis(tmp_path, capsys):
@@ -65,4 +66,32 @@ def test_top_level_cli_agent_subcommand_enables_agent_mode(monkeypatch):
         "--format",
         "markdown",
         "--agent",
+    ]
+
+
+def test_top_level_cli_routes_v3_repair_evaluation(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v3_repair_evaluation_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v3_repair_evaluation,
+        "main",
+        fake_v3_repair_evaluation_main,
+    )
+
+    cli_module.main(
+        [
+            "v3-repair-eval",
+            "outputs_v3/example",
+            "--strategies",
+            "rule",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "outputs_v3/example",
+        "--strategies",
+        "rule",
     ]

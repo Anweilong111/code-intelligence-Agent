@@ -1,4 +1,5 @@
 import hashlib
+import io
 from pathlib import Path
 import json
 import tempfile
@@ -11,7 +12,9 @@ from code_intelligence_agent.agents.llm_client import (
     DEEPSEEK_CHAT_COMPLETIONS_URL,
     JUDGE_SYSTEM_PROMPT,
     LLMRequestError,
+    LLMResponse,
     OpenAICompatibleLLMClient,
+    RetryingLLMClient,
     SequenceLLMClient,
     StaticLLMClient,
     create_alibaba_judge_client,
@@ -215,6 +218,182 @@ def test_openai_compatible_client_records_usage_cost_and_latency(monkeypatch):
     assert metadata["latency_ms"] >= 0
     assert metadata["api_key_fingerprint"].startswith("sha256:")
     assert "fake-key" not in json.dumps(metadata)
+
+
+def test_openai_compatible_client_sends_v3_controls_without_persisting_raw_response(
+    monkeypatch,
+):
+    requests = []
+    response_body = {
+        "id": "chatcmpl-v3",
+        "object": "chat.completion",
+        "created": 1784044800,
+        "model": "deepseek-v4-pro",
+        "system_fingerprint": "fp-test",
+        "provider_private_field": "must-not-be-persisted",
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "message": {
+                    "content": json.dumps({"files": []}),
+                    "reasoning_content": "private-provider-reasoning",
+                },
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 20,
+            "prompt_cache_hit_tokens": 7,
+            "prompt_cache_miss_tokens": 13,
+            "completion_tokens": 11,
+            "total_tokens": 31,
+            "completion_tokens_details": {"reasoning_tokens": 5},
+        },
+    }
+
+    def fake_urlopen(request, timeout):
+        requests.append((request, timeout))
+        return _FakeHTTPResponse(json.dumps(response_body))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        timeout=300,
+        temperature=0,
+        max_tokens=32768,
+        response_format={"type": "json_object"},
+        thinking="enabled",
+        reasoning_effort="high",
+    )
+
+    response = client.complete("Return a JSON repair candidate.")
+    sent = json.loads(requests[0][0].data.decode("utf-8"))
+    serialized_metadata = json.dumps(response.metadata)
+
+    assert sent["temperature"] == 0
+    assert sent["max_tokens"] == 32768
+    assert sent["response_format"] == {"type": "json_object"}
+    assert sent["thinking"] == {"type": "enabled"}
+    assert sent["reasoning_effort"] == "high"
+    assert response.metadata["response_model"] == "deepseek-v4-pro"
+    assert response.metadata["finish_reason"] == "stop"
+    assert response.metadata["reasoning_content_chars"] == 26
+    assert response.metadata["usage"]["prompt_cache_hit_tokens"] == 7
+    assert response.metadata["usage"]["prompt_cache_miss_tokens"] == 13
+    assert response.metadata["usage"]["reasoning_tokens"] == 5
+    assert "raw" not in response.metadata
+    assert "response_preview" not in response.metadata
+    assert "must-not-be-persisted" not in serialized_metadata
+    assert "private-provider-reasoning" not in serialized_metadata
+
+
+def test_openai_compatible_client_hashes_http_error_body_without_exposing_it(
+    monkeypatch,
+):
+    secret_body = b'{"error":"provider-private-detail"}'
+
+    def fake_urlopen(request, timeout):
+        del request, timeout
+        raise urllib.error.HTTPError(
+            "https://api.deepseek.com/chat/completions",
+            429,
+            "rate limited",
+            {},
+            io.BytesIO(secret_body),
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+    )
+
+    try:
+        client.complete("repair this function")
+    except LLMRequestError as exc:
+        serialized = json.dumps(exc.metadata)
+        assert exc.metadata["http_status"] == 429
+        assert exc.metadata["provider_payload_bytes"] == len(secret_body)
+        assert exc.metadata["provider_payload_sha256"].startswith("sha256:")
+        assert "provider-private-detail" not in serialized
+        assert "response_preview" not in exc.metadata
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
+
+
+def test_retrying_llm_client_retries_transient_failures_within_one_request():
+    class TransientClient:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, prompt):
+            del prompt
+            self.calls += 1
+            if self.calls == 1:
+                raise LLMRequestError(
+                    "url_error",
+                    "temporary network failure",
+                    {"error_reason": "network_unavailable"},
+                )
+            if self.calls == 2:
+                raise LLMRequestError(
+                    "http_error",
+                    "temporary provider failure",
+                    {"http_status": 503, "error_reason": "http_503"},
+                )
+            return LLMResponse(text='{"files": []}', metadata={"status": "pass"})
+
+    transient_client = TransientClient()
+    delays = []
+    client = RetryingLLMClient(
+        transient_client,
+        max_retries=2,
+        backoff_seconds=(0.1, 0.2),
+        sleeper=delays.append,
+    )
+
+    response = client.complete("repair")
+
+    assert transient_client.calls == 3
+    assert delays == [0.1, 0.2]
+    assert response.metadata["provider_attempt_count"] == 3
+    assert response.metadata["provider_retry_count"] == 2
+    assert response.metadata["provider_retry_reasons"] == [
+        "network_unavailable",
+        "http_503",
+    ]
+
+
+def test_retrying_llm_client_does_not_retry_authentication_failure():
+    class AuthenticationFailureClient:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, prompt):
+            del prompt
+            self.calls += 1
+            raise LLMRequestError(
+                "http_error",
+                "authentication failed",
+                {"http_status": 401, "error_reason": "http_401"},
+            )
+
+    auth_client = AuthenticationFailureClient()
+    delays = []
+    client = RetryingLLMClient(auth_client, sleeper=delays.append)
+
+    try:
+        client.complete("repair")
+    except LLMRequestError as exc:
+        assert auth_client.calls == 1
+        assert delays == []
+        assert exc.metadata["provider_attempt_count"] == 1
+        assert exc.metadata["provider_retry_count"] == 0
+        assert exc.metadata["provider_terminal_error_reason"] == "http_401"
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
 
 
 def test_openai_compatible_client_raises_structured_request_error(monkeypatch):
