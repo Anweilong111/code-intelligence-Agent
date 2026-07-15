@@ -1,7 +1,7 @@
 # V3 Phase 0 Experiment Protocol
 
 - Status: `pass`
-- Protocol SHA-256: `38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445`
+- Protocol SHA-256: `b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4`
 - Baseline: `v2-baseline` -> `cf571489ac35c4dfcff44d7def0c9310b8206b2b`
 - Baseline tag verified: `True`
 - Provider/model: `deepseek/deepseek-v4-pro`

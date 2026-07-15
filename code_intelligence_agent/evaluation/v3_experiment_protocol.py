@@ -44,6 +44,7 @@ FAILURE_LAYERS = {
 PROVIDER_FAILURE_CATEGORIES = {
     "authentication",
     "authorization",
+    "billing_or_quota",
     "rate_limit",
     "network",
     "timeout",

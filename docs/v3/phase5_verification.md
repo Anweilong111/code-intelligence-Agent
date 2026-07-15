@@ -51,9 +51,9 @@ successes and do not enter pass@1/pass@3.
 
 | Gate | Result | Duration |
 | --- | --- | ---: |
-| Phase 5 + repair regression | 85 passed, 1 skipped | 9.79 s |
-| All V3 tests | 120 passed, 1 skipped | 7.78 s |
-| Full pytest suite | 1395 passed, 2 skipped | 859.98 s |
+| Phase 5 + repair regression | 86 passed, 1 skipped | 9.86 s |
+| All V3 tests | 121 passed, 1 skipped | 8.05 s |
+| Full pytest suite | 1396 passed, 2 skipped | 899.19 s |
 | Release hygiene | 5/5 checks, 524 candidate files | n/a |
 
 The two full-suite skips attempt to create symbolic links on Windows; the host
@@ -75,7 +75,8 @@ paths and is LF-normalized.
   imports or exports.
 - API compatibility is intentionally strict and may reject valid refactors.
 - Live Rule/LLM/Hybrid repair rates remain unavailable until the paid 120-trial
-  experiment receives a fresh environment-injected API key.
+  evaluation runs with environment-injected provider access that has valid
+  authentication, billing/quota, and frozen-model availability.
 
 See the [semantic validation protocol](phase5_semantic_validation_protocol.md)
 and [machine-readable calibration](phase5_semantic_calibration.json) for the

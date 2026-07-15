@@ -7,7 +7,7 @@
   "complete_release_status": "pending",
   "claim_eligible": false,
   "release_decision": {
-    "reason": "phase0_through_phase6_offline_evidence_passes_but_live_llm_and_hybrid_trials_are_pending",
+    "reason": "phase0_through_phase6_offline_evidence_passes_but_live_trials_are_pending_and_provider_billing_or_quota_is_blocked",
     "offline_phase_gate_count": 7,
     "offline_phase_pass_count": 7,
     "live_trial_expected_count": 120,
@@ -15,7 +15,9 @@
     "live_llm_trial_expected_count": 60,
     "live_hybrid_trial_expected_count": 60,
     "missing_live_metrics_are_null": true,
-    "complete_release_requires_fresh_environment_injected_key": true
+    "complete_release_requires_environment_injected_key": true,
+    "complete_release_requires_provider_billing_or_quota_restored": true,
+    "latest_live_provider_blocker": "billing_or_quota_http_402"
   },
   "unified_evaluation": {
     "status": "partial",
@@ -43,18 +45,18 @@
     },
     "v3_memory_security_release_regression": {
       "status": "pass",
-      "passed": 154,
+      "passed": 177,
       "skipped": 2,
       "failed": 0,
-      "deselected": 1220,
-      "duration_seconds": 20.55
+      "deselected": 1219,
+      "duration_seconds": 40.39
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1395,
+      "passed": 1396,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 859.98
+      "duration_seconds": 899.19
     },
     "release_hygiene": {
       "status": "pass",
@@ -83,19 +85,29 @@
   },
   "artifacts": {
     "docs/v3/phase7_release_protocol.md": "c65f85fc163b602985033a72da49b6e9b78c0bda819419bd535639e72f4914c0",
-    "docs/v3/phase7_unified_evaluation.json": "5946d993281b74a74de0bcda58d247fcbd5a8015cc45f42bf0095da647b9a335",
-    "docs/v3/phase7_unified_evaluation.md": "ed7b22ef5a17f71af7bd37aa9e5b6e74762d15186f8c4e8de1a2589cbc46efad",
-    "code_intelligence_agent/evaluation/v3_release_evaluation.py": "645b92efa7dca21384dbf7b5ffd6fe7350b29c9eaffd78ad1740726b1c122031",
-    "code_intelligence_agent/evaluation/v3_repair_evaluation.py": "e9346119a3fa1d5b044c93ae07e1465ca7fee606bbe1bdb9cc6c459f9cdd661e",
+    "docs/v3/phase7_unified_evaluation.json": "25de567b190c08f1c41b53d09ca616022ffcac3c2b625e3b48f121cda90e3016",
+    "docs/v3/phase7_unified_evaluation.md": "bf3c3245d4023ab94f8327939e161c0af7b11d0ed9751383ec9c3f020321173e",
+    "code_intelligence_agent/evaluation/v3_release_evaluation.py": "6d12626bcd84b97cd634f4dbadfedfd6c0a4fb7f1e93bc4e0db6eb54323a3e8d",
+    "code_intelligence_agent/evaluation/v3_repair_evaluation.py": "a4bb9a380b99e72e9bf1581c248b78d8bf77d6151c9f3a697669c74fa0bd52b3",
+    "code_intelligence_agent/evaluation/v3_repair_execution.py": "3b856fb68f6e84ffa863b109f2596b501de5684d4e76c062cfa344c929edee20",
+    "code_intelligence_agent/evaluation/v3_experiment_protocol.py": "6ff933feb5f989c2d7d4dabcd511ad9b77773f7aad03550a3da72df681fde044",
     "code_intelligence_agent/agents/llm_client.py": "d79ff0ab2afd0e36a139fcf6158b3dd270077152a8bd0143c0c1f7367bc63412",
     "code_intelligence_agent/agents/llm_transport_worker.py": "6639e630ac39500717d5b5c1fed4148177a8496a2f65ad0fc6ed6266a23d6e43",
     "code_intelligence_agent/main.py": "0a7dddb1c6275f6b061c4f141365d7b0a0588470758bee9ad226a3258fffe490",
-    "tests/test_v3_release_evaluation.py": "156b1db9b9d58ea20b894bb2213734452302d8435f857c98d4e92879a7eb25f0",
-    "tests/test_v3_repair_trial.py": "a50192aa3a9aacc9babd1eae185cf62bcca75352043e1abbd79680a7dd61d39d",
+    "datasets/v3_real_bugs/experiment_protocol.json": "aa19bff782351a585a61ed7b0674b431617e7e6e685c651ff9593ce5e1764306",
+    "tests/test_v3_release_evaluation.py": "a1802a570c456c3622bb9a7c3c76b1cd77a43c0274bf84039f2a62b27dae30c8",
+    "tests/test_v3_repair_trial.py": "16f0781aae21b8f152737adc86fd3bc77cc380d056a28a48c73a654c9d4db9f9",
     "tests/test_llm_judge.py": "30761a90affcc8f5503c59a0848cc263b1a76e86465f39bef2f15d76b90bc997",
     "tests/test_llm_transport_worker.py": "d6ee5c5c90ff8406b9920f2e3496d67b2e8c77d282a71e4989bbbfda37bee939",
-    "docs/v3/phase3_repair_evaluation_protocol.md": "20733b1607579776838a78c8c565a88e69409aa99ed07878f138a75ae70fe80d",
-    "docs/v3/phase5_verification.json": "b70447ef98a6b93b7de32424d8b446262d0a048303a450aac77da4e6b92dbc8c",
+    "docs/v3/phase0_experiment_protocol.json": "69123d742e9911566be81c099a5d14486ea2bb3118b21b26c8e9c9e6e7e5f560",
+    "docs/v3/phase0_experiment_protocol.md": "5e48653642468aafd7cb716a296433ba962d589834d5314a95ce37331970c103",
+    "docs/v3/phase0_verification.json": "0c2577c5a47a13f32eb76ae44ce8b4b0ac82adf19874509d9a30d847d38f9460",
+    "docs/v3/phase0_verification.md": "c938568f7d2e60c26a7ba51aba4885334e862fd9cee849e9bd893dd3a77f19f4",
+    "docs/v3/phase3_offline_verification.json": "e0aecd098b7f331124995e31211dce2d6d331ca034a4cbada866a4e5f097d8ce",
+    "docs/v3/phase3_offline_verification.md": "c5ec7f600df5fbfb016c8fc117df8b363b45152168faf0c351f24ddc84cdbf71",
+    "docs/v3/phase3_repair_evaluation_protocol.md": "0f89aeaff3688d3530efe77c7eb4fa1a14055c5364d59b5ae5e32ae746365c4b",
+    "docs/v3/phase5_verification.json": "38081b290cadcc06a756d914641ae4ebfe50713887733902aa3ea7d58136a6c1",
+    "docs/v3/phase5_verification.md": "a24f73a2252d14d4b12fbf26d56ef84bd0241c524a3e27b18d98ccc1297407f0",
     "README.MD": "cbc843324700c7b3c341615828761ed190946d3daa03637d31515f758bc54acb"
   },
   "claim_boundaries": [
@@ -104,6 +116,6 @@
     "The two semantic calibration successes are human-fix validator evidence and are not Agent-generated repairs.",
     "Controlled memory and hostile-repository fixtures do not establish arbitrary-world success or a container security boundary.",
     "V2 and V3 startup counts are not treated as a causal uplift because their execution protocols differ.",
-    "No historical API key is reused; paid trials require a fresh key supplied through the process environment."
+    "Paid trials require an environment-injected key with active authentication, billing/quota, and frozen-model access."
   ]
 }

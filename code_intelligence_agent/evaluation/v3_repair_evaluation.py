@@ -7,7 +7,7 @@ import os
 import sys
 import uuid
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,6 +25,14 @@ from code_intelligence_agent.evaluation.v3_repair_orchestrator import (
 
 
 ALL_STRATEGIES = ("rule", "llm", "hybrid")
+SYSTEMIC_PROVIDER_FAILURE_CATEGORIES = frozenset(
+    {
+        "authentication",
+        "authorization",
+        "billing_or_quota",
+        "model_unavailable",
+    }
+)
 TRIAL_IMPLEMENTATION_FILES = (
     "agents/bug_detector.py",
     "agents/llm_client.py",
@@ -124,6 +132,7 @@ def run_v3_repair_evaluation(
     }
     records: list[dict[str, Any]] = []
     case_results: list[dict[str, Any]] = []
+    systemic_provider_blocker: dict[str, Any] | None = None
     started_at = _utc_now()
     for case in accepted:
         case_id = str(case.get("case_id") or "")
@@ -210,6 +219,7 @@ def run_v3_repair_evaluation(
             )
             for strategy in selected_strategies
         }
+        case_systemic_provider_blocker: dict[str, Any] | None = None
         if not prepare_only:
             ordered_trial_results: list[tuple[int, dict[str, Any]]] = []
             pending_jobs: list[dict[str, Any]] = []
@@ -293,12 +303,61 @@ def run_v3_repair_evaluation(
                 )
                 return _int(job["order"], 0), trial_result
 
+            case_systemic_provider_blocker = (
+                _systemic_provider_blocker_from_trial_results(
+                    case_id,
+                    [result for _, result in ordered_trial_results],
+                )
+            )
             worker_count = min(max(1, max_workers), max(1, len(pending_jobs)))
-            if pending_jobs and worker_count > 1:
-                with ThreadPoolExecutor(max_workers=worker_count) as executor:
-                    ordered_trial_results.extend(executor.map(execute_job, pending_jobs))
-            else:
-                ordered_trial_results.extend(execute_job(job) for job in pending_jobs)
+            if pending_jobs and case_systemic_provider_blocker is None:
+                if worker_count > 1:
+                    pending_iterator = iter(pending_jobs)
+                    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                        running = {}
+                        for _ in range(worker_count):
+                            job = next(pending_iterator, None)
+                            if job is None:
+                                break
+                            running[executor.submit(execute_job, job)] = job
+                        while running:
+                            completed, _ = wait(
+                                tuple(running),
+                                return_when=FIRST_COMPLETED,
+                            )
+                            for future in completed:
+                                running.pop(future)
+                                ordered_trial_results.append(future.result())
+                            case_systemic_provider_blocker = (
+                                _systemic_provider_blocker_from_trial_results(
+                                    case_id,
+                                    [
+                                        result
+                                        for _, result in ordered_trial_results
+                                    ],
+                                )
+                            )
+                            if case_systemic_provider_blocker is not None:
+                                continue
+                            for _ in range(len(completed)):
+                                job = next(pending_iterator, None)
+                                if job is None:
+                                    break
+                                running[executor.submit(execute_job, job)] = job
+                else:
+                    for job in pending_jobs:
+                        ordered_trial_results.append(execute_job(job))
+                        case_systemic_provider_blocker = (
+                            _systemic_provider_blocker_from_trial_results(
+                                case_id,
+                                [
+                                    result
+                                    for _, result in ordered_trial_results
+                                ],
+                            )
+                        )
+                        if case_systemic_provider_blocker is not None:
+                            break
             for _, trial_result in sorted(ordered_trial_results, key=lambda item: item[0]):
                 trial_results.append(_trial_summary(trial_result))
                 records.extend(
@@ -350,12 +409,27 @@ def run_v3_repair_evaluation(
                 "trials": trial_results,
             }
         )
+        if case_systemic_provider_blocker is not None:
+            systemic_provider_blocker = case_systemic_provider_blocker
+            break
     selected_case_ids = [str(case.get("case_id") or "") for case in accepted]
     record_audit = validate_run_records(
         records,
         protocol=protocol,
         require_complete=False,
     )
+    processed_case_ids = {
+        str(result.get("case_id") or "") for result in case_results
+    }
+    if systemic_provider_blocker is not None:
+        systemic_provider_blocker["unprocessed_case_ids"] = [
+            case_id
+            for case_id in selected_case_ids
+            if case_id not in processed_case_ids
+        ]
+        systemic_provider_blocker["unprocessed_case_count"] = len(
+            systemic_provider_blocker["unprocessed_case_ids"]
+        )
     if prepare_only:
         metrics = {}
         completeness = {
@@ -392,6 +466,7 @@ def run_v3_repair_evaluation(
             "pass"
             if record_audit["status"] == "pass"
             and completeness["status"] == "pass"
+            and systemic_provider_blocker is None
             else "fail"
         )
     result = {
@@ -417,6 +492,11 @@ def run_v3_repair_evaluation(
         "record_count": len(records),
         "record_audit": record_audit,
         "provider_model_metadata": summarize_v3_model_metadata(records, protocol),
+        "systemic_provider_blocker": (
+            systemic_provider_blocker
+            if systemic_provider_blocker is not None
+            else {"status": "none"}
+        ),
         "completeness": completeness,
         "metrics": metrics,
         "case_results": case_results,
@@ -1013,6 +1093,54 @@ def write_v3_repair_evaluation_artifacts(
     }
 
 
+def _systemic_provider_blocker_from_trial_results(
+    case_id: str,
+    trial_results: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    affected_trials: list[dict[str, Any]] = []
+    categories: set[str] = set()
+    blocker_record_count = 0
+    for trial_result in trial_results:
+        trial_categories: set[str] = set()
+        for record_value in _list(trial_result.get("records")):
+            record = _dict(record_value)
+            outcome_status = str(_dict(record.get("outcome")).get("status") or "")
+            category = str(_dict(record.get("failure")).get("category") or "")
+            if (
+                outcome_status == "provider_blocker"
+                and category in SYSTEMIC_PROVIDER_FAILURE_CATEGORIES
+            ):
+                trial_categories.add(category)
+                categories.add(category)
+                blocker_record_count += 1
+        if trial_categories:
+            affected_trials.append(
+                {
+                    "strategy": str(trial_result.get("strategy_mode") or ""),
+                    "trial_index": _int(trial_result.get("trial_index"), 0),
+                    "categories": sorted(trial_categories),
+                }
+            )
+    if not categories:
+        return None
+    affected_trials.sort(
+        key=lambda item: (
+            str(item.get("strategy") or ""),
+            _int(item.get("trial_index"), 0),
+        )
+    )
+    return {
+        "status": "halted",
+        "reason": "non_retryable_provider_access_failure",
+        "case_id": case_id,
+        "categories": sorted(categories),
+        "blocker_record_count": blocker_record_count,
+        "affected_trials": affected_trials,
+        "new_trial_submission_stopped": True,
+        "resume_requires_retry_blockers": True,
+    }
+
+
 def _write_text_lf(path: Path, content: str) -> None:
     with path.open("w", encoding="utf-8", newline="\n") as stream:
         stream.write(content)
@@ -1048,6 +1176,24 @@ def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:
             f"{_metric(row.get('semantic_claim_eligible_rate'))} | "
             f"{_metric(row.get('reverse_mutation_kill_rate'))} | "
             f"{_float(row.get('actual_cost_usd'), 0.0):.6f} |"
+        )
+    systemic_provider_blocker = _dict(result.get("systemic_provider_blocker"))
+    if str(systemic_provider_blocker.get("status") or "") == "halted":
+        lines.extend(
+            [
+                "",
+                "## Systemic Provider Blocker",
+                "",
+                f"- Case: `{systemic_provider_blocker.get('case_id')}`",
+                "- Categories: `"
+                + ", ".join(
+                    str(item)
+                    for item in _list(systemic_provider_blocker.get("categories"))
+                )
+                + "`",
+                "- New trial submission stopped: `true`",
+                "- Resume after resolving provider access with: `--retry-blockers`",
+            ]
         )
     lines.extend(
         [

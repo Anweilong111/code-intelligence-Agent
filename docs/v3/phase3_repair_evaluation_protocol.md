@@ -51,6 +51,10 @@ worker receives the request and API key only through standard input; neither is
 placed in its command line or inherited environment. A timeout terminates the
 worker and discards partial stdout/stderr. Provider retries remain attempts
 inside the same repair trial and receive independent bounded request budgets.
+Authentication, authorization, billing/quota, and unavailable-model failures
+are systemic provider blockers. After all already-running workers finish, the
+evaluator stops submitting new trials and cases, writes the incomplete trial
+matrix, and requires `--retry-blockers` after provider access is restored.
 
 ## Agent Loop
 

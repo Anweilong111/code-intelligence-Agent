@@ -700,6 +700,8 @@ def _provider_failure_category(error: LLMRequestError) -> str:
     status = _int(error.metadata.get("http_status"), 0)
     if status == 401:
         return "authentication"
+    if status == 402:
+        return "billing_or_quota"
     if status == 403:
         return "authorization"
     if status == 429:

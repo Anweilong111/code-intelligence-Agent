@@ -5,8 +5,13 @@
 Phase 7 is **offline-ready but incomplete**. All seven committed Phase 0-6
 evidence gates pass, the unified evaluator is deterministic, and the complete
 test suite passes. The release status remains `partial` because the required
-60 live LLM and 60 live Hybrid repair trials have not been executed with a
-fresh environment-injected provider key.
+60 live LLM and 60 live Hybrid repair trials have not completed under the
+amended protocol.
+
+The key and isolated transport probe succeeded on 2026-07-16, but the
+subsequent batch returned HTTP 402. Completion therefore requires restored
+provider billing/quota access and a rerun with `--retry-blockers`; a different
+Key is not by itself the acceptance condition.
 
 This distinction is enforced in code. Missing live values are emitted as JSON
 `null`, and `--require-complete` exits nonzero until a structurally valid
@@ -35,8 +40,8 @@ changes make the raw V2 `7/20` and V3 `19/20` repository-start counts
 | Gate | Result | Duration |
 | --- | --- | ---: |
 | Focused Phase 7 and repair regression | 41 passed | 5.26 s |
-| V3, memory, security, and release regression | 154 passed, 2 skipped | 20.55 s |
-| Full pytest suite | 1395 passed, 2 skipped | 859.98 s |
+| V3, memory, security, and release regression | 177 passed, 2 skipped | 40.39 s |
+| Full pytest suite | 1396 passed, 2 skipped | 899.19 s |
 | Release hygiene | 5/5 checks, 524 candidate files | current candidate set |
 
 The two skips are explicit Windows-host limitations: this host cannot create

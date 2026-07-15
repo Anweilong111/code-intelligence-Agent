@@ -2,8 +2,8 @@
 
 - Overall status: `partial`
 - Offline foundation: `pass`
-- Live LLM/Hybrid evaluation: `pending`
-- Verified: `2026-07-15`
+- Live LLM/Hybrid evaluation: `blocked_provider_billing_or_quota`
+- Verified: `2026-07-16`
 - Accepted real bugs: `20`
 - Rule trials: `20/20 complete`
 - Rule RunRecords: `58`, schema errors `0`
@@ -78,6 +78,20 @@ Independent live-model trials can run through a bounded worker pool. Each trial
 uses a separate model client, failed-candidate history, sandbox workspace,
 attempt directory, and trial ID; a concurrency regression test verifies that
 three trials execute on three independent workers.
+
+Each V3 HTTP request now runs in a trusted short-lived worker with a parent
+wall-clock deadline covering process startup, proxy, DNS, TLS, response headers,
+and response body. A 2026-07-16 real DeepSeek probe passed, followed by a 6/6
+trial smoke case whose 26,202-file artifact scan found zero API-key hits. The
+subsequent full batch returned HTTP 402, so paid execution was stopped. These
+trials were then invalidated by the amended protocol and are not counted as
+release metrics.
+
+HTTP 402 is classified as `billing_or_quota`. Authentication, authorization,
+billing/quota, and unavailable-model failures activate a circuit breaker: no
+new trial or case is submitted after already-running workers finish. Once
+provider access is restored, the amended protocol must be rerun with
+`--retry-blockers`.
 
 Whole-module candidates must also preserve existing function, method, class,
 generic-parameter, and decorator contracts. Live-model RunRecords distinguish

@@ -940,6 +940,17 @@ def test_provider_error_is_classified_separately_from_repair_failure():
     assert execution["failure_category"] == "authentication"
     assert execution["validation"]["targeted_tests"] == "not_run"
 
+    billing_error = LLMRequestError(
+        "http_error",
+        "LLM request failed with HTTP 402.",
+        {"http_status": 402, "provider_retry_count": 0},
+    )
+    billing_execution = provider_blocker_execution(billing_error)
+
+    assert billing_execution["outcome_status"] == "provider_blocker"
+    assert billing_execution["failure_layer"] == "provider"
+    assert billing_execution["failure_category"] == "billing_or_quota"
+
 
 def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(
     tmp_path,
@@ -1697,6 +1708,175 @@ def test_live_trial_workers_execute_independent_trials_concurrently(
         assert trial["execution_contract"]["targeted_timeout_seconds"] == 120
         assert trial["execution_contract_sha256"]
     assert len(worker_threads) == 3
+
+
+def test_systemic_billing_blocker_stops_new_trials_and_cases(
+    tmp_path,
+    monkeypatch,
+):
+    project_root = Path(__file__).resolve().parents[1]
+    protocol_path = project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    first_case = _case()
+    first_case["status"] = "accepted"
+    second_case = copy.deepcopy(first_case)
+    second_case["case_id"] = "case-002"
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "catalog_sha256": "catalog",
+                "cases": [first_case, second_case],
+            }
+        ),
+        encoding="utf-8",
+    )
+    profiles_path = tmp_path / "profiles.json"
+    profiles_path.write_text(json.dumps({"profiles": []}), encoding="utf-8")
+    seed = tmp_path / "seed"
+    seed.mkdir()
+    reproduction = tmp_path / "reproduction.json"
+    reproduction.write_text(
+        json.dumps({"bug_targeted": {"results": [{"status": "fail"}]}}),
+        encoding="utf-8",
+    )
+    trial_calls = []
+
+    monkeypatch.setenv("CIA_LLM_API_KEY", "fixture-key")
+    monkeypatch.setattr(
+        repair_eval,
+        "audit_v3_reproduction_seed",
+        lambda *args, **kwargs: {
+            "status": "pass",
+            "seed_repository": str(seed),
+            "reproduction_artifact": str(reproduction),
+        },
+    )
+    monkeypatch.setattr(
+        repair_eval,
+        "resolve_v3_case_runtime",
+        lambda *args, **kwargs: {
+            "status": "pass",
+            "python_executable": sys.executable,
+        },
+    )
+
+    def fake_prepare(case, *args, **kwargs):
+        del args, kwargs
+        return PreparedV3RepairCase(
+            case=case,
+            seed_repository=seed,
+            dynamic_evidence={"status": "pass"},
+            analysis_scope={"mode": "full_repository", "analysis_paths": None},
+            analysis_scope_ground_truth_audit={
+                "status": "pass",
+                "selection_snapshot_sha256": "selection",
+                "analysis_scope_file_recall": 1.0,
+                "editable_file_recall": 1.0,
+            },
+            localization={"status": "pass", "rankings": []},
+            editable_regions=[],
+            model_context={},
+            model_context_audit={"status": "pass", "context_sha256": "context"},
+            model_context_artifact="contexts/case.json",
+            preparation_artifacts={},
+        )
+
+    def fake_trial(protocol, prepared_case, **kwargs):
+        case = prepared_case.case
+        strategy = kwargs["strategy_mode"]
+        trial_index = kwargs["trial_index"]
+        trial_calls.append((case["case_id"], strategy, trial_index))
+        record = _evaluation_record(
+            protocol,
+            case=case,
+            trial_index=trial_index,
+            verified=False,
+            reflection_round=0,
+        )
+        record["outcome"] = {
+            "status": "provider_blocker",
+            "direct_success": False,
+            "reflection_recovered": False,
+        }
+        record["failure"] = {
+            "layer": "provider",
+            "category": "billing_or_quota",
+            "reason": "LLM request failed with HTTP 402.",
+        }
+        return {
+            "schema_version": "3.0",
+            "strategy_mode": strategy,
+            "trial_index": trial_index,
+            "trial_id": str(uuid.uuid4()),
+            "status": "fail",
+            "verified_repair": False,
+            "winning_run_id": "",
+            "record_count": 1,
+            "records": [record],
+            "candidates": [],
+        }
+
+    monkeypatch.setattr(repair_eval, "prepare_v3_repair_case", fake_prepare)
+    monkeypatch.setattr(repair_eval, "run_v3_repair_trial", fake_trial)
+
+    result = run_v3_repair_evaluation(
+        project_root=project_root,
+        protocol_path=protocol_path,
+        catalog_path=catalog_path,
+        environment_profiles_path=profiles_path,
+        reproduction_root=tmp_path,
+        output_dir=tmp_path / "evaluation",
+        strategies=["llm", "hybrid"],
+        live_model=True,
+        resume=False,
+        max_workers=3,
+    )
+
+    assert len(trial_calls) == 3
+    assert set(trial_calls) == {
+        ("case-001", "llm", 1),
+        ("case-001", "llm", 2),
+        ("case-001", "llm", 3),
+    }
+    assert result["status"] == "fail"
+    assert result["systemic_provider_blocker"] == {
+        "status": "halted",
+        "reason": "non_retryable_provider_access_failure",
+        "case_id": "case-001",
+        "categories": ["billing_or_quota"],
+        "blocker_record_count": 3,
+        "affected_trials": [
+            {
+                "strategy": "llm",
+                "trial_index": 1,
+                "categories": ["billing_or_quota"],
+            },
+            {
+                "strategy": "llm",
+                "trial_index": 2,
+                "categories": ["billing_or_quota"],
+            },
+            {
+                "strategy": "llm",
+                "trial_index": 3,
+                "categories": ["billing_or_quota"],
+            },
+        ],
+        "new_trial_submission_stopped": True,
+        "resume_requires_retry_blockers": True,
+        "unprocessed_case_ids": ["case-002"],
+        "unprocessed_case_count": 1,
+    }
+    assert result["completeness"]["expected_trial_count"] == 12
+    assert result["completeness"]["observed_trial_count"] == 3
+    assert result["completeness"]["missing_trial_count"] == 9
+    assert [item["case_id"] for item in result["case_results"]] == ["case-001"]
+    markdown = (tmp_path / "evaluation" / "evaluation.md").read_text(
+        encoding="utf-8"
+    )
+    assert "## Systemic Provider Blocker" in markdown
+    assert "`billing_or_quota`" in markdown
+    assert "`--retry-blockers`" in markdown
 
 
 def _evaluation_record(

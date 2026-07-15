@@ -27,12 +27,12 @@
 
 | Phase | Source status | Gate | Artifact | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `phase0` | `pass` | `pass` | `docs/v3/phase0_verification.json` | `f8205e10fb49` |
+| `phase0` | `pass` | `pass` | `docs/v3/phase0_verification.json` | `0c2577c5a47a` |
 | `phase1` | `pass` | `pass` | `docs/v3/phase1_verification.json` | `0fcd8fffc4ef` |
 | `phase2` | `pass` | `pass` | `docs/v3/phase2_verification.json` | `b87e5b3171d4` |
-| `phase3` | `partial` | `pass` | `docs/v3/phase3_offline_verification.json` | `5a21e7efa461` |
+| `phase3` | `partial` | `pass` | `docs/v3/phase3_offline_verification.json` | `e0aecd098b7f` |
 | `phase4` | `pass` | `pass` | `docs/v3/phase4_verification.json` | `da47701e940b` |
-| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `b70447ef98a6` |
+| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `38081b290cad` |
 | `phase6` | `pass` | `pass` | `docs/v3/phase6_verification.json` | `23a2613bac8f` |
 
 ## Metric Registry
@@ -78,7 +78,7 @@
 
 ## Pending Requirements
 
-- `fresh_environment_injected_api_key`: Inject a fresh provider key through the frozen protocol environment variable; never persist it.
+- `environment_injected_provider_access`: Use an environment-injected provider key with valid authentication, billing/quota, and frozen-model access; never persist the key.
 - `llm_trials`: Run 20 real bugs x 3 independent LLM trials (60 trials).
 - `hybrid_trials`: Run 20 real bugs x 3 independent Hybrid trials (60 trials).
 - `complete_live_artifact`: Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, and generator attribution.

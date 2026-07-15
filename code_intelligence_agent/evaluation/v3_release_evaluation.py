@@ -866,8 +866,11 @@ def _build_comparison_registry(
 def _pending_live_requirements(live: dict[str, Any]) -> list[dict[str, Any]]:
     return [
         {
-            "id": "fresh_environment_injected_api_key",
-            "requirement": "Inject a fresh provider key through the frozen protocol environment variable; never persist it.",
+            "id": "environment_injected_provider_access",
+            "requirement": (
+                "Use an environment-injected provider key with valid authentication, "
+                "billing/quota, and frozen-model access; never persist the key."
+            ),
         },
         {
             "id": "llm_trials",

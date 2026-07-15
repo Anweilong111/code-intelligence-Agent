@@ -2,7 +2,7 @@
   "schema_version": "3.0",
   "phase": "phase0_experiment_protocol",
   "status": "pass",
-  "verified_on": "2026-07-14",
+  "verified_on": "2026-07-16",
   "baseline": {
     "tag": "v2-baseline",
     "commit_sha": "cf571489ac35c4dfcff44d7def0c9310b8206b2b",
@@ -10,17 +10,29 @@
   },
   "protocol": {
     "path": "datasets/v3_real_bugs/experiment_protocol.json",
-    "sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+    "sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4",
     "validation_status": "pass",
     "validation_errors": 0,
     "frozen_prompt_count": 5,
     "run_record_schema_version": "3.0"
   },
+  "protocol_amendment": {
+    "amended_on": "2026-07-16",
+    "previous_protocol_sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+    "trigger": "A real DeepSeek batch returned HTTP 402 after the initial paid smoke evaluation.",
+    "changes": [
+      "Added billing_or_quota to the provider failure taxonomy.",
+      "Added a systemic provider circuit breaker that stops new trial and case submission while allowing already-running workers to finish.",
+      "Required --retry-blockers after provider access is restored."
+    ],
+    "historical_trials_invalidated": true,
+    "acceptance_gate_weakened": false
+  },
   "focused_tests": {
     "command": "python -m pytest -q tests/test_v1_baseline.py tests/test_v3_experiment_protocol.py tests/test_release_hygiene_audit.py",
-    "passed": 17,
+    "passed": 19,
     "failed": 0,
-    "duration_seconds": 1.79
+    "duration_seconds": 2.06
   },
   "full_test_suite": {
     "command": "python -m pytest -q",
@@ -51,6 +63,7 @@
     "trial_independence_enforced": true,
     "rule_llm_hybrid_attribution_enforced": true,
     "provider_and_environment_failures_separated": true,
+    "systemic_provider_failures_stop_new_paid_work": true,
     "verified_repair_requires_authoritative_validation": true,
     "raw_provider_payloads_forbidden_in_run_records": true,
     "api_keys_environment_only": true

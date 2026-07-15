@@ -9,7 +9,7 @@
     {
       "phase": "phase0",
       "artifact": "docs/v3/phase0_verification.json",
-      "sha256": "f8205e10fb49be21062053ccbc1355aed60c62dd546b62242684059641a9975c",
+      "sha256": "0c2577c5a47a13f32eb76ae44ce8b4b0ac82adf19874509d9a30d847d38f9460",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "phase0_experiment_protocol",
@@ -36,7 +36,7 @@
     {
       "phase": "phase3",
       "artifact": "docs/v3/phase3_offline_verification.json",
-      "sha256": "5a21e7efa46115c151c66f25fee3de106d16a3b1671c609092970718e56e580f",
+      "sha256": "e0aecd098b7f331124995e31211dce2d6d331ca034a4cbada866a4e5f097d8ce",
       "source_status": "partial",
       "gate_status": "pass",
       "phase_name": "phase3_real_model_repair_evaluation",
@@ -54,7 +54,7 @@
     {
       "phase": "phase5",
       "artifact": "docs/v3/phase5_verification.json",
-      "sha256": "b70447ef98a6b93b7de32424d8b446262d0a048303a450aac77da4e6b92dbc8c",
+      "sha256": "38081b290cadcc06a756d914641ae4ebfe50713887733902aa3ea7d58136a6c1",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "Phase 5 patch semantic correctness",
@@ -356,8 +356,8 @@
   },
   "pending_requirements": [
     {
-      "id": "fresh_environment_injected_api_key",
-      "requirement": "Inject a fresh provider key through the frozen protocol environment variable; never persist it."
+      "id": "environment_injected_provider_access",
+      "requirement": "Use an environment-injected provider key with valid authentication, billing/quota, and frozen-model access; never persist the key."
     },
     {
       "id": "llm_trials",

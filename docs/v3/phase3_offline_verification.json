@@ -3,11 +3,11 @@
   "phase": "phase3_real_model_repair_evaluation",
   "status": "partial",
   "offline_foundation_status": "pass",
-  "live_model_status": "pending",
-  "verified_on": "2026-07-15",
+  "live_model_status": "blocked_provider_billing_or_quota",
+  "verified_on": "2026-07-16",
   "protocol": {
     "path": "datasets/v3_real_bugs/experiment_protocol.json",
-    "sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+    "sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4",
     "rule_trials_per_case": 1,
     "llm_trials_per_case": 3,
     "hybrid_trials_per_case": 3,
@@ -110,12 +110,28 @@
     "parallelism": "Independent trials may run with a bounded worker count; each receives a distinct client, candidate history, workspace, attempt directory, and trial ID.",
     "credential_resolution": "The client checks every API-key environment variable declared by the frozen protocol; raw credentials are never included in V3 RunRecords.",
     "module_contract_safety": "Whole-module candidates preserve existing function, method, class-base, generic-parameter, and decorator contracts before sandbox execution.",
-    "model_request_audit": "RunRecords separate the frozen prompt-template hash from the complete request-prompt hash and record the provider-returned model identifier without storing raw private reasoning."
+    "model_request_audit": "RunRecords separate the frozen prompt-template hash from the complete request-prompt hash and record the provider-returned model identifier without storing raw private reasoning.",
+    "request_deadline": "V3 model calls run in a short-lived trusted worker; the parent enforces the frozen total wall-clock deadline across process startup, proxy, DNS, TLS, headers, and body.",
+    "systemic_provider_circuit_breaker": "Authentication, authorization, billing/quota, and unavailable-model failures stop new trial and case submission after already-running workers finish."
+  },
+  "latest_live_provider_observation": {
+    "observed_on": "2026-07-16",
+    "provider": "deepseek",
+    "model_id": "deepseek-v4-pro",
+    "transport_probe_status": "pass",
+    "transport_probe_timeout_mode": "isolated_total",
+    "smoke_case_trial_completeness": "6/6",
+    "smoke_artifact_secret_findings": 0,
+    "subsequent_batch_blocker": "billing_or_quota_http_402",
+    "batch_stopped_before_remaining_cases": true,
+    "historical_live_trials_invalidated_by_protocol_amendment": true,
+    "claim_eligible": false
   },
   "pending_acceptance_work": {
     "llm_trial_count": 60,
     "hybrid_trial_count": 60,
     "total_live_model_trials": 120,
+    "provider_access_requirement": "Restore billing/quota access, then rerun with --retry-blockers under the amended protocol.",
     "required_outputs": [
       "pass_at_1",
       "pass_at_3",

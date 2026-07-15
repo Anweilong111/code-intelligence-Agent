@@ -1,7 +1,7 @@
 {
   "schema_version": "3.0",
   "protocol_name": "code-intelligence-agent-v3-real-bug-repair",
-  "frozen_at": "2026-07-14",
+  "frozen_at": "2026-07-16",
   "baseline": {
     "tag": "v2-baseline",
     "commit_sha": "cf571489ac35c4dfcff44d7def0c9310b8206b2b",
@@ -130,6 +130,7 @@
     "provider": [
       "authentication",
       "authorization",
+      "billing_or_quota",
       "rate_limit",
       "network",
       "timeout",
@@ -179,5 +180,5 @@
     "raw_provider_response_in_run_record": false,
     "model_may_override_safety_controller": false
   },
-  "protocol_sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445"
+  "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4"
 }

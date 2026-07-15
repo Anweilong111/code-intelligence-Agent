@@ -1,10 +1,10 @@
 {
   "schema_version": "3.0",
-  "generated_at": "2026-07-14T16:05:36.569970+00:00",
+  "generated_at": "2026-07-15T18:36:06.959609+00:00",
   "status": "pass",
   "reason": "v3_phase0_protocol_frozen",
   "protocol_path": "datasets/v3_real_bugs/experiment_protocol.json",
-  "protocol_sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445",
+  "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4",
   "run_record_schema": {
     "$id": "code-intelligence-agent-v3-run-record",
     "schema_version": "3.0",
@@ -88,7 +88,7 @@
       "localization_v3": "1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86",
       "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88"
     },
-    "protocol_sha256": "38822eb4caa146106182717bb5847a725d4277a9ce9ba73e6b8c0f4108972445"
+    "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4"
   },
   "baseline": {
     "tag": "v2-baseline",
@@ -97,7 +97,7 @@
     "tag_matches": true
   },
   "current_environment": {
-    "head_commit": "cf571489ac35c4dfcff44d7def0c9310b8206b2b",
+    "head_commit": "082ce7b6033b6c06c3165a0462ad5d7609d8ebca",
     "branch": "codex/code-intelligence-agent-v3",
     "python_version": "3.13.12",
     "platform": "win32"

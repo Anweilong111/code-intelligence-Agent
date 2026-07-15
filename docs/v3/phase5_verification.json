@@ -5,8 +5,8 @@
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "fb232dc3da4e42eaea39224c8d629e4cd5b25b3ea5f4a463fbb6ed0b4e8777ae",
-    "implementation_hash_refresh_reason": "V3 model calls now execute in a trusted short-lived worker with a parent-enforced total wall-clock deadline covering process startup, proxy, DNS, connection, TLS, headers, and body. This changes trial execution and resume identity without changing the Phase 5 semantic acceptance contract.",
+    "trial_implementation_sha256": "677ff363206089f0f9d87ec4460fdfbba1072d7de98e14115b0733660db24e37",
+    "implementation_hash_refresh_reason": "The amended protocol adds billing_or_quota classification and a systemic provider circuit breaker after a real HTTP 402 observation. Together with isolated total request deadlines, this changes trial execution and resume identity without changing the Phase 5 semantic acceptance contract.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",
@@ -62,25 +62,25 @@
   "tests": {
     "phase5_and_repair_regression": {
       "status": "pass",
-      "passed": 85,
+      "passed": 86,
       "skipped": 1,
       "failed": 0,
-      "duration_seconds": 9.79
+      "duration_seconds": 9.86
     },
     "all_v3": {
       "status": "pass",
-      "passed": 120,
+      "passed": 121,
       "skipped": 1,
       "failed": 0,
       "deselected": 1276,
-      "duration_seconds": 7.78
+      "duration_seconds": 8.05
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1395,
+      "passed": 1396,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 859.98
+      "duration_seconds": 899.19
     },
     "release_hygiene": {
       "status": "pass",
@@ -104,6 +104,6 @@
     "Generated boundary/property probes were not applicable to the two calibration cases.",
     "Static cross-file checks do not prove dynamic imports or arbitrary runtime exports correct.",
     "The initial calibration contains two cases from one development repository.",
-    "The 120 paid live LLM and Hybrid trials remain pending until a fresh environment-injected key is available."
+    "The 120 paid live LLM and Hybrid trials remain pending until environment-injected provider access has valid authentication, billing/quota, and frozen-model availability."
   ]
 }
