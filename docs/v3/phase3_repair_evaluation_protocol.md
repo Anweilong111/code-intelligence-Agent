@@ -43,6 +43,8 @@ The independence unit is `(case, strategy, trial_index)`. Candidate history is
 not shared across trials. Provider retries remain inside the same model request
 and do not create a new trial. Reflection can inspect only the current trial's
 parent candidate and sanitized verification evidence.
+Each provider attempt is bounded by the protocol's 300-second total wall-clock
+budget; incremental response chunks do not reset that deadline.
 
 ## Agent Loop
 

@@ -90,7 +90,7 @@
     "code_intelligence_agent/main.py": "0a7dddb1c6275f6b061c4f141365d7b0a0588470758bee9ad226a3258fffe490",
     "tests/test_v3_release_evaluation.py": "f4c9d1767823354c0368f05da0720ddfb4e6e29fbe406ff3ef5f555dc6f9956b",
     "tests/test_v3_repair_trial.py": "7f2470722f04efc19aa7e93e9d1f49ad5833a4c45055dd050e1e3c8532353ab9",
-    "docs/v3/phase5_verification.json": "ee447df2465c9477c98b1ef6f111d47030284cd40eb309ef4b0862c2b29e12b1",
+    "docs/v3/phase5_verification.json": "84b78fc52a4a5173b7230c7bb4e3166357beaa5f78db2bc28410ad2136ddd312",
     "README.MD": "cbc843324700c7b3c341615828761ed190946d3daa03637d31515f758bc54acb"
   },
   "claim_boundaries": [

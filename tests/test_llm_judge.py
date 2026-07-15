@@ -427,6 +427,114 @@ def test_retrying_client_recovers_from_incomplete_chunked_response(monkeypatch):
     assert "part" not in json.dumps(response.metadata)
 
 
+def test_openai_client_reads_chunked_response_with_total_deadline(monkeypatch):
+    response_body = json.dumps(
+        {
+            "id": "chatcmpl-chunked",
+            "model": "deepseek-v4-pro",
+            "choices": [
+                {
+                    "message": {"content": '{"files": []}'},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+        }
+    ).encode("utf-8")
+
+    class Socket:
+        def __init__(self):
+            self.timeouts = []
+
+        def settimeout(self, value):
+            self.timeouts.append(value)
+
+    class Response:
+        def __init__(self):
+            self._chunks = [response_body[:17], response_body[17:], b""]
+            self.socket = Socket()
+            self.fp = type(
+                "FP",
+                (),
+                {"raw": type("Raw", (), {"_sock": self.socket})()},
+            )()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            del exc_type, exc, traceback
+
+        def read1(self, size):
+            assert size == 64 * 1024
+            return self._chunks.pop(0)
+
+    response = Response()
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda request, timeout: response,
+    )
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        timeout=7,
+    )
+
+    result = client.complete("repair")
+
+    assert result.text == '{"files": []}'
+    assert len(response.socket.timeouts) == 3
+    assert all(0 < value <= 7 for value in response.socket.timeouts)
+
+
+def test_openai_client_rejects_chunked_response_past_total_deadline(monkeypatch):
+    ticks = iter((0.0, 0.25, 1.1, 1.1))
+    monkeypatch.setattr(
+        "code_intelligence_agent.agents.llm_client.time.perf_counter",
+        lambda: next(ticks),
+    )
+
+    class Response:
+        def __init__(self):
+            self.read_count = 0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            del exc_type, exc, traceback
+
+        def read1(self, size):
+            assert size == 64 * 1024
+            self.read_count += 1
+            return b"provider-private-partial-response"
+
+    response = Response()
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda request, timeout: response,
+    )
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fake-key",
+        model="deepseek-v4-pro",
+        timeout=1,
+    )
+
+    try:
+        client.complete("repair")
+    except LLMRequestError as exc:
+        serialized = json.dumps(exc.metadata)
+        assert exc.reason == "timeout"
+        assert exc.metadata["error_reason"] == "timeout"
+        assert exc.metadata["latency_ms"] == 1100
+        assert "provider-private-partial-response" not in serialized
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
+    assert response.read_count == 1
+
+
 def test_retrying_llm_client_does_not_retry_authentication_failure():
     class AuthenticationFailureClient:
         def __init__(self):

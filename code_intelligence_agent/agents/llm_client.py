@@ -213,7 +213,11 @@ class OpenAICompatibleLLMClient:
         )
         try:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                response_bytes = response.read()
+                response_bytes = _read_response_with_deadline(
+                    response,
+                    started_at=started_at,
+                    timeout_seconds=self.timeout,
+                )
         except urllib.error.HTTPError as exc:
             error_body = _http_error_body(exc)
             metadata = self._request_metadata(
@@ -930,6 +934,43 @@ def _transport_error_reason(exc: BaseException) -> str:
     if isinstance(exc, BrokenPipeError):
         return "broken_pipe"
     return "transport_error"
+
+
+def _read_response_with_deadline(
+    response: Any,
+    *,
+    started_at: float,
+    timeout_seconds: int,
+) -> bytes:
+    read_once = getattr(response, "read1", None)
+    if not callable(read_once):
+        return response.read()
+
+    chunks: list[bytes] = []
+    while True:
+        remaining = float(timeout_seconds) - (time.perf_counter() - started_at)
+        if remaining <= 0:
+            raise TimeoutError("LLM response exceeded its total wall-clock deadline.")
+        _set_response_socket_timeout(response, remaining)
+        chunk = read_once(64 * 1024)
+        if not chunk:
+            return b"".join(chunks)
+        chunks.append(bytes(chunk))
+
+
+def _set_response_socket_timeout(response: Any, timeout_seconds: float) -> None:
+    fp = getattr(response, "fp", None)
+    raw = getattr(fp, "raw", None)
+    candidates = (
+        getattr(raw, "_sock", None),
+        getattr(fp, "_sock", None),
+        getattr(response, "_sock", None),
+    )
+    for candidate in candidates:
+        setter = getattr(candidate, "settimeout", None)
+        if callable(setter):
+            setter(max(0.001, timeout_seconds))
+            return
 
 
 def _is_retryable_provider_error(exc: LLMRequestError) -> bool:
