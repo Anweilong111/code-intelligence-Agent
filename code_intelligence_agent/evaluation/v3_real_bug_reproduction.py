@@ -18,6 +18,7 @@ from code_intelligence_agent.evaluation.github_repository_checkout import (
 from code_intelligence_agent.evaluation.repository_test_execution_result import (
     execute_repository_test_plan,
 )
+from code_intelligence_agent.tools.runtime_security import build_restricted_environment
 
 
 CheckoutFunction = Callable[..., dict[str, Any]]
@@ -549,7 +550,11 @@ def _runner_with_runtime_environment(
     conda_environment = (prefix / "conda-meta").is_dir()
 
     def configured_runner(command, **kwargs):
-        env = dict(kwargs.get("env") or os.environ)
+        provided_env = kwargs.get("env")
+        if provided_env is None:
+            env, _ = build_restricted_environment(sandbox_home=sandbox_home)
+        else:
+            env = dict(provided_env)
         if sandbox_home is not None:
             env["HOME"] = str(sandbox_home)
             env["USERPROFILE"] = str(sandbox_home)

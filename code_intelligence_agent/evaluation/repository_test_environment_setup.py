@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shlex
 import subprocess
@@ -9,6 +8,11 @@ import sys
 import tomllib
 from pathlib import Path
 from typing import Any
+
+from code_intelligence_agent.tools.runtime_security import (
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 SUPPORTED_REPOSITORY_TEST_ENVIRONMENT_SETUP_MODES = {"project", "runner_probe"}
@@ -448,9 +452,13 @@ def execute_repository_test_environment_setup(
             message="Repository root does not exist or is not a directory.",
             cwd=str(cwd),
         )
-    run = runner or subprocess.run
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    run = runner or run_restricted_process
+    setup_home = Path(str(plan.get("venv_path") or ".")).parent / ".cia-setup-home"
+    setup_home.mkdir(parents=True, exist_ok=True)
+    env, _ = build_restricted_environment(
+        sandbox_home=setup_home,
+        network_policy="allow",
+    )
     create = _run_setup_command(
         run,
         create_args,

@@ -11,6 +11,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from code_intelligence_agent.core.models import CodeEntity, TestExecutionSummary
+from code_intelligence_agent.tools.runtime_security import (
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 SUPPORTED_TEST_MODULES = frozenset({"pytest", "unittest"})
@@ -201,7 +205,13 @@ class CoverageRunner:
             handle.write(script)
             script_path = Path(handle.name)
         try:
-            completed = subprocess.run(
+            coverage_home = repo / ".cia-coverage-home"
+            coverage_home.mkdir(parents=True, exist_ok=True)
+            env, _ = build_restricted_environment(
+                overrides=self.environment,
+                sandbox_home=coverage_home,
+            )
+            completed = run_restricted_process(
                 [
                     self.python_executable,
                     str(script_path),
@@ -214,7 +224,7 @@ class CoverageRunner:
                 text=True,
                 timeout=self.timeout,
                 check=False,
-                env={**os.environ, **self.environment},
+                env=env,
             )
         except subprocess.TimeoutExpired as exc:
             return {

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +41,9 @@ def test_repository_test_execution_result_runs_safe_python_module_command(tmp_pa
     assert payload["python_executable_source"] == "current_interpreter"
     assert payload["failure_category"] == "none"
     assert "Repository Test Execution Result" in markdown
+    assert "Environment Isolation: `allowlisted_host_variables_plus_controlled_overrides`" in markdown
+    assert "Network Policy: `deny`" in markdown
+    assert "Resource Limits: cpu=" in markdown
     assert Path(paths["repository_test_execution_result_json"]).exists()
     assert Path(paths["repository_test_execution_result_markdown"]).exists()
 
@@ -192,7 +196,9 @@ def test_repository_test_execution_result_adds_src_layout_pythonpath(tmp_path, m
     assert payload["status"] == "pass"
     assert payload["automatic_environment_variable_names"] == ["PYTHONPATH"]
     assert payload["automatic_environment_variables"]["PYTHONPATH"] == str(src.resolve())
-    assert seen_env["PYTHONPATH"] == str(src.resolve())
+    pythonpath_entries = seen_env["PYTHONPATH"].split(os.pathsep)
+    assert pythonpath_entries[-1] == str(src.resolve())
+    assert Path(pythonpath_entries[0]).name == "runtime_guard"
     assert "Automatic Environment Variables" in markdown
 
 

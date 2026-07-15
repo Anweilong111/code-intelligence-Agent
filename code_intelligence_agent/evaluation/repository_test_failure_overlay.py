@@ -28,6 +28,10 @@ from code_intelligence_agent.evaluation.repository_test_execution_result import 
     _extract_count,
     _preview,
 )
+from code_intelligence_agent.tools.runtime_security import (
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 SUPPORTED_OVERLAY_RULES = {
@@ -110,7 +114,7 @@ def build_repository_test_failure_overlay(
     _copy_repository(root, overlay_root)
 
     attempts = []
-    run = runner or subprocess.run
+    run = runner or run_restricted_process
     for spec in case_specs:
         test_path = _write_overlay_test(overlay_root, spec)
         nodeid = f"{_relative_posix(test_path, overlay_root)}::{spec['test_name']}"
@@ -2504,15 +2508,16 @@ def _run_overlay_test(
     timeout: int,
     runner,
 ) -> dict[str, Any]:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
     src_path = cwd / "src"
     python_path_parts = [str(cwd)]
     if src_path.exists():
         python_path_parts.append(str(src_path))
-    if env.get("PYTHONPATH"):
-        python_path_parts.append(env["PYTHONPATH"])
-    env["PYTHONPATH"] = os.pathsep.join(python_path_parts)
+    overlay_home = cwd / ".cia-overlay-home"
+    overlay_home.mkdir(parents=True, exist_ok=True)
+    env, _ = build_restricted_environment(
+        overrides={"PYTHONPATH": os.pathsep.join(python_path_parts)},
+        sandbox_home=overlay_home,
+    )
     try:
         completed = runner(
             command_args,

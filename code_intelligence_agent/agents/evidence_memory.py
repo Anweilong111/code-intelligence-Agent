@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from collections import Counter
 from datetime import datetime, timezone
 from typing import Any
 
 
-EVIDENCE_MEMORY_SCHEMA_VERSION = 1
-RETRIEVAL_ALGORITHM = "structured_relevance_v1"
+EVIDENCE_MEMORY_SCHEMA_VERSION = 2
+RETRIEVAL_ALGORITHM = "structured_relevance_v2"
 MEMORY_LAYERS = (
     "working_memory",
     "session_memory",
@@ -30,6 +31,8 @@ _LAYER_PRIOR = {
     "repo_memory": 0.14,
     "cross_repo_pattern_memory": 0.10,
 }
+_DECISION_USES = {"execution_hint", "advisory_only", "audit_only"}
+_COMPLETED_SANDBOX_FAILURES = {"fail", "failed", "error", "rejected"}
 
 
 def build_evidence_memory(
@@ -389,7 +392,7 @@ def make_memory_record(
         "session_id": session_id if version_scope == "session" else "",
     }
     fingerprint = _fingerprint(identity)
-    return {
+    record = {
         "memory_id": f"mem_{fingerprint[:20]}",
         "fingerprint": fingerprint,
         "schema_version": EVIDENCE_MEMORY_SCHEMA_VERSION,
@@ -415,6 +418,8 @@ def make_memory_record(
         "expires_at": "",
         "stale_reason": "",
     }
+    record.update(_memory_authority(record))
+    return record
 
 
 def normalize_memory_record(record: dict[str, Any], *, now: str | None = None) -> dict[str, Any]:
@@ -439,6 +444,14 @@ def normalize_memory_record(record: dict[str, Any], *, now: str | None = None) -
     fingerprint = str(normalized.get("fingerprint") or _fingerprint(normalized))
     normalized["fingerprint"] = fingerprint
     normalized.setdefault("memory_id", f"mem_{fingerprint[:20]}")
+    authority = _memory_authority(normalized)
+    normalized.setdefault("trust_class", authority["trust_class"])
+    normalized.setdefault("decision_use", authority["decision_use"])
+    if normalized.get("decision_use") not in _DECISION_USES:
+        normalized["decision_use"] = "audit_only"
+    normalized.setdefault("conflict_status", "none")
+    normalized.setdefault("conflict_group", "")
+    normalized.setdefault("conflicts_with", [])
     return normalized
 
 
@@ -458,7 +471,7 @@ def retrieve_evidence_memories(
     query_tokens = _tokens(query_payload)
     if not enabled:
         return {
-            "schema_version": 1,
+            "schema_version": EVIDENCE_MEMORY_SCHEMA_VERSION,
             "status": "disabled",
             "reason": "memory_retrieval_disabled_for_ablation",
             "algorithm": RETRIEVAL_ALGORITHM,
@@ -466,6 +479,17 @@ def retrieve_evidence_memories(
             "candidate_count": 0,
             "selected_count": 0,
             "selected_memory_ids": [],
+            "execution_hint_memory_ids": [],
+            "advisory_memory_ids": [],
+            "audit_only_memory_ids": [],
+            "decision_use_counts": {},
+            "conflicts": {
+                "status": "clear",
+                "group_count": 0,
+                "record_count": 0,
+                "groups": [],
+                "conflicted_memory_ids": [],
+            },
             "records": [],
             "discarded_counts": {},
         }
@@ -492,6 +516,7 @@ def retrieve_evidence_memories(
             str(row[1].get("memory_id") or ""),
         )
     )
+    conflict_report = _annotate_memory_conflicts([row[1] for row in scored])
     limit = max(0, min(20, int(top_k)))
     selected = []
     for score, item, reasons in scored[:limit]:
@@ -511,6 +536,11 @@ def retrieve_evidence_memories(
                     "evidence_path",
                     "confidence",
                     "validation",
+                    "trust_class",
+                    "decision_use",
+                    "conflict_status",
+                    "conflict_group",
+                    "conflicts_with",
                 )
             }
             | {
@@ -518,8 +548,11 @@ def retrieve_evidence_memories(
                 "retrieval_reason": reasons,
             }
         )
+    decision_counts = Counter(
+        str(item.get("decision_use") or "audit_only") for item in selected
+    )
     return {
-        "schema_version": 1,
+        "schema_version": EVIDENCE_MEMORY_SCHEMA_VERSION,
         "status": "pass",
         "reason": "top_k_structured_memory_retrieved",
         "algorithm": RETRIEVAL_ALGORITHM,
@@ -529,6 +562,25 @@ def retrieve_evidence_memories(
         "selected_count": len(selected),
         "selected_memory_ids": [str(item.get("memory_id") or "") for item in selected],
         "selected_layers": sorted({str(item.get("layer") or "") for item in selected}),
+        "execution_hint_memory_ids": [
+            str(item.get("memory_id") or "")
+            for item in selected
+            if item.get("decision_use") == "execution_hint"
+            and item.get("conflict_status") == "none"
+        ],
+        "advisory_memory_ids": [
+            str(item.get("memory_id") or "")
+            for item in selected
+            if item.get("decision_use") == "advisory_only"
+        ],
+        "audit_only_memory_ids": [
+            str(item.get("memory_id") or "")
+            for item in selected
+            if item.get("decision_use") == "audit_only"
+            or item.get("conflict_status") != "none"
+        ],
+        "decision_use_counts": dict(sorted(decision_counts.items())),
+        "conflicts": conflict_report,
         "records": selected,
         "discarded_counts": dict(sorted(discarded.items())),
     }
@@ -541,12 +593,22 @@ def memory_policy_hints(retrieval: dict[str, Any]) -> dict[str, Any]:
     test_commands: list[str] = []
     blockers: list[str] = []
     verified_patterns: list[dict[str, Any]] = []
+    advisory_patterns: list[dict[str, Any]] = []
+    excluded_ids: list[str] = []
     source_ids: dict[str, list[str]] = {}
     for item_value in _list(_dict(retrieval).get("records")):
         item = _dict(item_value)
         content = _dict(item.get("content"))
         memory_id = str(item.get("memory_id") or "")
         kind = str(item.get("kind") or "")
+        decision_use = str(item.get("decision_use") or "audit_only")
+        conflicting = str(item.get("conflict_status") or "none") != "none"
+        if kind == "verified_repair_pattern":
+            advisory_patterns.append(content)
+            source_ids.setdefault("advisory_patterns", []).append(memory_id)
+        if decision_use != "execution_hint" or conflicting:
+            excluded_ids.append(memory_id)
+            continue
         values: list[tuple[str, str]] = []
         if kind == "user_constraint":
             values.append(("constraints", str(content.get("constraint") or "")))
@@ -584,6 +646,14 @@ def memory_policy_hints(retrieval: dict[str, Any]) -> dict[str, Any]:
         "test_commands": _unique_strings(test_commands),
         "blockers": _unique_strings(blockers),
         "verified_repair_patterns": verified_patterns,
+        "advisory_repair_patterns": advisory_patterns,
+        "requires_clarification": bool(
+            _list(_dict(_dict(retrieval).get("conflicts")).get("groups"))
+        ),
+        "conflict_groups": _list(
+            _dict(_dict(retrieval).get("conflicts")).get("groups")
+        ),
+        "excluded_from_execution_memory_ids": _unique_strings(excluded_ids),
         "source_memory_ids": {
             key: _unique_strings(values) for key, values in sorted(source_ids.items())
         },
@@ -596,41 +666,106 @@ def promote_verified_repair_patterns(
     existing_records: list[dict[str, Any]] | None = None,
     now: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Promote only sandbox-verified repair evidence to cross-repo memory."""
+    """Aggregate sandbox-observed strategy outcomes as advisory cross-repo memory."""
     timestamp = now or _now()
-    promoted = [normalize_memory_record(_dict(item), now=timestamp) for item in _list(existing_records)]
-    by_fingerprint = {
-        str(item.get("fingerprint") or ""): item
-        for item in promoted
-        if str(item.get("fingerprint") or "")
-    }
+    promoted = [
+        normalize_memory_record(_dict(item), now=timestamp)
+        for item in _list(existing_records)
+    ]
+    by_fingerprint: dict[str, dict[str, Any]] = {}
+    for item in promoted:
+        fingerprint = str(item.get("fingerprint") or "")
+        content = _dict(item.get("content"))
+        if (
+            item.get("kind") == "verified_repair_pattern"
+            and content.get("failure_type")
+            and (content.get("target_shape") or content.get("target_function"))
+            and content.get("generator")
+        ):
+            pattern_key = {
+                "failure_type": str(content.get("failure_type")),
+                "target_shape": str(
+                    content.get("target_shape")
+                    or _target_shape(str(content.get("target_function") or ""))
+                ),
+                "generator": str(content.get("generator")),
+            }
+            fingerprint = _fingerprint(pattern_key)
+            item["fingerprint"] = fingerprint
+            item["memory_id"] = f"pattern_{fingerprint[:20]}"
+            item["schema_version"] = EVIDENCE_MEMORY_SCHEMA_VERSION
+            item["decision_use"] = "advisory_only"
+        if fingerprint:
+            by_fingerprint[fingerprint] = item
     for item_value in _list(_dict(evidence_memory).get("records")):
         item = _dict(item_value)
         validation = _dict(item.get("validation"))
         content = _dict(item.get("content"))
-        if (
-            item.get("layer") != "repair_memory"
-            or item.get("kind") != "patch_attempt"
-            or validation.get("status") != "verified"
-            or validation.get("authority") != "sandbox_pytest"
-            or not bool(content.get("sandbox_verified"))
-        ):
+        sandbox_status = str(content.get("sandbox_status") or "").lower()
+        if item.get("layer") != "repair_memory" or item.get("kind") != "patch_attempt":
             continue
-        pattern_content = {
+        if validation.get("authority") != "sandbox_pytest":
+            continue
+        succeeded = bool(
+            validation.get("status") == "verified"
+            and bool(content.get("sandbox_verified"))
+        )
+        failed = bool(
+            not succeeded
+            and (
+                validation.get("status") == "failed"
+                or sandbox_status in _COMPLETED_SANDBOX_FAILURES
+            )
+        )
+        if not succeeded and not failed:
+            continue
+        pattern_key = {
             "failure_type": str(content.get("failure_type") or "unknown"),
             "target_shape": _target_shape(str(content.get("target_function") or "")),
             "generator": str(content.get("generator") or "unknown"),
-            "repair_outcome": "sandbox_verified",
         }
-        pattern_fingerprint = _fingerprint(pattern_content)
+        pattern_fingerprint = _fingerprint(pattern_key)
         existing = _dict(by_fingerprint.get(pattern_fingerprint))
         source_repo = str(item.get("repo") or "")
         source_ref = str(item.get("repository_ref") or "")
-        sources = _list(existing.get("source_versions"))
-        source_row = {"repo": source_repo, "repository_ref": source_ref}
-        new_source = source_row not in sources
+        attempts = [_dict(value) for value in _list(existing.get("source_attempts"))]
+        attempt = {
+            "repo": source_repo,
+            "repository_ref": source_ref,
+            "session_id": str(item.get("session_id") or ""),
+            "candidate_id": str(content.get("candidate_id") or ""),
+            "diff_fingerprint": str(content.get("diff_fingerprint") or ""),
+            "outcome": "success" if succeeded else "failure",
+        }
+        attempt_id = _fingerprint(attempt)
+        known_attempt_ids = {
+            str(value.get("attempt_id") or "") for value in attempts
+        }
+        new_source = attempt_id not in known_attempt_ids
         if new_source:
-            sources.append(source_row)
+            attempts.append({"attempt_id": attempt_id, **attempt})
+        success_count = sum(value.get("outcome") == "success" for value in attempts)
+        failure_count = sum(value.get("outcome") == "failure" for value in attempts)
+        source_versions = _unique_dicts(
+            [
+                {
+                    "repo": str(value.get("repo") or ""),
+                    "repository_ref": str(value.get("repository_ref") or ""),
+                }
+                for value in attempts
+            ]
+        )
+        source_repo_count = len(
+            {str(value.get("repo") or "") for value in attempts if value.get("repo")}
+        )
+        pattern_content = {
+            **pattern_key,
+            "repair_outcome": "sandbox_observed",
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "source_repository_count": source_repo_count,
+        }
+        confidence = _wilson_lower_bound(success_count, success_count + failure_count)
         record = {
             "memory_id": f"pattern_{pattern_fingerprint[:20]}",
             "fingerprint": pattern_fingerprint,
@@ -649,19 +784,40 @@ def promote_verified_repair_patterns(
             "repository_ref": source_ref,
             "session_id": str(item.get("session_id") or ""),
             "evidence_path": str(item.get("evidence_path") or "in_memory:patch_validation"),
-            "confidence": 1.0,
+            "confidence": confidence,
             "version_scope": "global",
-            "validation": {"status": "verified", "authority": "sandbox_pytest"},
+            "validation": {
+                "status": "verified" if success_count else "observed_failure_only",
+                "authority": "sandbox_pytest",
+            },
             "summary": _record_summary("verified_repair_pattern", pattern_content),
             "content": pattern_content,
             "keywords": sorted(_tokens(pattern_content))[:40],
             "expires_at": "",
             "stale_reason": "",
-            "evidence_count": len(sources),
-            "source_versions": sources[-20:],
+            "trust_class": "cross_repo_verified",
+            "decision_use": "advisory_only",
+            "conflict_status": "none",
+            "conflict_group": "",
+            "conflicts_with": [],
+            "evidence_count": len(attempts),
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "source_repository_count": source_repo_count,
+            "confidence_method": "wilson_lower_bound_95pct",
+            "source_versions": source_versions[-20:],
+            "source_attempts": attempts[-100:],
         }
         by_fingerprint[pattern_fingerprint] = record
-    return sorted(by_fingerprint.values(), key=lambda item: str(item.get("memory_id") or ""))
+    return sorted(
+        [
+            item
+            for item in by_fingerprint.values()
+            if _int(item.get("success_count")) > 0
+            or _dict(item.get("validation")).get("status") == "verified"
+        ],
+        key=lambda item: str(item.get("memory_id") or ""),
+    )
 
 
 def compact_turn_history(
@@ -693,8 +849,35 @@ def compact_turn_history(
     previous_actions = Counter(_dict(summary.get("action_counts")))
     previous_intents.update(intent_counts)
     previous_actions.update(action_counts)
+    compacted_facts = _summary_facts(compacted)
+    active_constraints = _unique_strings(
+        [
+            *_list(summary.get("active_constraints")),
+            *_list(compacted_facts.get("constraints")),
+        ]
+    )[-20:]
+    strategy_preferences = _unique_strings(
+        [
+            *_list(summary.get("repair_strategy_preferences")),
+            *_list(compacted_facts.get("repair_strategy_preferences")),
+        ]
+    )[-12:]
+    failed_fingerprints = _unique_strings(
+        [
+            *_list(summary.get("failed_patch_fingerprints")),
+            *_list(compacted_facts.get("failed_patch_fingerprints")),
+        ]
+    )[-20:]
+    blockers = _unique_strings(
+        [
+            *_list(summary.get("blockers")),
+            *_list(compacted_facts.get("blockers")),
+        ]
+    )[-20:]
+    verification_counts = Counter(_dict(summary.get("verification_counts")))
+    verification_counts.update(_dict(compacted_facts.get("verification_counts")))
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "updated_at": now or _now(),
         "compacted_turn_count": _int(summary.get("compacted_turn_count")) + compact_count,
         "intent_counts": dict(sorted(previous_intents.items())),
@@ -710,7 +893,27 @@ def compact_turn_history(
             _dict(_dict(_dict(compacted[-1]).get("loop")).get("act")).get("action_id")
             or ""
         ),
+        "active_constraints": active_constraints,
+        "repair_strategy_preferences": strategy_preferences,
+        "failed_patch_fingerprints": failed_fingerprints,
+        "blockers": blockers,
+        "verification_counts": dict(sorted(verification_counts.items())),
     }
+    summary["summary_fingerprint"] = _fingerprint(
+        {
+            key: summary[key]
+            for key in (
+                "compacted_turn_count",
+                "intent_counts",
+                "action_counts",
+                "active_constraints",
+                "repair_strategy_preferences",
+                "failed_patch_fingerprints",
+                "blockers",
+                "verification_counts",
+            )
+        }
+    )
     return retained, summary, {
         "status": "compacted",
         "compacted_now": compact_count,
@@ -734,6 +937,133 @@ def total_turn_count(memory: dict[str, Any]) -> int:
     return _int(_dict(memory.get("conversation_summary")).get("compacted_turn_count")) + len(
         _list(memory.get("turns"))
     )
+
+
+def _memory_authority(item: dict[str, Any]) -> dict[str, str]:
+    layer = str(item.get("layer") or "")
+    kind = str(item.get("kind") or "")
+    source = str(item.get("source") or "")
+    validation = _dict(item.get("validation"))
+    authority = str(validation.get("authority") or "")
+    if layer == "cross_repo_pattern_memory":
+        return {
+            "trust_class": "cross_repo_verified",
+            "decision_use": "advisory_only",
+        }
+    if authority == "user" and source in {"user_input", "user_intent"}:
+        return {"trust_class": "trusted_user", "decision_use": "execution_hint"}
+    if authority == "sandbox_pytest" and kind in {
+        "patch_attempt",
+        "test_environment_and_result",
+    }:
+        return {
+            "trust_class": "verified_runtime",
+            "decision_use": "execution_hint",
+        }
+    if kind == "patch_attempt" and source == "patch_validation":
+        return {
+            "trust_class": "agent_observed_current_repo",
+            "decision_use": "execution_hint",
+        }
+    if kind in {"latest_blocker", "current_agent_state"}:
+        return {
+            "trust_class": "agent_derived",
+            "decision_use": "execution_hint",
+        }
+    return {"trust_class": "agent_derived", "decision_use": "advisory_only"}
+
+
+def _annotate_memory_conflicts(records: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for item in records:
+        item["conflict_status"] = "none"
+        item["conflict_group"] = ""
+        item["conflicts_with"] = []
+        signature = _directive_signature(item)
+        if not signature:
+            continue
+        group, value = signature
+        grouped.setdefault(group, {}).setdefault(value, []).append(item)
+    conflicts = []
+    conflicted_ids: set[str] = set()
+    for group, values in sorted(grouped.items()):
+        if len(values) <= 1:
+            continue
+        group_ids = sorted(
+            {
+                str(item.get("memory_id") or "")
+                for bucket in values.values()
+                for item in bucket
+                if item.get("memory_id")
+            }
+        )
+        for bucket in values.values():
+            for item in bucket:
+                memory_id = str(item.get("memory_id") or "")
+                item["conflict_status"] = "conflicting"
+                item["conflict_group"] = group
+                item["conflicts_with"] = [
+                    value for value in group_ids if value != memory_id
+                ]
+                item["decision_use"] = "audit_only"
+                conflicted_ids.add(memory_id)
+        conflicts.append(
+            {
+                "group": group,
+                "values": sorted(values),
+                "memory_ids": group_ids,
+                "resolution": "clarification_required",
+            }
+        )
+    return {
+        "status": "conflict" if conflicts else "clear",
+        "group_count": len(conflicts),
+        "record_count": len(conflicted_ids),
+        "groups": conflicts,
+        "conflicted_memory_ids": sorted(conflicted_ids),
+    }
+
+
+def _directive_signature(item: dict[str, Any]) -> tuple[str, str] | None:
+    kind = str(item.get("kind") or "")
+    if kind not in {"user_constraint", "repair_strategy_preference"}:
+        return None
+    content = _dict(item.get("content"))
+    explicit_group = _normalized_directive(str(content.get("conflict_key") or ""))
+    explicit_value = _normalized_directive(str(content.get("value") or ""))
+    if explicit_group and explicit_value:
+        return explicit_group, explicit_value
+    if kind == "repair_strategy_preference":
+        strategy = _normalized_directive(str(content.get("strategy") or ""))
+        return ("repair_strategy", strategy) if strategy else None
+    text = _normalized_directive(str(content.get("constraint") or ""))
+    if not text:
+        return None
+    if "public api" in text or "public signature" in text:
+        mutation_allowed = not any(
+            token in text
+            for token in (
+                "do not",
+                "dont",
+                "never",
+                "preserve",
+                "keep",
+                "avoid",
+            )
+        )
+        return "public_api_mutation", "allow" if mutation_allowed else "deny"
+    negative = re.match(r"^(?:do not|dont|never|avoid|forbid) (.+)$", text)
+    if negative:
+        return f"constraint:{negative.group(1)}", "deny"
+    positive = re.match(r"^(?:allow|require|must|use|prefer) (.+)$", text)
+    if positive:
+        return f"constraint:{positive.group(1)}", "allow"
+    return None
+
+
+def _normalized_directive(value: str) -> str:
+    text = re.sub(r"[^a-z0-9_. -]+", " ", value.lower())
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _memory_filter_reason(
@@ -848,6 +1178,88 @@ def _fingerprint(value: Any) -> str:
 
 def _unique_strings(values: list[Any]) -> list[str]:
     return list(dict.fromkeys(str(item) for item in values if str(item or "")))
+
+
+def _unique_dicts(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    unique: dict[str, dict[str, Any]] = {}
+    for value in values:
+        unique[_fingerprint(value)] = value
+    return list(unique.values())
+
+
+def _wilson_lower_bound(successes: int, total: int, *, z: float = 1.96) -> float:
+    if total <= 0:
+        return 0.0
+    proportion = successes / total
+    denominator = 1 + (z * z / total)
+    centre = proportion + (z * z / (2 * total))
+    margin = z * math.sqrt(
+        (proportion * (1 - proportion) / total) + (z * z / (4 * total * total))
+    )
+    return round(max(0.0, (centre - margin) / denominator), 4)
+
+
+def _summary_facts(turns: list[dict[str, Any]]) -> dict[str, Any]:
+    facts: dict[str, Any] = {
+        "constraints": [],
+        "repair_strategy_preferences": [],
+        "failed_patch_fingerprints": [],
+        "blockers": [],
+        "verification_counts": Counter(),
+    }
+
+    def visit(value: Any, key: str = "") -> None:
+        if isinstance(value, dict):
+            status = str(value.get("status") or "").lower()
+            for child_key, child_value in value.items():
+                normalized_key = str(child_key).lower()
+                if normalized_key in {"constraint", "constraints"}:
+                    facts["constraints"].extend(
+                        _list(child_value) if isinstance(child_value, list) else [child_value]
+                    )
+                elif normalized_key in {
+                    "repair_strategy_preference",
+                    "repair_strategy_preferences",
+                }:
+                    facts["repair_strategy_preferences"].extend(
+                        _list(child_value) if isinstance(child_value, list) else [child_value]
+                    )
+                elif normalized_key in {
+                    "failed_patch_fingerprint",
+                    "failed_patch_fingerprints",
+                }:
+                    facts["failed_patch_fingerprints"].extend(
+                        _list(child_value) if isinstance(child_value, list) else [child_value]
+                    )
+                elif normalized_key == "diff_fingerprint" and status in {
+                    "fail",
+                    "failed",
+                    "error",
+                    "rejected",
+                }:
+                    facts["failed_patch_fingerprints"].append(child_value)
+                elif normalized_key in {"blocker", "primary_blocker"}:
+                    facts["blockers"].append(child_value)
+                elif normalized_key in {"verification_status", "verify_status"}:
+                    facts["verification_counts"][str(child_value or "unknown")] += 1
+                visit(child_value, normalized_key)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child, key)
+        elif key == "status" and str(value or "") in {"pass", "fail", "blocked"}:
+            facts["verification_counts"][str(value)] += 1
+
+    for turn in turns:
+        visit(turn)
+    for key in (
+        "constraints",
+        "repair_strategy_preferences",
+        "failed_patch_fingerprints",
+        "blockers",
+    ):
+        facts[key] = _unique_strings(facts[key])
+    facts["verification_counts"] = dict(facts["verification_counts"])
+    return facts
 
 
 def _now() -> str:

@@ -944,6 +944,8 @@ def render_agent_memory_report(payload: dict[str, Any]) -> str:
     reuse = _dict(payload.get("reuse_contract"))
     evidence = _dict(payload.get("evidence_memory"))
     retrieval = _dict(payload.get("retrieval"))
+    decision_use_counts = _dict(retrieval.get("decision_use_counts"))
+    conflict_report = _dict(retrieval.get("conflicts"))
     lines = [
         "# Agent Memory Report",
         "",
@@ -990,6 +992,18 @@ def render_agent_memory_report(payload: dict[str, Any]) -> str:
         f"- Stale Records: {_int(evidence.get('stale_record_count', 0))}",
         f"- Selected: {_int(retrieval.get('selected_count', 0))}/{_int(retrieval.get('candidate_count', 0))}",
         f"- Selected IDs: {_md(', '.join(_list(retrieval.get('selected_memory_ids'))) or 'none')}",
+        (
+            "- Decision Use: "
+            f"execution_hint={_int(decision_use_counts.get('execution_hint', 0))}, "
+            f"advisory_only={_int(decision_use_counts.get('advisory_only', 0))}, "
+            f"audit_only={_int(decision_use_counts.get('audit_only', 0))}"
+        ),
+        (
+            "- Conflicts: "
+            f"status={_md(conflict_report.get('status') or 'clear')}, "
+            f"groups={_int(conflict_report.get('group_count', 0))}, "
+            f"records={_int(conflict_report.get('record_count', 0))}"
+        ),
         "",
         "## Reuse Contract",
         "",
@@ -2261,6 +2275,13 @@ def _memory_usage_evidence(memory: dict[str, Any]) -> dict[str, Any]:
         "retrieved_memory_count": _int(retrieval.get("selected_count", 0)),
         "retrieved_memory_ids": _list(retrieval.get("selected_memory_ids")),
         "retrieved_memory_layers": _list(retrieval.get("selected_layers")),
+        "memory_decision_use_counts": _dict(retrieval.get("decision_use_counts")),
+        "memory_conflict_group_count": _int(
+            _dict(retrieval.get("conflicts")).get("group_count", 0)
+        ),
+        "memory_conflict_record_count": _int(
+            _dict(retrieval.get("conflicts")).get("record_count", 0)
+        ),
         "stale_memory_discard_count": _int(
             _dict(retrieval.get("discarded_counts")).get(
                 "stale_repository_version",

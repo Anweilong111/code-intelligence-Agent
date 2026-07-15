@@ -392,7 +392,7 @@ def test_repository_test_patch_candidates_llm_reads_session_patch_memory(
         "evidence_retrieval"
     ]
     assert retrieval["status"] == "pass"
-    assert retrieval["algorithm"] == "structured_relevance_v1"
+    assert retrieval["algorithm"] == "structured_relevance_v2"
     assert retrieval["selected_memory_ids"]
     assert retrieval["policy_hints"]["constraints"] == ["不要修改公共 API"]
     assert "User constraint: 不要修改公共 API" in prompt_payload["constraints"]

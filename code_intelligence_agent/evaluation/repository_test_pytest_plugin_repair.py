@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import json
-import os
 import shlex
 import subprocess
 from pathlib import Path
 from typing import Any
+
+from code_intelligence_agent.tools.runtime_security import (
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 def plan_repository_test_pytest_plugin_repair(
@@ -133,9 +137,13 @@ def execute_repository_test_pytest_plugin_repair(
             reason="venv_python_missing",
             message="Pytest plugin repair requires an isolated venv Python path.",
         )
-    run = runner or subprocess.run
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    run = runner or run_restricted_process
+    plugin_home = Path(venv_python).parent / ".cia-plugin-home"
+    plugin_home.mkdir(parents=True, exist_ok=True)
+    env, _ = build_restricted_environment(
+        sandbox_home=plugin_home,
+        network_policy="allow",
+    )
     try:
         completed = run(
             install_args,

@@ -40,6 +40,20 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_v3_security_evaluation(raw_argv):
+        from code_intelligence_agent.evaluation.v3_security_evaluation import (
+            main as v3_security_evaluation_main,
+        )
+
+        v3_security_evaluation_main(raw_argv[1:])
+        return
+    if _should_route_to_v3_memory_evaluation(raw_argv):
+        from code_intelligence_agent.evaluation.v3_memory_evaluation import (
+            main as v3_memory_evaluation_main,
+        )
+
+        v3_memory_evaluation_main(raw_argv[1:])
+        return
     if _should_route_to_v3_semantic_evaluation(raw_argv):
         from code_intelligence_agent.evaluation.v3_semantic_evaluation import (
             main as v3_semantic_evaluation_main,
@@ -126,6 +140,22 @@ def _should_route_to_v3_semantic_evaluation(argv: list[str]) -> bool:
         argv
         and argv[0]
         in {"v3-semantic-eval", "v3-semantic-evaluation"}
+    )
+
+
+def _should_route_to_v3_memory_evaluation(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {"v3-memory-eval", "v3-memory-evaluation"}
+    )
+
+
+def _should_route_to_v3_security_evaluation(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {"v3-security-eval", "v3-security-evaluation"}
     )
 
 

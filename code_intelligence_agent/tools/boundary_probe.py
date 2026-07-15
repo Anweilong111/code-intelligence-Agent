@@ -11,6 +11,10 @@ from pathlib import Path
 from typing import Any
 
 from code_intelligence_agent.core.models import PatchCandidate
+from code_intelligence_agent.tools.runtime_security import (
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 _BOOTSTRAP = Path(__file__).with_name("boundary_probe_bootstrap.py")
@@ -73,14 +77,16 @@ def run_boundary_probe(
             str(_BOOTSTRAP),
             str(payload_path),
         ]
+        env, _ = build_restricted_environment(sandbox_home=tmp_dir)
         try:
-            completed = subprocess.run(
+            completed = run_restricted_process(
                 command,
                 cwd=tmp_dir,
                 capture_output=True,
                 text=True,
                 timeout=max(0.1, timeout_seconds),
                 check=False,
+                env=env,
             )
         except subprocess.TimeoutExpired as exc:
             return BoundaryProbeResult(

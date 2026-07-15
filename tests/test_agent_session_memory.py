@@ -86,13 +86,18 @@ def test_session_memory_persists_compact_redacted_repo_state(tmp_path):
     decision_report_text = Path(session["agent_decision_report_path"]).read_text(
         encoding="utf-8"
     )
+    memory_report_text = Path(session["agent_memory_report_path"]).read_text(
+        encoding="utf-8"
+    )
     assert memory_report["status"] == "pass"
     assert memory_report["ready_layer_count"] == 5
     assert memory_report["layer_count"] == 5
     assert memory_report["retrieval"]["selected_memory_ids"]
     assert memory_report["evidence_memory"]["retrieval_algorithm"] == (
-        "structured_relevance_v1"
+        "structured_relevance_v2"
     )
+    assert "Decision Use: execution_hint=" in memory_report_text
+    assert "Conflicts: status=" in memory_report_text
     assert decision_report["selected_action"]["id"] == "run_llm_patch_reflection_loop"
     assert "LLM Recommended Action" in decision_report_text
     assert "Controller Final Action" in decision_report_text
@@ -554,7 +559,7 @@ def test_top_level_cli_supports_memory_show_delete_and_reset(tmp_path, capsys):
     )
     shown = json.loads(capsys.readouterr().out)
     memory_id = shown["retrieval"]["selected_memory_ids"][0]
-    assert shown["retrieval"]["algorithm"] == "structured_relevance_v1"
+    assert shown["retrieval"]["algorithm"] == "structured_relevance_v2"
 
     cli_module.main(
         [

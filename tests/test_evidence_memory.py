@@ -151,6 +151,248 @@ def test_long_conversation_compaction_preserves_total_turn_count():
     assert summary["intent_counts"]["continue_repair"] == 10
 
 
+def test_conflicting_user_memories_are_audit_only_and_require_clarification():
+    evidence = {
+        "records": [
+            {
+                "memory_id": "mem_preserve_api",
+                "layer": "session_memory",
+                "kind": "user_constraint",
+                "status": "active",
+                "source": "user_input",
+                "repo": "example/project",
+                "repository_ref": "abc123",
+                "session_id": "session-1",
+                "evidence_path": "session.json",
+                "confidence": 1.0,
+                "version_scope": "session",
+                "validation": {"status": "explicit", "authority": "user"},
+                "content": {
+                    "constraint": "preserve public API",
+                    "conflict_key": "public_api_mutation",
+                    "value": "deny",
+                },
+            },
+            {
+                "memory_id": "mem_change_api",
+                "layer": "session_memory",
+                "kind": "user_constraint",
+                "status": "active",
+                "source": "user_input",
+                "repo": "example/project",
+                "repository_ref": "abc123",
+                "session_id": "session-1",
+                "evidence_path": "session.json",
+                "confidence": 1.0,
+                "version_scope": "session",
+                "validation": {"status": "explicit", "authority": "user"},
+                "content": {
+                    "constraint": "allow public API changes",
+                    "conflict_key": "public_api_mutation",
+                    "value": "allow",
+                },
+            },
+        ]
+    }
+
+    result = retrieve_evidence_memories(
+        evidence,
+        "repair while respecting public API constraints",
+        repo="example/project",
+        repository_ref="abc123",
+        session_id="session-1",
+        top_k=10,
+        now=NOW,
+    )
+    hints = memory_policy_hints(result)
+
+    assert result["conflicts"]["group_count"] == 1
+    assert result["conflicts"]["groups"][0]["resolution"] == (
+        "clarification_required"
+    )
+    assert set(result["audit_only_memory_ids"]) == {
+        "mem_preserve_api",
+        "mem_change_api",
+    }
+    assert all(item["decision_use"] == "audit_only" for item in result["records"])
+    assert hints["constraints"] == []
+    assert hints["requires_clarification"] is True
+
+
+def test_cross_repo_pattern_is_retrieved_as_advisory_not_execution_hint():
+    evidence = {
+        "records": [
+            {
+                "memory_id": "pattern_missing_key",
+                "layer": "cross_repo_pattern_memory",
+                "kind": "verified_repair_pattern",
+                "status": "active",
+                "source": "sandbox_verified_repair_promotion",
+                "repo": "source/project",
+                "repository_ref": "source123",
+                "session_id": "source-session",
+                "evidence_path": "source/patch_validation.json",
+                "confidence": 0.7,
+                "version_scope": "global",
+                "validation": {"status": "verified", "authority": "sandbox_pytest"},
+                "content": {
+                    "failure_type": "missing_key",
+                    "target_shape": "load_user",
+                    "generator": "hybrid",
+                },
+            }
+        ]
+    }
+
+    result = retrieve_evidence_memories(
+        evidence,
+        "repair missing key in load_user",
+        repo="new/project",
+        repository_ref="new123",
+        session_id="new-session",
+        top_k=3,
+        now=NOW,
+    )
+    hints = memory_policy_hints(result)
+
+    assert result["advisory_memory_ids"] == ["pattern_missing_key"]
+    assert result["execution_hint_memory_ids"] == []
+    assert hints["verified_repair_patterns"] == []
+    assert hints["advisory_repair_patterns"][0]["generator"] == "hybrid"
+
+
+def test_cross_repo_strategy_confidence_counts_success_and_failure_evidence():
+    def patch_record(repo: str, ref: str, candidate: str, passed: bool) -> dict:
+        return {
+            "memory_id": f"mem_{candidate}",
+            "layer": "repair_memory",
+            "kind": "patch_attempt",
+            "status": "active",
+            "source": "patch_validation",
+            "repo": repo,
+            "repository_ref": ref,
+            "session_id": f"session-{candidate}",
+            "evidence_path": f"{repo}/patch_validation.json",
+            "confidence": 1.0,
+            "version_scope": "repo_commit",
+            "validation": {
+                "status": "verified" if passed else "failed",
+                "authority": "sandbox_pytest",
+            },
+            "content": {
+                "candidate_id": candidate,
+                "target_function": "pkg.core.load_user",
+                "failure_type": "missing_key",
+                "generator": "hybrid",
+                "diff_fingerprint": f"diff-{candidate}",
+                "sandbox_status": "pass" if passed else "fail",
+                "sandbox_verified": passed,
+            },
+        }
+
+    first = promote_verified_repair_patterns(
+        {"records": [patch_record("repo/one", "sha1", "ok", True)]},
+        now=NOW,
+    )
+    patterns = promote_verified_repair_patterns(
+        {"records": [patch_record("repo/two", "sha2", "bad", False)]},
+        existing_records=first,
+        now="2026-07-14T01:00:00Z",
+    )
+
+    assert len(patterns) == 1
+    pattern = patterns[0]
+    assert pattern["evidence_count"] == 2
+    assert pattern["success_count"] == 1
+    assert pattern["failure_count"] == 1
+    assert pattern["source_repository_count"] == 2
+    assert 0 < pattern["confidence"] < 0.5
+    assert pattern["confidence_method"] == "wilson_lower_bound_95pct"
+    assert pattern["decision_use"] == "advisory_only"
+
+
+def test_cross_repo_pattern_promotion_migrates_legacy_fingerprint_before_merge():
+    def patch_record(candidate: str, passed: bool) -> dict:
+        return {
+            "memory_id": f"mem_{candidate}",
+            "layer": "repair_memory",
+            "kind": "patch_attempt",
+            "status": "active",
+            "source": "patch_validation",
+            "repo": f"repo/{candidate}",
+            "repository_ref": f"sha-{candidate}",
+            "session_id": f"session-{candidate}",
+            "evidence_path": f"repo/{candidate}/patch_validation.json",
+            "confidence": 1.0,
+            "version_scope": "repo_commit",
+            "validation": {
+                "status": "verified" if passed else "failed",
+                "authority": "sandbox_pytest",
+            },
+            "content": {
+                "candidate_id": candidate,
+                "target_function": "pkg.core.load_user",
+                "failure_type": "missing_key",
+                "generator": "hybrid",
+                "diff_fingerprint": f"diff-{candidate}",
+                "sandbox_status": "pass" if passed else "fail",
+                "sandbox_verified": passed,
+            },
+        }
+
+    existing = promote_verified_repair_patterns(
+        {"records": [patch_record("legacy-ok", True)]},
+        now=NOW,
+    )[0]
+    existing["schema_version"] = 1
+    existing["fingerprint"] = "legacy-v1-fingerprint"
+    existing["memory_id"] = "pattern_legacy_v1"
+
+    patterns = promote_verified_repair_patterns(
+        {"records": [patch_record("current-fail", False)]},
+        existing_records=[existing],
+        now="2026-07-14T02:00:00Z",
+    )
+
+    assert len(patterns) == 1
+    assert patterns[0]["schema_version"] == 2
+    assert patterns[0]["memory_id"].startswith("pattern_")
+    assert patterns[0]["memory_id"] != "pattern_legacy_v1"
+    assert patterns[0]["evidence_count"] == 2
+    assert patterns[0]["success_count"] == 1
+    assert patterns[0]["failure_count"] == 1
+    assert patterns[0]["decision_use"] == "advisory_only"
+
+
+def test_long_conversation_compaction_preserves_decision_relevant_facts():
+    turns = [
+        {
+            "created_at": f"2026-07-14T00:{index:02d}:00Z",
+            "intent": "continue_repair",
+            "constraints": ["preserve public API"] if index == 2 else [],
+            "repair_strategy_preferences": ["hybrid"] if index == 3 else [],
+            "loop": {
+                "verify": {
+                    "status": "fail" if index == 4 else "pass",
+                    "blocker": "targeted_test_failed" if index == 4 else "",
+                    "failed_patch_fingerprints": ["diff-old"] if index == 4 else [],
+                },
+                "act": {"action_id": "repair"},
+            },
+        }
+        for index in range(45)
+    ]
+
+    _, summary, report = compact_turn_history(turns, now=NOW)
+
+    assert report["status"] == "compacted"
+    assert summary["active_constraints"] == ["preserve public API"]
+    assert summary["repair_strategy_preferences"] == ["hybrid"]
+    assert summary["failed_patch_fingerprints"] == ["diff-old"]
+    assert summary["blockers"] == ["targeted_test_failed"]
+    assert len(summary["summary_fingerprint"]) == 64
+
+
 def _session() -> dict:
     return {
         "session_id": "session-1",

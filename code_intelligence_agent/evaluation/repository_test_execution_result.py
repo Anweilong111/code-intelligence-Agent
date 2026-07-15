@@ -9,6 +9,13 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from code_intelligence_agent.tools.runtime_security import (
+    audit_repository_tree,
+    build_restricted_environment,
+    is_sensitive_environment_name,
+    run_restricted_process,
+)
+
 
 def execute_repository_test_plan(
     execution_plan: dict[str, Any],
@@ -79,6 +86,25 @@ def execute_repository_test_plan(
             reason="repository_root_missing",
             message="Repository test root does not exist or is not a directory.",
         )
+    repository_tree_audit = audit_repository_tree(repo_path)
+    if repository_tree_audit["status"] != "pass":
+        payload = _skipped(
+            command=command,
+            level=level,
+            risk=risk,
+            scope=scope,
+            cwd=str(repo_path),
+            python_executable=resolved_python,
+            python_executable_source=resolved_python_source,
+            planned_environment_variables=planned_environment_variables,
+            reason="unsafe_repository_tree",
+            message=(
+                "Repository test execution was rejected because the tree contains "
+                "a symlink or could not be safely audited."
+            ),
+        )
+        payload["repository_tree_audit"] = repository_tree_audit
+        return payload
     working_dir = str(execution_plan.get("recommended_working_dir") or "")
     execution_cwd = _execution_cwd(repo_path, working_dir)
     if execution_cwd is None or not execution_cwd.exists() or not execution_cwd.is_dir():
@@ -115,15 +141,45 @@ def execute_repository_test_plan(
         execution_plan.get("recommended_execution_runner")
         or _module_from_command_args(command_args)
     )
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    env.update(planned_environment_variables)
+    sandbox_home = repo_path / ".cia-test-home"
+    if sandbox_home.is_symlink() or (
+        sandbox_home.exists() and not sandbox_home.is_dir()
+    ):
+        payload = _skipped(
+            command=command,
+            level=level,
+            risk=risk,
+            scope=scope,
+            cwd=str(execution_cwd),
+            python_executable=resolved_python,
+            python_executable_source=resolved_python_source,
+            planned_environment_variables=planned_environment_variables,
+            reason="unsafe_sandbox_home",
+            message="Repository test sandbox home is a symlink or non-directory path.",
+        )
+        payload["repository_tree_audit"] = repository_tree_audit
+        return payload
+    sandbox_home.mkdir(parents=True, exist_ok=True)
+    env, environment_isolation = build_restricted_environment(
+        overrides=planned_environment_variables,
+        sandbox_home=sandbox_home,
+    )
+    automatic_base_env = dict(env)
+    automatic_base_env["PYTHONPATH"] = str(
+        planned_environment_variables.get("PYTHONPATH") or ""
+    )
     automatic_environment_variables = _automatic_environment_variables(
         execution_cwd,
-        env=env,
+        env=automatic_base_env,
     )
-    env.update(automatic_environment_variables)
-    run = runner or subprocess.run
+    env, environment_isolation = build_restricted_environment(
+        overrides={
+            **planned_environment_variables,
+            **automatic_environment_variables,
+        },
+        sandbox_home=sandbox_home,
+    )
+    run = runner or run_restricted_process
     try:
         completed = run(
             command_args,
@@ -163,6 +219,8 @@ def execute_repository_test_plan(
             "automatic_environment_variable_names": sorted(
                 automatic_environment_variables
             ),
+            "environment_isolation": environment_isolation,
+            "repository_tree_audit": repository_tree_audit,
             "returncode": -1,
             "timeout": True,
             "passed": 0,
@@ -230,6 +288,8 @@ def execute_repository_test_plan(
         "planned_environment_variable_names": sorted(planned_environment_variables),
         "automatic_environment_variables": automatic_environment_variables,
         "automatic_environment_variable_names": sorted(automatic_environment_variables),
+        "environment_isolation": environment_isolation,
+        "repository_tree_audit": repository_tree_audit,
         "returncode": completed.returncode,
         "timeout": False,
         "passed": _int(test_counts.get("passed", 0)),
@@ -253,6 +313,8 @@ def execute_repository_test_plan(
 
 
 def render_repository_test_execution_result_markdown(payload: dict[str, Any]) -> str:
+    isolation = _dict(payload.get("environment_isolation"))
+    resource_limits = _dict(isolation.get("resource_limits"))
     lines = [
         "# Repository Test Execution Result",
         "",
@@ -279,6 +341,30 @@ def render_repository_test_execution_result_markdown(payload: dict[str, Any]) ->
         (
             "- Automatic Environment Variables: "
             f"{', '.join(str(item) for item in _list(payload.get('automatic_environment_variable_names'))) or 'none'}"
+        ),
+        (
+            "- Environment Isolation: "
+            f"`{_markdown_cell(isolation.get('environment_policy') or 'not_applied')}`"
+        ),
+        (
+            "- Blocked Sensitive Variables: "
+            f"{_int(isolation.get('blocked_sensitive_variable_count', 0))}"
+        ),
+        (
+            "- Network Policy: "
+            f"`{_markdown_cell(isolation.get('network_policy') or 'not_applied')}` "
+            f"(`{_markdown_cell(isolation.get('network_enforcement') or 'none')}`)"
+        ),
+        (
+            "- Resource Limits: "
+            f"cpu={_markdown_cell(resource_limits.get('cpu_seconds') or 'none')}s, "
+            f"memory={_markdown_cell(resource_limits.get('memory_mb') or 'none')}MB, "
+            f"file={_markdown_cell(resource_limits.get('max_file_mb') or 'none')}MB, "
+            f"wall_clock={_markdown_cell(resource_limits.get('wall_clock_timeout') or 'none')}"
+        ),
+        (
+            "- Isolation Limitation: "
+            f"{_markdown_cell(resource_limits.get('platform_limitation') or isolation.get('network_residual_risk') or 'none')}"
         ),
         f"- Return Code: {_markdown_cell(payload.get('returncode'))}",
         f"- Timeout: {str(bool(payload.get('timeout', False))).lower()}",
@@ -1120,6 +1206,8 @@ def _safe_environment_variables(values: dict[str, Any]) -> dict[str, str]:
     for key, value in values.items():
         name = str(key)
         text = str(value)
+        if is_sensitive_environment_name(name):
+            continue
         if not re.fullmatch(r"[A-Z_][A-Z0-9_]*", name):
             continue
         if not re.fullmatch(

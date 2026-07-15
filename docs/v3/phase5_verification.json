@@ -5,7 +5,8 @@
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "533b77f5a5aa2e840ad7d674aea4b3ef8c9e4764623cef60cd1aa0fe4e104bc2",
+    "trial_implementation_sha256": "29b6144c8875cfc466426c4b50ddeb7908d61416a6cf1120c0886f3c72edfaca",
+    "implementation_hash_refresh_reason": "Phase 6 runtime isolation changed sandbox and boundary-probe implementation files without changing the Phase 5 semantic acceptance contract.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",

@@ -1,0 +1,549 @@
+{
+  "schema_version": 1,
+  "suite_name": "v3_memory_generalization",
+  "status": "pass",
+  "reason": "all_memory_generalization_gates_passed",
+  "case_count": 7,
+  "run_count": 14,
+  "metrics": {
+    "without_memory": {
+      "run_count": 7,
+      "task_completion_rate": 0.428571,
+      "expected_record_recall": 0.0,
+      "average_selected_count": 0.0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "average_runtime_ms": 0.011257
+    },
+    "structured_v2": {
+      "run_count": 7,
+      "task_completion_rate": 1.0,
+      "expected_record_recall": 1.0,
+      "average_selected_count": 0.714286,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "average_runtime_ms": 0.135271
+    }
+  },
+  "strategy_confidence": {
+    "status": "pass",
+    "reason": "strategy_confidence_calibrated_from_sandbox_outcomes",
+    "evidence_count": 5,
+    "success_count": 3,
+    "failure_count": 2,
+    "source_repository_count": 3,
+    "confidence": 0.2307,
+    "confidence_method": "wilson_lower_bound_95pct",
+    "decision_use": "advisory_only",
+    "duplicate_evidence_count_unchanged": true
+  },
+  "long_session_summary": {
+    "status": "pass",
+    "reason": "decision_relevant_facts_preserved_after_compaction",
+    "checks": {
+      "constraints": true,
+      "strategies": true,
+      "failed_patch_fingerprints": true,
+      "blockers": true,
+      "fingerprint": true
+    },
+    "compacted_turn_count": 26,
+    "retained_turn_count": 24,
+    "active_constraints": [
+      "preserve public API"
+    ],
+    "repair_strategy_preferences": [
+      "hybrid"
+    ],
+    "failed_patch_fingerprints": [
+      "diff-long-session"
+    ],
+    "blockers": [
+      "targeted_test_failed"
+    ],
+    "summary_fingerprint": "ef4dded65fa11aa2c966563804a80c4bd2587302446247df79984b9dbd9222f6"
+  },
+  "embedding_retrieval_decision": {
+    "status": "not_retained",
+    "implemented": false,
+    "evaluated": false,
+    "measured_incremental_benefit": null,
+    "reason": "The controlled benchmark requires exact provenance, scope, conflict, and authority matching. No semantic-near retrieval subset currently demonstrates incremental benefit over structured_v2, so adding an embedding store would be unsupported complexity.",
+    "revisit_gate": "Add a blind paraphrase/cross-repository subset and retain embeddings only if completion improves without stale, conflict, or advisory execution violations."
+  },
+  "acceptance_gates": {
+    "structured_memory_completes_all_controlled_cases": true,
+    "structured_memory_improves_over_no_memory": true,
+    "stale_memory_never_reused": true,
+    "conflicting_memory_never_becomes_execution_hint": true,
+    "cross_repo_memory_is_advisory_only": true,
+    "strategy_confidence_uses_success_and_failure_evidence": true,
+    "long_session_summary_preserves_decision_facts": true,
+    "embedding_store_not_added_without_uplift_evidence": true
+  },
+  "runs": [
+    {
+      "case_id": "current_user_constraint",
+      "mode": "without_memory",
+      "task_completed": false,
+      "checks": {
+        "selected": false,
+        "execution_authority": false,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "mem_constraint"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0185,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "current_user_constraint",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [
+        "mem_constraint"
+      ],
+      "execution_hint_memory_ids": [
+        "mem_constraint"
+      ],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "mem_constraint"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 2,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 1,
+      "runtime_ms": 0.2397,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "current_failed_patch",
+      "mode": "without_memory",
+      "task_completed": false,
+      "checks": {
+        "selected": false,
+        "execution_authority": false,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "mem_failed_patch"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0115,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "current_failed_patch",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [
+        "mem_failed_patch"
+      ],
+      "execution_hint_memory_ids": [
+        "mem_failed_patch"
+      ],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "mem_failed_patch"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 2,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 1,
+      "runtime_ms": 0.1255,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "stale_commit_rejected",
+      "mode": "without_memory",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "mem_old_commit"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0132,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "stale_commit_rejected",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "mem_old_commit"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0953,
+      "discarded_counts": {
+        "stale_repository_version": 1
+      }
+    },
+    {
+      "case_id": "conflicting_constraints_require_clarification",
+      "mode": "without_memory",
+      "task_completed": false,
+      "checks": {
+        "selected": false,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": false,
+        "excluded": true,
+        "clarification": false
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "mem_change_api",
+        "mem_preserve_api"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 4,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.01,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "conflicting_constraints_require_clarification",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [
+        "mem_change_api",
+        "mem_preserve_api"
+      ],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [
+        "mem_change_api",
+        "mem_preserve_api"
+      ],
+      "expected_selected_ids": [
+        "mem_change_api",
+        "mem_preserve_api"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 4,
+      "recalled_record_count": 4,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": true,
+      "policy_requires_clarification": true,
+      "selected_count": 2,
+      "runtime_ms": 0.223,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "verified_cross_repo_pattern_advisory_only",
+      "mode": "without_memory",
+      "task_completed": false,
+      "checks": {
+        "selected": false,
+        "execution_authority": true,
+        "advisory_authority": false,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "pattern_missing_key"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0101,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "verified_cross_repo_pattern_advisory_only",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [
+        "pattern_missing_key"
+      ],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [
+        "pattern_missing_key"
+      ],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [
+        "pattern_missing_key"
+      ],
+      "expected_excluded_ids": [],
+      "required_record_count": 2,
+      "recalled_record_count": 2,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 1,
+      "runtime_ms": 0.1069,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "unverified_cross_repo_pattern_rejected",
+      "mode": "without_memory",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "pattern_unverified"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0079,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "unverified_cross_repo_pattern_rejected",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "pattern_unverified"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0816,
+      "discarded_counts": {
+        "unverified_cross_repo_pattern": 1
+      }
+    },
+    {
+      "case_id": "other_session_constraint_rejected",
+      "mode": "without_memory",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "mem_other_session"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0076,
+      "discarded_counts": {}
+    },
+    {
+      "case_id": "other_session_constraint_rejected",
+      "mode": "structured_v2",
+      "task_completed": true,
+      "checks": {
+        "selected": true,
+        "execution_authority": true,
+        "advisory_authority": true,
+        "audit_authority": true,
+        "excluded": true,
+        "clarification": true
+      },
+      "selected_memory_ids": [],
+      "execution_hint_memory_ids": [],
+      "advisory_memory_ids": [],
+      "audit_only_memory_ids": [],
+      "expected_selected_ids": [],
+      "expected_excluded_ids": [
+        "mem_other_session"
+      ],
+      "required_record_count": 0,
+      "recalled_record_count": 0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "requires_clarification": false,
+      "policy_requires_clarification": false,
+      "selected_count": 0,
+      "runtime_ms": 0.0749,
+      "discarded_counts": {
+        "other_session": 1
+      }
+    }
+  ],
+  "claim_boundary": "This is a deterministic memory-policy benchmark. It measures scope, authority, conflict handling, and retrieval utility, not live-model reasoning quality."
+}

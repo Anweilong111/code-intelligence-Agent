@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shlex
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
+
+from code_intelligence_agent.tools.runtime_security import (
+    audit_repository_tree,
+    build_restricted_environment,
+    run_restricted_process,
+)
 
 
 def validate_repository_test_command(
@@ -45,6 +50,18 @@ def validate_repository_test_command(
             reason="repository_root_missing",
             message="Repository test root does not exist or is not a directory.",
         )
+    tree_audit = audit_repository_tree(repo_path)
+    if tree_audit["status"] != "pass":
+        payload = _skipped(
+            command=command,
+            repository_root=str(repo_path),
+            working_dir=working_dir,
+            cwd=str(repo_path),
+            reason="unsafe_repository_tree",
+            message="Repository tree contains a symlink or could not be safely audited.",
+        )
+        payload["repository_tree_audit"] = tree_audit
+        return payload
     command_cwd = _command_cwd(repo_path, working_dir)
     if command_cwd is None or not command_cwd.exists() or not command_cwd.is_dir():
         return _skipped(
@@ -65,10 +82,24 @@ def validate_repository_test_command(
             reason="unsupported_command",
             message="Only python -m module style test commands are executed.",
         )
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    sandbox_home = repo_path / ".cia-test-home"
+    if sandbox_home.is_symlink() or (
+        sandbox_home.exists() and not sandbox_home.is_dir()
+    ):
+        return _skipped(
+            command=command,
+            repository_root=str(repo_path),
+            working_dir=working_dir,
+            cwd=str(command_cwd),
+            reason="unsafe_sandbox_home",
+            message="Repository test sandbox home is unsafe.",
+        )
+    sandbox_home.mkdir(parents=True, exist_ok=True)
+    env, environment_isolation = build_restricted_environment(
+        sandbox_home=sandbox_home
+    )
     try:
-        completed = subprocess.run(
+        completed = run_restricted_process(
             command_args,
             cwd=command_cwd,
             capture_output=True,
@@ -97,6 +128,8 @@ def validate_repository_test_command(
             "next_actions": [
                 "Increase repository_test_timeout or run a narrower test command.",
             ],
+            "environment_isolation": environment_isolation,
+            "repository_tree_audit": tree_audit,
         }
     stdout = completed.stdout or ""
     stderr = completed.stderr or ""
@@ -121,6 +154,8 @@ def validate_repository_test_command(
         "failed": _extract_count(stdout, "failed"),
         "stdout_preview": _preview(stdout),
         "stderr_preview": _preview(stderr),
+        "environment_isolation": environment_isolation,
+        "repository_tree_audit": tree_audit,
         "next_actions": []
         if success
         else [

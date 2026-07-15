@@ -1,0 +1,135 @@
+{
+  "schema_version": "v3_phase6_verification_v1",
+  "verified_at": "2026-07-15",
+  "status": "pass",
+  "phase": "Phase 6 memory generalization and repository security",
+  "memory_evaluation": {
+    "status": "pass",
+    "case_count": 7,
+    "run_count": 14,
+    "without_memory_completion": 0.428571,
+    "structured_v2_completion": 1.0,
+    "structured_v2_expected_record_recall": 1.0,
+    "stale_reuse_count": 0,
+    "conflict_execution_violation_count": 0,
+    "advisory_execution_violation_count": 0,
+    "strategy_attempt_count": 5,
+    "strategy_source_repository_count": 3,
+    "strategy_success_count": 3,
+    "strategy_failure_count": 2,
+    "strategy_confidence": 0.2307,
+    "strategy_confidence_method": "wilson_lower_bound_95pct",
+    "cross_repo_decision_use": "advisory_only",
+    "embedding_retrieval": "not_retained"
+  },
+  "security_evaluation": {
+    "status": "pass",
+    "case_count": 8,
+    "passed_case_count": 8,
+    "dispositions": {
+      "rejected": 4,
+      "isolated": 3,
+      "reported": 1
+    },
+    "prompt_instructions_have_authority": false,
+    "host_secrets_exposed": false,
+    "python_external_socket_blocked": true,
+    "runaway_process_terminated": true,
+    "claim": "process-level defense in depth, not a container security boundary"
+  },
+  "implementation": {
+    "memory_schema_version": 2,
+    "retrieval_algorithm": "structured_relevance_v2",
+    "memory_decision_uses": [
+      "execution_hint",
+      "advisory_only",
+      "audit_only"
+    ],
+    "repository_content_instruction_authority": "none",
+    "llm_override_on_conflict_or_injection": "rejected",
+    "environment_policy": "allowlisted_host_variables_plus_controlled_overrides",
+    "python_network_policy": "external_socket_denied_loopback_allowed",
+    "hard_windows_resource_quota": false,
+    "native_child_network_isolation": false
+  },
+  "tests": {
+    "phase6_core_regression": {
+      "status": "pass",
+      "passed": 118,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 15.63
+    },
+    "runtime_dynamic_regression": {
+      "status": "pass",
+      "passed": 116,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 108.98
+    },
+    "all_v3": {
+      "status": "pass",
+      "passed": 119,
+      "skipped": 2,
+      "failed": 0,
+      "deselected": 1246,
+      "duration_seconds": 8.46
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1365,
+      "skipped": 2,
+      "failed": 0,
+      "duration_seconds": 752.07
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 509
+    },
+    "skip_explanations": [
+      "tests/test_runtime_security.py cannot create a symbolic link on this Windows host.",
+      "tests/test_v3_semantic_validation.py cannot create a symbolic link on this Windows host."
+    ]
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "raw_api_keys_in_candidate_files": 0,
+    "absolute_local_paths_in_phase6_release_artifacts": 0,
+    "tool_signature_traces_in_public_docs": 0,
+    "lf_normalized_files": [
+      "datasets/memory_evaluation/v3_memory_generalization_cases.json",
+      "docs/v3/phase6_memory_and_security_protocol.md",
+      "docs/v3/phase6_memory_evaluation.json",
+      "docs/v3/phase6_memory_evaluation.md",
+      "docs/v3/phase6_security_evaluation.json",
+      "docs/v3/phase6_security_evaluation.md"
+    ]
+  },
+  "artifacts": {
+    "docs/v3/phase6_memory_and_security_protocol.md": "77d91622fe78e95ca280a0a3fb1b39a8347f7ddc10490e9e08de1fe9a0cdecf7",
+    "docs/v3/phase6_memory_evaluation.json": "71259b328459e966ffc5206bab57bcb49e9c6e79bb48795b210c60b7f4b30196",
+    "docs/v3/phase6_memory_evaluation.md": "ca66bc9edb433a493062eaf24d1b9bb3616c830ced86cb5941225fbb39ac120e",
+    "docs/v3/phase6_security_evaluation.json": "98316340a4d858e53c715394ad38b43a5391b78fffd94425da04e6048fc2e667",
+    "docs/v3/phase6_security_evaluation.md": "28f3a216613f0a835b20f80a76f6a1754faa481d310ae93119ae15baa5032feb",
+    "datasets/memory_evaluation/v3_memory_generalization_cases.json": "01e882336a137b9cfbbe5e56a1aa65798d97c68607dd430a6bf19c198955cab2",
+    "code_intelligence_agent/agents/controller.py": "cccbfd1e13271e847e4470a240cb77b8700da926a0c177c8eb4105bdd33310d9",
+    "code_intelligence_agent/agents/evidence_memory.py": "ac33f17f3522049ca95a41b7380f3423b1d2cd584375551cd2e184a4b868e7aa",
+    "code_intelligence_agent/agents/session_memory.py": "1b2214607a21eaea4d444cbc1888c5dc779d6a803f1295a819234bfa567f9b5b",
+    "code_intelligence_agent/agents/untrusted_content.py": "9c80cb32767bb2fb76cd7426a311fe865a1078ce40a83b00f79fefe43de6ee43",
+    "code_intelligence_agent/tools/runtime_security.py": "2aa26189de7455b8094417201dea576f808a45b64b17515272dcbf1a62c94f1d",
+    "code_intelligence_agent/tools/runtime_guard/sitecustomize.py": "babfc0bfc36ca12e728a49f828aef678262fcf0ef005f5e260dcdb92f6ad8e45",
+    "code_intelligence_agent/evaluation/v3_memory_evaluation.py": "9b9dd6cbf774aaccfde82aeef444a1200483069aee62e62e7b987f8fac12aff0",
+    "code_intelligence_agent/evaluation/v3_security_evaluation.py": "dc207055fb47c317a733ff5050887c215bc7ca68858906069734875d2bfaea9a"
+  },
+  "claim_boundaries": [
+    "The memory benchmark measures deterministic scope, authority, conflict handling, and retrieval utility; it does not measure live-model reasoning or repair success.",
+    "The hostile-repository suite contains controlled fixtures and is not proof that arbitrary untrusted code is safe outside OS or container isolation.",
+    "The Python socket guard does not isolate native child executables.",
+    "Windows wall-clock process-tree termination is enforced, but hard CPU, memory, disk, and network quotas require a container or Job Object.",
+    "The symlink rejection path is unit tested, but this Windows host reports fixture creation as unavailable rather than a runtime pass.",
+    "The pending 120 live Rule/LLM/Hybrid trials are not replaced by Phase 6 deterministic evidence."
+  ]
+}
