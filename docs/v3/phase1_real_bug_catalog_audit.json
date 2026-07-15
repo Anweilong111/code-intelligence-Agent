@@ -35,5 +35,5 @@
   "warnings": [
     "shared_bug_commit_requires_grouped_analysis:https://github.com/cool-RR/PySnooper@e21a31162f4c54be693d8ca8260e42393b39abd3"
   ],
-  "catalog_sha256": "17cf0fa94babb06d201cf4fc63c03543485e395eda57ded046b83cf756138f84"
+  "catalog_sha256": "1b75cff6ff3c464f2c749284007664cedcd7198f24b9173f904a4b1e1424aecf"
 }

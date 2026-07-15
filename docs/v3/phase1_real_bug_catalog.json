@@ -1,7 +1,7 @@
 {
   "schema_version": "3.0",
   "catalog_id": "v3-real-python-bugs-bugsinpy-seed-25",
-  "generated_at": "2026-07-14T19:43:18.102013+00:00",
+  "generated_at": "2026-07-14T23:41:33.330518+00:00",
   "source": {
     "adapter": "bugsinpy_metadata_v1",
     "repository_url": "https://github.com/soarsmu/BugsInPy",
@@ -303,13 +303,19 @@
       "python_version": "3.8.3",
       "environment_profile_id": "black-py3.8.3-win64",
       "test_overlay_paths": [
-        "tests/test_black.py"
+        "tests/test_black.py",
+        "tests/data/fmtonoff4.py"
       ],
       "test_overlay_provenance": {
         "benchmark_declared_paths": [
           "tests/test_black.py"
         ],
-        "additional_support_files": []
+        "additional_support_files": [
+          {
+            "path": "tests/data/fmtonoff4.py",
+            "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+          }
+        ]
       },
       "targeted_test_commands": [
         [
@@ -390,8 +396,8 @@
       "reproduction": {
         "evidence_status": "validated",
         "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-2/reproduction.json",
-        "evidence_sha256": "a378166d61745ea54f8bf07c6e003d79b166db4092837c3bfe85cb2f761ef4da",
-        "completed_at": "2026-07-14T18:09:22.688346+00:00",
+        "evidence_sha256": "6523307cb211e8ad98acd77c7333850ea05fc579e2dd4d24af7acd651cc50c15",
+        "completed_at": "2026-07-14T23:42:11.433143+00:00",
         "runtime": {
           "status": "pass",
           "expected_version": "3.8.3",
@@ -404,7 +410,7 @@
           "test_count": 1,
           "passed": 0,
           "failed": 1,
-          "errors": 1,
+          "errors": 0,
           "skipped": 0,
           "environment_blocker": false
         },
@@ -607,13 +613,19 @@
       "python_version": "3.8.3",
       "environment_profile_id": "black-py3.8.3-win64",
       "test_overlay_paths": [
-        "tests/test_black.py"
+        "tests/test_black.py",
+        "tests/data/function_trailing_comma.py"
       ],
       "test_overlay_provenance": {
         "benchmark_declared_paths": [
           "tests/test_black.py"
         ],
-        "additional_support_files": []
+        "additional_support_files": [
+          {
+            "path": "tests/data/function_trailing_comma.py",
+            "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+          }
+        ]
       },
       "targeted_test_commands": [
         [
@@ -695,8 +707,8 @@
       "reproduction": {
         "evidence_status": "validated",
         "evidence_artifact": "outputs_v3/reproduction/bugsinpy-black-5/reproduction.json",
-        "evidence_sha256": "16402d94d0b2bcf2443c475ed57099fcdee5dc1057a419ed802079aa747220e4",
-        "completed_at": "2026-07-14T18:10:42.239826+00:00",
+        "evidence_sha256": "c8ec268ee2058527935cf8a9ef8b3b4f38e313f8bf2f344032885e1d9caa14fa",
+        "completed_at": "2026-07-14T23:42:45.503286+00:00",
         "runtime": {
           "status": "pass",
           "expected_version": "3.8.3",
@@ -709,7 +721,7 @@
           "test_count": 1,
           "passed": 0,
           "failed": 1,
-          "errors": 1,
+          "errors": 0,
           "skipped": 0,
           "environment_blocker": false
         },
@@ -4042,7 +4054,7 @@
       }
     }
   ],
-  "catalog_sha256": "17cf0fa94babb06d201cf4fc63c03543485e395eda57ded046b83cf756138f84",
+  "catalog_sha256": "1b75cff6ff3c464f2c749284007664cedcd7198f24b9173f904a4b1e1424aecf",
   "evidence_aggregation": {
     "schema_version": "3.0",
     "status": "pass",
@@ -4053,5 +4065,5 @@
     "raw_artifacts_committed": false,
     "gold_patch_visible_to_execution": false
   },
-  "evidence_aggregated_at": "2026-07-14T19:38:36.948082+00:00"
+  "evidence_aggregated_at": "2026-07-14T23:42:45.503286+00:00"
 }

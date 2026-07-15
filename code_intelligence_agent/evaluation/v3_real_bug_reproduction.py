@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -300,6 +301,14 @@ def reproduce_real_bug_case(
         runner=runner,
         test_environment=_dict(case.get("test_environment")),
     )
+    benchmark_input_blocker = _missing_test_overlay_support_blocker(
+        bug_targeted,
+        bug_root=bug_root,
+        fix_root=fix_root,
+    )
+    if benchmark_input_blocker:
+        bug_targeted["environment_blocker"] = True
+        bug_targeted["benchmark_input_blocker"] = benchmark_input_blocker
     fix_targeted = execute_test_commands(
         commands,
         repository_root=fix_root,
@@ -341,10 +350,8 @@ def reproduce_real_bug_case(
     fix_targeted_passed = _successful_nonempty_test_group(fix_targeted)
     fix_regression_passed = _successful_nonempty_test_group(fix_regression)
     reproducible = bug_failed_as_expected and fix_targeted_passed and fix_regression_passed
-    blocker = _first_environment_blocker(
-        bug_targeted,
-        fix_targeted,
-        fix_regression,
+    blocker = benchmark_input_blocker or _first_environment_blocker(
+        bug_targeted, fix_targeted, fix_regression
     )
     return {
         "schema_version": "3.0",
@@ -353,6 +360,8 @@ def reproduce_real_bug_case(
         "reason": (
             "real_bug_reproduced"
             if reproducible
+            else "benchmark_input_blocker"
+            if benchmark_input_blocker
             else "environment_blocker"
             if blocker
             else "bug_fix_behavior_not_reproduced"
@@ -687,6 +696,55 @@ def _first_environment_blocker(*groups: dict[str, Any]) -> dict[str, Any]:
                     "signal": str(result.get("failure_signal") or ""),
                     "diagnostic": str(result.get("diagnostic_summary") or ""),
                 }
+    return {}
+
+
+def _missing_test_overlay_support_blocker(
+    group: dict[str, Any],
+    *,
+    bug_root: str | Path,
+    fix_root: str | Path,
+) -> dict[str, Any]:
+    bug = Path(bug_root).resolve()
+    fix = Path(fix_root).resolve()
+    for result_value in _list(group.get("results")):
+        context = str(_dict(result_value).get("failure_context") or "")
+        if "FileNotFoundError" not in context or "No such file or directory" not in context:
+            continue
+        for missing_value in re.findall(
+            r"No such file or directory:\s*['\"]([^'\"]+)['\"]",
+            context,
+        ):
+            missing_path = Path(missing_value)
+            missing = (
+                missing_path.resolve()
+                if missing_path.is_absolute()
+                else (bug / missing_path).resolve()
+            )
+            try:
+                relative = missing.relative_to(bug)
+            except (OSError, ValueError):
+                continue
+            relative_parts = tuple(part.lower() for part in relative.parts)
+            if not relative_parts or relative_parts[0] not in {"test", "tests"}:
+                continue
+            fix_file = (fix / relative).resolve()
+            if (
+                not _within(fix_file, fix)
+                or not fix_file.is_file()
+                or fix_file.is_symlink()
+            ):
+                continue
+            return {
+                "layer": "benchmark_input",
+                "category": "missing_test_overlay_support_file",
+                "relative_path": relative.as_posix(),
+                "signal": "Bug-side targeted test referenced a missing test support file.",
+                "diagnostic": (
+                    "The same test-only path exists at the fix revision and must be "
+                    "declared in test_overlay_paths before this case can be accepted."
+                ),
+            }
     return {}
 
 

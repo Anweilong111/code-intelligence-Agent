@@ -67,6 +67,12 @@
         },
         {
           "bug_id": 2,
+          "test_overlay_additions": [
+            {
+              "path": "tests/data/fmtonoff4.py",
+              "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+            }
+          ],
           "difficulty_tags": [
             "data_flow",
             "static_negative"
@@ -87,6 +93,12 @@
         },
         {
           "bug_id": 5,
+          "test_overlay_additions": [
+            {
+              "path": "tests/data/function_trailing_comma.py",
+              "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+            }
+          ],
           "difficulty_tags": [
             "high_similarity_candidates",
             "data_flow"

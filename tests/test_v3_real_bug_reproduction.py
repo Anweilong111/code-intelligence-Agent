@@ -240,6 +240,75 @@ def test_reproduction_requires_bug_fail_fix_targeted_and_regression_pass(tmp_pat
     assert result["gold_patch_visible_to_execution"] is False
 
 
+def test_reproduction_rejects_missing_fix_side_test_support_file(tmp_path):
+    case = _case()
+    bug = tmp_path / "bug"
+    fix = tmp_path / "fix"
+    (bug / "tests").mkdir(parents=True)
+    support = fix / "tests" / "data" / "support.py"
+    support.parent.mkdir(parents=True)
+    support.write_text("INPUT = 1\n", encoding="utf-8")
+    preparation = {
+        "status": "pass",
+        "reason": "fixture",
+        "bug_root": str(bug),
+        "fix_root": str(fix),
+        "bug_checkout": {"status": "pass", "ref": "a" * 40},
+        "fix_checkout": {"status": "pass", "ref": "b" * 40},
+        "test_overlay": {"status": "pass", "files": []},
+    }
+    calls = 0
+
+    def fake_runner(command, **kwargs):
+        nonlocal calls
+        del kwargs
+        if "-c" in command:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout="3.11.9\n",
+                stderr="",
+            )
+        calls += 1
+        if calls == 1:
+            return subprocess.CompletedProcess(
+                command,
+                1,
+                stdout="1 failed",
+                stderr=(
+                    "FileNotFoundError: [Errno 2] No such file or directory: "
+                    f"'{bug / 'tests' / 'data' / 'support.py'}'"
+                ),
+            )
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout="1 passed",
+            stderr="",
+        )
+
+    result = reproduce_real_bug_case(
+        case,
+        preparation,
+        python_executable=Path(__file__),
+        runner=fake_runner,
+    )
+
+    assert result["status"] == "fail"
+    assert result["reason"] == "benchmark_input_blocker"
+    assert result["acceptance"]["bug_targeted_failed"] is False
+    assert result["blocker"] == {
+        "layer": "benchmark_input",
+        "category": "missing_test_overlay_support_file",
+        "relative_path": "tests/data/support.py",
+        "signal": "Bug-side targeted test referenced a missing test support file.",
+        "diagnostic": (
+            "The same test-only path exists at the fix revision and must be declared "
+            "in test_overlay_paths before this case can be accepted."
+        ),
+    }
+
+
 def test_reproduction_rejects_zero_test_regression(tmp_path):
     case = _case()
     preparation = {

@@ -1,7 +1,7 @@
 {
   "schema_version": "3.0",
   "catalog_id": "v3-real-python-bugs-bugsinpy-seed-25",
-  "generated_at": "2026-07-14T19:43:18.102013+00:00",
+  "generated_at": "2026-07-14T23:41:33.330518+00:00",
   "source": {
     "adapter": "bugsinpy_metadata_v1",
     "repository_url": "https://github.com/soarsmu/BugsInPy",
@@ -267,13 +267,19 @@
       "python_version": "3.8.3",
       "environment_profile_id": "black-py3.8.3-win64",
       "test_overlay_paths": [
-        "tests/test_black.py"
+        "tests/test_black.py",
+        "tests/data/fmtonoff4.py"
       ],
       "test_overlay_provenance": {
         "benchmark_declared_paths": [
           "tests/test_black.py"
         ],
-        "additional_support_files": []
+        "additional_support_files": [
+          {
+            "path": "tests/data/fmtonoff4.py",
+            "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+          }
+        ]
       },
       "targeted_test_commands": [
         [
@@ -499,13 +505,19 @@
       "python_version": "3.8.3",
       "environment_profile_id": "black-py3.8.3-win64",
       "test_overlay_paths": [
-        "tests/test_black.py"
+        "tests/test_black.py",
+        "tests/data/function_trailing_comma.py"
       ],
       "test_overlay_provenance": {
         "benchmark_declared_paths": [
           "tests/test_black.py"
         ],
-        "additional_support_files": []
+        "additional_support_files": [
+          {
+            "path": "tests/data/function_trailing_comma.py",
+            "reason": "The fixed targeted test reads this test-only formatter fixture, which is absent at the bug SHA and is not production code or part of the gold patch."
+          }
+        ]
       },
       "targeted_test_commands": [
         [
@@ -3322,5 +3334,5 @@
       }
     }
   ],
-  "catalog_sha256": "b2b877143ef3cfbcdcf4c6e0b5680d72a3c659470582b495cbaa61f16b1f54bc"
+  "catalog_sha256": "c53def9c01715dfb89993750351a8c5fe5ab1502b47bda7f6ef83d7c7d175588"
 }

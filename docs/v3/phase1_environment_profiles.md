@@ -3,7 +3,7 @@
 - Status: `pass`
 - Profiles: `8`
 - Bound cases: `25` / `25`
-- Manifest SHA-256: `5e8a4b6179094205c730d6118d6876026ed3e79631a284454cf8ffe1a5e778a2`
+- Manifest SHA-256: `c54765750d2cdfa835d861a7d579e19ddd15c5807daefc6a42329520674324a4`
 - Runtime directories are ignored; only exact package/version snapshots and fingerprints are committed.
 
 | Profile | Python | Platform | Packages | Cases | Fingerprint |

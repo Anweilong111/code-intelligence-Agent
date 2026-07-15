@@ -4,7 +4,7 @@
 - Cases: `25`
 - Repositories: `6`
 - Candidate/accepted/rejected: `20` / `0` / `5`
-- Catalog SHA-256: `b2b877143ef3cfbcdcf4c6e0b5680d72a3c659470582b495cbaa61f16b1f54bc`
+- Catalog SHA-256: `c53def9c01715dfb89993750351a8c5fe5ab1502b47bda7f6ef83d7c7d175588`
 - Import errors: `0`
 
 | Case | Split | Repository | Python | Status | Targeted commands | Ground truth files |
