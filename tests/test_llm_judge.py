@@ -1,4 +1,5 @@
 import hashlib
+import http.client
 import io
 from pathlib import Path
 import json
@@ -364,6 +365,66 @@ def test_retrying_llm_client_retries_transient_failures_within_one_request():
         "network_unavailable",
         "http_503",
     ]
+
+
+def test_retrying_client_recovers_from_incomplete_chunked_response(monkeypatch):
+    calls = []
+    delays = []
+    response_body = json.dumps(
+        {
+            "id": "chatcmpl-after-retry",
+            "model": "deepseek-v4-pro",
+            "choices": [
+                {
+                    "message": {"content": '{"files": []}'},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+        }
+    ).encode("utf-8")
+
+    class Response:
+        def __init__(self, *, broken):
+            self.broken = broken
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            del exc_type, exc, traceback
+
+        def read(self):
+            if self.broken:
+                raise http.client.IncompleteRead(b"part", 100)
+            return response_body
+
+    def fake_urlopen(request, timeout):
+        del request, timeout
+        calls.append(len(calls) + 1)
+        return Response(broken=len(calls) == 1)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = RetryingLLMClient(
+        OpenAICompatibleLLMClient(
+            provider="deepseek",
+            api_key="fake-key",
+            model="deepseek-v4-pro",
+        ),
+        max_retries=1,
+        backoff_seconds=(0.25,),
+        sleeper=delays.append,
+    )
+
+    response = client.complete("repair")
+
+    assert response.text == '{"files": []}'
+    assert calls == [1, 2]
+    assert delays == [0.25]
+    assert response.metadata["provider_attempt_count"] == 2
+    assert response.metadata["provider_retry_count"] == 1
+    assert response.metadata["provider_retry_reasons"] == ["incomplete_read"]
+    assert "part" not in json.dumps(response.metadata)
 
 
 def test_retrying_llm_client_does_not_retry_authentication_failure():

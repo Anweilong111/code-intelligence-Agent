@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import os
 import time
@@ -256,6 +257,20 @@ class OpenAICompatibleLLMClient:
             raise LLMRequestError(
                 "timeout",
                 f"LLM request exceeded {self.timeout}s timeout.",
+                metadata,
+            ) from exc
+        except (http.client.HTTPException, OSError) as exc:
+            metadata = self._request_metadata(
+                prompt=prompt,
+                text="",
+                status="error",
+                elapsed_ms=_elapsed_ms(started_at),
+                error_type=type(exc).__name__,
+                error_reason=_transport_error_reason(exc),
+            )
+            raise LLMRequestError(
+                "url_error",
+                "LLM response transport ended before a complete response was received.",
                 metadata,
             ) from exc
         try:
@@ -899,6 +914,22 @@ def _provider_retry_metadata(
 def _provider_error_reason(exc: LLMRequestError) -> str:
     value = exc.metadata.get("error_reason")
     return str(value or exc.reason)
+
+
+def _transport_error_reason(exc: BaseException) -> str:
+    if isinstance(exc, http.client.IncompleteRead):
+        return "incomplete_read"
+    if isinstance(exc, http.client.RemoteDisconnected):
+        return "remote_disconnected"
+    if isinstance(exc, ConnectionResetError):
+        return "connection_reset"
+    if isinstance(exc, ConnectionAbortedError):
+        return "connection_aborted"
+    if isinstance(exc, ConnectionRefusedError):
+        return "connection_refused"
+    if isinstance(exc, BrokenPipeError):
+        return "broken_pipe"
+    return "transport_error"
 
 
 def _is_retryable_provider_error(exc: LLMRequestError) -> bool:
