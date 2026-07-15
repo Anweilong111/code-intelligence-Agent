@@ -76,6 +76,36 @@ def run_v3_repair_evaluation(
     catalog = _read_json(catalog_path)
     profiles = _read_json(environment_profiles_path)
     selected_strategies = _normalize_strategies(strategies)
+    catalog_cases = [_dict(case) for case in _list(catalog.get("cases"))]
+    accepted = [
+        _dict(case)
+        for case in catalog_cases
+        if str(_dict(case).get("status") or "") == "accepted"
+    ]
+    requested_case_ids = {str(item) for item in (case_ids or []) if str(item)}
+    if requested_case_ids:
+        accepted_ids = {str(case.get("case_id") or "") for case in accepted}
+        unavailable = sorted(requested_case_ids - accepted_ids)
+        if unavailable:
+            status_by_id = {
+                str(case.get("case_id") or ""): str(case.get("status") or "missing")
+                for case in catalog_cases
+            }
+            details = ", ".join(
+                f"{case_id} ({status_by_id.get(case_id, 'missing')})"
+                for case_id in unavailable
+            )
+            raise ValueError(f"Requested V3 case IDs are not accepted: {details}")
+        accepted = [
+            case
+            for case in accepted
+            if str(case.get("case_id") or "") in requested_case_ids
+        ]
+    accepted.sort(key=lambda case: str(case.get("case_id") or ""))
+    if max_cases > 0:
+        accepted = accepted[:max_cases]
+    if not accepted:
+        raise ValueError("V3 repair evaluation selected no accepted cases.")
     if not prepare_only and any(
         strategy in {"llm", "hybrid"} for strategy in selected_strategies
     ):
@@ -87,21 +117,6 @@ def run_v3_repair_evaluation(
             raise ValueError(
                 "No V3 model API key is present in the current process environment."
             )
-    accepted = [
-        _dict(case)
-        for case in _list(catalog.get("cases"))
-        if str(_dict(case).get("status") or "") == "accepted"
-    ]
-    requested_case_ids = {str(item) for item in (case_ids or []) if str(item)}
-    if requested_case_ids:
-        accepted = [
-            case
-            for case in accepted
-            if str(case.get("case_id") or "") in requested_case_ids
-        ]
-    accepted.sort(key=lambda case: str(case.get("case_id") or ""))
-    if max_cases > 0:
-        accepted = accepted[:max_cases]
     profile_by_id = {
         str(_dict(profile).get("profile_id") or ""): _dict(profile)
         for profile in _list(profiles.get("profiles"))

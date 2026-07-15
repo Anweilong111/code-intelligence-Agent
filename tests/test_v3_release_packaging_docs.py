@@ -50,7 +50,7 @@ def test_v3_demo_uses_real_cli_and_preserves_live_trial_gate():
     assert "python -m code_intelligence_agent agent" in text
     assert "python -m code_intelligence_agent chat-ui" in text
     assert "python -m code_intelligence_agent v3-repair-eval" in text
-    assert "--case-id bugsinpy-black-1" in text
+    assert "--case-id bugsinpy-pysnooper-3" in text
     assert "--live-model" in text
     assert "119 个 trial" in text
     assert "60 LLM + 60 Hybrid" in text

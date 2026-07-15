@@ -253,7 +253,7 @@ python -m code_intelligence_agent v3-repair-eval `
   outputs_v3/phase3_live `
   --root . `
   --strategies llm,hybrid `
-  --case-id bugsinpy-black-1 `
+  --case-id bugsinpy-pysnooper-3 `
   --live-model `
   --max-workers 1 `
   --format markdown

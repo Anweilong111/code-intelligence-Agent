@@ -8,6 +8,8 @@ import sys
 import threading
 import uuid
 
+import pytest
+
 from code_intelligence_agent.agents.llm_client import (
     LLMRequestError,
     StaticLLMClient,
@@ -1380,6 +1382,67 @@ def test_v3_repair_cli_accepts_bounded_trial_workers():
     )
 
     assert args.max_workers == 3
+
+
+def test_repair_evaluation_rejects_requested_case_that_is_not_accepted(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    protocol_path = (
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    accepted_case = _case()
+    accepted_case["status"] = "accepted"
+    rejected_case = copy.deepcopy(accepted_case)
+    rejected_case["case_id"] = "bugsinpy-demo-rejected"
+    rejected_case["status"] = "rejected"
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(
+        json.dumps({"cases": [accepted_case, rejected_case]}),
+        encoding="utf-8",
+    )
+    profiles_path = tmp_path / "profiles.json"
+    profiles_path.write_text(json.dumps({"profiles": []}), encoding="utf-8")
+
+    with pytest.raises(
+        ValueError,
+        match=r"Requested V3 case IDs are not accepted: bugsinpy-demo-rejected \(rejected\)",
+    ):
+        run_v3_repair_evaluation(
+            project_root=project_root,
+            protocol_path=protocol_path,
+            catalog_path=catalog_path,
+            environment_profiles_path=profiles_path,
+            reproduction_root=tmp_path,
+            output_dir=tmp_path / "evaluation",
+            strategies=["rule"],
+            case_ids=["bugsinpy-demo-rejected"],
+            prepare_only=True,
+        )
+
+
+def test_repair_evaluation_rejects_empty_accepted_catalog(tmp_path):
+    project_root = Path(__file__).resolve().parents[1]
+    protocol_path = (
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(json.dumps({"cases": []}), encoding="utf-8")
+    profiles_path = tmp_path / "profiles.json"
+    profiles_path.write_text(json.dumps({"profiles": []}), encoding="utf-8")
+
+    with pytest.raises(
+        ValueError,
+        match="V3 repair evaluation selected no accepted cases",
+    ):
+        run_v3_repair_evaluation(
+            project_root=project_root,
+            protocol_path=protocol_path,
+            catalog_path=catalog_path,
+            environment_profiles_path=profiles_path,
+            reproduction_root=tmp_path,
+            output_dir=tmp_path / "evaluation",
+            strategies=["rule"],
+            prepare_only=True,
+        )
 
 
 def test_live_trial_workers_execute_independent_trials_concurrently(

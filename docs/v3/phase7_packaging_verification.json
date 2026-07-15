@@ -91,9 +91,9 @@
   ],
   "artifacts": {
     "docs/v3/v3_architecture_and_agent_design_cn.md": "62a6f8d5770c79732ab7448d8d0c547e688db082b5aebc058eb079735058f28a",
-    "docs/v3/v3_ten_minute_demo_guide_cn.md": "af400937892f5083fe5fd6365137fcc723a7c15496615e693d36a7ed78caf3fa",
+    "docs/v3/v3_ten_minute_demo_guide_cn.md": "af5f50fa20d53fa0ff1a7f29377f2732e21b99b7dc2fe2b3b0f78626a9b596a9",
     "docs/career/v3_resume_interview_pack_cn.md": "c3c3bc2bdefbaa94d1a1bbc8890f0c856a61e82bf265658ea07e6dbd4d486cda",
-    "tests/test_v3_release_packaging_docs.py": "4a0ca80801b4397ade569319eeecba19465487a76b83042d12635c074eaa716d",
+    "tests/test_v3_release_packaging_docs.py": "31da03a12748dd0fafa18706775571a362129ef6793e6c703127ac82a6378b1f",
     "code_intelligence_agent/evaluation/release_hygiene_audit.py": "adc4476d9eb2f6f2a1369047af50835c906f53d1ce94dc5eeede634f6691c74c",
     "tests/test_release_hygiene_audit.py": "9faec834a69c8a8a9feac689b6faa5d3f21a0aaea8a14a8e3421e61234d07ba6"
   },
