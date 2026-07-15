@@ -191,9 +191,14 @@ Each completed trial writes an immutable attempt result and a `latest.json`
 pointer. Resume reuses only a schema-compatible complete trial whose input
 fingerprint matches the current protocol, bug SHA, dynamic evidence,
 localization, selected model context, analysis/edit scope, and critical repair
-implementation files. Provider/environment blockers are reused unless
-`--retry-blockers` is explicit. New attempts receive new directories and trial
-identifiers; prior attempts remain available for audit.
+implementation files. The fingerprint also covers an auditable trial execution
+contract: strategy, live-model mode, rule-candidate limit, targeted and full
+regression timeouts, pinned runtime profile and Python executable hashes, and
+the reproduction artifact hash. Changing any behavior-affecting value creates a
+new attempt instead of silently reusing an incompatible result.
+Provider/environment blockers are reused unless `--retry-blockers` is explicit.
+New attempts receive new directories and trial identifiers; prior attempts
+remain available for audit.
 
 ## Commands
 

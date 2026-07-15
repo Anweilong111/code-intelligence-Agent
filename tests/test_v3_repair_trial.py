@@ -39,6 +39,7 @@ from code_intelligence_agent.evaluation.v3_repair_evaluation import (
     audit_v3_evaluation_completeness,
     audit_v3_reproduction_seed,
     build_arg_parser,
+    build_v3_trial_execution_contract,
     build_v3_trial_input_fingerprint,
     build_v3_repair_metrics,
     run_v3_repair_evaluation,
@@ -1382,6 +1383,8 @@ def test_resume_requires_the_current_trial_input_fingerprint(tmp_path):
     )
     repository = tmp_path / "repository"
     repository.mkdir()
+    executable = tmp_path / "python.exe"
+    executable.write_bytes(b"pinned-python-runtime")
     prepared = PreparedV3RepairCase(
         case=_case(),
         seed_repository=repository,
@@ -1397,12 +1400,43 @@ def test_resume_requires_the_current_trial_input_fingerprint(tmp_path):
         model_context_artifact="",
         preparation_artifacts={},
     )
-    fingerprint = build_v3_trial_input_fingerprint(protocol, prepared)
+    execution_contract = build_v3_trial_execution_contract(
+        strategy_mode="hybrid",
+        live_model=True,
+        rule_candidate_limit=5,
+        targeted_timeout=180,
+        regression_timeout=900,
+        runtime={
+            "profile_id": "python-test",
+            "expected_python_version": "3.test",
+            "python_executable": executable.as_posix(),
+        },
+        runtime_profile={
+            "profile_id": "python-test",
+            "archive_sha256": "a" * 64,
+        },
+        reproduction_artifact_sha256="b" * 64,
+    )
+    fingerprint = build_v3_trial_input_fingerprint(
+        protocol,
+        prepared,
+        execution_contract=execution_contract,
+    )
     trial_path = tmp_path / "latest.json"
+    contract_sha256 = hashlib.sha256(
+        json.dumps(
+            execution_contract,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
     trial_path.write_text(
         json.dumps(
             {
                 "input_fingerprint": fingerprint,
+                "execution_contract": execution_contract,
+                "execution_contract_sha256": contract_sha256,
                 "records": [
                     _evaluation_record(
                         protocol,
@@ -1421,17 +1455,55 @@ def test_resume_requires_the_current_trial_input_fingerprint(tmp_path):
         trial_path,
         protocol=protocol,
         expected_input_fingerprint=fingerprint,
+        expected_execution_contract=execution_contract,
         retry_blockers=False,
     )
     stale = _load_resumable_trial(
         trial_path,
         protocol=protocol,
         expected_input_fingerprint="different-input",
+        expected_execution_contract=execution_contract,
+        retry_blockers=False,
+    )
+    changed_contract = dict(execution_contract)
+    changed_contract["targeted_timeout_seconds"] = 120
+    stale_contract = _load_resumable_trial(
+        trial_path,
+        protocol=protocol,
+        expected_input_fingerprint=fingerprint,
+        expected_execution_contract=changed_contract,
         retry_blockers=False,
     )
 
     assert resumed is not None
     assert stale is None
+    assert stale_contract is None
+    assert execution_contract["model_execution_mode"] == "live"
+    assert execution_contract["rule_candidate_limit"] == 5
+    assert execution_contract["targeted_timeout_seconds"] == 180
+    assert execution_contract["regression_timeout_seconds"] == 900
+    assert execution_contract["runtime_profile_id"] == "python-test"
+    assert execution_contract["python_executable_sha256"] == hashlib.sha256(
+        executable.read_bytes()
+    ).hexdigest()
+    assert executable.as_posix() not in json.dumps(execution_contract)
+    for field, changed_value in (
+        ("strategy_mode", "llm"),
+        ("model_execution_mode", "none"),
+        ("rule_candidate_limit", 4),
+        ("targeted_timeout_seconds", 120),
+        ("regression_timeout_seconds", 600),
+        ("runtime_profile_sha256", "c" * 64),
+        ("python_executable_sha256", "d" * 64),
+        ("reproduction_artifact_sha256", "e" * 64),
+    ):
+        changed = dict(execution_contract)
+        changed[field] = changed_value
+        assert build_v3_trial_input_fingerprint(
+            protocol,
+            prepared,
+            execution_contract=changed,
+        ) != fingerprint
 
 
 def test_v3_repair_cli_accepts_bounded_trial_workers():
@@ -1613,6 +1685,16 @@ def test_live_trial_workers_execute_independent_trials_concurrently(
     assert result["status"] == "pass", result
     assert result["completeness"]["observed_trial_count"] == 3
     assert result["metrics"]["llm"]["observed_trial_count"] == 3
+    assert result["execution_parameters"] == {
+        "rule_candidate_limit": 5,
+        "targeted_timeout_seconds": 120,
+        "regression_timeout_seconds": 900,
+    }
+    for trial in result["case_results"][0]["trials"]:
+        assert trial["execution_contract"]["strategy_mode"] == "llm"
+        assert trial["execution_contract"]["rule_candidate_limit"] == 0
+        assert trial["execution_contract"]["targeted_timeout_seconds"] == 120
+        assert trial["execution_contract_sha256"]
     assert len(worker_threads) == 3
 
 

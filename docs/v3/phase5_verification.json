@@ -5,8 +5,8 @@
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "d93360da8e649bb352b00a358848209c91b931d7fbf27b2679dc903a2b80a73b",
-    "implementation_hash_refresh_reason": "Phase 6 runtime isolation and Phase 7 provider/model metadata aggregation and LF artifact writing changed included implementation files without changing the Phase 5 semantic acceptance contract.",
+    "trial_implementation_sha256": "468483358c8c41ad83ccb8935b8e5dd00fc67c23bda5703e7311fc78df211706",
+    "implementation_hash_refresh_reason": "Phase 3 resume integrity now fingerprints and persists the trial execution contract, including test timeouts, candidate limits, runtime identity, and reproduction evidence, without changing the Phase 5 semantic acceptance contract.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",

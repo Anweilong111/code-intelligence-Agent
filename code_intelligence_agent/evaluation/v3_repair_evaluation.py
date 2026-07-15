@@ -191,15 +191,35 @@ def run_v3_repair_evaluation(
             )
             continue
         trial_results = []
-        trial_input_fingerprint = build_v3_trial_input_fingerprint(
-            protocol,
-            prepared,
-        )
+        execution_contracts = {
+            strategy: build_v3_trial_execution_contract(
+                strategy_mode=strategy,
+                live_model=live_model,
+                rule_candidate_limit=rule_candidate_limit,
+                targeted_timeout=targeted_timeout,
+                regression_timeout=regression_timeout,
+                runtime=runtime,
+                runtime_profile=profile_by_id.get(
+                    str(runtime.get("profile_id") or ""),
+                    {},
+                ),
+                reproduction_artifact_sha256=str(
+                    seed_audit.get("reproduction_artifact_sha256") or ""
+                ),
+            )
+            for strategy in selected_strategies
+        }
         if not prepare_only:
             ordered_trial_results: list[tuple[int, dict[str, Any]]] = []
             pending_jobs: list[dict[str, Any]] = []
             trial_order = 0
             for strategy in selected_strategies:
+                execution_contract = execution_contracts[strategy]
+                trial_input_fingerprint = build_v3_trial_input_fingerprint(
+                    protocol,
+                    prepared,
+                    execution_contract=execution_contract,
+                )
                 for trial_index in _trial_indices(protocol, strategy):
                     trial_order += 1
                     trial_root = case_output / "trials" / strategy / f"trial-{trial_index}"
@@ -208,6 +228,7 @@ def run_v3_repair_evaluation(
                         latest_path,
                         protocol=protocol,
                         expected_input_fingerprint=trial_input_fingerprint,
+                        expected_execution_contract=execution_contract,
                         retry_blockers=retry_blockers,
                     ) if resume else None
                     if resumed is not None:
@@ -224,6 +245,8 @@ def run_v3_repair_evaluation(
                                 "trial_root": trial_root,
                                 "latest_path": latest_path,
                                 "attempt_dir": attempt_dir,
+                                "execution_contract": execution_contract,
+                                "input_fingerprint": trial_input_fingerprint,
                             }
                         )
 
@@ -241,7 +264,14 @@ def run_v3_repair_evaluation(
                     targeted_timeout=targeted_timeout,
                     regression_timeout=regression_timeout,
                 )
-                trial_result["input_fingerprint"] = trial_input_fingerprint
+                execution_contract = _dict(job.get("execution_contract"))
+                trial_result["execution_contract"] = execution_contract
+                trial_result["execution_contract_sha256"] = _sha256_json(
+                    execution_contract
+                )
+                trial_result["input_fingerprint"] = str(
+                    job.get("input_fingerprint") or ""
+                )
                 trial_result["resumed"] = False
                 trial_result["attempt_dir"] = attempt_dir.as_posix()
                 attempt_dir.mkdir(parents=True, exist_ok=True)
@@ -370,6 +400,11 @@ def run_v3_repair_evaluation(
         "prepare_only": prepare_only,
         "live_model": live_model,
         "max_workers": max(1, max_workers),
+        "execution_parameters": {
+            "rule_candidate_limit": max(0, rule_candidate_limit),
+            "targeted_timeout_seconds": max(1, targeted_timeout),
+            "regression_timeout_seconds": max(1, regression_timeout),
+        },
         "started_at": started_at,
         "completed_at": completed_at,
         "protocol_path": str(Path(protocol_path).resolve()),
@@ -1046,6 +1081,7 @@ def _load_resumable_trial(
     *,
     protocol: dict[str, Any],
     expected_input_fingerprint: str,
+    expected_execution_contract: dict[str, Any],
     retry_blockers: bool,
 ) -> dict[str, Any] | None:
     if not path.is_file():
@@ -1055,6 +1091,12 @@ def _load_resumable_trial(
     except (OSError, json.JSONDecodeError):
         return None
     if str(result.get("input_fingerprint") or "") != expected_input_fingerprint:
+        return None
+    if _dict(result.get("execution_contract")) != expected_execution_contract:
+        return None
+    if str(result.get("execution_contract_sha256") or "") != _sha256_json(
+        expected_execution_contract
+    ):
         return None
     records = [_dict(record) for record in _list(result.get("records"))]
     audit = validate_run_records(records, protocol=protocol, require_complete=False)
@@ -1069,9 +1111,48 @@ def _load_resumable_trial(
     return result
 
 
+def build_v3_trial_execution_contract(
+    *,
+    strategy_mode: str,
+    live_model: bool,
+    rule_candidate_limit: int,
+    targeted_timeout: int,
+    regression_timeout: int,
+    runtime: dict[str, Any],
+    runtime_profile: dict[str, Any],
+    reproduction_artifact_sha256: str,
+) -> dict[str, Any]:
+    executable = Path(str(runtime.get("python_executable") or ""))
+    return {
+        "schema_version": "v3_trial_execution_contract_v1",
+        "strategy_mode": strategy_mode,
+        "model_execution_mode": (
+            "live" if live_model and strategy_mode in {"llm", "hybrid"} else "none"
+        ),
+        "rule_candidate_limit": (
+            max(0, rule_candidate_limit)
+            if strategy_mode in {"rule", "hybrid"}
+            else 0
+        ),
+        "targeted_timeout_seconds": max(1, targeted_timeout),
+        "regression_timeout_seconds": max(1, regression_timeout),
+        "runtime_profile_id": str(runtime.get("profile_id") or ""),
+        "runtime_expected_python_version": str(
+            runtime.get("expected_python_version") or ""
+        ),
+        "runtime_profile_sha256": _sha256_json(_dict(runtime_profile)),
+        "python_executable_sha256": (
+            sha256_file(executable) if executable.is_file() else ""
+        ),
+        "reproduction_artifact_sha256": reproduction_artifact_sha256,
+    }
+
+
 def build_v3_trial_input_fingerprint(
     protocol: dict[str, Any],
     prepared: PreparedV3RepairCase,
+    *,
+    execution_contract: dict[str, Any],
 ) -> str:
     payload = {
         "protocol_sha256": str(protocol.get("protocol_sha256") or ""),
@@ -1090,6 +1171,7 @@ def build_v3_trial_input_fingerprint(
         ),
         "dynamic_evidence_sha256": _sha256_json(prepared.dynamic_evidence),
         "localization_sha256": _sha256_json(prepared.localization),
+        "execution_contract_sha256": _sha256_json(execution_contract),
         "implementation_sha256": _v3_trial_implementation_sha256(),
     }
     return _sha256_json(payload)
@@ -1112,6 +1194,10 @@ def _trial_summary(result: dict[str, Any]) -> dict[str, Any]:
         "resumed": bool(result.get("resumed", False)),
         "attempt_dir": str(result.get("attempt_dir") or ""),
         "input_fingerprint": str(result.get("input_fingerprint") or ""),
+        "execution_contract_sha256": str(
+            result.get("execution_contract_sha256") or ""
+        ),
+        "execution_contract": _dict(result.get("execution_contract")),
     }
 
 
