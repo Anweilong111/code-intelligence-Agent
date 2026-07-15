@@ -15,6 +15,7 @@ from code_intelligence_agent.agents.llm_client import (
     StaticLLMClient,
 )
 from code_intelligence_agent.core.repo_parser import RepoParser
+from code_intelligence_agent.evaluation import v3_repair_orchestrator as repair_orchestrator
 from code_intelligence_agent.evaluation.v3_experiment_protocol import (
     load_experiment_protocol,
     validate_run_record,
@@ -938,7 +939,10 @@ def test_provider_error_is_classified_separately_from_repair_failure():
     assert execution["validation"]["targeted_tests"] == "not_run"
 
 
-def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(tmp_path):
+def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(
+    tmp_path,
+    monkeypatch,
+):
     project_root = Path(__file__).resolve().parents[1]
     protocol = load_experiment_protocol(
         project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
@@ -1019,6 +1023,7 @@ def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(tmp_path
                         "original_sha256": region.original_sha256,
                         "replacement": (
                             "def ratio(total, count):\n"
+                            '    cache_root = "/tmp/cache"\n'
                             "    if count == 0:\n"
                             "        return -1\n"
                             "    return total / count"
@@ -1084,8 +1089,61 @@ def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(tmp_path
     assert len(direct_client.prompts) == 1
     assert len(reflection_client.prompts) == 1
     assert "failed_diff_fingerprints" in reflection_client.prompts[0]
+    assert "/tmp/cache" in reflection_client.prompts[0]
     assert (tmp_path / "trial" / "workspaces" / "candidate-1").is_dir()
     assert (tmp_path / "trial" / "workspaces" / "candidate-2").is_dir()
+
+    original_audit = repair_orchestrator.audit_v3_model_context
+
+    def reject_reflection_context(context, **kwargs):
+        if context.get("reflection"):
+            return {
+                "status": "fail",
+                "errors": ["absolute_local_path_present"],
+                "context_sha256": "rejected-context",
+                "absolute_local_path_locations": [
+                    "$.reflection.validation.semantic_justification"
+                ],
+            }
+        return original_audit(context, **kwargs)
+
+    monkeypatch.setattr(
+        repair_orchestrator,
+        "audit_v3_model_context",
+        reject_reflection_context,
+    )
+    blocked_reflection_client = StaticLLMClient(reflection_client.text)
+    blocked = run_v3_repair_trial(
+        protocol,
+        prepared,
+        project_root=project_root,
+        output_dir=tmp_path / "blocked-trial",
+        strategy_mode="llm",
+        trial_index=2,
+        python_executable=sys.executable,
+        llm_client=StaticLLMClient(direct_client.text),
+        reflection_client=blocked_reflection_client,
+        targeted_timeout=30,
+        regression_timeout=30,
+    )
+    blocked_audit = validate_run_records(
+        blocked["records"],
+        protocol=protocol,
+        require_complete=False,
+    )
+
+    assert blocked["status"] == "fail"
+    assert blocked["record_count"] == 2
+    assert blocked["records"][1]["outcome"]["status"] == "safety_rejected"
+    assert blocked["records"][1]["failure"] == {
+        "layer": "safety",
+        "category": "unsafe_reflection_context",
+        "reason": (
+            "unsafe_reflection_context:absolute_local_path_present"
+        ),
+    }
+    assert blocked_reflection_client.prompts == []
+    assert blocked_audit["status"] == "pass", blocked_audit["errors"]
 
 
 def test_reproduction_seed_audit_verifies_commit_and_overlay_hash(tmp_path):

@@ -64,6 +64,13 @@ class PreparedV3RepairCase:
     preparation_artifacts: dict[str, str]
 
 
+class UnsafeV3ReflectionContextError(ValueError):
+    def __init__(self, audit: dict[str, Any]) -> None:
+        self.audit = dict(audit)
+        errors = [str(item) for item in _list(audit.get("errors"))]
+        super().__init__("Unsafe V3 reflection context: " + ",".join(errors))
+
+
 def prepare_v3_repair_case(
     case: dict[str, Any],
     *,
@@ -583,13 +590,46 @@ def run_v3_repair_trial(
     active_execution = execution
     active_candidate_payload = active_candidate
     for reflection_round in range(1, maximum_rounds + 1):
-        reflection_context = _build_reflection_context(
-            prepared,
-            parent_candidate_id=active_parent_id,
-            parent_candidate=active_candidate_payload,
-            parent_execution=active_execution,
-            failed_diff_fingerprints=failed_diff_fingerprints,
+        candidate_index += 1
+        reflection_candidate_id = _candidate_id(
+            prepared.case,
+            mode=mode,
+            trial_index=trial_index,
+            candidate_index=candidate_index,
+            label=f"llm-reflection-{reflection_round}",
         )
+        try:
+            reflection_context = _build_reflection_context(
+                prepared,
+                parent_candidate_id=active_parent_id,
+                parent_candidate=active_candidate_payload,
+                parent_execution=active_execution,
+                failed_diff_fingerprints=failed_diff_fingerprints,
+            )
+        except UnsafeV3ReflectionContextError as exc:
+            reflection_execution = _reflection_context_rejection_execution(
+                exc.audit
+            )
+            reflection_record = _record_candidate(
+                protocol,
+                prepared=prepared,
+                mode=mode,
+                trial_index=trial_index,
+                trial_id=trial_id,
+                candidate_index=candidate_index,
+                candidate_id=reflection_candidate_id,
+                generator_family="llm",
+                generator_id="llm_reflection_context_rejected",
+                reflection_round=reflection_round,
+                parent_candidate_id=active_parent_id,
+                prompt_id="reflection_v3",
+                llm_metadata={},
+                execution=reflection_execution,
+                output_dir=output,
+            )
+            records.append(reflection_record)
+            candidate_summaries.append(_record_summary(reflection_record))
+            break
         reflection_context_path = (
             output / "contexts" / f"reflection-{reflection_round}.json"
         )
@@ -603,14 +643,6 @@ def run_v3_repair_trial(
             protocol=protocol,
             project_root=project_root,
             prompt_id="reflection_v3",
-        )
-        candidate_index += 1
-        reflection_candidate_id = _candidate_id(
-            prepared.case,
-            mode=mode,
-            trial_index=trial_index,
-            candidate_index=candidate_index,
-            label=f"llm-reflection-{reflection_round}",
         )
         if reflection_client_error is not None:
             reflection_execution = provider_blocker_execution(
@@ -997,6 +1029,10 @@ def _build_reflection_context(
 ) -> dict[str, Any]:
     context = json.loads(json.dumps(prepared.model_context))
     workspace = str(_dict(parent_execution.get("workspace")).get("workspace") or "")
+    reflection_roots = [
+        prepared.seed_repository,
+        Path(workspace) if workspace else None,
+    ]
     context["task"] = "revise_failed_python_source_repair"
     context["reflection"] = {
         "parent_candidate_id": parent_candidate_id,
@@ -1012,20 +1048,21 @@ def _build_reflection_context(
                 for item in _list(parent_candidate.get("files"))
             ]
         },
-        "validation": _dict(parent_execution.get("validation")),
-        "safety_reasons": [
-            str(item)
-            for item in _list(
-                _dict(parent_execution.get("safety")).get("reasons")
-            )
-        ],
+        "validation": _sanitize_reflection_feedback(
+            _dict(parent_execution.get("validation")),
+            roots=reflection_roots,
+        ),
+        "safety_reasons": _sanitize_reflection_feedback(
+            _list(_dict(parent_execution.get("safety")).get("reasons")),
+            roots=reflection_roots,
+        ),
         "targeted_test": _compact_test_group(
             _dict(parent_execution.get("targeted")),
-            roots=[prepared.seed_repository, Path(workspace) if workspace else None],
+            roots=reflection_roots,
         ),
         "full_regression": _compact_test_group(
             _dict(parent_execution.get("regression")),
-            roots=[prepared.seed_repository, Path(workspace) if workspace else None],
+            roots=reflection_roots,
         ),
         "failed_diff_fingerprints": sorted(failed_diff_fingerprints),
         "history_scope": "current_trial_only",
@@ -1036,7 +1073,7 @@ def _build_reflection_context(
         repository_root=prepared.seed_repository,
     )
     if audit["status"] != "pass":
-        raise ValueError("Unsafe V3 reflection context: " + ",".join(audit["errors"]))
+        raise UnsafeV3ReflectionContextError(audit)
     return context
 
 
@@ -1072,9 +1109,69 @@ def _compact_test_group(
         )
     return {
         "status": str(group.get("status") or ""),
-        "reason": str(group.get("reason") or ""),
+        "reason": sanitize_v3_untrusted_text(
+            str(group.get("reason") or ""),
+            repository_roots=roots,
+            limit=2_000,
+        ),
         "environment_blocker": bool(group.get("environment_blocker", False)),
         "results": rows,
+    }
+
+
+def _sanitize_reflection_feedback(
+    value: Any,
+    *,
+    roots: list[Path | None],
+) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _sanitize_reflection_feedback(item, roots=roots)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_sanitize_reflection_feedback(item, roots=roots) for item in value]
+    if isinstance(value, str):
+        return sanitize_v3_untrusted_text(
+            value,
+            repository_roots=roots,
+            limit=12_000,
+        )
+    return value
+
+
+def _reflection_context_rejection_execution(audit: dict[str, Any]) -> dict[str, Any]:
+    errors = [str(item) for item in _list(audit.get("errors"))]
+    reason = "unsafe_reflection_context"
+    return {
+        "validation": {
+            "ast_valid": None,
+            "safety_gate": "fail",
+            "targeted_tests": "not_run",
+            "full_regression": "not_run",
+            "semantic_validation": "not_run",
+            "semantic_justification": (
+                "Reflection was not executed because its model context failed "
+                "the safety audit."
+            ),
+        },
+        "outcome_status": "safety_rejected",
+        "failure_layer": "safety",
+        "failure_category": reason,
+        "failure_reason": reason + (":" + ",".join(errors) if errors else ""),
+        "validation_latency_ms": 0.0,
+        "safety": {
+            "status": "fail",
+            "safety_gate": "fail",
+            "reason": reason,
+            "reasons": errors,
+            "context_audit": dict(audit),
+        },
+        "workspace": {"status": "not_run", "reason": reason},
+        "application": {"status": "not_run", "reason": reason},
+        "targeted": {"status": "not_run", "reason": reason},
+        "regression": {"status": "not_run", "reason": reason},
+        "semantic": {"status": "not_run", "reason": reason},
     }
 
 

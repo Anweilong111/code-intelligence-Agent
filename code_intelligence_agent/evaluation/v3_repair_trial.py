@@ -455,10 +455,17 @@ def audit_v3_model_context(
     root = str(Path(repository_root).resolve())
     if root and root.lower() in serialized.lower():
         errors.append("absolute_repository_root_present")
+    reflection = _dict(context.get("reflection"))
     path_audit_sections = {
         "failure_evidence": _dict(context.get("failure_evidence")),
         "localization": _dict(context.get("localization")),
-        "reflection": _dict(context.get("reflection")),
+        # Source replacements may legitimately contain portable absolute-path
+        # literals. Runtime feedback remains subject to strict local-path checks.
+        "reflection": {
+            key: value
+            for key, value in reflection.items()
+            if key != "parent_patch"
+        },
     }
     absolute_local_path_locations = _absolute_path_locations(
         path_audit_sections
