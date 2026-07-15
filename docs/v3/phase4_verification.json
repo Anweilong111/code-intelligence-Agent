@@ -1,0 +1,97 @@
+{
+  "schema_version": "v3_phase4_verification_v1",
+  "verified_at": "2026-07-15",
+  "status": "pass",
+  "phase": "Phase 4 difficult fault localization and signal attribution",
+  "evaluation": {
+    "accepted_case_count": 20,
+    "ready_case_count": 20,
+    "blocker_count": 0,
+    "development_case_count": 7,
+    "validation_case_count": 8,
+    "test_case_count": 5,
+    "function_rankable_case_count": 19,
+    "function_unrankable_case_count": 1,
+    "real_runtime_coverage_case_count": 20,
+    "real_failing_runtime_coverage_case_count": 20,
+    "weight_candidate_count": 141,
+    "weight_selection_scope": "validation_only",
+    "selected_profile": "simplex-021",
+    "selected_profile_sha256": "5e86aa8ffd55c93f9f862f5698376edee0ce8144ff0ce7d06fe170394b79e10a",
+    "frozen_test_fusion": {
+      "top1": 0.6,
+      "top3": 0.8,
+      "top5": 1.0,
+      "mrr": 0.706667,
+      "map": 0.614359,
+      "ndcg_at_3": 0.622629,
+      "exam": 0.003639
+    },
+    "llm_only_status": "not_applicable",
+    "semantic_signal_kind": "deterministic_lexical_similarity"
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "repository_disjoint_splits": true,
+    "resolved_ground_truth_case_count": 20,
+    "ranking_snapshot_match_case_count": 20,
+    "score_reconstruction_pass_case_count": 20,
+    "real_failing_runtime_coverage_case_count": 20,
+    "test_ground_truth_accessed_during_weight_search": false,
+    "absolute_local_paths_in_committed_phase4_artifacts": 0,
+    "raw_api_keys_in_candidate_files": 0,
+    "release_artifact_lf_normalized": true
+  },
+  "tests": {
+    "phase4_and_localization_regression": {
+      "status": "pass",
+      "passed": 80,
+      "failed": 0,
+      "duration_seconds": 12.12
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1328,
+      "failed": 0,
+      "duration_seconds": 775.5
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 484
+    }
+  },
+  "cache_verification": {
+    "signal_extraction_version": "v3_localization_signals_1.3.0",
+    "matching_case_cache_count": 20,
+    "warm_reproduction_duration_seconds": 5.4167,
+    "fingerprint_includes": [
+      "case_id",
+      "bug_commit_sha",
+      "targeted_test_commands",
+      "test_environment",
+      "reproduction_artifact_sha256",
+      "runtime_profile",
+      "runtime_python",
+      "runtime_coverage_mode",
+      "coverage_timeout_seconds",
+      "bug_python_source_sha256",
+      "signal_extraction_version"
+    ]
+  },
+  "artifacts": {
+    "phase4_localization_metrics.json": "48e16f8b270524898208f2db11a7150a009533e5d59f4a6f4b2b718d1eadcfb2",
+    "phase4_difficult_localization.md": "265cd07e6a2d8c3fec68594ed40539ae67e0a7da128ca7ff89555bf39eff9728",
+    "phase4_test_top5_attribution.json": "26d1aa331b194bde706446ecee57b9f89ec132f49f698a54a27f8ad1c9212f85",
+    "phase4_fault_localization_protocol.md": "5c88242d699b478f9046106931224b0f19a9c5c045c1debd5fda6aa609611ef9"
+  },
+  "claim_boundaries": [
+    "These are fault-localization metrics, not patch repair rates.",
+    "Rule and Graph received zero validation-selected Fusion weight and receive no Fusion success attribution.",
+    "LLM-only localization was not evaluated and Semantic-only is not an LLM result.",
+    "The frozen test split contains five cases from one repository.",
+    "The 120 paid LLM and Hybrid repair trials remain pending until a fresh environment-injected key is available."
+  ]
+}

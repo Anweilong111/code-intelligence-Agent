@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from code_intelligence_agent.core.models import CodeEntity, TestExecutionSummary
+
+
+SUPPORTED_TEST_MODULES = frozenset({"pytest", "unittest"})
 
 
 @dataclass(frozen=True)
@@ -29,8 +33,18 @@ class TestCoverageResult:
 
 
 class CoverageRunner:
-    def __init__(self, timeout: int = 10) -> None:
+    def __init__(
+        self,
+        timeout: int = 10,
+        *,
+        python_executable: str | Path | None = None,
+        environment: dict[str, str] | None = None,
+    ) -> None:
         self.timeout = timeout
+        self.python_executable = str(python_executable or sys.executable)
+        self.environment = {
+            str(key): str(value) for key, value in (environment or {}).items()
+        }
 
     def run_test_coverage(
         self,
@@ -42,7 +56,32 @@ class CoverageRunner:
         test_function = _find_test_function(functions, test_name)
         test_id = test_function.id if test_function is not None else test_name
         target = _pytest_target(repo, test_function, test_name)
-        raw = self._run_trace(repo, target)
+        return self.run_command_coverage(
+            repo,
+            functions,
+            [self.python_executable, "-m", "pytest", "-q", target],
+            test_name=test_name,
+            test_id=test_id,
+        )
+
+    def run_command_coverage(
+        self,
+        repo_path: str | Path,
+        functions: list[CodeEntity],
+        command: list[str],
+        *,
+        test_name: str,
+        test_id: str | None = None,
+    ) -> TestCoverageResult:
+        """Trace an exact ``python -m <module>`` test command.
+
+        The command is executed in-process by a small tracer launched with the
+        configured Python interpreter. This keeps historical benchmark cases on
+        their pinned runtime while supporting both pytest and unittest targets.
+        """
+        repo = Path(repo_path).resolve()
+        module, module_args = _python_module_command(command)
+        raw = self._run_trace(repo, module, module_args)
         covered = _covered_functions(raw.get("covered_lines", {}), functions, repo)
         covered_lines = _covered_function_lines(
             raw.get("covered_lines", {}), functions, repo
@@ -55,14 +94,14 @@ class CoverageRunner:
         branch_outcomes = _covered_branch_outcomes(functions, covered_lines)
         path_fragments = _covered_path_fragments(
             functions=functions,
-            test_label=(test_function.name if test_function is not None else test_name),
+            test_label=test_name,
             covered_lines_by_function=covered_lines,
             call_events=raw.get("call_events", []),
             line_events=raw.get("line_events", []),
         )
         return TestCoverageResult(
             test_name=test_name,
-            test_id=test_id,
+            test_id=test_id or test_name,
             success=raw.get("returncode") == 0,
             returncode=int(raw.get("returncode", -1)),
             covered_function_ids=covered,
@@ -146,7 +185,12 @@ class CoverageRunner:
             failure_messages=failure_messages,
         )
 
-    def _run_trace(self, repo: Path, target: str) -> dict:
+    def _run_trace(
+        self,
+        repo: Path,
+        module: str,
+        module_args: list[str],
+    ) -> dict:
         script = _trace_script()
         with tempfile.NamedTemporaryFile(
             "w",
@@ -159,16 +203,18 @@ class CoverageRunner:
         try:
             completed = subprocess.run(
                 [
-                    sys.executable,
+                    self.python_executable,
                     str(script_path),
                     str(repo),
-                    target,
+                    module,
+                    json.dumps(module_args),
                 ],
                 cwd=repo,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
                 check=False,
+                env={**os.environ, **self.environment},
             )
         except subprocess.TimeoutExpired as exc:
             return {
@@ -204,10 +250,13 @@ import contextlib
 import io
 import json
 import os
+import runpy
 import sys
+import threading
 
 repo = os.path.abspath(sys.argv[1])
-target = sys.argv[2]
+module = sys.argv[2]
+module_args = json.loads(sys.argv[3])
 sys.path.insert(0, repo)
 
 stdout = io.StringIO()
@@ -215,7 +264,14 @@ stderr = io.StringIO()
 covered = {}
 call_events = []
 line_events = []
-active_stack = []
+thread_state = threading.local()
+
+def active_stack():
+    stack = getattr(thread_state, "stack", None)
+    if stack is None:
+        stack = []
+        thread_state.stack = stack
+    return stack
 
 def in_repo(filename):
     filename = os.path.abspath(filename)
@@ -235,6 +291,7 @@ def trace_func(frame, event, arg):
         "name": frame.f_code.co_name,
         "firstlineno": frame.f_code.co_firstlineno,
     }
+    stack = active_stack()
     if event == "line":
         covered.setdefault(filename, set()).add(frame.f_lineno)
         if len(line_events) < 5000:
@@ -243,7 +300,7 @@ def trace_func(frame, event, arg):
                 "lineno": frame.f_lineno,
             })
     elif event == "call":
-        active_stack.append(frame_key)
+        stack.append(frame_key)
         if len(call_events) < 2000:
             call_events.append({
                 "event": "call",
@@ -251,17 +308,17 @@ def trace_func(frame, event, arg):
                 "name": frame.f_code.co_name,
                 "firstlineno": frame.f_code.co_firstlineno,
                 "is_coroutine": bool(frame.f_code.co_flags & (0x80 | 0x200)),
-                "stack": list(active_stack),
+                "stack": list(stack),
             })
     elif event == "return":
-        for index in range(len(active_stack) - 1, -1, -1):
-            current = active_stack[index]
+        for index in range(len(stack) - 1, -1, -1):
+            current = stack[index]
             if (
                 current.get("filename") == filename
                 and current.get("name") == frame.f_code.co_name
                 and current.get("firstlineno") == frame.f_code.co_firstlineno
             ):
-                del active_stack[index:]
+                del stack[index:]
                 break
     elif event == "exception":
         exc_type = ""
@@ -274,25 +331,26 @@ def trace_func(frame, event, arg):
                 "name": frame.f_code.co_name,
                 "firstlineno": frame.f_code.co_firstlineno,
                 "exception": exc_type,
-                "stack": list(active_stack),
+                "stack": list(stack),
             })
     return trace_func
 
 with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-    def run_pytest():
-        import pytest
-        return pytest.main(["-q", target])
     try:
         sys.settrace(trace_func)
-        returncode = run_pytest()
+        threading.settrace(trace_func)
+        sys.argv = [module, *module_args]
+        runpy.run_module(module, run_name="__main__", alter_sys=False)
+        returncode = 0
     except SystemExit as exc:
-        returncode = int(exc.code or 0)
+        returncode = exc.code if isinstance(exc.code, int) else int(bool(exc.code))
     except BaseException:
         import traceback
         traceback.print_exc()
         returncode = 1
     finally:
         sys.settrace(None)
+        threading.settrace(None)
 
 print(json.dumps({
     "returncode": returncode,
@@ -303,6 +361,24 @@ print(json.dumps({
     "line_events": line_events,
 }))
 '''
+
+
+def _python_module_command(command: list[str]) -> tuple[str, list[str]]:
+    normalized = [str(part) for part in command]
+    try:
+        module_flag = normalized.index("-m")
+    except ValueError as exc:
+        raise ValueError(
+            "Coverage commands must use the form `python -m <module> ...`."
+        ) from exc
+    if module_flag + 1 >= len(normalized):
+        raise ValueError("Coverage command is missing the module after `-m`.")
+    module = normalized[module_flag + 1].strip()
+    if not module or module.startswith("-"):
+        raise ValueError("Coverage command contains an invalid Python module.")
+    if module not in SUPPORTED_TEST_MODULES:
+        raise ValueError(f"Unsupported coverage test module: {module}")
+    return module, normalized[module_flag + 2 :]
 
 
 def _find_test_function(

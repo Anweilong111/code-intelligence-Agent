@@ -1,0 +1,2102 @@
+{
+  "schema_version": "v3_phase4_localization_metrics_v1",
+  "signal_extraction_version": "v3_localization_signals_1.3.0",
+  "recorded_at": "2026-07-15",
+  "status": "pass",
+  "dataset": {
+    "accepted_case_count": 20,
+    "ready_case_count": 20,
+    "split_case_counts": {
+      "development": 7,
+      "validation": 8,
+      "test": 5
+    },
+    "function_rankable_case_count": 19,
+    "function_unrankable_case_count": 1
+  },
+  "selection": {
+    "scope": "validation_only",
+    "candidate_profile_count": 141,
+    "validation_case_count": 8,
+    "function_rankable_validation_case_count": 7,
+    "validation_case_ids": [
+      "bugsinpy-fastapi-1",
+      "bugsinpy-fastapi-4",
+      "bugsinpy-fastapi-5",
+      "bugsinpy-fastapi-7",
+      "bugsinpy-tqdm-2",
+      "bugsinpy-tqdm-3",
+      "bugsinpy-tqdm-4",
+      "bugsinpy-tqdm-5"
+    ],
+    "excluded_unrankable_validation_case_ids": [
+      "bugsinpy-tqdm-3"
+    ],
+    "test_case_ids_not_supplied_to_search": [
+      "bugsinpy-youtube-dl-2",
+      "bugsinpy-youtube-dl-3",
+      "bugsinpy-youtube-dl-4",
+      "bugsinpy-youtube-dl-6",
+      "bugsinpy-youtube-dl-8"
+    ],
+    "test_ground_truth_accessed": false,
+    "objective": "0.25*MAP + 0.25*MRR + 0.20*nDCG@3 + 0.15*Top1 + 0.10*Top3 + 0.05*(1-EXAM)",
+    "tie_break_policy": "robust_objective,global_objective,MAP,MRR,Top1,sparser_profile,name",
+    "selected_profile": {
+      "name": "simplex-021",
+      "weights": {
+        "sbfl": 0.225,
+        "graph": 0.0,
+        "static": 0.0,
+        "semantic": 0.25,
+        "llm": 0.0,
+        "risk": 0.0,
+        "test_failure": 0.175,
+        "traceback": 0.1,
+        "complexity": 0.125,
+        "change_history": 0.125
+      },
+      "validation_objective": 0.59678835,
+      "robust_validation_objective": 0.57730195,
+      "function_metrics": {
+        "case_count": 7,
+        "top1": 0.571429,
+        "top3": 0.714286,
+        "top5": 0.714286,
+        "mrr": 0.638837,
+        "map": 0.516272,
+        "ndcg_at_3": 0.511775,
+        "exam": 0.029737
+      },
+      "repository_groups": [
+        {
+          "repository": "tiangolo/fastapi",
+          "case_count": 4,
+          "objective": 0.5773019500000001
+        },
+        {
+          "repository": "tqdm/tqdm",
+          "case_count": 3,
+          "objective": 0.6227711499999999
+        }
+      ],
+      "nonzero_weight_count": 6
+    },
+    "selected_profile_sha256": "5e86aa8ffd55c93f9f862f5698376edee0ce8144ff0ce7d06fe170394b79e10a",
+    "top_candidates": [
+      {
+        "name": "simplex-021",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.59678835,
+        "robust_validation_objective": 0.57730195,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.571429,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.638837,
+          "map": 0.516272,
+          "ndcg_at_3": 0.511775,
+          "exam": 0.029737
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.5773019500000001
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6227711499999999
+          }
+        ],
+        "nonzero_weight_count": 6
+      },
+      {
+        "name": "simplex-016",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.50667265,
+        "robust_validation_objective": 0.4978732,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.529266,
+          "map": 0.461238,
+          "ndcg_at_3": 0.450316,
+          "exam": 0.048902
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.513272
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.49787320000000007
+          }
+        ],
+        "nonzero_weight_count": 7
+      },
+      {
+        "name": "simplex-015",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.5057226,
+        "robust_validation_objective": 0.4971258,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.528885,
+          "map": 0.457843,
+          "ndcg_at_3": 0.450316,
+          "exam": 0.049023
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.5121702
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.4971258
+          }
+        ],
+        "nonzero_weight_count": 6
+      },
+      {
+        "name": "simplex-022",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.559162,
+        "robust_validation_objective": 0.4956042,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.590476,
+          "map": 0.510692,
+          "ndcg_at_3": 0.498152,
+          "exam": 0.029493
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.6068301
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.49560420000000005
+          }
+        ],
+        "nonzero_weight_count": 7
+      },
+      {
+        "name": "simplex-008",
+        "weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.75,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.5094916,
+        "robust_validation_objective": 0.48832835,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.515886,
+          "map": 0.466079,
+          "ndcg_at_3": 0.483836,
+          "exam": 0.083908
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52536415
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.48832835
+          }
+        ],
+        "nonzero_weight_count": 4
+      },
+      {
+        "name": "simplex-007",
+        "weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.75,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.5086576,
+        "robust_validation_objective": 0.4881307,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.515588,
+          "map": 0.463075,
+          "ndcg_at_3": 0.483836,
+          "exam": 0.084078
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52405305
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.48813070000000003
+          }
+        ],
+        "nonzero_weight_count": 3
+      },
+      {
+        "name": "simplex-014",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.25,
+          "change_history": 0.25
+        },
+        "validation_objective": 0.487935,
+        "robust_validation_objective": 0.4834244,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.521635,
+          "map": 0.433646,
+          "ndcg_at_3": 0.408019,
+          "exam": 0.078352
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.48342440000000003
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.49394865000000004
+          }
+        ],
+        "nonzero_weight_count": 7
+      },
+      {
+        "name": "simplex-006",
+        "weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.25,
+          "change_history": 0.25
+        },
+        "validation_objective": 0.48339175,
+        "robust_validation_objective": 0.48335435,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.516655,
+          "map": 0.435397,
+          "ndcg_at_3": 0.408019,
+          "exam": 0.153072
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.4834199
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.48335435000000004
+          }
+        ],
+        "nonzero_weight_count": 4
+      },
+      {
+        "name": "simplex-005",
+        "weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.25,
+          "change_history": 0.25
+        },
+        "validation_objective": 0.53724895,
+        "robust_validation_objective": 0.48212515,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.571429,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.588035,
+          "map": 0.468102,
+          "ndcg_at_3": 0.440347,
+          "exam": 0.154239
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.48212515
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6107471499999999
+          }
+        ],
+        "nonzero_weight_count": 3
+      },
+      {
+        "name": "simplex-004",
+        "weights": {
+          "sbfl": 0.0,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0,
+          "traceback": 0.0,
+          "complexity": 0.375,
+          "change_history": 0.375
+        },
+        "validation_objective": 0.5337461,
+        "robust_validation_objective": 0.4771776,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.571429,
+          "top3": 0.571429,
+          "top5": 0.571429,
+          "mrr": 0.587372,
+          "map": 0.461428,
+          "ndcg_at_3": 0.440347,
+          "exam": 0.187611
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.4771776
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6091708499999999
+          }
+        ],
+        "nonzero_weight_count": 4
+      },
+      {
+        "name": "simplex-025",
+        "weights": {
+          "sbfl": 0.3375,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.0,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.2625,
+          "traceback": 0.15,
+          "complexity": 0.125,
+          "change_history": 0.125
+        },
+        "validation_objective": 0.52672445,
+        "robust_validation_objective": 0.4567943,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.566831,
+          "map": 0.437448,
+          "ndcg_at_3": 0.459051,
+          "exam": 0.037395
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.45679430000000004
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6199643499999999
+          }
+        ],
+        "nonzero_weight_count": 5
+      },
+      {
+        "name": "simplex-043",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.25,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.5315158,
+        "robust_validation_objective": 0.4503145,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.564626,
+          "map": 0.44236,
+          "ndcg_at_3": 0.473866,
+          "exam": 0.014363
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.4503145
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6397846999999999
+          }
+        ],
+        "nonzero_weight_count": 5
+      },
+      {
+        "name": "simplex-044",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.25,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.5287745,
+        "robust_validation_objective": 0.44552325,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.558503,
+          "map": 0.438028,
+          "ndcg_at_3": 0.473866,
+          "exam": 0.016914
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.44552325
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.63977745
+          }
+        ],
+        "nonzero_weight_count": 6
+      },
+      {
+        "name": "simplex-047",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.25,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.5232697,
+        "robust_validation_objective": 0.4379734,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.565476,
+          "map": 0.435365,
+          "ndcg_at_3": 0.440347,
+          "exam": 0.014484
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.43797340000000007
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6369985499999999
+          }
+        ],
+        "nonzero_weight_count": 5
+      },
+      {
+        "name": "simplex-048",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.25,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.5208119,
+        "robust_validation_objective": 0.43368235,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.714286,
+          "top5": 0.714286,
+          "mrr": 0.559524,
+          "map": 0.431826,
+          "ndcg_at_3": 0.440347,
+          "exam": 0.016185
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.43368235
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.6369845499999999
+          }
+        ],
+        "nonzero_weight_count": 6
+      },
+      {
+        "name": "simplex-024",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.48312065,
+        "robust_validation_objective": 0.43105185,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.428571,
+          "top5": 0.714286,
+          "mrr": 0.502234,
+          "map": 0.470445,
+          "ndcg_at_3": 0.428571,
+          "exam": 0.058121
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52217235
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.43105185
+          }
+        ],
+        "nonzero_weight_count": 5
+      },
+      {
+        "name": "simplex-018",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.75,
+          "llm": 0.0,
+          "risk": 0.05,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.48319615,
+        "robust_validation_objective": 0.4310486,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.428571,
+          "top5": 0.714286,
+          "mrr": 0.502331,
+          "map": 0.47048,
+          "ndcg_at_3": 0.428571,
+          "exam": 0.057271
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.522307
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.4310486
+          }
+        ],
+        "nonzero_weight_count": 5
+      },
+      {
+        "name": "simplex-017",
+        "weights": {
+          "sbfl": 0.1125,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.75,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.0875,
+          "traceback": 0.05,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.4808408,
+        "robust_validation_objective": 0.4253637,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.428571,
+          "top5": 0.571429,
+          "mrr": 0.497671,
+          "map": 0.465566,
+          "ndcg_at_3": 0.428571,
+          "exam": 0.056508
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52244875
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.4253637
+          }
+        ],
+        "nonzero_weight_count": 4
+      },
+      {
+        "name": "simplex-023",
+        "weights": {
+          "sbfl": 0.225,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.5,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.175,
+          "traceback": 0.1,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.4808408,
+        "robust_validation_objective": 0.4253637,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.428571,
+          "top5": 0.571429,
+          "mrr": 0.497671,
+          "map": 0.465566,
+          "ndcg_at_3": 0.428571,
+          "exam": 0.056508
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52244875
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.4253637
+          }
+        ],
+        "nonzero_weight_count": 4
+      },
+      {
+        "name": "simplex-027",
+        "weights": {
+          "sbfl": 0.3375,
+          "graph": 0.0,
+          "static": 0.0,
+          "semantic": 0.25,
+          "llm": 0.0,
+          "risk": 0.0,
+          "test_failure": 0.2625,
+          "traceback": 0.15,
+          "complexity": 0.0,
+          "change_history": 0.0
+        },
+        "validation_objective": 0.4808408,
+        "robust_validation_objective": 0.4253637,
+        "function_metrics": {
+          "case_count": 7,
+          "top1": 0.428571,
+          "top3": 0.428571,
+          "top5": 0.571429,
+          "mrr": 0.497671,
+          "map": 0.465566,
+          "ndcg_at_3": 0.428571,
+          "exam": 0.056508
+        },
+        "repository_groups": [
+          {
+            "repository": "tiangolo/fastapi",
+            "case_count": 4,
+            "objective": 0.52244875
+          },
+          {
+            "repository": "tqdm/tqdm",
+            "case_count": 3,
+            "objective": 0.4253637
+          }
+        ],
+        "nonzero_weight_count": 4
+      }
+    ]
+  },
+  "frozen_test_metrics": {
+    "rule_only": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.018985,
+        "map": 0.01925,
+        "ndcg_at_3": 0.0,
+        "exam": 0.469861
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.6,
+        "top3": 0.6,
+        "top5": 0.8,
+        "mrr": 0.660526,
+        "map": 0.660526,
+        "ndcg_at_3": 0.6,
+        "exam": 0.193636
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 17.6277,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "graph_only": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.2,
+        "mrr": 0.074966,
+        "map": 0.074906,
+        "ndcg_at_3": 0.0,
+        "exam": 0.10107
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.2,
+        "top3": 0.4,
+        "top5": 0.8,
+        "mrr": 0.425,
+        "map": 0.425,
+        "ndcg_at_3": 0.326186,
+        "exam": 0.118874
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 17.8187,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "dynamic_only": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.4,
+        "mrr": 0.160098,
+        "map": 0.144156,
+        "ndcg_at_3": 0.0,
+        "exam": 0.015413
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.4,
+        "top3": 0.4,
+        "top5": 1.0,
+        "mrr": 0.55,
+        "map": 0.55,
+        "ndcg_at_3": 0.4,
+        "exam": 0.075238
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 18.1146,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "semantic_only": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.2,
+        "top3": 0.2,
+        "top5": 0.4,
+        "mrr": 0.280261,
+        "map": 0.194547,
+        "ndcg_at_3": 0.122629,
+        "exam": 0.082593
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.8,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.9,
+        "map": 0.9,
+        "ndcg_at_3": 0.926186,
+        "exam": 0.009091
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 19.1786,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "fusion": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.6,
+        "top3": 0.8,
+        "top5": 1.0,
+        "mrr": 0.706667,
+        "map": 0.614359,
+        "ndcg_at_3": 0.622629,
+        "exam": 0.003639
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.8,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.9,
+        "map": 0.9,
+        "ndcg_at_3": 0.926186,
+        "exam": 0.009524
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 18.6188,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "without_rule": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.6,
+        "top3": 0.8,
+        "top5": 1.0,
+        "mrr": 0.706667,
+        "map": 0.614359,
+        "ndcg_at_3": 0.622629,
+        "exam": 0.003639
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.8,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.9,
+        "map": 0.9,
+        "ndcg_at_3": 0.926186,
+        "exam": 0.009524
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 18.4632,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "without_graph": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.6,
+        "top3": 0.8,
+        "top5": 1.0,
+        "mrr": 0.706667,
+        "map": 0.614359,
+        "ndcg_at_3": 0.622629,
+        "exam": 0.003639
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.8,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.9,
+        "map": 0.9,
+        "ndcg_at_3": 0.926186,
+        "exam": 0.009524
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 19.2526,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "without_dynamic": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.2,
+        "top3": 0.2,
+        "top5": 0.4,
+        "mrr": 0.282826,
+        "map": 0.2861,
+        "ndcg_at_3": 0.2,
+        "exam": 0.06655
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.4,
+        "top3": 0.6,
+        "top5": 0.8,
+        "mrr": 0.531667,
+        "map": 0.531667,
+        "ndcg_at_3": 0.5,
+        "exam": 0.119206
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 18.2201,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "without_semantic": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.4,
+        "top3": 0.6,
+        "top5": 0.8,
+        "mrr": 0.573333,
+        "map": 0.527255,
+        "ndcg_at_3": 0.477371,
+        "exam": 0.005593
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 0.6,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.8,
+        "map": 0.8,
+        "ndcg_at_3": 0.852372,
+        "exam": 0.019524
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 17.6365,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "without_auxiliary": {
+      "case_count": 5,
+      "function_rankable_case_count": 5,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-6",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 5,
+        "top1": 0.4,
+        "top3": 0.8,
+        "top5": 0.8,
+        "mrr": 0.542029,
+        "map": 0.452555,
+        "ndcg_at_3": 0.522629,
+        "exam": 0.009635
+      },
+      "file": {
+        "case_count": 5,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 18281.9458,
+      "rerank_latency_ms": 18.0547,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "llm_only": {
+      "status": "not_applicable",
+      "reason": "no_live_llm_localization_scorer_configured",
+      "case_count": 5,
+      "function_rankable_case_count": 0,
+      "function": {},
+      "file": {}
+    }
+  },
+  "test_difficulty_subset_metrics": {
+    "static_negative": {
+      "case_count": 2,
+      "function_rankable_case_count": 2,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-3",
+        "bugsinpy-youtube-dl-6"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 2,
+        "top1": 0.5,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.666667,
+        "map": 0.435897,
+        "ndcg_at_3": 0.556574,
+        "exam": 0.002342
+      },
+      "file": {
+        "case_count": 2,
+        "top1": 0.5,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 0.75,
+        "map": 0.75,
+        "ndcg_at_3": 0.815465,
+        "exam": 0.02381
+      },
+      "mean_signal_extraction_latency_ms": 15088.9285,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "cross_function": {
+      "case_count": 1,
+      "function_rankable_case_count": 1,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-4"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 1,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "file": {
+        "case_count": 1,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 22702.3273,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "data_flow": {
+      "case_count": 3,
+      "function_rankable_case_count": 3,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-4",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 3,
+        "top1": 0.666667,
+        "top3": 0.666667,
+        "top5": 1.0,
+        "mrr": 0.733333,
+        "map": 0.733333,
+        "ndcg_at_3": 0.666667,
+        "exam": 0.004505
+      },
+      "file": {
+        "case_count": 3,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 20410.6239,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "separated_failure_site": {
+      "case_count": 1,
+      "function_rankable_case_count": 1,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-6"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 1,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 0.538462,
+        "ndcg_at_3": 0.613147,
+        "exam": 0.0
+      },
+      "file": {
+        "case_count": 1,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 13248.9517,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "high_similarity_candidates": {
+      "case_count": 2,
+      "function_rankable_case_count": 2,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [
+        "bugsinpy-youtube-dl-2",
+        "bugsinpy-youtube-dl-8"
+      ],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 2,
+        "top1": 0.5,
+        "top3": 0.5,
+        "top5": 1.0,
+        "mrr": 0.6,
+        "map": 0.6,
+        "ndcg_at_3": 0.5,
+        "exam": 0.006757
+      },
+      "file": {
+        "case_count": 2,
+        "top1": 1.0,
+        "top3": 1.0,
+        "top5": 1.0,
+        "mrr": 1.0,
+        "map": 1.0,
+        "ndcg_at_3": 1.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 19264.7723,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    },
+    "multi_file": {
+      "case_count": 0,
+      "function_rankable_case_count": 0,
+      "function_unrankable_case_count": 0,
+      "function_rankable_case_ids": [],
+      "function_unrankable_case_ids": [],
+      "function": {
+        "case_count": 0,
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "ndcg_at_3": 0.0,
+        "exam": 0.0
+      },
+      "file": {
+        "case_count": 0,
+        "top1": 0.0,
+        "top3": 0.0,
+        "top5": 0.0,
+        "mrr": 0.0,
+        "map": 0.0,
+        "ndcg_at_3": 0.0,
+        "exam": 0.0
+      },
+      "mean_signal_extraction_latency_ms": 0.0,
+      "rerank_latency_ms": 17.8319,
+      "metric_denominator_policy": "Function metrics exclude only cases with no changed function present in the bug revision; file metrics retain every case."
+    }
+  },
+  "ablation_analysis": {
+    "reference_variant": "fusion",
+    "delta_direction": "Positive values mean Fusion outperformed the ablated variant; for EXAM, positive means the ablated EXAM was worse.",
+    "families": {
+      "rule": {
+        "ablation_variant": "without_rule",
+        "selected_family_weight": 0.0,
+        "fusion_minus_ablation": {
+          "top1": 0.0,
+          "top3": 0.0,
+          "top5": 0.0,
+          "mrr": 0.0,
+          "map": 0.0,
+          "ndcg_at_3": 0.0,
+          "exam_improvement": 0.0,
+          "file_top1": 0.0
+        },
+        "conclusion": "inactive_by_validation_weight_selection"
+      },
+      "graph": {
+        "ablation_variant": "without_graph",
+        "selected_family_weight": 0.0,
+        "fusion_minus_ablation": {
+          "top1": 0.0,
+          "top3": 0.0,
+          "top5": 0.0,
+          "mrr": 0.0,
+          "map": 0.0,
+          "ndcg_at_3": 0.0,
+          "exam_improvement": 0.0,
+          "file_top1": 0.0
+        },
+        "conclusion": "inactive_by_validation_weight_selection"
+      },
+      "dynamic": {
+        "ablation_variant": "without_dynamic",
+        "selected_family_weight": 0.5,
+        "fusion_minus_ablation": {
+          "top1": 0.4,
+          "top3": 0.6,
+          "top5": 0.6,
+          "mrr": 0.423841,
+          "map": 0.328259,
+          "ndcg_at_3": 0.422629,
+          "exam_improvement": 0.062911,
+          "file_top1": 0.4
+        },
+        "conclusion": "positive_test_contribution"
+      },
+      "semantic": {
+        "ablation_variant": "without_semantic",
+        "selected_family_weight": 0.25,
+        "fusion_minus_ablation": {
+          "top1": 0.2,
+          "top3": 0.2,
+          "top5": 0.2,
+          "mrr": 0.133334,
+          "map": 0.087104,
+          "ndcg_at_3": 0.145258,
+          "exam_improvement": 0.001954,
+          "file_top1": 0.2
+        },
+        "conclusion": "positive_test_contribution"
+      },
+      "auxiliary": {
+        "ablation_variant": "without_auxiliary",
+        "selected_family_weight": 0.25,
+        "fusion_minus_ablation": {
+          "top1": 0.2,
+          "top3": 0.0,
+          "top5": 0.2,
+          "mrr": 0.164638,
+          "map": 0.161804,
+          "ndcg_at_3": 0.1,
+          "exam_improvement": 0.005996,
+          "file_top1": -0.2
+        },
+        "conclusion": "positive_test_contribution"
+      }
+    }
+  },
+  "failure_analysis": {
+    "test_top1_miss_count": 2,
+    "test_top1_misses": [
+      {
+        "case_id": "bugsinpy-youtube-dl-3",
+        "function_first_rank": 3,
+        "file_first_rank": 2,
+        "difficulty_tags": [
+          "static_negative"
+        ]
+      },
+      {
+        "case_id": "bugsinpy-youtube-dl-8",
+        "function_first_rank": 5,
+        "file_first_rank": 1,
+        "difficulty_tags": [
+          "data_flow",
+          "high_similarity_candidates"
+        ]
+      }
+    ],
+    "test_top5_miss_count": 0,
+    "test_top5_misses": [],
+    "function_unrankable_case_ids": [
+      "bugsinpy-tqdm-3"
+    ],
+    "inactive_signal_families": [
+      "rule",
+      "graph"
+    ],
+    "no_observed_change_signal_families": [],
+    "selected_weights": {
+      "sbfl": 0.225,
+      "graph": 0.0,
+      "static": 0.0,
+      "semantic": 0.25,
+      "llm": 0.0,
+      "risk": 0.0,
+      "test_failure": 0.175,
+      "traceback": 0.1,
+      "complexity": 0.125,
+      "change_history": 0.125
+    },
+    "test_repository_count": 1,
+    "test_repositories": [
+      "ytdl-org/youtube-dl"
+    ],
+    "validation_repository_count": 2,
+    "empty_test_difficulty_subsets": [
+      "multi_file"
+    ],
+    "limitations": [
+      "The test split is repository-disjoint but contains one repository, so confidence intervals and broader repository coverage remain future work.",
+      "Signal families assigned zero validation weight cannot receive Fusion success attribution on the frozen test split.",
+      "LLM-only localization is not evaluated because no live localization scorer is configured.",
+      "A function introduced only by the fix revision has no rankable bug-side function and is evaluated at file level only."
+    ]
+  },
+  "coverage_summary": {
+    "case_count": 20,
+    "real_runtime_coverage_case_count": 20,
+    "real_failing_runtime_coverage_case_count": 20,
+    "real_runtime_coverage_rate": 1.0,
+    "real_failing_runtime_coverage_rate": 1.0,
+    "missing_real_runtime_coverage_case_ids": [],
+    "missing_real_failing_runtime_coverage_case_ids": []
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "errors": [],
+    "repository_disjoint_splits": true,
+    "repositories_by_split": {
+      "development": [
+        "cool-RR/PySnooper",
+        "psf/black"
+      ],
+      "validation": [
+        "tiangolo/fastapi",
+        "tqdm/tqdm"
+      ],
+      "test": [
+        "ytdl-org/youtube-dl"
+      ]
+    },
+    "overlapping_repositories": [],
+    "resolved_ground_truth_case_count": 20,
+    "unresolved_ground_truth_case_ids": [],
+    "ranking_snapshot_match_case_count": 20,
+    "ranking_snapshot_mismatch_case_ids": [],
+    "score_reconstruction_pass_case_count": 20,
+    "score_reconstruction_failure_case_ids": [],
+    "real_failing_runtime_coverage_case_count": 20,
+    "missing_real_failing_runtime_coverage_case_ids": [],
+    "validation_only_weight_selection": true,
+    "test_ground_truth_accessed_during_weight_search": false
+  },
+  "case_results": [
+    {
+      "case_id": "bugsinpy-black-10",
+      "split": "development",
+      "repository": "psf/black",
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 30,
+        "file_first_rank": 3,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-black-2",
+      "split": "development",
+      "repository": "psf/black",
+      "difficulty_tags": [
+        "data_flow",
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 17,
+        "file_first_rank": 2,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-black-3",
+      "split": "development",
+      "repository": "psf/black",
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 3,
+        "file_first_rank": 2,
+        "function_top1": false,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-black-5",
+      "split": "development",
+      "repository": "psf/black",
+      "difficulty_tags": [
+        "high_similarity_candidates",
+        "data_flow"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 12,
+        "file_first_rank": 1,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-fastapi-1",
+      "split": "validation",
+      "repository": "tiangolo/fastapi",
+      "difficulty_tags": [
+        "multi_file",
+        "high_similarity_candidates"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-fastapi-4",
+      "split": "validation",
+      "repository": "tiangolo/fastapi",
+      "difficulty_tags": [
+        "data_flow",
+        "separated_failure_site"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-fastapi-5",
+      "split": "validation",
+      "repository": "tiangolo/fastapi",
+      "difficulty_tags": [
+        "cross_function",
+        "data_flow"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 11,
+        "file_first_rank": 5,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": false,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-fastapi-7",
+      "split": "validation",
+      "repository": "tiangolo/fastapi",
+      "difficulty_tags": [
+        "separated_failure_site",
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 3,
+        "file_first_rank": 3,
+        "function_top1": false,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-1",
+      "split": "development",
+      "repository": "cool-RR/PySnooper",
+      "difficulty_tags": [
+        "multi_file",
+        "cross_function"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 10,
+        "file_first_rank": 1,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-2",
+      "split": "development",
+      "repository": "cool-RR/PySnooper",
+      "difficulty_tags": [
+        "cross_function",
+        "high_similarity_candidates"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 6,
+        "file_first_rank": 4,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": false,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-pysnooper-3",
+      "split": "development",
+      "repository": "cool-RR/PySnooper",
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 18,
+        "file_first_rank": 1,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-tqdm-2",
+      "split": "validation",
+      "repository": "tqdm/tqdm",
+      "difficulty_tags": [
+        "multi_file",
+        "cross_function"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-tqdm-3",
+      "split": "validation",
+      "repository": "tqdm/tqdm",
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "function_rankable": false,
+      "fusion_metrics": {
+        "function_rankable": false,
+        "function_first_rank": null,
+        "file_first_rank": 2,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-tqdm-4",
+      "split": "validation",
+      "repository": "tqdm/tqdm",
+      "difficulty_tags": [
+        "data_flow"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-tqdm-5",
+      "split": "validation",
+      "repository": "tqdm/tqdm",
+      "difficulty_tags": [
+        "high_similarity_candidates",
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 21,
+        "file_first_rank": 2,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": false,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-2",
+      "split": "test",
+      "repository": "ytdl-org/youtube-dl",
+      "difficulty_tags": [
+        "data_flow",
+        "high_similarity_candidates"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-3",
+      "split": "test",
+      "repository": "ytdl-org/youtube-dl",
+      "difficulty_tags": [
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 3,
+        "file_first_rank": 2,
+        "function_top1": false,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": false,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-4",
+      "split": "test",
+      "repository": "ytdl-org/youtube-dl",
+      "difficulty_tags": [
+        "cross_function",
+        "data_flow"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-6",
+      "split": "test",
+      "repository": "ytdl-org/youtube-dl",
+      "difficulty_tags": [
+        "separated_failure_site",
+        "static_negative"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 1,
+        "file_first_rank": 1,
+        "function_top1": true,
+        "function_top3": true,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    },
+    {
+      "case_id": "bugsinpy-youtube-dl-8",
+      "split": "test",
+      "repository": "ytdl-org/youtube-dl",
+      "difficulty_tags": [
+        "data_flow",
+        "high_similarity_candidates"
+      ],
+      "function_rankable": true,
+      "fusion_metrics": {
+        "function_rankable": true,
+        "function_first_rank": 5,
+        "file_first_rank": 1,
+        "function_top1": false,
+        "function_top3": false,
+        "function_top5": true,
+        "file_top1": true,
+        "file_top3": true,
+        "file_top5": true
+      },
+      "real_failing_runtime_coverage_available": true,
+      "score_reconstruction_pass": true
+    }
+  ],
+  "evidence": {
+    "authoritative_local_artifact": "outputs_v3/localization_phase4/v3_localization_evaluation.json",
+    "authoritative_local_artifact_sha256": "e33479bc2cf938c4c750c546113edfdc678063662e60c16d2eacac7a53138cd0",
+    "committed_test_top5_attribution": "docs/v3/phase4_test_top5_attribution.json",
+    "committed_test_top5_attribution_sha256": "26d1aa331b194bde706446ecee57b9f89ec132f49f698a54a27f8ad1c9212f85",
+    "reproduction_command": "python -m code_intelligence_agent v3-localization-eval outputs_v3/localization_phase4 --coverage-timeout 180 --release-docs-dir docs/v3"
+  },
+  "claim_boundaries": [
+    "Metrics are fault-localization results, not patch repair rates.",
+    "Semantic-only is deterministic lexical similarity, not an LLM result.",
+    "Rule and Graph received zero validation-selected Fusion weight and therefore receive no Fusion success attribution.",
+    "The repository-disjoint test split contains five cases from one repository; broader confidence intervals remain future work.",
+    "LLM-only localization is not applicable until a real localization scorer is configured."
+  ]
+}

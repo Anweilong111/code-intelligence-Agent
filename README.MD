@@ -44,6 +44,42 @@ Evidence: [Phase 2 protocol](docs/v3/phase2_repository_startup_protocol.md),
 [machine-readable metrics](docs/v3/phase2_repository_startup_metrics.json), and
 [verification record](docs/v3/phase2_verification.md).
 
+## V3 Real-Bug Localization Status
+
+Phase 4 now evaluates function-level fault localization on the 20 accepted
+real defects using case-pinned Python runtimes and actual failing-test traces:
+
+- All 20 cases produced real failing runtime coverage; 19 are function-rankable
+  and one fix-only added-function case remains in the file-level denominator.
+- Repositories are disjoint across development (7), validation (8), and frozen
+  test (5) splits. Weight search uses seven function-rankable validation cases
+  only; test ground truth is never supplied to profile selection.
+- The frozen test Fusion result is Top-1 `0.6000`, Top-3 `0.8000`, Top-5
+  `1.0000`, MRR `0.7067`, MAP `0.6144`, and EXAM `0.0036`.
+- Runtime Dynamic, deterministic Semantic, and Complexity/ChangeHistory signals
+  show positive frozen-test ablation contributions. Static Rule and Graph
+  receive zero validation-selected Fusion weight, so no gain is attributed to
+  those families in this experiment.
+- Every committed test Top-5 row retains raw signals, frozen weights,
+  per-signal contributions, clamp adjustment, and an exact score reconstruction.
+  LLM-only localization is explicitly `not_applicable`; Semantic-only is not
+  presented as an LLM result.
+
+Reproduce with:
+
+```powershell
+python -m code_intelligence_agent v3-localization-eval outputs_v3/localization_phase4 `
+  --coverage-timeout 180 `
+  --release-docs-dir docs/v3
+```
+
+Evidence: [Phase 4 protocol](docs/v3/phase4_fault_localization_protocol.md),
+[evaluation report](docs/v3/phase4_difficult_localization.md),
+[machine-readable metrics](docs/v3/phase4_localization_metrics.json), and
+[test Top-5 attribution](docs/v3/phase4_test_top5_attribution.json). The
+[verification record](docs/v3/phase4_verification.md) pins the exact test counts,
+runtime, release gates, signal version, and artifact hashes.
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

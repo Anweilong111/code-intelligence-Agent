@@ -4,6 +4,7 @@ import json
 
 from code_intelligence_agent import main as cli_module
 from code_intelligence_agent.evaluation import github_repo_intelligence
+from code_intelligence_agent.evaluation import v3_localization_evaluation
 from code_intelligence_agent.evaluation import v3_repair_evaluation
 
 
@@ -94,4 +95,30 @@ def test_top_level_cli_routes_v3_repair_evaluation(monkeypatch):
         "outputs_v3/example",
         "--strategies",
         "rule",
+    ]
+
+
+def test_top_level_cli_routes_v3_localization_evaluation(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v3_localization_evaluation_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v3_localization_evaluation,
+        "main",
+        fake_v3_localization_evaluation_main,
+    )
+
+    cli_module.main(
+        [
+            "v3-localization-eval",
+            "outputs_v3/localization",
+            "--no-runtime-coverage",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "outputs_v3/localization",
+        "--no-runtime-coverage",
     ]
