@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
 import uuid
 from collections import Counter, defaultdict
@@ -16,6 +15,9 @@ from code_intelligence_agent.evaluation.v3_experiment_protocol import (
     load_experiment_protocol,
     sha256_file,
     validate_run_records,
+)
+from code_intelligence_agent.evaluation.v3_repair_execution import (
+    run_v3_provider_access_preflight,
 )
 from code_intelligence_agent.evaluation.v3_repair_orchestrator import (
     PreparedV3RepairCase,
@@ -115,16 +117,13 @@ def run_v3_repair_evaluation(
         accepted = accepted[:max_cases]
     if not accepted:
         raise ValueError("V3 repair evaluation selected no accepted cases.")
-    if not prepare_only and any(
+    requires_live_provider = not prepare_only and any(
         strategy in {"llm", "hybrid"} for strategy in selected_strategies
-    ):
+    )
+    if requires_live_provider:
         if not live_model:
             raise ValueError(
                 "LLM/Hybrid evaluation requires explicit live_model=True or --live-model."
-            )
-        if not _model_key_present(protocol):
-            raise ValueError(
-                "No V3 model API key is present in the current process environment."
             )
     profile_by_id = {
         str(_dict(profile).get("profile_id") or ""): _dict(profile)
@@ -134,7 +133,28 @@ def run_v3_repair_evaluation(
     case_results: list[dict[str, Any]] = []
     systemic_provider_blocker: dict[str, Any] | None = None
     started_at = _utc_now()
-    for case in accepted:
+    provider_access_preflight = (
+        run_v3_provider_access_preflight(protocol, root=root)
+        if requires_live_provider
+        else {
+            "schema_version": "v3_provider_access_preflight_v1",
+            "status": "not_required",
+            "reason": (
+                "preparation_only_mode"
+                if prepare_only
+                else "selected_strategies_do_not_call_a_model"
+            ),
+            "performed": False,
+            "counted_as_repair_trial": False,
+            "actual_cost_usd": 0.0,
+        }
+    )
+    if str(provider_access_preflight.get("status") or "") == "blocked":
+        systemic_provider_blocker = _systemic_provider_blocker_from_preflight(
+            provider_access_preflight
+        )
+    cases_to_process = accepted if systemic_provider_blocker is None else []
+    for case in cases_to_process:
         case_id = str(case.get("case_id") or "")
         case_output = output / "cases" / case_id
         case_output.mkdir(parents=True, exist_ok=True)
@@ -492,6 +512,7 @@ def run_v3_repair_evaluation(
         "record_count": len(records),
         "record_audit": record_audit,
         "provider_model_metadata": summarize_v3_model_metadata(records, protocol),
+        "provider_access_preflight": provider_access_preflight,
         "systemic_provider_blocker": (
             systemic_provider_blocker
             if systemic_provider_blocker is not None
@@ -1093,6 +1114,24 @@ def write_v3_repair_evaluation_artifacts(
     }
 
 
+def _systemic_provider_blocker_from_preflight(
+    preflight: dict[str, Any],
+) -> dict[str, Any]:
+    failure = _dict(preflight.get("failure"))
+    category = str(failure.get("category") or "invalid_provider_response")
+    return {
+        "status": "halted",
+        "reason": "provider_access_preflight_failed",
+        "case_id": "",
+        "categories": [category],
+        "blocker_record_count": 0,
+        "affected_trials": [],
+        "preflight_reason": str(preflight.get("reason") or ""),
+        "new_trial_submission_stopped": True,
+        "resume_requires_retry_blockers": False,
+    }
+
+
 def _systemic_provider_blocker_from_trial_results(
     case_id: str,
     trial_results: list[dict[str, Any]],
@@ -1177,14 +1216,32 @@ def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:
             f"{_metric(row.get('reverse_mutation_kill_rate'))} | "
             f"{_float(row.get('actual_cost_usd'), 0.0):.6f} |"
         )
+    provider_preflight = _dict(result.get("provider_access_preflight"))
+    provider_failure = _dict(provider_preflight.get("failure"))
+    lines.extend(
+        [
+            "",
+            "## Provider Access Preflight",
+            "",
+            f"- Status: `{provider_preflight.get('status')}`",
+            f"- Performed: `{str(bool(provider_preflight.get('performed', False))).lower()}`",
+            "- Counted as repair trial: `false`",
+            f"- Provider: `{provider_preflight.get('provider', '')}`",
+            f"- Protocol model: `{provider_preflight.get('protocol_model_id', '')}`",
+            f"- Observed model: `{provider_preflight.get('observed_model_id', '')}`",
+            f"- Cost USD: `{_float(provider_preflight.get('actual_cost_usd'), 0.0):.10f}`",
+            f"- Latency ms: `{_int(provider_preflight.get('latency_ms'), 0)}`",
+            f"- Failure category: `{provider_failure.get('category', 'none')}`",
+            "- Response content retained: `false`",
+        ]
+    )
     systemic_provider_blocker = _dict(result.get("systemic_provider_blocker"))
     if str(systemic_provider_blocker.get("status") or "") == "halted":
+        lines.extend(["", "## Systemic Provider Blocker", ""])
+        if str(systemic_provider_blocker.get("case_id") or ""):
+            lines.append(f"- Case: `{systemic_provider_blocker.get('case_id')}`")
         lines.extend(
             [
-                "",
-                "## Systemic Provider Blocker",
-                "",
-                f"- Case: `{systemic_provider_blocker.get('case_id')}`",
                 "- Categories: `"
                 + ", ".join(
                     str(item)
@@ -1192,7 +1249,16 @@ def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:
                 )
                 + "`",
                 "- New trial submission stopped: `true`",
-                "- Resume after resolving provider access with: `--retry-blockers`",
+                (
+                    "- Resume after resolving provider access with: `--retry-blockers`"
+                    if bool(
+                        systemic_provider_blocker.get(
+                            "resume_requires_retry_blockers",
+                            False,
+                        )
+                    )
+                    else "- Resume after resolving provider access with the same command."
+                ),
             ]
         )
     lines.extend(
@@ -1364,13 +1430,6 @@ def _trial_indices(protocol: dict[str, Any], strategy: str) -> list[int]:
         "hybrid": _int(randomness.get("hybrid_trials"), 3),
     }[strategy]
     return list(range(1, max(0, count) + 1))
-
-
-def _model_key_present(protocol: dict[str, Any]) -> bool:
-    return any(
-        bool(os.environ.get(str(name)))
-        for name in _list(_dict(protocol.get("model")).get("api_key_env_names"))
-    )
 
 
 def _normalize_strategies(values: list[str]) -> list[str]:

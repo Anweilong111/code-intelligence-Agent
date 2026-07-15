@@ -177,6 +177,23 @@ failure reports. They are not relabeled as failed source repairs. Token, cost,
 latency, and retry totals include every persisted provider call represented by a
 RunRecord.
 
+## Provider Access Preflight
+
+Before any live LLM/Hybrid repository preparation or Trial submission, the
+runner sends one frozen provider-access request. The request disables reasoning,
+allows at most 16 output tokens, uses the same isolated total request deadline,
+and requires both a valid HTTP 200 chat-completion envelope and the exact frozen
+response model ID. The protocol pins the system Prompt file and runtime request
+Prompt independently by SHA-256; drift blocks the run before provider access.
+
+The preflight is not a repair Trial. It has no case ID, trial ID, candidate,
+patch, or sandbox result; it cannot enter pass@1/pass@3. Its usage, cost,
+latency, retry metadata, provider status, prompt hashes, and response hashes are
+stored separately. Response content and API credentials are never retained.
+Any terminal authentication, authorization, billing/quota, rate-limit, network,
+timeout, invalid-response, or model-access failure stops all case preparation
+and Trial submission while preserving all missing Trial identities.
+
 ## Failure Taxonomy
 
 Failures are assigned to the earliest authoritative layer:
@@ -254,8 +271,9 @@ python -m code_intelligence_agent v3-repair-eval `
   --require-pass
 ```
 
-The `--live-model` flag is an explicit paid-execution gate. Missing current
-credentials fail before any case is run.
+The `--live-model` flag is an explicit paid-execution gate. Missing or invalid
+credentials and unavailable billing/quota produce a structured preflight
+blocker artifact before any case is prepared or repair Trial is submitted.
 
 ## Boundary
 

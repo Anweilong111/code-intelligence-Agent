@@ -11,6 +11,7 @@ import uuid
 import pytest
 
 from code_intelligence_agent.agents.llm_client import (
+    LLMResponse,
     LLMRequestError,
     StaticLLMClient,
 )
@@ -30,9 +31,11 @@ from code_intelligence_agent.evaluation.v3_repair_orchestrator import (
 from code_intelligence_agent.evaluation.v3_repair_execution import (
     build_v3_run_record,
     copy_v3_trial_workspace,
+    create_v3_provider_access_client,
     create_v3_repair_client,
     execute_v3_patch_candidate,
     provider_blocker_execution,
+    run_v3_provider_access_preflight,
 )
 from code_intelligence_agent.evaluation.v3_repair_evaluation import (
     _load_resumable_trial,
@@ -695,6 +698,30 @@ def test_v3_repair_client_is_built_from_frozen_protocol():
     assert client.backoff_seconds == (2.0, 8.0)
 
 
+def test_v3_provider_access_client_uses_bounded_non_reasoning_request():
+    root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+
+    client = create_v3_provider_access_client(
+        protocol,
+        root=root,
+        api_key="fake-key",
+        sleeper=lambda delay: None,
+    )
+    transport = client.client
+
+    assert transport.provider == "deepseek"
+    assert transport.model == "deepseek-v4-pro"
+    assert transport.max_tokens == 16
+    assert transport.thinking == "disabled"
+    assert transport.reasoning_effort is None
+    assert transport.response_format == {"type": "json_object"}
+    assert transport.isolate_request_timeout is True
+    assert client.max_retries == 2
+
+
 def test_v3_repair_client_accepts_secondary_protocol_key_environment(
     monkeypatch,
 ):
@@ -950,6 +977,183 @@ def test_provider_error_is_classified_separately_from_repair_failure():
     assert billing_execution["outcome_status"] == "provider_blocker"
     assert billing_execution["failure_layer"] == "provider"
     assert billing_execution["failure_category"] == "billing_or_quota"
+
+
+def test_provider_access_preflight_records_cost_without_response_content():
+    project_root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    secret_like_response = "s" + "k-" + "abcdefghijklmnop1234"
+
+    class MetadataClient:
+        def complete(self, prompt):
+            assert "provider access" in prompt.lower()
+            return LLMResponse(
+                text=json.dumps(
+                    {"status": "ok", "untrusted": secret_like_response}
+                ),
+                metadata={
+                    "status": "pass",
+                    "provider": "deepseek",
+                    "model": "deepseek-v4-pro",
+                    "response_model": "deepseek-v4-pro",
+                    "response_id": "response-1",
+                    "latency_ms": 17,
+                    "prompt_sha256": "a" * 64,
+                    "system_prompt_sha256": "b" * 64,
+                    "response_chars": 64,
+                    "response_sha256": "c" * 64,
+                    "provider_attempt_count": 1,
+                    "provider_retry_count": 0,
+                    "usage": {
+                        "source": "provider_usage",
+                        "prompt_tokens": 10,
+                        "prompt_cache_hit_tokens": 2,
+                        "prompt_cache_miss_tokens": 8,
+                        "completion_tokens": 3,
+                        "reasoning_tokens": 0,
+                    },
+                },
+            )
+
+    result = run_v3_provider_access_preflight(
+        protocol,
+        root=project_root,
+        llm_client=MetadataClient(),
+    )
+
+    assert result["status"] == "pass"
+    assert result["reason"] == "provider_access_verified"
+    assert result["counted_as_repair_trial"] is False
+    assert result["observed_model_id"] == "deepseek-v4-pro"
+    assert result["request_prompt_sha256"] == (
+        protocol["model"]["access_preflight"]["request_prompt_sha256"]
+    )
+    assert result["usage"] == {
+        "source": "provider_usage",
+        "input_tokens": 10,
+        "cache_hit_input_tokens": 2,
+        "cache_miss_input_tokens": 8,
+        "output_tokens": 3,
+        "reasoning_tokens": 0,
+        "total_tokens": 13,
+    }
+    assert result["actual_cost_usd"] > 0
+    assert result["response_content_retained"] is False
+    assert secret_like_response not in json.dumps(result)
+
+
+def test_provider_access_preflight_blocks_request_prompt_protocol_drift():
+    project_root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    protocol["model"]["access_preflight"]["request_prompt_sha256"] = "0" * 64
+
+    class UnexpectedCallClient:
+        def complete(self, prompt):
+            raise AssertionError(f"Provider must not be called: {prompt}")
+
+    result = run_v3_provider_access_preflight(
+        protocol,
+        root=project_root,
+        llm_client=UnexpectedCallClient(),
+    )
+
+    assert result["status"] == "blocked"
+    assert result["reason"] == "provider_access_configuration_failed"
+    assert result["failure"]["category"] == "invalid_provider_response"
+    assert result["actual_cost_usd"] == 0.0
+
+
+def test_provider_access_preflight_classifies_http_402_without_a_trial():
+    project_root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+
+    class BillingBlockedClient:
+        def complete(self, prompt):
+            del prompt
+            raise LLMRequestError(
+                "http_error",
+                "LLM request failed with HTTP 402.",
+                {
+                    "http_status": 402,
+                    "latency_ms": 21,
+                    "provider_payload_bytes": 32,
+                    "provider_payload_sha256": "sha256:" + "d" * 64,
+                },
+            )
+
+    result = run_v3_provider_access_preflight(
+        protocol,
+        root=project_root,
+        llm_client=BillingBlockedClient(),
+    )
+
+    assert result["status"] == "blocked"
+    assert result["counted_as_repair_trial"] is False
+    assert result["failure"] == {
+        "layer": "provider",
+        "category": "billing_or_quota",
+        "reason": "LLM request failed with HTTP 402.",
+    }
+    assert result["usage"]["total_tokens"] == 0
+    assert result["actual_cost_usd"] == 0.0
+    assert "provider_payload_sha256" in result["request_metadata"]
+
+
+def test_provider_access_preflight_blocks_response_model_drift():
+    project_root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+
+    class DriftedModelClient:
+        def complete(self, prompt):
+            del prompt
+            return LLMResponse(
+                text='{"status":"ok"}',
+                metadata={
+                    "provider": "deepseek",
+                    "model": "deepseek-v4-pro",
+                    "response_model": "different-model",
+                    "latency_ms": 5,
+                    "usage": {},
+                },
+            )
+
+    result = run_v3_provider_access_preflight(
+        protocol,
+        root=project_root,
+        llm_client=DriftedModelClient(),
+    )
+
+    assert result["status"] == "blocked"
+    assert result["reason"] == "provider_response_model_mismatch"
+    assert result["failure"]["category"] == "model_unavailable"
+    assert result["observed_model_id"] == "different-model"
+
+
+def test_provider_access_preflight_reports_missing_environment_key(
+    monkeypatch,
+):
+    project_root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    monkeypatch.delenv("CIA_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+
+    result = run_v3_provider_access_preflight(protocol, root=project_root)
+
+    assert result["status"] == "blocked"
+    assert result["reason"] == "provider_access_configuration_failed"
+    assert result["failure"]["category"] == "authentication"
+    assert result["actual_cost_usd"] == 0.0
+    assert result["request_metadata"] == {}
 
 
 def test_llm_trial_runs_direct_failure_then_bounded_reflection_recovery(
@@ -1587,6 +1791,109 @@ def test_repair_evaluation_rejects_empty_accepted_catalog(tmp_path):
         )
 
 
+def test_provider_access_preflight_blocks_before_case_preparation_and_trials(
+    tmp_path,
+    monkeypatch,
+):
+    project_root = Path(__file__).resolve().parents[1]
+    protocol_path = (
+        project_root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    first_case = _case()
+    first_case["status"] = "accepted"
+    second_case = copy.deepcopy(first_case)
+    second_case["case_id"] = "case-002"
+    catalog_path = tmp_path / "catalog.json"
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "catalog_sha256": "catalog",
+                "cases": [first_case, second_case],
+            }
+        ),
+        encoding="utf-8",
+    )
+    profiles_path = tmp_path / "profiles.json"
+    profiles_path.write_text(json.dumps({"profiles": []}), encoding="utf-8")
+    preflight = {
+        "schema_version": "v3_provider_access_preflight_v1",
+        "status": "blocked",
+        "reason": "provider_access_request_failed",
+        "performed": True,
+        "counted_as_repair_trial": False,
+        "provider": "deepseek",
+        "protocol_model_id": "deepseek-v4-pro",
+        "observed_model_id": "",
+        "actual_cost_usd": 0.0,
+        "latency_ms": 10,
+        "failure": {
+            "layer": "provider",
+            "category": "billing_or_quota",
+            "reason": "LLM request failed with HTTP 402.",
+        },
+    }
+    monkeypatch.setattr(
+        repair_eval,
+        "run_v3_provider_access_preflight",
+        lambda *args, **kwargs: preflight,
+    )
+
+    def unexpected_case_work(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("case preparation must not run after preflight failure")
+
+    monkeypatch.setattr(
+        repair_eval,
+        "audit_v3_reproduction_seed",
+        unexpected_case_work,
+    )
+    monkeypatch.setattr(
+        repair_eval,
+        "run_v3_repair_trial",
+        unexpected_case_work,
+    )
+
+    result = run_v3_repair_evaluation(
+        project_root=project_root,
+        protocol_path=protocol_path,
+        catalog_path=catalog_path,
+        environment_profiles_path=profiles_path,
+        reproduction_root=tmp_path,
+        output_dir=tmp_path / "evaluation",
+        strategies=["llm", "hybrid"],
+        live_model=True,
+        resume=False,
+        max_workers=3,
+    )
+
+    assert result["status"] == "fail"
+    assert result["record_count"] == 0
+    assert result["case_results"] == []
+    assert result["provider_access_preflight"] == preflight
+    assert result["systemic_provider_blocker"] == {
+        "status": "halted",
+        "reason": "provider_access_preflight_failed",
+        "case_id": "",
+        "categories": ["billing_or_quota"],
+        "blocker_record_count": 0,
+        "affected_trials": [],
+        "preflight_reason": "provider_access_request_failed",
+        "new_trial_submission_stopped": True,
+        "resume_requires_retry_blockers": False,
+        "unprocessed_case_ids": ["case-001", "case-002"],
+        "unprocessed_case_count": 2,
+    }
+    assert result["completeness"]["expected_trial_count"] == 12
+    assert result["completeness"]["observed_trial_count"] == 0
+    assert result["completeness"]["missing_trial_count"] == 12
+    markdown = (tmp_path / "evaluation" / "evaluation.md").read_text(
+        encoding="utf-8"
+    )
+    assert "## Provider Access Preflight" in markdown
+    assert "Counted as repair trial: `false`" in markdown
+    assert "with the same command" in markdown
+
+
 def test_live_trial_workers_execute_independent_trials_concurrently(
     tmp_path,
     monkeypatch,
@@ -1631,6 +1938,11 @@ def test_live_trial_workers_execute_independent_trials_concurrently(
     worker_threads: set[int] = set()
 
     monkeypatch.setenv("CIA_LLM_API_KEY", "fixture-key")
+    monkeypatch.setattr(
+        repair_eval,
+        "run_v3_provider_access_preflight",
+        lambda *args, **kwargs: _passing_provider_preflight(),
+    )
     monkeypatch.setattr(
         repair_eval,
         "audit_v3_reproduction_seed",
@@ -1742,6 +2054,11 @@ def test_systemic_billing_blocker_stops_new_trials_and_cases(
     trial_calls = []
 
     monkeypatch.setenv("CIA_LLM_API_KEY", "fixture-key")
+    monkeypatch.setattr(
+        repair_eval,
+        "run_v3_provider_access_preflight",
+        lambda *args, **kwargs: _passing_provider_preflight(),
+    )
     monkeypatch.setattr(
         repair_eval,
         "audit_v3_reproduction_seed",
@@ -1877,6 +2194,22 @@ def test_systemic_billing_blocker_stops_new_trials_and_cases(
     assert "## Systemic Provider Blocker" in markdown
     assert "`billing_or_quota`" in markdown
     assert "`--retry-blockers`" in markdown
+
+
+def _passing_provider_preflight() -> dict:
+    return {
+        "schema_version": "v3_provider_access_preflight_v1",
+        "status": "pass",
+        "reason": "provider_access_verified",
+        "performed": True,
+        "counted_as_repair_trial": False,
+        "provider": "deepseek",
+        "protocol_model_id": "deepseek-v4-pro",
+        "observed_model_id": "deepseek-v4-pro",
+        "actual_cost_usd": 0.000001,
+        "latency_ms": 10,
+        "failure": {"layer": "none", "category": "none", "reason": ""},
+    }
 
 
 def _evaluation_record(

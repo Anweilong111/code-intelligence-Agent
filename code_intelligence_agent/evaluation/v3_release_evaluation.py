@@ -67,6 +67,10 @@ def evaluate_v3_release(
     comparisons = _build_comparison_registry(phase_payloads)
     release_gates = {
         **offline_gates,
+        "live_provider_access_preflight_passed": (
+            live["status"] == "pass"
+            and _dict(live.get("provider_access_preflight")).get("status") == "pass"
+        ),
         "live_llm_hybrid_120_trials_complete": live["status"] == "pass",
         "rule_llm_hybrid_attribution_available": (
             offline_gates["phase3_offline_foundation_passed"]
@@ -98,7 +102,6 @@ def evaluate_v3_release(
             )
         )
     )
-    phase6 = _dict(phase_payloads.get("phase6"))
     pending = [] if complete else _pending_live_requirements(live)
     return {
         "schema_version": "v3_phase7_unified_evaluation_v1",
@@ -114,7 +117,7 @@ def evaluate_v3_release(
         "comparison_registry": comparisons,
         "release_gates": release_gates,
         "pending_requirements": pending,
-        "latest_regression": _dict(phase6.get("tests")),
+        "latest_regression": _latest_regression(phase_payloads),
         "denominator_policy": {
             "failed_trials_retained": True,
             "provider_and_environment_blockers_separated": True,
@@ -128,9 +131,32 @@ def evaluate_v3_release(
             "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
             "V2/V3 numbers are not presented as improvements when their protocols differ.",
             "A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
+            "Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.",
             "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows.",
         ],
     }
+
+
+def _latest_regression(phase_payloads: dict[str, Any]) -> dict[str, Any]:
+    phase5_tests = _dict(_dict(phase_payloads.get("phase5")).get("tests"))
+    phase6_tests = _dict(_dict(phase_payloads.get("phase6")).get("tests"))
+    latest = dict(phase6_tests)
+    for field in (
+        "phase5_and_repair_regression",
+        "all_v3",
+        "full_pytest",
+        "release_hygiene",
+        "skip_explanation",
+    ):
+        if field in phase5_tests:
+            latest[field] = phase5_tests[field]
+    latest["latest_general_regression_source"] = (
+        "docs/v3/phase5_verification.json"
+    )
+    latest["phase6_specialized_regression_source"] = (
+        "docs/v3/phase6_verification.json"
+    )
+    return latest
 
 
 def render_v3_release_markdown(payload: dict[str, Any]) -> str:
@@ -206,6 +232,20 @@ def render_v3_release_markdown(payload: dict[str, Any]) -> str:
             f"{_metric(item.get('actual_cost_usd'))} | "
             f"{_strategy_metric(strategy, 'latency_ms', item)} |"
         )
+    provider_preflight = _dict(
+        _dict(payload.get("live_evaluation")).get("provider_access_preflight")
+    )
+    lines.extend(
+        [
+            "",
+            "## Provider Access Preflight",
+            "",
+            f"- Status: `{provider_preflight.get('status') or 'pending'}`",
+            "- Counted as repair trial: `false`",
+            f"- Cost USD: `{_metric(provider_preflight.get('actual_cost_usd'))}`",
+            f"- Latency ms: `{_metric(provider_preflight.get('latency_ms'))}`",
+        ]
+    )
     environment = _dict(
         _dict(payload.get("metric_registry")).get("repository_environment")
     )
@@ -474,6 +514,9 @@ def _load_live_evaluation(
             for strategy in LIVE_STRATEGIES
         },
         "provider_model_metadata": _dict(payload.get("provider_model_metadata")),
+        "provider_access_preflight": _dict(
+            payload.get("provider_access_preflight")
+        ),
         "case_examples": _extract_live_case_examples(payload),
     }
 
@@ -497,6 +540,8 @@ def _validate_live_evaluation(
         errors.append("run_record_audit_not_pass")
     model_metadata = _dict(payload.get("provider_model_metadata"))
     frozen_model = _dict(frozen_protocol.get("model"))
+    provider_preflight = _dict(payload.get("provider_access_preflight"))
+    frozen_preflight = _dict(frozen_model.get("access_preflight"))
     expected_provider = str(frozen_model.get("provider") or "")
     expected_model_id = str(frozen_model.get("model_id") or "")
     expected_prompt_hashes = {
@@ -506,6 +551,58 @@ def _validate_live_evaluation(
         for item in _list(frozen_protocol.get("prompts"))
         if str(_dict(item).get("id") or "")
     }
+    expected_preflight_prompt_id = str(frozen_preflight.get("prompt_id") or "")
+    expected_preflight_request_hash = str(
+        frozen_preflight.get("request_prompt_sha256") or ""
+    )
+    if str(provider_preflight.get("schema_version") or "") != (
+        "v3_provider_access_preflight_v1"
+    ):
+        errors.append("provider_access_preflight_schema_version_invalid")
+    if provider_preflight.get("status") != "pass":
+        errors.append("provider_access_preflight_not_pass")
+    if provider_preflight.get("performed") is not True:
+        errors.append("provider_access_preflight_not_performed")
+    if provider_preflight.get("counted_as_repair_trial") is not False:
+        errors.append("provider_access_preflight_counted_as_repair_trial")
+    if str(provider_preflight.get("provider") or "") != expected_provider:
+        errors.append("provider_access_preflight_provider_mismatch")
+    if str(provider_preflight.get("protocol_model_id") or "") != expected_model_id:
+        errors.append("provider_access_preflight_protocol_model_mismatch")
+    if str(provider_preflight.get("observed_model_id") or "") != expected_model_id:
+        errors.append("provider_access_preflight_observed_model_mismatch")
+    if str(provider_preflight.get("prompt_id") or "") != expected_preflight_prompt_id:
+        errors.append("provider_access_preflight_prompt_id_mismatch")
+    if str(provider_preflight.get("prompt_template_sha256") or "") != str(
+        expected_prompt_hashes.get(expected_preflight_prompt_id) or ""
+    ):
+        errors.append("provider_access_preflight_prompt_hash_mismatch")
+    if str(provider_preflight.get("request_prompt_sha256") or "") != (
+        expected_preflight_request_hash
+    ):
+        errors.append("provider_access_preflight_request_prompt_hash_mismatch")
+    if provider_preflight.get("cost_attribution") != "provider_preflight_overhead":
+        errors.append("provider_access_preflight_cost_attribution_invalid")
+    if provider_preflight.get("response_content_retained") is not False:
+        errors.append("provider_access_preflight_response_content_retained")
+    if provider_preflight.get("response_content_used_for_repair") is not False:
+        errors.append("provider_access_preflight_response_used_for_repair")
+    if any(
+        field in provider_preflight
+        for field in ("response_content", "raw_response", "response_body")
+    ):
+        errors.append("provider_access_preflight_response_content_present")
+    preflight_cost = _nullable_float(provider_preflight.get("actual_cost_usd"))
+    if preflight_cost is None or preflight_cost < 0:
+        errors.append("provider_access_preflight_cost_invalid")
+    preflight_latency = _nullable_float(provider_preflight.get("latency_ms"))
+    if preflight_latency is None or preflight_latency < 0:
+        errors.append("provider_access_preflight_latency_invalid")
+    preflight_usage = _dict(provider_preflight.get("usage"))
+    for field in ("input_tokens", "output_tokens", "total_tokens"):
+        value = _nullable_float(preflight_usage.get(field))
+        if value is None or value < 0:
+            errors.append(f"provider_access_preflight_usage_invalid:{field}")
     if model_metadata.get("status") != "pass":
         errors.append("provider_model_metadata_not_pass")
     if _int(model_metadata.get("model_record_count")) < REQUIRED_TOTAL_LIVE_TRIALS:
@@ -584,6 +681,7 @@ def _build_metric_registry(
     calibration = _dict(phase5.get("calibration"))
     memory = _dict(phase6.get("memory_evaluation"))
     security = _dict(phase6.get("security_evaluation"))
+    provider_preflight = _dict(live.get("provider_access_preflight"))
     repair_strategies = {
         "rule": _repair_metric(
             "measured",
@@ -735,6 +833,16 @@ def _build_metric_registry(
             "hybrid_actual_cost_usd": repair_strategies["hybrid"].get(
                 "actual_cost_usd"
             ),
+            "provider_preflight_actual_cost_usd": (
+                _float(provider_preflight.get("actual_cost_usd"))
+                if live.get("status") == "pass"
+                else None
+            ),
+            "provider_preflight_latency_ms": (
+                _int(provider_preflight.get("latency_ms"))
+                if live.get("status") == "pass"
+                else None
+            ),
             "source": (
                 "docs/v3/phase3_offline_verification.json and live evaluation"
             ),
@@ -873,6 +981,13 @@ def _pending_live_requirements(live: dict[str, Any]) -> list[dict[str, Any]]:
             ),
         },
         {
+            "id": "provider_access_preflight",
+            "requirement": (
+                "Record one passing frozen provider-access preflight with exact-model "
+                "verification and separate token, cost, and latency overhead."
+            ),
+        },
+        {
             "id": "llm_trials",
             "requirement": "Run 20 real bugs x 3 independent LLM trials (60 trials).",
         },
@@ -885,7 +1000,8 @@ def _pending_live_requirements(live: dict[str, Any]) -> list[dict[str, Any]]:
             "requirement": (
                 "Supply a passing evaluation with 120/120 trials, zero missing trials, "
                 "RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, "
-                "token, cost, latency, failure taxonomy, and generator attribution."
+                "token, cost, latency, failure taxonomy, generator attribution, and a "
+                "passing provider-access preflight."
             ),
             "current_live_status": str(live.get("status") or "pending"),
             "validation_errors": _list(live.get("errors")),

@@ -6,6 +6,11 @@ Phase 5 passes its implementation, calibration, regression, and release-hygiene
 gates. A repair can no longer reach `verified_repair` after targeted and full
 regression alone. It must also receive a complete semantic pass.
 
+The trial implementation fingerprint now includes the frozen provider-access
+preflight that runs before repository preparation and Trial submission. The
+preflight is excluded from pass@k and semantic repair claims; the semantic
+acceptance contract itself did not change.
+
 ## Implemented Gate
 
 Six checks are required for the current benchmark cases:
@@ -51,10 +56,10 @@ successes and do not enter pass@1/pass@3.
 
 | Gate | Result | Duration |
 | --- | --- | ---: |
-| Phase 5 + repair regression | 86 passed, 1 skipped | 9.86 s |
-| All V3 tests | 121 passed, 1 skipped | 8.05 s |
-| Full pytest suite | 1396 passed, 2 skipped | 899.19 s |
-| Release hygiene | 5/5 checks, 524 candidate files | n/a |
+| Phase 5 + repair regression | 85 passed, 1 skipped | 22.28 s |
+| All V3 tests | 133 passed, 1 skipped | 8.56 s |
+| Full pytest suite | 1408 passed, 2 skipped | 755.54 s |
+| Release hygiene | 5/5 checks, 525 candidate files | n/a |
 
 The two full-suite skips attempt to create symbolic links on Windows; the host
 did not grant those operations. Parent traversal rejection and runtime

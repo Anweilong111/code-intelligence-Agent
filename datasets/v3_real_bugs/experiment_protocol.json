@@ -45,6 +45,17 @@
         8
       ]
     },
+    "access_preflight": {
+      "enabled": true,
+      "prompt_id": "provider_access_preflight_v3",
+      "request_prompt_sha256": "4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd",
+      "max_output_tokens": 16,
+      "thinking": "disabled",
+      "reasoning_effort": null,
+      "runs_once_per_evaluation": true,
+      "counts_as_repair_trial": false,
+      "success_condition": "http_200_valid_chat_completion_envelope_and_exact_response_model"
+    },
     "model_catalog_source": "https://api-docs.deepseek.com/api/list-models"
   },
   "randomness": {
@@ -104,6 +115,12 @@
       "version": "3.0.0",
       "path": "datasets/v3_real_bugs/prompts/judge_v3.txt",
       "sha256": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88"
+    },
+    {
+      "id": "provider_access_preflight_v3",
+      "version": "3.0.0",
+      "path": "datasets/v3_real_bugs/prompts/provider_access_preflight_v3.txt",
+      "sha256": "08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa"
     }
   ],
   "success_authority": {
@@ -180,5 +197,5 @@
     "raw_provider_response_in_run_record": false,
     "model_may_override_safety_controller": false
   },
-  "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4"
+  "protocol_sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035"
 }

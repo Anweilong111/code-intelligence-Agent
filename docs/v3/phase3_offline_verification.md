@@ -7,8 +7,8 @@
 - Accepted real bugs: `20`
 - Rule trials: `20/20 complete`
 - Rule RunRecords: `58`, schema errors `0`
-- Focused tests: `113 passed`
-- Full regression: `1314 passed in 782.79s`
+- Focused tests: `134 passed`
+- Full regression: `1408 passed, 2 skipped in 755.54s`
 - Release hygiene: `5/5 pass`, `0` raw API-key findings
 
 ## Preparation Audit
@@ -90,8 +90,24 @@ release metrics.
 HTTP 402 is classified as `billing_or_quota`. Authentication, authorization,
 billing/quota, and unavailable-model failures activate a circuit breaker: no
 new trial or case is submitted after already-running workers finish. Once
-provider access is restored, the amended protocol must be rerun with
-`--retry-blockers`.
+provider access is restored, the amended protocol must be rerun; historical
+Trial-level blockers require `--retry-blockers`.
+
+The second protocol amendment moves this check before repair work. One frozen
+request runs with reasoning disabled and at most 16 output tokens. It must
+receive an HTTP 200 chat-completion envelope from the exact frozen model. Its
+tokens, cost, and latency are recorded as `provider_preflight_overhead`; it is
+not a repair Trial and cannot affect pass@1 or pass@3. The response content is
+discarded, leaving only hashes and allowlisted metadata. Both the system Prompt
+file and runtime request Prompt are pinned by SHA-256 and checked before a
+provider call is allowed.
+
+The final amended-protocol preflight returned HTTP 402 in 543 ms with zero tokens and
+zero cost. It submitted zero of 120 Trials, created no case directory, kept the
+20 cases in the missing denominator, wrote only three evaluation files, and
+produced zero raw-key findings. After billing/quota is restored, a preflight-
+only blocker can be retried with the same command; `--retry-blockers` remains
+necessary only for historical Trial-level blocker attempts.
 
 Whole-module candidates must also preserve existing function, method, class,
 generic-parameter, and decorator contracts. Live-model RunRecords distinguish

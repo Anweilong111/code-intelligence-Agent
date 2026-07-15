@@ -5,8 +5,8 @@
 - Status: `pass`
 - V2 baseline tag: `v2-baseline`
 - V2 baseline commit: `cf571489ac35c4dfcff44d7def0c9310b8206b2b`
-- Protocol SHA-256: `b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4`
-- Frozen prompts: `5`
+- Protocol SHA-256: `4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035`
+- Frozen prompts: `6`
 - RunRecord schema: `3.0`
 
 ## Verification
@@ -14,7 +14,7 @@
 | Check | Result |
 | --- | --- |
 | Protocol audit | pass, 0 errors |
-| Focused regression | 19 passed in 2.06s |
+| Focused regression | 22 passed in 2.13s |
 | Complete regression | 1244 passed in 883.25s |
 | Release hygiene | 5/5 checks pass |
 | Secret scan | 0 raw key findings |
@@ -22,12 +22,20 @@
 ## Protocol Amendment
 
 On 2026-07-16, a real DeepSeek batch returned HTTP 402 after the paid smoke
-case had completed. The protocol now classifies this as `billing_or_quota`
-instead of `invalid_provider_response`. A systemic provider circuit breaker
-stops new trial and case submission after authentication, authorization,
-billing/quota, or unavailable-model failures while allowing already-running
-workers to finish. Resuming after provider access is restored requires
-`--retry-blockers`.
+case had completed. The first amendment classified this as
+`billing_or_quota` and stopped new work after already-running workers finished.
+The second amendment adds one frozen provider-access preflight before any
+repository preparation or repair worker is submitted. It uses at most 16
+output tokens, disables reasoning, requires an HTTP 200 chat-completion
+envelope and the exact frozen response model, and retains only hashes and safe
+metadata rather than response content. Both its system Prompt file and runtime
+request Prompt are pinned by SHA-256.
+
+The preflight is operational overhead, not a repair Trial. Its tokens, cost,
+and latency are recorded separately and it cannot increase pass@1, pass@3, or
+the 120-Trial denominator. A failed preflight stops all case preparation and
+Trial submission; a Trial-level blocker still requires `--retry-blockers` when
+resuming an older blocked attempt.
 
 This amendment changes the protocol SHA and invalidates historical trial resume
 fingerprints. It does not weaken any repair, safety, or completeness gate.

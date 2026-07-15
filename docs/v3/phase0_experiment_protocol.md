@@ -1,7 +1,7 @@
 # V3 Phase 0 Experiment Protocol
 
 - Status: `pass`
-- Protocol SHA-256: `b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4`
+- Protocol SHA-256: `4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035`
 - Baseline: `v2-baseline` -> `cf571489ac35c4dfcff44d7def0c9310b8206b2b`
 - Baseline tag verified: `True`
 - Provider/model: `deepseek/deepseek-v4-pro`
@@ -23,6 +23,7 @@
 | localization_v3 | `1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86` |
 | patch_generation_v3 | `c5898a77322fc5aa1394cc538c97bde51bda31affcde0f0610eba80231259c47` |
 | planner_v3 | `c6d2ca2b7a0f26c7bad2b28ddefad06017ab12a6a0ab9f258685f141bcf5d771` |
+| provider_access_preflight_v3 | `08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa` |
 | reflection_v3 | `0778d16ec733db013a30567626b0de50524de5c7398530f932d2a8428bd0faa2` |
 
 ## Attribution Rules

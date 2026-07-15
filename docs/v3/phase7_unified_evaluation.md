@@ -18,6 +18,7 @@
 | `phase4_localization_passed` | pass |
 | `phase5_semantic_validation_passed` | pass |
 | `phase6_memory_and_security_passed` | pass |
+| `live_provider_access_preflight_passed` | pending/fail |
 | `live_llm_hybrid_120_trials_complete` | pending/fail |
 | `rule_llm_hybrid_attribution_available` | pending/fail |
 | `live_cost_latency_and_failure_taxonomy_available` | pending/fail |
@@ -27,12 +28,12 @@
 
 | Phase | Source status | Gate | Artifact | SHA-256 |
 | --- | --- | --- | --- | --- |
-| `phase0` | `pass` | `pass` | `docs/v3/phase0_verification.json` | `0c2577c5a47a` |
+| `phase0` | `pass` | `pass` | `docs/v3/phase0_verification.json` | `26c93a701d6a` |
 | `phase1` | `pass` | `pass` | `docs/v3/phase1_verification.json` | `0fcd8fffc4ef` |
 | `phase2` | `pass` | `pass` | `docs/v3/phase2_verification.json` | `b87e5b3171d4` |
-| `phase3` | `partial` | `pass` | `docs/v3/phase3_offline_verification.json` | `e0aecd098b7f` |
+| `phase3` | `partial` | `pass` | `docs/v3/phase3_offline_verification.json` | `adbb5e227d99` |
 | `phase4` | `pass` | `pass` | `docs/v3/phase4_verification.json` | `da47701e940b` |
-| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `38081b290cad` |
+| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `ef3a726cc3f1` |
 | `phase6` | `pass` | `pass` | `docs/v3/phase6_verification.json` | `23a2613bac8f` |
 
 ## Metric Registry
@@ -57,6 +58,13 @@
 | `llm` | `pending` | pending | pending | pending | pending | pending | pending |
 | `hybrid` | `pending` | pending | pending | pending | pending | pending | pending |
 
+## Provider Access Preflight
+
+- Status: `pending`
+- Counted as repair trial: `false`
+- Cost USD: `pending`
+- Latency ms: `pending`
+
 ## Proportion Uncertainty
 
 | Metric | Observed | Wilson 95% interval |
@@ -79,9 +87,10 @@
 ## Pending Requirements
 
 - `environment_injected_provider_access`: Use an environment-injected provider key with valid authentication, billing/quota, and frozen-model access; never persist the key.
+- `provider_access_preflight`: Record one passing frozen provider-access preflight with exact-model verification and separate token, cost, and latency overhead.
 - `llm_trials`: Run 20 real bugs x 3 independent LLM trials (60 trials).
 - `hybrid_trials`: Run 20 real bugs x 3 independent Hybrid trials (60 trials).
-- `complete_live_artifact`: Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, and generator attribution.
+- `complete_live_artifact`: Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, generator attribution, and a passing provider-access preflight.
 
 ## Claim Boundaries
 
@@ -89,4 +98,5 @@
 - Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.
 - V2/V3 numbers are not presented as improvements when their protocols differ.
 - A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.
+- Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.
 - Process-level repository defenses do not provide container-grade isolation for native child processes on Windows.

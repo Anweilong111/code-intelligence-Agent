@@ -9,8 +9,9 @@ readiness while refusing a complete release claim when live evidence is absent,
 incomplete, stale, or structurally invalid.
 
 The current committed result is `partial`. Phase 0-6 offline evidence passes,
-but the required 60 LLM and 60 Hybrid trials have not been run with a fresh
-environment-injected provider key.
+but the final frozen-protocol provider preflight returns HTTP 402 before any
+repository preparation or repair Trial. The required 60 LLM and 60 Hybrid
+trials therefore remain unsubmitted.
 
 ## Evidence States
 
@@ -55,6 +56,11 @@ If any artifact is missing, invalid JSON, or fails its phase-specific gate,
 A supplied live evaluation is accepted only when all conditions hold:
 
 - top-level `status=pass` and `live_model=true`;
+- one passing provider-access preflight whose provider, exact response model,
+  frozen system Prompt hash, frozen request Prompt hash, nonnegative usage,
+  cost, and latency all pass audit;
+- the preflight retains no response content, is attributed only to provider
+  overhead, and is not counted as a repair Trial;
 - exactly 20 accepted cases;
 - `record_audit.status=pass`;
 - LLM and Hybrid are both present;
@@ -87,6 +93,10 @@ RunRecords:
 
 Raw Prompts, raw provider payloads, private reasoning, and API keys are not
 persisted in the release report.
+
+The preflight is audited separately from repair RunRecords. Its system Prompt
+file and runtime request Prompt are independently frozen by SHA-256; model drift
+or Prompt drift blocks execution before repository preparation.
 
 ## Statistics and Denominators
 
@@ -129,7 +139,8 @@ Measured evidence includes:
 - memory: controlled completion 0.4286 -> 1.0000 with zero stale,
   conflicting, or advisory execution;
 - security: 8/8 hostile fixtures rejected, isolated, or accurately reported;
-- latest full regression: 1381 passed, 2 explicit Windows symlink skips.
+- latest full regression: 1408 passed and 2 explicit Windows symlink skips in
+  755.54 seconds from 1410 collected tests.
 
 LLM/Hybrid repair, Reflection recovery, provider token usage, live cost, live
 latency, direct success examples, and Reflection success examples remain

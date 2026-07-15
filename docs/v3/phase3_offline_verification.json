@@ -7,7 +7,7 @@
   "verified_on": "2026-07-16",
   "protocol": {
     "path": "datasets/v3_real_bugs/experiment_protocol.json",
-    "sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4",
+    "sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035",
     "rule_trials_per_case": 1,
     "llm_trials_per_case": 3,
     "hybrid_trials_per_case": 3,
@@ -78,15 +78,15 @@
   },
   "focused_tests": {
     "command": "python -m pytest tests/test_v3_repair_trial.py tests/test_main_cli.py tests/test_llm_judge.py tests/test_v3_real_bug_reproduction.py tests/test_phase3_patch_and_sandbox.py tests/test_patch_validation.py tests/test_patch_safety_v2.py -q",
-    "passed": 113,
+    "passed": 134,
     "failed": 0,
-    "duration_seconds": 16.57
+    "duration_seconds": 19.32
   },
   "full_test_suite": {
     "command": "python -m pytest -q",
-    "passed": 1314,
+    "passed": 1408,
     "failed": 0,
-    "duration_seconds": 782.79
+    "duration_seconds": 755.54
   },
   "release_hygiene": {
     "command": "python -m code_intelligence_agent.evaluation.release_hygiene_audit outputs_v3/phase3_release_hygiene_final --root . --require-pass --format json",
@@ -112,7 +112,8 @@
     "module_contract_safety": "Whole-module candidates preserve existing function, method, class-base, generic-parameter, and decorator contracts before sandbox execution.",
     "model_request_audit": "RunRecords separate the frozen prompt-template hash from the complete request-prompt hash and record the provider-returned model identifier without storing raw private reasoning.",
     "request_deadline": "V3 model calls run in a short-lived trusted worker; the parent enforces the frozen total wall-clock deadline across process startup, proxy, DNS, TLS, headers, and body.",
-    "systemic_provider_circuit_breaker": "Authentication, authorization, billing/quota, and unavailable-model failures stop new trial and case submission after already-running workers finish."
+    "systemic_provider_circuit_breaker": "Authentication, authorization, billing/quota, and unavailable-model failures stop new trial and case submission after already-running workers finish.",
+    "provider_access_preflight": "One frozen request with at most 16 output tokens and reasoning disabled runs before repository preparation. Its system Prompt file and runtime request Prompt are both pinned by SHA-256. It requires an HTTP 200 chat-completion envelope and the exact frozen response model, retains no response content, records cost and latency separately, and never counts as a repair trial."
   },
   "latest_live_provider_observation": {
     "observed_on": "2026-07-16",
@@ -124,6 +125,18 @@
     "smoke_artifact_secret_findings": 0,
     "subsequent_batch_blocker": "billing_or_quota_http_402",
     "batch_stopped_before_remaining_cases": true,
+    "amended_provider_preflight_status": "blocked_billing_or_quota_http_402",
+    "amended_provider_preflight_protocol_sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035",
+    "amended_provider_preflight_request_prompt_sha256": "4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd",
+    "amended_provider_preflight_latency_ms": 543,
+    "amended_provider_preflight_token_count": 0,
+    "amended_provider_preflight_cost_usd": 0.0,
+    "amended_provider_preflight_max_output_tokens": 16,
+    "amended_provider_preflight_response_content_retained": false,
+    "amended_provider_preflight_unprocessed_case_count": 20,
+    "amended_provider_preflight_submitted_trial_count": 0,
+    "amended_provider_preflight_artifact_file_count": 3,
+    "amended_provider_preflight_artifact_secret_findings": 0,
     "historical_live_trials_invalidated_by_protocol_amendment": true,
     "claim_eligible": false
   },
@@ -131,7 +144,7 @@
     "llm_trial_count": 60,
     "hybrid_trial_count": 60,
     "total_live_model_trials": 120,
-    "provider_access_requirement": "Restore billing/quota access, then rerun with --retry-blockers under the amended protocol.",
+    "provider_access_requirement": "Restore billing/quota access, then rerun under the amended protocol. Use --retry-blockers only when resuming historical Trial-level blocker attempts.",
     "required_outputs": [
       "pass_at_1",
       "pass_at_3",
@@ -140,6 +153,7 @@
       "token_usage",
       "actual_cost_usd",
       "latency",
+      "provider_preflight_cost_and_latency",
       "failure_taxonomy",
       "winning_generator_attribution"
     ]

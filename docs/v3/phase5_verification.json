@@ -5,8 +5,8 @@
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "677ff363206089f0f9d87ec4460fdfbba1072d7de98e14115b0733660db24e37",
-    "implementation_hash_refresh_reason": "The amended protocol adds billing_or_quota classification and a systemic provider circuit breaker after a real HTTP 402 observation. Together with isolated total request deadlines, this changes trial execution and resume identity without changing the Phase 5 semantic acceptance contract.",
+    "trial_implementation_sha256": "dca7927696c80ed872860f24e0950d7bc788a04fb30894c7e6da2654d6d96dae",
+    "implementation_hash_refresh_reason": "The second protocol amendment adds a frozen provider-access preflight before repository preparation and Trial submission. It changes trial execution and resume identity while leaving the Phase 5 semantic acceptance contract unchanged.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",
@@ -62,32 +62,32 @@
   "tests": {
     "phase5_and_repair_regression": {
       "status": "pass",
-      "passed": 86,
+      "passed": 85,
       "skipped": 1,
       "failed": 0,
-      "duration_seconds": 9.86
+      "duration_seconds": 22.28
     },
     "all_v3": {
       "status": "pass",
-      "passed": 121,
+      "passed": 133,
       "skipped": 1,
       "failed": 0,
       "deselected": 1276,
-      "duration_seconds": 8.05
+      "duration_seconds": 8.56
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1396,
+      "passed": 1408,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 899.19
+      "duration_seconds": 755.54
     },
     "release_hygiene": {
       "status": "pass",
       "passed_checks": 5,
       "check_count": 5,
       "failed_checks": 0,
-      "candidate_file_count": 524
+      "candidate_file_count": 525
     },
     "skip_explanation": "The Windows host did not permit two unit tests to create symbolic links. Deterministic traversal rejection and runtime workspace symlink scans remain covered."
   },

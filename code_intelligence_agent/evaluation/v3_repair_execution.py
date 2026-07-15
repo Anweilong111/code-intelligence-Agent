@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from code_intelligence_agent.agents.llm_client import (
+    LLMClient,
     LLMRequestError,
     OpenAICompatibleLLMClient,
     RetryingLLMClient,
@@ -31,6 +33,45 @@ from code_intelligence_agent.evaluation.v3_semantic_validation import (
 )
 
 
+V3_PROVIDER_ACCESS_PREFLIGHT_PROMPT = (
+    "Confirm provider access to this chat-completions endpoint. Return JSON now."
+)
+V3_PROVIDER_ACCESS_PREFLIGHT_SCHEMA_VERSION = "v3_provider_access_preflight_v1"
+_PREFLIGHT_METADATA_FIELDS = (
+    "status",
+    "provider",
+    "model",
+    "response_model",
+    "response_id",
+    "response_object",
+    "response_created",
+    "response_choice_count",
+    "finish_reason",
+    "latency_ms",
+    "timeout_seconds",
+    "request_timeout_mode",
+    "temperature",
+    "max_tokens",
+    "thinking",
+    "reasoning_effort",
+    "prompt_chars",
+    "prompt_sha256",
+    "system_prompt_sha256",
+    "response_chars",
+    "response_sha256",
+    "provider_attempt_count",
+    "provider_retry_count",
+    "provider_retry_reasons",
+    "provider_retry_delays_seconds",
+    "provider_terminal_error_reason",
+    "http_status",
+    "error_type",
+    "error_reason",
+    "provider_payload_bytes",
+    "provider_payload_sha256",
+)
+
+
 def create_v3_repair_client(
     protocol: dict[str, Any],
     *,
@@ -38,6 +79,55 @@ def create_v3_repair_client(
     prompt_id: str,
     api_key: str | None = None,
     sleeper=time.sleep,
+) -> RetryingLLMClient:
+    model = _dict(protocol.get("model"))
+    return _create_v3_protocol_client(
+        protocol,
+        root=root,
+        prompt_id=prompt_id,
+        api_key=api_key,
+        sleeper=sleeper,
+        max_output_tokens=_int(model.get("max_output_tokens"), 32768),
+        thinking=str(model.get("thinking") or "") or None,
+        reasoning_effort=str(model.get("reasoning_effort") or "") or None,
+    )
+
+
+def create_v3_provider_access_client(
+    protocol: dict[str, Any],
+    *,
+    root: str | Path,
+    api_key: str | None = None,
+    sleeper=time.sleep,
+) -> RetryingLLMClient:
+    model = _dict(protocol.get("model"))
+    preflight = _dict(model.get("access_preflight"))
+    if preflight.get("enabled") is not True:
+        raise ValueError("V3 provider access preflight is not enabled in protocol.")
+    return _create_v3_protocol_client(
+        protocol,
+        root=root,
+        prompt_id=str(preflight.get("prompt_id") or ""),
+        api_key=api_key,
+        sleeper=sleeper,
+        max_output_tokens=_int(preflight.get("max_output_tokens"), 16),
+        thinking=str(preflight.get("thinking") or "") or None,
+        reasoning_effort=(
+            str(preflight.get("reasoning_effort") or "") or None
+        ),
+    )
+
+
+def _create_v3_protocol_client(
+    protocol: dict[str, Any],
+    *,
+    root: str | Path,
+    prompt_id: str,
+    api_key: str | None,
+    sleeper,
+    max_output_tokens: int,
+    thinking: str | None,
+    reasoning_effort: str | None,
 ) -> RetryingLLMClient:
     root_path = Path(root).resolve()
     prompt = _prompt_spec(protocol, prompt_id)
@@ -71,10 +161,10 @@ def create_v3_repair_client(
         system_prompt=prompt_path.read_text(encoding="utf-8"),
         api_key_env=(api_key_env_names[0] if api_key_env_names else "CIA_LLM_API_KEY"),
         temperature=_float(model.get("temperature"), 0.0),
-        max_tokens=_int(model.get("max_output_tokens"), 32768),
+        max_tokens=max(1, max_output_tokens),
         response_format={"type": "json_object"},
-        thinking=str(model.get("thinking") or "") or None,
-        reasoning_effort=str(model.get("reasoning_effort") or "") or None,
+        thinking=thinking,
+        reasoning_effort=reasoning_effort,
         isolate_request_timeout=True,
     )
     return RetryingLLMClient(
@@ -85,6 +175,141 @@ def create_v3_repair_client(
         ),
         sleeper=sleeper,
     )
+
+
+def run_v3_provider_access_preflight(
+    protocol: dict[str, Any],
+    *,
+    root: str | Path,
+    api_key: str | None = None,
+    llm_client: LLMClient | None = None,
+) -> dict[str, Any]:
+    started_at = utc_now()
+    started = time.perf_counter()
+    model = _dict(protocol.get("model"))
+    preflight = _dict(model.get("access_preflight"))
+    prompt_id = str(preflight.get("prompt_id") or "")
+    prompt_spec = _prompt_spec(protocol, prompt_id)
+    expected_model = str(model.get("model_id") or "")
+    request_prompt_sha256 = hashlib.sha256(
+        V3_PROVIDER_ACCESS_PREFLIGHT_PROMPT.encode("utf-8")
+    ).hexdigest()
+    base = {
+        "schema_version": V3_PROVIDER_ACCESS_PREFLIGHT_SCHEMA_VERSION,
+        "performed": True,
+        "counted_as_repair_trial": False,
+        "cost_attribution": "provider_preflight_overhead",
+        "provider": str(model.get("provider") or ""),
+        "protocol_model_id": expected_model,
+        "prompt_id": prompt_id,
+        "prompt_template_sha256": str(prompt_spec.get("sha256") or ""),
+        "request_prompt_sha256": request_prompt_sha256,
+        "response_content_retained": False,
+        "response_content_used_for_repair": False,
+        "started_at": started_at,
+    }
+    try:
+        if request_prompt_sha256 != str(
+            preflight.get("request_prompt_sha256") or ""
+        ):
+            raise ValueError(
+                "V3 provider access preflight request Prompt does not match the "
+                "frozen protocol hash."
+            )
+        client = llm_client or create_v3_provider_access_client(
+            protocol,
+            root=root,
+            api_key=api_key,
+        )
+        response = client.complete(V3_PROVIDER_ACCESS_PREFLIGHT_PROMPT)
+    except LLMRequestError as exc:
+        metadata = _safe_preflight_metadata(exc.metadata)
+        usage = _run_record_usage(exc.metadata)
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "provider_access_request_failed",
+            "observed_model_id": str(metadata.get("response_model") or ""),
+            "latency_ms": _int(
+                metadata.get("latency_ms"),
+                _elapsed_ms(started),
+            ),
+            "usage": usage,
+            "actual_cost_usd": compute_run_record_cost(
+                {"usage": usage},
+                protocol,
+            ),
+            "request_metadata": metadata,
+            "failure": {
+                "layer": "provider",
+                "category": _provider_failure_category(exc),
+                "reason": str(exc),
+            },
+            "completed_at": utc_now(),
+        }
+    except ValueError as exc:
+        message = str(exc)
+        normalized_message = message.lower()
+        category = (
+            "authentication"
+            if (
+                "api key" in normalized_message
+                or "api_key" in normalized_message
+                or "required for llm requests" in normalized_message
+            )
+            else "invalid_provider_response"
+        )
+        return {
+            **base,
+            "status": "blocked",
+            "reason": "provider_access_configuration_failed",
+            "observed_model_id": "",
+            "latency_ms": _elapsed_ms(started),
+            "usage": _zero_usage(),
+            "actual_cost_usd": 0.0,
+            "request_metadata": {},
+            "failure": {
+                "layer": "provider",
+                "category": category,
+                "reason": message,
+            },
+            "completed_at": utc_now(),
+        }
+
+    metadata = _safe_preflight_metadata(response.metadata)
+    usage = _run_record_usage(response.metadata)
+    observed_model = str(metadata.get("response_model") or "")
+    if not observed_model:
+        status = "blocked"
+        reason = "provider_response_model_missing"
+        category = "invalid_provider_response"
+    elif observed_model != expected_model:
+        status = "blocked"
+        reason = "provider_response_model_mismatch"
+        category = "model_unavailable"
+    else:
+        status = "pass"
+        reason = "provider_access_verified"
+        category = "none"
+    return {
+        **base,
+        "status": status,
+        "reason": reason,
+        "observed_model_id": observed_model,
+        "latency_ms": _int(metadata.get("latency_ms"), _elapsed_ms(started)),
+        "usage": usage,
+        "actual_cost_usd": compute_run_record_cost(
+            {"usage": usage},
+            protocol,
+        ),
+        "request_metadata": metadata,
+        "failure": {
+            "layer": "none" if status == "pass" else "provider",
+            "category": category,
+            "reason": "" if status == "pass" else reason,
+        },
+        "completed_at": utc_now(),
+    }
 
 
 def copy_v3_trial_workspace(
@@ -713,6 +938,14 @@ def _provider_failure_category(error: LLMRequestError) -> str:
     if error.reason == "url_error" or status >= 500:
         return "network"
     return "invalid_provider_response"
+
+
+def _safe_preflight_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    return {
+        field: metadata[field]
+        for field in _PREFLIGHT_METADATA_FIELDS
+        if field in metadata
+    }
 
 
 def _prompt_spec(protocol: dict[str, Any], prompt_id: str) -> dict[str, Any]:

@@ -9,7 +9,7 @@
     {
       "phase": "phase0",
       "artifact": "docs/v3/phase0_verification.json",
-      "sha256": "0c2577c5a47a13f32eb76ae44ce8b4b0ac82adf19874509d9a30d847d38f9460",
+      "sha256": "26c93a701d6af33f7b44785b5c86aa203a739a03ac5bc98917dbd43f477214d6",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "phase0_experiment_protocol",
@@ -36,7 +36,7 @@
     {
       "phase": "phase3",
       "artifact": "docs/v3/phase3_offline_verification.json",
-      "sha256": "e0aecd098b7f331124995e31211dce2d6d331ca034a4cbada866a4e5f097d8ce",
+      "sha256": "adbb5e227d9981224b0d4c067de57e58ad1608320990d6cc75451487dae2ae3a",
       "source_status": "partial",
       "gate_status": "pass",
       "phase_name": "phase3_real_model_repair_evaluation",
@@ -54,7 +54,7 @@
     {
       "phase": "phase5",
       "artifact": "docs/v3/phase5_verification.json",
-      "sha256": "38081b290cadcc06a756d914641ae4ebfe50713887733902aa3ea7d58136a6c1",
+      "sha256": "ef3a726cc3f1c1c4278cde1870164bd6c3cb989e9d636d444514b9c87bb35f96",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "Phase 5 patch semantic correctness",
@@ -311,6 +311,8 @@
       "rule_actual_cost_usd": 0.0,
       "llm_actual_cost_usd": null,
       "hybrid_actual_cost_usd": null,
+      "provider_preflight_actual_cost_usd": null,
+      "provider_preflight_latency_ms": null,
       "source": "docs/v3/phase3_offline_verification.json and live evaluation"
     }
   },
@@ -349,6 +351,7 @@
     "phase4_localization_passed": true,
     "phase5_semantic_validation_passed": true,
     "phase6_memory_and_security_passed": true,
+    "live_provider_access_preflight_passed": false,
     "live_llm_hybrid_120_trials_complete": false,
     "rule_llm_hybrid_attribution_available": false,
     "live_cost_latency_and_failure_taxonomy_available": false,
@@ -360,6 +363,10 @@
       "requirement": "Use an environment-injected provider key with valid authentication, billing/quota, and frozen-model access; never persist the key."
     },
     {
+      "id": "provider_access_preflight",
+      "requirement": "Record one passing frozen provider-access preflight with exact-model verification and separate token, cost, and latency overhead."
+    },
+    {
       "id": "llm_trials",
       "requirement": "Run 20 real bugs x 3 independent LLM trials (60 trials)."
     },
@@ -369,7 +376,7 @@
     },
     {
       "id": "complete_live_artifact",
-      "requirement": "Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, and generator attribution.",
+      "requirement": "Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, generator attribution, and a passing provider-access preflight.",
       "current_live_status": "pending",
       "validation_errors": []
     }
@@ -391,30 +398,40 @@
     },
     "all_v3": {
       "status": "pass",
-      "passed": 119,
-      "skipped": 2,
+      "passed": 133,
+      "skipped": 1,
       "failed": 0,
-      "deselected": 1246,
-      "duration_seconds": 8.46
+      "deselected": 1276,
+      "duration_seconds": 8.56
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1365,
+      "passed": 1408,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 752.07
+      "duration_seconds": 755.54
     },
     "release_hygiene": {
       "status": "pass",
       "passed_checks": 5,
       "check_count": 5,
       "failed_checks": 0,
-      "candidate_file_count": 509
+      "candidate_file_count": 525
     },
     "skip_explanations": [
       "tests/test_runtime_security.py cannot create a symbolic link on this Windows host.",
       "tests/test_v3_semantic_validation.py cannot create a symbolic link on this Windows host."
-    ]
+    ],
+    "phase5_and_repair_regression": {
+      "status": "pass",
+      "passed": 85,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 22.28
+    },
+    "skip_explanation": "The Windows host did not permit two unit tests to create symbolic links. Deterministic traversal rejection and runtime workspace symlink scans remain covered.",
+    "latest_general_regression_source": "docs/v3/phase5_verification.json",
+    "phase6_specialized_regression_source": "docs/v3/phase6_verification.json"
   },
   "denominator_policy": {
     "failed_trials_retained": true,
@@ -464,6 +481,7 @@
     "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
     "V2/V3 numbers are not presented as improvements when their protocols differ.",
     "A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
+    "Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.",
     "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows."
   ]
 }

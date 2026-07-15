@@ -137,6 +137,30 @@ def validate_experiment_protocol(
         errors.append("model.api_key_source_must_be_environment_only")
     if not _list(model.get("api_key_env_names")):
         errors.append("model.api_key_env_names_are_required")
+    access_preflight = _dict(model.get("access_preflight"))
+    if access_preflight.get("enabled") is not True:
+        errors.append("model.access_preflight.enabled_must_be_true")
+    preflight_prompt_id = str(access_preflight.get("prompt_id") or "")
+    if not preflight_prompt_id:
+        errors.append("model.access_preflight.prompt_id_is_required")
+    if not SHA256_PATTERN.fullmatch(
+        str(access_preflight.get("request_prompt_sha256") or "")
+    ):
+        errors.append("model.access_preflight.request_prompt_sha256_is_invalid")
+    preflight_max_tokens = _int(access_preflight.get("max_output_tokens"), 0)
+    if not 1 <= preflight_max_tokens <= 64:
+        errors.append("model.access_preflight.max_output_tokens_must_be_1_to_64")
+    if str(access_preflight.get("thinking") or "") != "disabled":
+        errors.append("model.access_preflight.thinking_must_be_disabled")
+    if access_preflight.get("runs_once_per_evaluation") is not True:
+        errors.append("model.access_preflight.must_run_once_per_evaluation")
+    if access_preflight.get("counts_as_repair_trial") is not False:
+        errors.append("model.access_preflight.must_not_count_as_repair_trial")
+    if (
+        str(access_preflight.get("success_condition") or "")
+        != "http_200_valid_chat_completion_envelope_and_exact_response_model"
+    ):
+        errors.append("model.access_preflight.success_condition_is_invalid")
 
     randomness = _dict(protocol.get("randomness"))
     if _int(randomness.get("rule_trials"), 0) != 1:
@@ -192,6 +216,8 @@ def validate_experiment_protocol(
         )
         if actual_hash:
             prompt_hashes[prompt_id] = actual_hash
+    if preflight_prompt_id and preflight_prompt_id not in prompt_ids:
+        errors.append("model.access_preflight.prompt_id_is_not_frozen")
 
     metrics = {str(item) for item in _list(protocol.get("required_metrics"))}
     required_metrics = {
@@ -658,7 +684,8 @@ def build_protocol_audit(
         "success_authority": _dict(protocol.get("success_authority")),
         "notes": [
             "The protocol audit does not call a model or claim a repair rate.",
-            "Live trials require a fresh environment-injected API key.",
+            "Live trials require environment-injected provider access with valid authentication, billing/quota, and frozen-model availability.",
+            "One minimal provider-access preflight runs before live repair work and is excluded from pass@k trial counts.",
             "Provider retries stay inside one trial and are recorded separately.",
         ],
     }
@@ -730,9 +757,17 @@ def write_protocol_audit_artifacts(
     prefix.parent.mkdir(parents=True, exist_ok=True)
     json_path = prefix.with_suffix(".json")
     markdown_path = prefix.with_suffix(".md")
-    json_path.write_text(json.dumps(audit, indent=2, ensure_ascii=False), encoding="utf-8")
-    markdown_path.write_text(render_protocol_audit_markdown(audit), encoding="utf-8")
+    _write_text_lf(
+        json_path,
+        json.dumps(audit, indent=2, ensure_ascii=False) + "\n",
+    )
+    _write_text_lf(markdown_path, render_protocol_audit_markdown(audit))
     return {"json": str(json_path), "markdown": str(markdown_path)}
+
+
+def _write_text_lf(path: Path, content: str) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(content)
 
 
 def _validate_hashed_path(

@@ -1,10 +1,10 @@
 {
   "schema_version": "3.0",
-  "generated_at": "2026-07-15T18:36:06.959609+00:00",
+  "generated_at": "2026-07-15T19:49:10.143774+00:00",
   "status": "pass",
   "reason": "v3_phase0_protocol_frozen",
   "protocol_path": "datasets/v3_real_bugs/experiment_protocol.json",
-  "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4",
+  "protocol_sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035",
   "run_record_schema": {
     "$id": "code-intelligence-agent-v3-run-record",
     "schema_version": "3.0",
@@ -86,9 +86,10 @@
       "reflection_v3": "0778d16ec733db013a30567626b0de50524de5c7398530f932d2a8428bd0faa2",
       "planner_v3": "c6d2ca2b7a0f26c7bad2b28ddefad06017ab12a6a0ab9f258685f141bcf5d771",
       "localization_v3": "1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86",
-      "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88"
+      "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88",
+      "provider_access_preflight_v3": "08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa"
     },
-    "protocol_sha256": "b92bf069c21bc6cb6950e74424022c16cf841647542d9f5218ea1d40e08d50d4"
+    "protocol_sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035"
   },
   "baseline": {
     "tag": "v2-baseline",
@@ -97,7 +98,7 @@
     "tag_matches": true
   },
   "current_environment": {
-    "head_commit": "082ce7b6033b6c06c3165a0462ad5d7609d8ebca",
+    "head_commit": "867f9bb965672e29d184270bf28dc309707c5056",
     "branch": "codex/code-intelligence-agent-v3",
     "python_version": "3.13.12",
     "platform": "win32"
@@ -130,6 +131,17 @@
         8
       ]
     },
+    "access_preflight": {
+      "enabled": true,
+      "prompt_id": "provider_access_preflight_v3",
+      "request_prompt_sha256": "4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd",
+      "max_output_tokens": 16,
+      "thinking": "disabled",
+      "reasoning_effort": null,
+      "runs_once_per_evaluation": true,
+      "counts_as_repair_trial": false,
+      "success_condition": "http_200_valid_chat_completion_envelope_and_exact_response_model"
+    },
     "model_catalog_source": "https://api-docs.deepseek.com/api/list-models"
   },
   "frozen_pricing": {
@@ -151,7 +163,8 @@
     "reflection_v3": "0778d16ec733db013a30567626b0de50524de5c7398530f932d2a8428bd0faa2",
     "planner_v3": "c6d2ca2b7a0f26c7bad2b28ddefad06017ab12a6a0ab9f258685f141bcf5d771",
     "localization_v3": "1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86",
-    "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88"
+    "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88",
+    "provider_access_preflight_v3": "08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa"
   },
   "randomness": {
     "rule_trials": 1,
@@ -180,7 +193,8 @@
   },
   "notes": [
     "The protocol audit does not call a model or claim a repair rate.",
-    "Live trials require a fresh environment-injected API key.",
+    "Live trials require environment-injected provider access with valid authentication, billing/quota, and frozen-model availability.",
+    "One minimal provider-access preflight runs before live repair work and is excluded from pass@k trial counts.",
     "Provider retries stay inside one trial and are recorded separately."
   ]
 }

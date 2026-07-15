@@ -8,10 +8,13 @@ test suite passes. The release status remains `partial` because the required
 60 live LLM and 60 live Hybrid repair trials have not completed under the
 amended protocol.
 
-The key and isolated transport probe succeeded on 2026-07-16, but the
-subsequent batch returned HTTP 402. Completion therefore requires restored
-provider billing/quota access and a rerun with `--retry-blockers`; a different
-Key is not by itself the acceptance condition.
+The final frozen-protocol preflight returned HTTP 402 in 543 ms before any
+repository preparation or repair Trial was submitted. It consumed zero model
+tokens, incurred zero measured cost, retained no response content, and produced
+zero raw-key findings. Completion therefore requires restored provider
+billing/quota access; replacing a Key is not by itself the acceptance condition.
+A preflight-only blocker reruns with the same command, while
+`--retry-blockers` is required only for historical Trial-level blockers.
 
 This distinction is enforced in code. Missing live values are emitted as JSON
 `null`, and `--require-complete` exits nonzero until a structurally valid
@@ -39,10 +42,10 @@ changes make the raw V2 `7/20` and V3 `19/20` repository-start counts
 
 | Gate | Result | Duration |
 | --- | --- | ---: |
-| Focused Phase 7 and repair regression | 41 passed | 5.26 s |
-| V3, memory, security, and release regression | 177 passed, 2 skipped | 40.39 s |
-| Full pytest suite | 1396 passed, 2 skipped | 899.19 s |
-| Release hygiene | 5/5 checks, 524 candidate files | current candidate set |
+| Focused Phase 7 and repair regression | 67 passed | 5.64 s |
+| V3, memory, security, and release regression | 189 passed, 2 skipped | 22.62 s |
+| Full pytest suite | 1408 passed, 2 skipped | 755.54 s |
+| Release hygiene | 5/5 checks, 525 candidate files | current candidate set |
 
 The two skips are explicit Windows-host limitations: this host cannot create
 the symbolic-link fixtures used by `tests/test_runtime_security.py` and

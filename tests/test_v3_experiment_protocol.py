@@ -13,6 +13,7 @@ from code_intelligence_agent.evaluation.v3_experiment_protocol import (
     validate_experiment_protocol,
     validate_run_record,
     validate_run_records,
+    write_protocol_audit_artifacts,
 )
 
 
@@ -26,8 +27,23 @@ def test_repository_v3_protocol_is_frozen_and_valid():
 
     assert audit["status"] == "pass", audit["errors"]
     assert audit["warning_count"] == 0
-    assert len(audit["prompt_hashes"]) == 5
+    assert len(audit["prompt_hashes"]) == 6
     assert protocol["model"]["model_id"] == "deepseek-v4-pro"
+    assert protocol["model"]["access_preflight"] == {
+        "enabled": True,
+        "prompt_id": "provider_access_preflight_v3",
+        "request_prompt_sha256": (
+            "4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd"
+        ),
+        "max_output_tokens": 16,
+        "thinking": "disabled",
+        "reasoning_effort": None,
+        "runs_once_per_evaluation": True,
+        "counts_as_repair_trial": False,
+        "success_condition": (
+            "http_200_valid_chat_completion_envelope_and_exact_response_model"
+        ),
+    }
     assert protocol["randomness"]["llm_trials"] == 3
     assert protocol["randomness"]["hybrid_trials"] == 3
 
@@ -44,6 +60,49 @@ def test_protocol_detects_prompt_drift(tmp_path):
 
     assert audit["status"] == "fail"
     assert "prompt:patch_generation_v3_sha256_mismatch" in audit["errors"]
+
+
+def test_protocol_rejects_preflight_that_can_count_as_repair_trial(tmp_path):
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("original", encoding="utf-8")
+    requirements = tmp_path / "requirements.txt"
+    requirements.write_text("pytest\n", encoding="utf-8")
+    protocol = _minimal_protocol(tmp_path, prompt, requirements)
+    protocol["model"]["access_preflight"]["counts_as_repair_trial"] = True
+    protocol.pop("protocol_sha256")
+
+    audit = validate_experiment_protocol(protocol, root=tmp_path)
+
+    assert audit["status"] == "fail"
+    assert "model.access_preflight.must_not_count_as_repair_trial" in audit["errors"]
+
+
+def test_protocol_rejects_unfrozen_preflight_request_prompt(tmp_path):
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("original", encoding="utf-8")
+    requirements = tmp_path / "requirements.txt"
+    requirements.write_text("pytest\n", encoding="utf-8")
+    protocol = _minimal_protocol(tmp_path, prompt, requirements)
+    protocol["model"]["access_preflight"]["request_prompt_sha256"] = "invalid"
+    protocol.pop("protocol_sha256")
+
+    audit = validate_experiment_protocol(protocol, root=tmp_path)
+
+    assert audit["status"] == "fail"
+    assert (
+        "model.access_preflight.request_prompt_sha256_is_invalid"
+        in audit["errors"]
+    )
+
+
+def test_protocol_audit_writer_uses_lf_on_windows(tmp_path):
+    paths = write_protocol_audit_artifacts(
+        {"status": "pass", "notes": ["first", "second"]},
+        tmp_path / "protocol_audit",
+    )
+
+    assert b"\r\n" not in Path(paths["json"]).read_bytes()
+    assert b"\r\n" not in Path(paths["markdown"]).read_bytes()
 
 
 def test_verified_llm_run_record_requires_every_authoritative_gate():
@@ -199,6 +258,19 @@ def _minimal_protocol(root: Path, prompt: Path, requirements: Path) -> dict:
             "temperature": 0,
             "api_key_source": "environment_only",
             "api_key_env_names": ["CIA_LLM_API_KEY"],
+            "access_preflight": {
+                "enabled": True,
+                "prompt_id": "patch_generation_v3",
+                "request_prompt_sha256": "a" * 64,
+                "max_output_tokens": 16,
+                "thinking": "disabled",
+                "reasoning_effort": None,
+                "runs_once_per_evaluation": True,
+                "counts_as_repair_trial": False,
+                "success_condition": (
+                    "http_200_valid_chat_completion_envelope_and_exact_response_model"
+                ),
+            },
         },
         "randomness": {
             "rule_trials": 1,

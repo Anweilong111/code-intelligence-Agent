@@ -34,6 +34,10 @@ def test_current_v3_release_is_offline_ready_but_live_trials_remain_pending():
     assert strategies["llm"]["evidence_state"] == "pending"
     assert strategies["llm"]["pass_at_1"] is None
     assert strategies["hybrid"]["actual_cost_usd"] is None
+    assert payload["latest_regression"]["full_pytest"]["passed"] == 1408
+    assert payload["latest_regression"]["latest_general_regression_source"] == (
+        "docs/v3/phase5_verification.json"
+    )
     assert payload["comparison_registry"]["v2_v3_repository_startup"][
         "status"
     ] == "not_comparable"
@@ -52,6 +56,10 @@ def test_complete_live_evaluation_unlocks_release_without_changing_rule_attribut
     assert strategies["llm"]["pass_at_1"] == 0.25
     assert strategies["hybrid"]["pass_at_3"] == 0.45
     assert strategies["llm"]["actual_cost_usd"] == 12.5
+    assert payload["release_gates"]["live_provider_access_preflight_passed"] is True
+    assert payload["metric_registry"]["cost_and_latency"][
+        "provider_preflight_actual_cost_usd"
+    ] == 0.000001
     assert payload["pending_requirements"] == []
 
 
@@ -85,6 +93,36 @@ def test_live_artifact_with_model_or_prompt_protocol_drift_is_rejected():
     assert "protocol_model_id_differs_from_frozen_protocol" in errors
     assert "observed_model_ids_differ_from_frozen_protocol" in errors
     assert "protocol_prompt_hashes_differ_from_frozen_protocol" in errors
+
+
+def test_complete_live_evaluation_requires_passing_provider_access_preflight():
+    live = _complete_live_evaluation()
+    live["provider_access_preflight"]["status"] = "blocked"
+    live["provider_access_preflight"]["observed_model_id"] = ""
+
+    payload = evaluate_v3_release(ROOT, live_evaluation=live)
+
+    assert payload["status"] == "partial"
+    assert payload["live_evaluation"]["status"] == "invalid"
+    errors = payload["live_evaluation"]["errors"]
+    assert "provider_access_preflight_not_pass" in errors
+    assert "provider_access_preflight_observed_model_mismatch" in errors
+
+
+def test_complete_live_evaluation_rejects_unfrozen_or_retained_preflight_data():
+    live = _complete_live_evaluation()
+    preflight = live["provider_access_preflight"]
+    preflight["request_prompt_sha256"] = "0" * 64
+    preflight["response_content"] = '{"status":"ok"}'
+    preflight["latency_ms"] = -1
+
+    payload = evaluate_v3_release(ROOT, live_evaluation=live)
+
+    assert payload["status"] == "partial"
+    errors = payload["live_evaluation"]["errors"]
+    assert "provider_access_preflight_request_prompt_hash_mismatch" in errors
+    assert "provider_access_preflight_response_content_present" in errors
+    assert "provider_access_preflight_latency_invalid" in errors
 
 
 def test_missing_offline_phase_artifact_fails_offline_release(tmp_path):
@@ -175,7 +213,7 @@ def test_committed_phase7_verification_hashes_release_artifacts():
     assert verification["status"] == "partial"
     assert verification["offline_release_status"] == "pass"
     assert verification["complete_release_status"] == "pending"
-    assert verification["tests"]["full_pytest"]["passed"] == 1396
+    assert verification["tests"]["full_pytest"]["passed"] == 1408
     for relative_path, expected_hash in verification["artifacts"].items():
         path = ROOT / relative_path
         assert path.is_file(), relative_path
@@ -197,6 +235,11 @@ def _complete_live_evaluation() -> dict:
     prompt_hashes = {
         item["id"]: item["sha256"] for item in protocol["prompts"]
     }
+    preflight_prompt = next(
+        item
+        for item in protocol["prompts"]
+        if item["id"] == model["access_preflight"]["prompt_id"]
+    )
     return {
         "schema_version": "3.0",
         "status": "pass",
@@ -215,6 +258,31 @@ def _complete_live_evaluation() -> dict:
             "observed_providers": [model["provider"]],
             "observed_model_ids": [model["model_id"]],
             "observed_prompt_ids": ["patch_generation_v3", "reflection_v3"],
+        },
+        "provider_access_preflight": {
+            "schema_version": "v3_provider_access_preflight_v1",
+            "status": "pass",
+            "reason": "provider_access_verified",
+            "performed": True,
+            "counted_as_repair_trial": False,
+            "provider": model["provider"],
+            "protocol_model_id": model["model_id"],
+            "observed_model_id": model["model_id"],
+            "prompt_id": preflight_prompt["id"],
+            "prompt_template_sha256": preflight_prompt["sha256"],
+            "request_prompt_sha256": model["access_preflight"][
+                "request_prompt_sha256"
+            ],
+            "cost_attribution": "provider_preflight_overhead",
+            "response_content_retained": False,
+            "response_content_used_for_repair": False,
+            "actual_cost_usd": 0.000001,
+            "latency_ms": 100,
+            "usage": {
+                "input_tokens": 10,
+                "output_tokens": 2,
+                "total_tokens": 12,
+            },
         },
         "completeness": {
             "status": "pass",
