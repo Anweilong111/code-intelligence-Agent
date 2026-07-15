@@ -54,7 +54,7 @@
     {
       "phase": "phase5",
       "artifact": "docs/v3/phase5_verification.json",
-      "sha256": "fc26f223a1fc4370498bcec1f70c5d87362d12fc625a1cb3a349234a45e9bdd5",
+      "sha256": "b70447ef98a6b93b7de32424d8b446262d0a048303a450aac77da4e6b92dbc8c",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "Phase 5 patch semantic correctness",

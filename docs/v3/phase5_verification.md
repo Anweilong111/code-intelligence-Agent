@@ -51,15 +51,15 @@ successes and do not enter pass@1/pass@3.
 
 | Gate | Result | Duration |
 | --- | --- | ---: |
-| Phase 5 + repair regression | 59 passed, 1 skipped | 5.40 s |
-| All V3 tests | 99 passed, 1 skipped | 6.20 s |
-| Full pytest suite | 1349 passed, 1 skipped | 816.20 s |
-| Release hygiene | 5/5 checks, 493 candidate files | n/a |
+| Phase 5 + repair regression | 85 passed, 1 skipped | 9.79 s |
+| All V3 tests | 120 passed, 1 skipped | 7.78 s |
+| Full pytest suite | 1395 passed, 2 skipped | 859.98 s |
+| Release hygiene | 5/5 checks, 524 candidate files | n/a |
 
-The skipped test attempts to create a symbolic link on Windows; the host did not
-grant that operation. Parent traversal rejection and runtime workspace symlink
-scans remain deterministic, and the skipped result is retained rather than
-reported as a pass.
+The two full-suite skips attempt to create symbolic links on Windows; the host
+did not grant those operations. Parent traversal rejection and runtime
+workspace symlink scans remain deterministic, and the skipped results are
+retained rather than reported as passes.
 
 The release audit found no raw API keys, tracked local outputs, binary documents,
 tool-signature traces, or documentation that grants an LLM judge authority over

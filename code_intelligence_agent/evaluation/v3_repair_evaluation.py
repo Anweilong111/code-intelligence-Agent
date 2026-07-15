@@ -28,6 +28,7 @@ ALL_STRATEGIES = ("rule", "llm", "hybrid")
 TRIAL_IMPLEMENTATION_FILES = (
     "agents/bug_detector.py",
     "agents/llm_client.py",
+    "agents/llm_transport_worker.py",
     "agents/patch_generator.py",
     "core/repo_parser.py",
     "evaluation/repository_test_dynamic_evidence.py",

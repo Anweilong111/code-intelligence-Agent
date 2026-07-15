@@ -1,8 +1,10 @@
+import base64
 import hashlib
 import http.client
 import io
 from pathlib import Path
 import json
+import subprocess
 import tempfile
 import urllib.error
 
@@ -533,6 +535,208 @@ def test_openai_client_rejects_chunked_response_past_total_deadline(monkeypatch)
     else:  # pragma: no cover - assertion guard
         raise AssertionError("Expected LLMRequestError")
     assert response.read_count == 1
+
+
+def test_isolated_request_keeps_secret_out_of_command_environment_and_metadata(
+    monkeypatch,
+):
+    secret = "fixture-secret-only-on-stdin"
+    prompt = "private repair prompt"
+    calls = []
+    response_body = json.dumps(
+        {
+            "id": "chatcmpl-isolated",
+            "model": "deepseek-v4-pro",
+            "choices": [
+                {
+                    "message": {"content": '{"files": []}'},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+        }
+    ).encode("utf-8")
+
+    def fake_run(command, **kwargs):
+        calls.append((command, kwargs))
+        request = json.loads(kwargs["input"].decode("utf-8"))
+        assert request["headers"]["Authorization"] == f"Bearer {secret}"
+        request_body = base64.b64decode(request["data_b64"])
+        assert prompt.encode("utf-8") in request_body
+        envelope = {
+            "status": "ok",
+            "body_b64": base64.b64encode(response_body).decode("ascii"),
+        }
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps(envelope).encode("utf-8"),
+            stderr=b"",
+        )
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.agents.llm_client.subprocess.run",
+        fake_run,
+    )
+    monkeypatch.setenv("CIA_LLM_API_KEY", secret)
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key=secret,
+        model="deepseek-v4-pro",
+        timeout=7,
+        isolate_request_timeout=True,
+    )
+
+    response = client.complete(prompt)
+
+    command, kwargs = calls[0]
+    assert response.text == '{"files": []}'
+    assert response.metadata["request_timeout_mode"] == "isolated_total"
+    assert secret not in " ".join(command)
+    assert prompt not in " ".join(command)
+    assert secret not in json.dumps(kwargs["env"])
+    assert "CIA_LLM_API_KEY" not in kwargs["env"]
+    assert secret not in json.dumps(response.metadata)
+    assert prompt not in json.dumps(response.metadata)
+
+
+def test_isolated_request_timeout_discards_partial_worker_output(monkeypatch):
+    observed = {}
+
+    def fake_run(command, **kwargs):
+        observed["command"] = command
+        observed["kwargs"] = kwargs
+        raise subprocess.TimeoutExpired(
+            command,
+            kwargs["timeout"],
+            output=b"provider-private-partial-response",
+            stderr=b"provider-private-error",
+        )
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.agents.llm_client.subprocess.run",
+        fake_run,
+    )
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fixture-secret-timeout",
+        model="deepseek-v4-pro",
+        timeout=1,
+        isolate_request_timeout=True,
+    )
+
+    try:
+        client.complete("private timeout prompt")
+    except LLMRequestError as exc:
+        serialized = json.dumps(exc.metadata)
+        assert exc.reason == "timeout"
+        assert exc.metadata["error_reason"] == "timeout"
+        assert exc.metadata["request_timeout_mode"] == "isolated_total"
+        assert "provider-private-partial-response" not in serialized
+        assert "provider-private-error" not in serialized
+        assert "fixture-secret-timeout" not in serialized
+        assert "private timeout prompt" not in serialized
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
+    assert "fixture-secret-timeout" not in " ".join(observed["command"])
+    assert "fixture-secret-timeout" not in json.dumps(observed["kwargs"]["env"])
+
+
+def test_isolated_request_preserves_safe_http_error_taxonomy(monkeypatch):
+    provider_body = b"provider-private-rate-limit-detail"
+
+    def fake_run(command, **kwargs):
+        del kwargs
+        envelope = {
+            "status": "http_error",
+            "http_status": 429,
+            "body_b64": base64.b64encode(provider_body).decode("ascii"),
+        }
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps(envelope).encode("utf-8"),
+            stderr=b"",
+        )
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.agents.llm_client.subprocess.run",
+        fake_run,
+    )
+    client = OpenAICompatibleLLMClient(
+        provider="deepseek",
+        api_key="fixture-key",
+        model="deepseek-v4-pro",
+        isolate_request_timeout=True,
+    )
+
+    try:
+        client.complete("repair")
+    except LLMRequestError as exc:
+        serialized = json.dumps(exc.metadata)
+        assert exc.reason == "http_error"
+        assert exc.metadata["http_status"] == 429
+        assert exc.metadata["error_reason"] == "http_429"
+        assert exc.metadata["provider_payload_bytes"] == len(provider_body)
+        assert exc.metadata["provider_payload_sha256"].startswith("sha256:")
+        assert "provider-private-rate-limit-detail" not in serialized
+    else:  # pragma: no cover - assertion guard
+        raise AssertionError("Expected LLMRequestError")
+
+
+def test_retrying_client_retries_isolated_url_error_without_new_trial(monkeypatch):
+    calls = []
+    delays = []
+    response_body = json.dumps(
+        {
+            "choices": [{"message": {"content": '{"files": []}'}}],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+        }
+    ).encode("utf-8")
+
+    def fake_run(command, **kwargs):
+        del kwargs
+        calls.append(command)
+        if len(calls) == 1:
+            envelope = {
+                "status": "url_error",
+                "reason": "network_unavailable",
+            }
+        else:
+            envelope = {
+                "status": "ok",
+                "body_b64": base64.b64encode(response_body).decode("ascii"),
+            }
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps(envelope).encode("utf-8"),
+            stderr=b"",
+        )
+
+    monkeypatch.setattr(
+        "code_intelligence_agent.agents.llm_client.subprocess.run",
+        fake_run,
+    )
+    client = RetryingLLMClient(
+        OpenAICompatibleLLMClient(
+            provider="deepseek",
+            api_key="fixture-key",
+            model="deepseek-v4-pro",
+            isolate_request_timeout=True,
+        ),
+        max_retries=1,
+        backoff_seconds=(0.25,),
+        sleeper=delays.append,
+    )
+
+    response = client.complete("repair")
+
+    assert len(calls) == 2
+    assert delays == [0.25]
+    assert response.metadata["provider_attempt_count"] == 2
+    assert response.metadata["provider_retry_count"] == 1
+    assert response.metadata["provider_retry_reasons"] == ["network_unavailable"]
 
 
 def test_retrying_llm_client_does_not_retry_authentication_failure():

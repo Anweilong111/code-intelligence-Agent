@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import http.client
+import io
 import json
 import os
+import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
@@ -128,6 +133,7 @@ class OpenAICompatibleLLMClient:
         response_format: dict[str, Any] | None = None,
         thinking: str | None = None,
         reasoning_effort: str | None = None,
+        isolate_request_timeout: bool = False,
     ) -> None:
         self.provider = _normalize_provider(
             provider or os.environ.get(provider_env) or "openai"
@@ -153,6 +159,7 @@ class OpenAICompatibleLLMClient:
         self.response_format = dict(response_format) if response_format else None
         self.thinking = _normalize_thinking(thinking)
         self.reasoning_effort = _normalize_reasoning_effort(reasoning_effort)
+        self.isolate_request_timeout = bool(isolate_request_timeout)
         if not self.api_key:
             raise ValueError(f"{api_key_env} is required for LLM requests.")
         self.api_key_fingerprint = _api_key_fingerprint(self.api_key)
@@ -202,22 +209,32 @@ class OpenAICompatibleLLMClient:
             payload["tools"] = tools
             payload["tool_choice"] = tool_choice
         data = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
-            self.base_url,
-            data=data,
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
+        request_headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                response_bytes = _read_response_with_deadline(
-                    response,
+            if self.isolate_request_timeout:
+                response_bytes = _isolated_http_post(
+                    url=self.base_url,
+                    data=data,
+                    headers=request_headers,
                     started_at=started_at,
                     timeout_seconds=self.timeout,
                 )
+            else:
+                request = urllib.request.Request(
+                    self.base_url,
+                    data=data,
+                    headers=request_headers,
+                    method="POST",
+                )
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    response_bytes = _read_response_with_deadline(
+                        response,
+                        started_at=started_at,
+                        timeout_seconds=self.timeout,
+                    )
         except urllib.error.HTTPError as exc:
             error_body = _http_error_body(exc)
             metadata = self._request_metadata(
@@ -377,6 +394,11 @@ class OpenAICompatibleLLMClient:
             "model": self.model,
             "base_url": self.base_url,
             "timeout_seconds": self.timeout,
+            "request_timeout_mode": (
+                "isolated_total"
+                if self.isolate_request_timeout
+                else "in_process_response_deadline"
+            ),
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "response_format": (
@@ -920,7 +942,164 @@ def _provider_error_reason(exc: LLMRequestError) -> str:
     return str(value or exc.reason)
 
 
+def _isolated_http_post(
+    *,
+    url: str,
+    data: bytes,
+    headers: dict[str, str],
+    started_at: float,
+    timeout_seconds: int,
+) -> bytes:
+    remaining = float(timeout_seconds) - (time.perf_counter() - started_at)
+    if remaining <= 0:
+        raise TimeoutError("LLM request exceeded its total wall-clock deadline.")
+    worker_payload = json.dumps(
+        {
+            "url": url,
+            "data_b64": base64.b64encode(data).decode("ascii"),
+            "headers": headers,
+            "timeout_seconds": remaining,
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    worker_path = Path(__file__).with_name("llm_transport_worker.py").resolve()
+    command = [sys.executable, "-I", "-S", str(worker_path)]
+    try:
+        result = subprocess.run(
+            command,
+            input=worker_payload,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=remaining,
+            check=False,
+            env=_isolated_worker_environment(),
+            creationflags=_worker_creation_flags(),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise TimeoutError(
+            "LLM request exceeded its total wall-clock deadline."
+        ) from exc
+    except OSError as exc:
+        raise _IsolatedTransportError("worker_start_error") from exc
+    if result.returncode != 0:
+        raise _IsolatedTransportError("worker_exit_nonzero")
+    try:
+        envelope = json.loads(result.stdout.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise _IsolatedTransportError("invalid_worker_response") from exc
+    if not isinstance(envelope, dict):
+        raise _IsolatedTransportError("invalid_worker_response")
+
+    status = str(envelope.get("status") or "")
+    if status == "ok":
+        return _worker_response_body(envelope)
+    if status == "http_error":
+        status_code = _int_or_none(envelope.get("http_status"))
+        if status_code is None:
+            raise _IsolatedTransportError("invalid_worker_response")
+        raise urllib.error.HTTPError(
+            url,
+            status_code,
+            "LLM provider returned an HTTP error.",
+            {},
+            io.BytesIO(_worker_response_body(envelope)),
+        )
+    if status == "url_error":
+        raise urllib.error.URLError(_safe_worker_reason(envelope, "url_error"))
+    if status == "timeout":
+        raise TimeoutError("LLM request exceeded its total wall-clock deadline.")
+    if status in {"transport_error", "worker_error"}:
+        raise _IsolatedTransportError(
+            _safe_worker_reason(envelope, "transport_error")
+        )
+    raise _IsolatedTransportError("invalid_worker_response")
+
+
+def _worker_response_body(envelope: dict[str, Any]) -> bytes:
+    encoded = envelope.get("body_b64")
+    if not isinstance(encoded, str):
+        raise _IsolatedTransportError("invalid_worker_response")
+    try:
+        return base64.b64decode(encoded.encode("ascii"), validate=True)
+    except (UnicodeEncodeError, ValueError) as exc:
+        raise _IsolatedTransportError("invalid_worker_response") from exc
+
+
+def _safe_worker_reason(envelope: dict[str, Any], default: str) -> str:
+    reason = str(envelope.get("reason") or default)
+    allowed = {
+        "broken_pipe",
+        "connection_aborted",
+        "connection_refused",
+        "connection_reset",
+        "incomplete_read",
+        "invalid_request",
+        "name_resolution_error",
+        "network_unavailable",
+        "remote_disconnected",
+        "response_too_large",
+        "timeout",
+        "transport_error",
+        "unexpected_worker_error",
+        "url_error",
+    }
+    return reason if reason in allowed else default
+
+
+def _isolated_worker_environment() -> dict[str, str]:
+    allowed_names = {
+        "ALL_PROXY",
+        "APPDATA",
+        "COMSPEC",
+        "HOME",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "HTTPS_PROXY",
+        "HTTP_PROXY",
+        "LANG",
+        "LC_ALL",
+        "LOCALAPPDATA",
+        "NO_PROXY",
+        "PATH",
+        "REQUESTS_CA_BUNDLE",
+        "SSL_CERT_DIR",
+        "SSL_CERT_FILE",
+        "SYSTEMDRIVE",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+        "TMPDIR",
+        "USERPROFILE",
+        "WINDIR",
+    }
+    environment = {
+        name: value
+        for name, value in os.environ.items()
+        if name.upper() in allowed_names
+    }
+    environment["PYTHONIOENCODING"] = "utf-8"
+    environment["PYTHONUTF8"] = "1"
+    return environment
+
+
+def _worker_creation_flags() -> int:
+    if os.name != "nt":
+        return 0
+    return int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+
+class _IsolatedTransportError(OSError):
+    def __init__(self, transport_reason: str) -> None:
+        super().__init__(transport_reason)
+        self.transport_reason = transport_reason
+
+
 def _transport_error_reason(exc: BaseException) -> str:
+    isolated_reason = getattr(exc, "transport_reason", None)
+    if isinstance(isolated_reason, str) and isolated_reason:
+        return isolated_reason
     if isinstance(exc, http.client.IncompleteRead):
         return "incomplete_read"
     if isinstance(exc, http.client.RemoteDisconnected):

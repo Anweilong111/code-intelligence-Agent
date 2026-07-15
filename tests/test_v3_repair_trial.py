@@ -690,6 +690,7 @@ def test_v3_repair_client_is_built_from_frozen_protocol():
     assert transport.response_format == {"type": "json_object"}
     assert transport.thinking == "enabled"
     assert transport.reasoning_effort == "high"
+    assert transport.isolate_request_timeout is True
     assert client.max_retries == 2
     assert client.backoff_seconds == (2.0, 8.0)
 

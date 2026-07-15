@@ -1,12 +1,12 @@
 {
   "schema_version": "v3_phase5_verification_v1",
-  "verified_at": "2026-07-15",
+  "verified_at": "2026-07-16",
   "status": "pass",
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "55aeaba21488e303816fc0462ff9454b49694c52965ebb6a9bf279f1d6e34ba6",
-    "implementation_hash_refresh_reason": "Phase 3 resume integrity now fingerprints the trial execution contract, and provider response reads enforce the frozen total wall-clock budget without changing the Phase 5 semantic acceptance contract.",
+    "trial_implementation_sha256": "fb232dc3da4e42eaea39224c8d629e4cd5b25b3ea5f4a463fbb6ed0b4e8777ae",
+    "implementation_hash_refresh_reason": "V3 model calls now execute in a trusted short-lived worker with a parent-enforced total wall-clock deadline covering process startup, proxy, DNS, connection, TLS, headers, and body. This changes trial execution and resume identity without changing the Phase 5 semantic acceptance contract.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",
@@ -62,34 +62,34 @@
   "tests": {
     "phase5_and_repair_regression": {
       "status": "pass",
-      "passed": 59,
+      "passed": 85,
       "skipped": 1,
       "failed": 0,
-      "duration_seconds": 5.4
+      "duration_seconds": 9.79
     },
     "all_v3": {
       "status": "pass",
-      "passed": 99,
+      "passed": 120,
       "skipped": 1,
       "failed": 0,
-      "deselected": 1250,
-      "duration_seconds": 6.2
+      "deselected": 1276,
+      "duration_seconds": 7.78
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1349,
-      "skipped": 1,
+      "passed": 1395,
+      "skipped": 2,
       "failed": 0,
-      "duration_seconds": 816.2
+      "duration_seconds": 859.98
     },
     "release_hygiene": {
       "status": "pass",
       "passed_checks": 5,
       "check_count": 5,
       "failed_checks": 0,
-      "candidate_file_count": 493
+      "candidate_file_count": 524
     },
-    "skip_explanation": "The Windows host did not permit the unit test to create a symbolic link. Deterministic traversal rejection and runtime workspace symlink scans remain covered."
+    "skip_explanation": "The Windows host did not permit two unit tests to create symbolic links. Deterministic traversal rejection and runtime workspace symlink scans remain covered."
   },
   "artifacts": {
     "phase5_semantic_calibration.json": "cdb71d73bc72b9ef5c0916b92a316ac09516a7fe82dbfec4049d4bc739ea562b",

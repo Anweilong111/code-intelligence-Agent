@@ -44,7 +44,13 @@ not shared across trials. Provider retries remain inside the same model request
 and do not create a new trial. Reflection can inspect only the current trial's
 parent candidate and sanitized verification evidence.
 Each provider attempt is bounded by the protocol's 300-second total wall-clock
-budget; incremental response chunks do not reset that deadline.
+budget. V3 executes the complete HTTP exchange in a short-lived trusted worker
+process, while the parent enforces that deadline across worker startup, proxy
+resolution, DNS, connection, TLS, response headers, and response body. The
+worker receives the request and API key only through standard input; neither is
+placed in its command line or inherited environment. A timeout terminates the
+worker and discards partial stdout/stderr. Provider retries remain attempts
+inside the same repair trial and receive independent bounded request budgets.
 
 ## Agent Loop
 

@@ -175,7 +175,7 @@ def test_committed_phase7_verification_hashes_release_artifacts():
     assert verification["status"] == "partial"
     assert verification["offline_release_status"] == "pass"
     assert verification["complete_release_status"] == "pending"
-    assert verification["tests"]["full_pytest"]["passed"] == 1381
+    assert verification["tests"]["full_pytest"]["passed"] == 1395
     for relative_path, expected_hash in verification["artifacts"].items():
         path = ROOT / relative_path
         assert path.is_file(), relative_path

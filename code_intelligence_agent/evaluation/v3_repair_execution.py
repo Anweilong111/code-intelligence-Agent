@@ -75,6 +75,7 @@ def create_v3_repair_client(
         response_format={"type": "json_object"},
         thinking=str(model.get("thinking") or "") or None,
         reasoning_effort=str(model.get("reasoning_effort") or "") or None,
+        isolate_request_timeout=True,
     )
     return RetryingLLMClient(
         client,
