@@ -1,0 +1,104 @@
+{
+  "schema_version": "v3_phase7_offline_verification_v1",
+  "verified_at": "2026-07-15",
+  "status": "partial",
+  "phase": "Phase 7 unified evaluation and release audit",
+  "offline_release_status": "pass",
+  "complete_release_status": "pending",
+  "claim_eligible": false,
+  "release_decision": {
+    "reason": "phase0_through_phase6_offline_evidence_passes_but_live_llm_and_hybrid_trials_are_pending",
+    "offline_phase_gate_count": 7,
+    "offline_phase_pass_count": 7,
+    "live_trial_expected_count": 120,
+    "live_trial_observed_count": 0,
+    "live_llm_trial_expected_count": 60,
+    "live_hybrid_trial_expected_count": 60,
+    "missing_live_metrics_are_null": true,
+    "complete_release_requires_fresh_environment_injected_key": true
+  },
+  "unified_evaluation": {
+    "status": "partial",
+    "offline_release_status": "pass",
+    "complete_release_status": "pending",
+    "claim_eligible": false,
+    "accepted_real_bug_count": 20,
+    "source_repository_count": 6,
+    "repository_start_count": 19,
+    "repository_denominator": 20,
+    "localization_top_1": 0.6,
+    "localization_top_3": 0.8,
+    "localization_top_5": 1.0,
+    "rule_pass_at_1": 0.0,
+    "llm_pass_at_1": null,
+    "hybrid_pass_at_1": null
+  },
+  "tests": {
+    "phase7_focused_regression": {
+      "status": "pass",
+      "passed": 41,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 5.26
+    },
+    "v3_memory_security_release_regression": {
+      "status": "pass",
+      "passed": 154,
+      "skipped": 2,
+      "failed": 0,
+      "deselected": 1220,
+      "duration_seconds": 20.55
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1374,
+      "skipped": 2,
+      "failed": 0,
+      "duration_seconds": 815.86
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 516
+    },
+    "skip_explanations": [
+      "tests/test_runtime_security.py cannot create a symbolic link on this Windows host.",
+      "tests/test_v3_semantic_validation.py cannot create a symbolic link on this Windows host."
+    ]
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "raw_api_keys_in_candidate_files": 0,
+    "absolute_local_paths_in_phase7_release_artifacts": 0,
+    "tool_signature_traces_in_public_docs": 0,
+    "lf_normalized_files": [
+      "docs/v3/phase7_release_protocol.md",
+      "docs/v3/phase7_unified_evaluation.json",
+      "docs/v3/phase7_unified_evaluation.md",
+      "docs/v3/phase7_offline_verification.json",
+      "docs/v3/phase7_offline_verification.md"
+    ]
+  },
+  "artifacts": {
+    "docs/v3/phase7_release_protocol.md": "2fccc8e9f1c7a17ea7bed96e86eacd4f0117d1cab6c011289f471d9c80347912",
+    "docs/v3/phase7_unified_evaluation.json": "2330d952652f5e31dba09221843925b05269d77a711777be1274c67ab16063d1",
+    "docs/v3/phase7_unified_evaluation.md": "d072db54180212b6e8d31a4551302d316ede61d02f4556b95eb714a746129c1b",
+    "code_intelligence_agent/evaluation/v3_release_evaluation.py": "645b92efa7dca21384dbf7b5ffd6fe7350b29c9eaffd78ad1740726b1c122031",
+    "code_intelligence_agent/evaluation/v3_repair_evaluation.py": "6dae48086cf707ac931d9878e7de7b1d675e8740583a86498cd5a674b9fc5759",
+    "code_intelligence_agent/main.py": "0a7dddb1c6275f6b061c4f141365d7b0a0588470758bee9ad226a3258fffe490",
+    "tests/test_v3_release_evaluation.py": "ed6bb7ce5935915c36ce4b0445197eda165ba8559b325330a158c4b5e9e449ed",
+    "tests/test_v3_repair_trial.py": "a11068bcc433bdd8bf37a08ab1657835ed28bc244fc70fa45d76cc0713794273",
+    "docs/v3/phase5_verification.json": "fc26f223a1fc4370498bcec1f70c5d87362d12fc625a1cb3a349234a45e9bdd5",
+    "README.MD": "524a8f30a402aa8cbf9dc18f1cc9618a299d8d87bd0487b8fceb2ae1a93fc232"
+  },
+  "claim_boundaries": [
+    "Phase 7 currently proves offline release readiness, not complete V3 repair performance.",
+    "LLM and Hybrid repair metrics remain null until exactly 60 independent live trials per strategy pass the audit.",
+    "The two semantic calibration successes are human-fix validator evidence and are not Agent-generated repairs.",
+    "Controlled memory and hostile-repository fixtures do not establish arbitrary-world success or a container security boundary.",
+    "V2 and V3 startup counts are not treated as a causal uplift because their execution protocols differ.",
+    "No historical API key is reused; paid trials require a fresh key supplied through the process environment."
+  ]
+}

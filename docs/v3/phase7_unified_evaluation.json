@@ -1,0 +1,469 @@
+{
+  "schema_version": "v3_phase7_unified_evaluation_v1",
+  "status": "partial",
+  "reason": "offline_release_evidence_passed_live_trials_pending",
+  "offline_release_status": "pass",
+  "complete_release_status": "pending",
+  "claim_eligible": false,
+  "phase_evidence": [
+    {
+      "phase": "phase0",
+      "artifact": "docs/v3/phase0_verification.json",
+      "sha256": "f8205e10fb49be21062053ccbc1355aed60c62dd546b62242684059641a9975c",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "phase0_experiment_protocol",
+      "error": ""
+    },
+    {
+      "phase": "phase1",
+      "artifact": "docs/v3/phase1_verification.json",
+      "sha256": "0fcd8fffc4ef3c8e61a22225a109cd6f4fd4ec878b502c339cae31b405dbc790",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "phase1_real_python_bug_benchmark",
+      "error": ""
+    },
+    {
+      "phase": "phase2",
+      "artifact": "docs/v3/phase2_verification.json",
+      "sha256": "b87e5b3171d4f6cc9ccf7b1efb1b9402db5aaa117f2773bfbdad3c1e4eac033d",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "phase2_isolated_repository_test_startup",
+      "error": ""
+    },
+    {
+      "phase": "phase3",
+      "artifact": "docs/v3/phase3_offline_verification.json",
+      "sha256": "5a21e7efa46115c151c66f25fee3de106d16a3b1671c609092970718e56e580f",
+      "source_status": "partial",
+      "gate_status": "pass",
+      "phase_name": "phase3_real_model_repair_evaluation",
+      "error": ""
+    },
+    {
+      "phase": "phase4",
+      "artifact": "docs/v3/phase4_verification.json",
+      "sha256": "da47701e940b459f62800d7ecefe17ca40fcc8c617c17b5fecb41553b13a51bd",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "Phase 4 difficult fault localization and signal attribution",
+      "error": ""
+    },
+    {
+      "phase": "phase5",
+      "artifact": "docs/v3/phase5_verification.json",
+      "sha256": "fc26f223a1fc4370498bcec1f70c5d87362d12fc625a1cb3a349234a45e9bdd5",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "Phase 5 patch semantic correctness",
+      "error": ""
+    },
+    {
+      "phase": "phase6",
+      "artifact": "docs/v3/phase6_verification.json",
+      "sha256": "23a2613bac8f3b3ab5a0689ed568169c189beae1fb2affda202ce9631e40b54d",
+      "source_status": "pass",
+      "gate_status": "pass",
+      "phase_name": "Phase 6 memory generalization and repository security",
+      "error": ""
+    }
+  ],
+  "phase_evidence_errors": [],
+  "live_evaluation": {
+    "status": "pending",
+    "reason": "live_evaluation_artifact_not_supplied",
+    "source": "none",
+    "sha256": "",
+    "errors": [],
+    "case_count": 0,
+    "expected_trial_count": 120,
+    "observed_trial_count": 0,
+    "metrics": {}
+  },
+  "metric_registry": {
+    "benchmark": {
+      "evidence_state": "measured",
+      "headline": "20 accepted real bugs from 6 repositories",
+      "accepted_case_count": 20,
+      "rejected_case_count": 5,
+      "repository_count": 6,
+      "source": "docs/v3/phase1_verification.json"
+    },
+    "repository_environment": {
+      "evidence_state": "measured",
+      "headline": "19/20 test processes started and terminated",
+      "started_and_terminated_count": 19,
+      "case_count": 20,
+      "rate": 0.95,
+      "wilson_95pct": {
+        "status": "measured",
+        "method": "wilson_95pct",
+        "successes": 19,
+        "denominator": 20,
+        "lower": 0.763864,
+        "upper": 0.991119
+      },
+      "classified_not_started_blocker_count": 1,
+      "source": "docs/v3/phase2_verification.json"
+    },
+    "fault_localization": {
+      "evidence_state": "measured",
+      "headline": "frozen test Top-1/3/5=0.60/0.80/1.00",
+      "test_case_count": 5,
+      "top1": 0.6,
+      "top3": 0.8,
+      "top5": 1.0,
+      "mrr": 0.706667,
+      "map": 0.614359,
+      "exam": 0.003639,
+      "top1_wilson_95pct": {
+        "status": "measured",
+        "method": "wilson_95pct",
+        "successes": 3,
+        "denominator": 5,
+        "lower": 0.23072,
+        "upper": 0.882382
+      },
+      "top3_wilson_95pct": {
+        "status": "measured",
+        "method": "wilson_95pct",
+        "successes": 4,
+        "denominator": 5,
+        "lower": 0.375528,
+        "upper": 0.963777
+      },
+      "top5_wilson_95pct": {
+        "status": "measured",
+        "method": "wilson_95pct",
+        "successes": 5,
+        "denominator": 5,
+        "lower": 0.565509,
+        "upper": 1.0
+      },
+      "source": "docs/v3/phase4_verification.json"
+    },
+    "repair_strategies": {
+      "rule": {
+        "evidence_state": "measured",
+        "case_denominator": 20,
+        "observed_trial_count": 20,
+        "pass_at_1": 0.0,
+        "pass_at_1_count": 0,
+        "pass_at_1_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 0,
+          "denominator": 20,
+          "lower": 0.0,
+          "upper": 0.16113
+        },
+        "pass_at_3": 0.0,
+        "pass_at_3_count": 0,
+        "pass_at_3_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 0,
+          "denominator": 20,
+          "lower": 0.0,
+          "upper": 0.16113
+        },
+        "verified_repair_rate": 0.0,
+        "reflection_recovery_rate": null,
+        "ast_valid_rate": 0.924528,
+        "safety_pass_rate": 0.924528,
+        "targeted_test_pass_rate": 0.0,
+        "full_regression_pass_rate": null,
+        "semantic_claim_eligible_rate": null,
+        "actual_cost_usd": 0.0,
+        "latency_ms": null,
+        "token_usage": {},
+        "failure_layers": {
+          "generation": 5,
+          "syntax": 4,
+          "targeted_test": 49
+        },
+        "failure_categories": {
+          "generation:no_rule_patch_candidates_generated": 5,
+          "syntax:invalid_python_ast": 4,
+          "targeted_test:test_assertion_failure": 49
+        },
+        "winning_generator_families": {},
+        "source": "docs/v3/phase3_offline_verification.json"
+      },
+      "llm": {
+        "evidence_state": "pending",
+        "case_denominator": 20,
+        "required_trial_count": 60,
+        "observed_trial_count": 0,
+        "pass_at_1": null,
+        "pass_at_3": null,
+        "verified_repair_rate": null,
+        "reflection_recovery_rate": null,
+        "ast_valid_rate": null,
+        "safety_pass_rate": null,
+        "targeted_test_pass_rate": null,
+        "full_regression_pass_rate": null,
+        "semantic_claim_eligible_rate": null,
+        "actual_cost_usd": null,
+        "latency_ms": null,
+        "token_usage": {},
+        "failure_layers": {},
+        "failure_categories": {},
+        "winning_generator_families": {},
+        "source": "pending_live_evaluation",
+        "reason": "llm_requires_20_cases_x_3_independent_trials"
+      },
+      "hybrid": {
+        "evidence_state": "pending",
+        "case_denominator": 20,
+        "required_trial_count": 60,
+        "observed_trial_count": 0,
+        "pass_at_1": null,
+        "pass_at_3": null,
+        "verified_repair_rate": null,
+        "reflection_recovery_rate": null,
+        "ast_valid_rate": null,
+        "safety_pass_rate": null,
+        "targeted_test_pass_rate": null,
+        "full_regression_pass_rate": null,
+        "semantic_claim_eligible_rate": null,
+        "actual_cost_usd": null,
+        "latency_ms": null,
+        "token_usage": {},
+        "failure_layers": {},
+        "failure_categories": {},
+        "winning_generator_families": {},
+        "source": "pending_live_evaluation",
+        "reason": "hybrid_requires_20_cases_x_3_independent_trials"
+      }
+    },
+    "planner": {
+      "evidence_state": "safety_policy_measured",
+      "headline": "conflict and repository-injection overrides are rejected",
+      "task_outcome_metric_state": "not_separately_measured_in_v3",
+      "llm_override_on_conflict": "rejected",
+      "llm_override_on_repository_injection": "rejected",
+      "source": "docs/v3/phase6_verification.json"
+    },
+    "reflection": {
+      "evidence_state": "pending",
+      "headline": "requires 120 live LLM/Hybrid trials",
+      "llm_rate": null,
+      "hybrid_rate": null,
+      "source": "pending_live_evaluation"
+    },
+    "semantic_validation": {
+      "evidence_state": "calibration_only",
+      "headline": "2/2 human fixes accepted",
+      "human_fix_case_count": 2,
+      "semantic_pass_count": 2,
+      "false_rejection_count": 0,
+      "reverse_mutation_killed_count": 3,
+      "reverse_mutation_count": 3,
+      "agent_repair_claim": false,
+      "source": "docs/v3/phase5_verification.json"
+    },
+    "memory": {
+      "evidence_state": "measured",
+      "headline": "completion 0.4286 -> 1.0000",
+      "status": "pass",
+      "case_count": 7,
+      "run_count": 14,
+      "without_memory_completion": 0.428571,
+      "structured_v2_completion": 1.0,
+      "structured_v2_expected_record_recall": 1.0,
+      "stale_reuse_count": 0,
+      "conflict_execution_violation_count": 0,
+      "advisory_execution_violation_count": 0,
+      "strategy_attempt_count": 5,
+      "strategy_source_repository_count": 3,
+      "strategy_success_count": 3,
+      "strategy_failure_count": 2,
+      "strategy_confidence": 0.2307,
+      "strategy_confidence_method": "wilson_lower_bound_95pct",
+      "cross_repo_decision_use": "advisory_only",
+      "embedding_retrieval": "not_retained",
+      "source": "docs/v3/phase6_verification.json"
+    },
+    "security": {
+      "evidence_state": "measured_controlled_fixtures",
+      "headline": "8/8 controlled threats handled",
+      "status": "pass",
+      "case_count": 8,
+      "passed_case_count": 8,
+      "dispositions": {
+        "rejected": 4,
+        "isolated": 3,
+        "reported": 1
+      },
+      "prompt_instructions_have_authority": false,
+      "host_secrets_exposed": false,
+      "python_external_socket_blocked": true,
+      "runaway_process_terminated": true,
+      "claim": "process-level defense in depth, not a container security boundary",
+      "source": "docs/v3/phase6_verification.json"
+    },
+    "cost_and_latency": {
+      "evidence_state": "partial",
+      "headline": "Rule cost USD 0; live LLM/Hybrid cost pending",
+      "rule_actual_cost_usd": 0.0,
+      "llm_actual_cost_usd": null,
+      "hybrid_actual_cost_usd": null,
+      "source": "docs/v3/phase3_offline_verification.json and live evaluation"
+    }
+  },
+  "comparison_registry": {
+    "v2_v3_repository_startup": {
+      "status": "not_comparable",
+      "reason": "V3 adds isolated runtimes and new startup policy; raw counts are context only",
+      "v2_count": 7,
+      "v2_denominator": 20,
+      "v3_count": 19,
+      "v3_denominator": 20,
+      "difference_claim_eligible": false
+    },
+    "v2_v3_fault_localization": {
+      "status": "not_comparable",
+      "reason": "V3 uses a real-bug repository-disjoint split and V2 uses a controlled mutation benchmark",
+      "difference_claim_eligible": false
+    },
+    "v2_v3_patch_repair": {
+      "status": "not_comparable",
+      "reason": "V2 LLM metrics use deterministic fixtures; V3 live-model metrics are pending",
+      "difference_claim_eligible": false
+    },
+    "v2_v3_memory": {
+      "status": "not_comparable",
+      "reason": "V3 changes authority, conflict, stale-scope, and advisory-memory gates",
+      "difference_claim_eligible": false
+    }
+  },
+  "release_gates": {
+    "all_phase_evidence_parseable": true,
+    "phase0_protocol_frozen": true,
+    "phase1_real_bug_benchmark_passed": true,
+    "phase2_repository_startup_passed": true,
+    "phase3_offline_foundation_passed": true,
+    "phase4_localization_passed": true,
+    "phase5_semantic_validation_passed": true,
+    "phase6_memory_and_security_passed": true,
+    "live_llm_hybrid_120_trials_complete": false,
+    "rule_llm_hybrid_attribution_available": false,
+    "live_cost_latency_and_failure_taxonomy_available": false,
+    "full_v3_claim_eligible": false
+  },
+  "pending_requirements": [
+    {
+      "id": "fresh_environment_injected_api_key",
+      "requirement": "Inject a fresh provider key through the frozen protocol environment variable; never persist it."
+    },
+    {
+      "id": "llm_trials",
+      "requirement": "Run 20 real bugs x 3 independent LLM trials (60 trials)."
+    },
+    {
+      "id": "hybrid_trials",
+      "requirement": "Run 20 real bugs x 3 independent Hybrid trials (60 trials)."
+    },
+    {
+      "id": "complete_live_artifact",
+      "requirement": "Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, and generator attribution.",
+      "current_live_status": "pending",
+      "validation_errors": []
+    }
+  ],
+  "latest_regression": {
+    "phase6_core_regression": {
+      "status": "pass",
+      "passed": 118,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 15.63
+    },
+    "runtime_dynamic_regression": {
+      "status": "pass",
+      "passed": 116,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 108.98
+    },
+    "all_v3": {
+      "status": "pass",
+      "passed": 119,
+      "skipped": 2,
+      "failed": 0,
+      "deselected": 1246,
+      "duration_seconds": 8.46
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1365,
+      "skipped": 2,
+      "failed": 0,
+      "duration_seconds": 752.07
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 509
+    },
+    "skip_explanations": [
+      "tests/test_runtime_security.py cannot create a symbolic link on this Windows host.",
+      "tests/test_v3_semantic_validation.py cannot create a symbolic link on this Windows host."
+    ]
+  },
+  "denominator_policy": {
+    "failed_trials_retained": true,
+    "provider_and_environment_blockers_separated": true,
+    "missing_trials_never_imputed": true,
+    "calibration_not_counted_as_agent_repair": true,
+    "historical_metrics_compared_only_when_protocols_match": true
+  },
+  "case_examples": {
+    "direct_live_repair": {
+      "status": "pending",
+      "reason": "live_trials_not_complete"
+    },
+    "reflection_live_repair": {
+      "status": "pending",
+      "reason": "live_trials_not_complete"
+    },
+    "rule_failure_taxonomy": {
+      "status": "measured",
+      "failure_layers": {
+        "generation": 5,
+        "syntax": 4,
+        "targeted_test": 49
+      },
+      "failure_categories": {
+        "generation:no_rule_patch_candidates_generated": 5,
+        "syntax:invalid_python_ast": 4,
+        "targeted_test:test_assertion_failure": 49
+      }
+    },
+    "environment_blocker": {
+      "status": "measured",
+      "count": 1
+    },
+    "security_rejections": {
+      "status": "measured_controlled_fixtures",
+      "case_count": 8,
+      "dispositions": {
+        "rejected": 4,
+        "isolated": 3,
+        "reported": 1
+      }
+    }
+  },
+  "claim_boundaries": [
+    "Offline Phase 0-6 evidence does not substitute for the pending 120 live LLM and Hybrid trials.",
+    "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
+    "V2/V3 numbers are not presented as improvements when their protocols differ.",
+    "A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
+    "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows."
+  ]
+}

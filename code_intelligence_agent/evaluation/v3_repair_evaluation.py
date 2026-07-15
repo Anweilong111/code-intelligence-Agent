@@ -365,6 +365,7 @@ def run_v3_repair_evaluation(
         "case_count": len(selected_case_ids),
         "record_count": len(records),
         "record_audit": record_audit,
+        "provider_model_metadata": summarize_v3_model_metadata(records, protocol),
         "completeness": completeness,
         "metrics": metrics,
         "case_results": case_results,
@@ -817,6 +818,84 @@ def build_v3_repair_metrics(
     return metrics
 
 
+def summarize_v3_model_metadata(
+    records: list[dict[str, Any]],
+    protocol: dict[str, Any],
+) -> dict[str, Any]:
+    model_records = [
+        _dict(record)
+        for record in records
+        if str(_dict(_dict(record).get("candidate")).get("generator_family") or "")
+        == "llm"
+    ]
+    protocol_model = _dict(protocol.get("model"))
+    protocol_prompts = {
+        str(_dict(value).get("id") or ""): str(_dict(value).get("sha256") or "")
+        for value in _list(protocol.get("prompts"))
+        if str(_dict(value).get("id") or "")
+    }
+    missing_core_metadata_count = 0
+    request_hashes = set()
+    system_hashes = set()
+    providers = set()
+    model_ids = set()
+    provider_response_models = set()
+    observed_call_dates = set()
+    prompt_ids = set()
+    for record in model_records:
+        model = _dict(record.get("model"))
+        timestamps = _dict(record.get("timestamps"))
+        if not all(
+            str(model.get(field) or "")
+            for field in ("provider", "model_id", "prompt_id", "prompt_sha256")
+        ):
+            missing_core_metadata_count += 1
+        providers.add(str(model.get("provider") or ""))
+        model_ids.add(str(model.get("model_id") or ""))
+        prompt_ids.add(str(model.get("prompt_id") or ""))
+        if model.get("request_prompt_sha256"):
+            request_hashes.add(str(model.get("request_prompt_sha256")))
+        if model.get("system_prompt_sha256"):
+            system_hashes.add(str(model.get("system_prompt_sha256")))
+        if model.get("provider_response_model"):
+            provider_response_models.add(str(model.get("provider_response_model")))
+        completed_at = str(timestamps.get("completed_at") or "")
+        if len(completed_at) >= 10:
+            observed_call_dates.add(completed_at[:10])
+    providers.discard("")
+    model_ids.discard("")
+    prompt_ids.discard("")
+    status = (
+        "not_applicable"
+        if not model_records
+        else "pass"
+        if not missing_core_metadata_count
+        else "fail"
+    )
+    return {
+        "status": status,
+        "model_record_count": len(model_records),
+        "missing_core_metadata_count": missing_core_metadata_count,
+        "protocol_provider": str(protocol_model.get("provider") or ""),
+        "protocol_model_id": str(protocol_model.get("model_id") or ""),
+        "temperature": protocol_model.get("temperature"),
+        "thinking": str(protocol_model.get("thinking") or ""),
+        "reasoning_effort": str(protocol_model.get("reasoning_effort") or ""),
+        "protocol_prompt_hashes": dict(sorted(protocol_prompts.items())),
+        "observed_providers": sorted(providers),
+        "observed_model_ids": sorted(model_ids),
+        "observed_prompt_ids": sorted(prompt_ids),
+        "provider_response_models": sorted(provider_response_models),
+        "observed_call_dates": sorted(observed_call_dates),
+        "request_prompt_hash_count": len(request_hashes),
+        "request_prompt_hash_set_sha256": _sha256_json(sorted(request_hashes)),
+        "system_prompt_hash_count": len(system_hashes),
+        "system_prompt_hash_set_sha256": _sha256_json(sorted(system_hashes)),
+        "raw_prompts_persisted": False,
+        "raw_provider_payloads_persisted": False,
+    }
+
+
 def audit_v3_evaluation_completeness(
     records: list[dict[str, Any]],
     *,
@@ -867,23 +946,25 @@ def write_v3_repair_evaluation_artifacts(
     json_path = output / "evaluation.json"
     markdown_path = output / "evaluation.md"
     records_path = output / "run_records.jsonl"
-    json_path.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+    _write_text_lf(
+        json_path,
+        json.dumps(result, indent=2, ensure_ascii=False) + "\n",
     )
-    markdown_path.write_text(
-        render_v3_repair_evaluation_markdown(result),
-        encoding="utf-8",
-    )
-    records_path.write_text(
+    _write_text_lf(markdown_path, render_v3_repair_evaluation_markdown(result))
+    _write_text_lf(
+        records_path,
         "".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records),
-        encoding="utf-8",
     )
     return {
         "json": json_path.as_posix(),
         "markdown": markdown_path.as_posix(),
         "run_records": records_path.as_posix(),
     }
+
+
+def _write_text_lf(path: Path, content: str) -> None:
+    with path.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(content)
 
 
 def render_v3_repair_evaluation_markdown(result: dict[str, Any]) -> str:

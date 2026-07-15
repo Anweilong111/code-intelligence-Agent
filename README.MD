@@ -159,6 +159,37 @@ Evidence: [Phase 6 protocol](docs/v3/phase6_memory_and_security_protocol.md),
 [memory report](docs/v3/phase6_memory_evaluation.md), and
 [security report](docs/v3/phase6_security_evaluation.md).
 
+## V3 Unified Release Status
+
+Phase 7 now aggregates all committed V3 evidence without filling missing live
+metrics with Rule, fixture, or calibration results:
+
+- Offline Phase 0-6 evidence is `pass`; complete V3 release is `pending`.
+- Benchmark, environment, localization, Rule repair, semantic calibration,
+  memory, and security values are labeled by evidence type and source artifact.
+- LLM/Hybrid pass@1, pass@3, verified repair, Reflection, token, cost, latency,
+  failure taxonomy, and generator attribution remain JSON `null`/`pending` until
+  all `120/120` live trials pass RunRecord and completeness audits.
+- Wilson 95% intervals expose small-sample uncertainty; V2/V3 differences are
+  withheld when protocols differ.
+- A nominally passing live artifact with 119 trials, missing model metadata, or
+  missing strategy metrics cannot unlock the release gate.
+
+Reproduce the current offline result with:
+
+```powershell
+python -m code_intelligence_agent v3-release-eval `
+  outputs_v3/phase7_release `
+  --root . `
+  --require-offline-pass
+```
+
+Evidence: [Phase 7 protocol](docs/v3/phase7_release_protocol.md),
+[unified report](docs/v3/phase7_unified_evaluation.md), and
+[machine-readable report](docs/v3/phase7_unified_evaluation.json). The exact
+test, hygiene, artifact-hash, and claim-boundary evidence is recorded in the
+[Phase 7 offline verification](docs/v3/phase7_offline_verification.md).
+
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 
 项目重点不是让模型直接“猜代码怎么改”，而是把程序分析、图建模、测试反馈、受控补丁搜索和 AgentController 决策闭环组合起来，形成可审计的 `Observe -> Plan -> Act -> Verify -> Reflect -> Replan` 流程。

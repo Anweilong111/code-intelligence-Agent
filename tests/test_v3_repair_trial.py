@@ -39,6 +39,7 @@ from code_intelligence_agent.evaluation.v3_repair_evaluation import (
     build_v3_trial_input_fingerprint,
     build_v3_repair_metrics,
     run_v3_repair_evaluation,
+    summarize_v3_model_metadata,
 )
 from code_intelligence_agent.evaluation import v3_repair_evaluation as repair_eval
 from code_intelligence_agent.evaluation import v3_repair_execution as repair_execution
@@ -1285,6 +1286,33 @@ def test_repair_metrics_report_semantic_and_reverse_mutation_evidence():
     assert metrics["reverse_mutation_count"] == 2
     assert metrics["reverse_mutation_kill_rate"] == 1.0
     assert metrics["reverse_mutation_surviving_count"] == 0
+
+
+def test_repair_evaluation_summarizes_model_and_prompt_hash_metadata():
+    root = Path(__file__).resolve().parents[1]
+    protocol = load_experiment_protocol(
+        root / "datasets" / "v3_real_bugs" / "experiment_protocol.json"
+    )
+    record = _evaluation_record(
+        protocol,
+        case=_case(),
+        trial_index=1,
+        verified=False,
+        reflection_round=0,
+    )
+
+    summary = summarize_v3_model_metadata([record], protocol)
+
+    assert summary["status"] == "pass"
+    assert summary["model_record_count"] == 1
+    assert summary["missing_core_metadata_count"] == 0
+    assert summary["protocol_provider"] == "deepseek"
+    assert summary["protocol_model_id"] == "deepseek-v4-pro"
+    assert "patch_generation_v3" in summary["protocol_prompt_hashes"]
+    assert summary["observed_providers"] == ["deepseek"]
+    assert summary["observed_model_ids"] == ["deepseek-v4-pro"]
+    assert summary["raw_prompts_persisted"] is False
+    assert summary["raw_provider_payloads_persisted"] is False
 
 
 def test_resume_requires_the_current_trial_input_fingerprint(tmp_path):
