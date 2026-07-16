@@ -33,7 +33,7 @@
 | `phase2` | `pass` | `pass` | `docs/v3/phase2_verification.json` | `b87e5b3171d4` |
 | `phase3` | `partial` | `pass` | `docs/v3/phase3_offline_verification.json` | `adbb5e227d99` |
 | `phase4` | `pass` | `pass` | `docs/v3/phase4_verification.json` | `da47701e940b` |
-| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `ef3a726cc3f1` |
+| `phase5` | `pass` | `pass` | `docs/v3/phase5_verification.json` | `6ae38cad8167` |
 | `phase6` | `pass` | `pass` | `docs/v3/phase6_verification.json` | `23a2613bac8f` |
 
 ## Metric Registry

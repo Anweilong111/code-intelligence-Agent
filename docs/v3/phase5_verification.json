@@ -5,8 +5,8 @@
   "phase": "Phase 5 patch semantic correctness",
   "implementation": {
     "semantic_schema_version": "v3_semantic_validation_v1",
-    "trial_implementation_sha256": "dca7927696c80ed872860f24e0950d7bc788a04fb30894c7e6da2654d6d96dae",
-    "implementation_hash_refresh_reason": "The second protocol amendment adds a frozen provider-access preflight before repository preparation and Trial submission. It changes trial execution and resume identity while leaving the Phase 5 semantic acceptance contract unchanged.",
+    "trial_implementation_sha256": "334eee5f35bcfee89252a2d4796e774e4258f810f05dd0653235d7d91e0a8cb3",
+    "implementation_hash_refresh_reason": "Windows reverse-mutation workspace cleanup now retries transient file locks and degrades exhausted cleanup to a runtime warning. This prevents disposable workspace cleanup from terminating the paid trial batch without changing the Phase 5 semantic acceptance contract.",
     "post_regression_gate_enabled": true,
     "verified_repair_requires_semantic_pass": true,
     "missing_required_oracle_outcome": "unverified_suggestion",
@@ -62,25 +62,25 @@
   "tests": {
     "phase5_and_repair_regression": {
       "status": "pass",
-      "passed": 85,
+      "passed": 56,
       "skipped": 1,
       "failed": 0,
-      "duration_seconds": 22.28
+      "duration_seconds": 10.86
     },
     "all_v3": {
       "status": "pass",
-      "passed": 133,
+      "passed": 135,
       "skipped": 1,
       "failed": 0,
       "deselected": 1276,
-      "duration_seconds": 8.56
+      "duration_seconds": 61.21
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1408,
+      "passed": 1410,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 755.54
+      "duration_seconds": 931.9
     },
     "release_hygiene": {
       "status": "pass",
@@ -94,8 +94,8 @@
   "artifacts": {
     "phase5_semantic_calibration.json": "cdb71d73bc72b9ef5c0916b92a316ac09516a7fe82dbfec4049d4bc739ea562b",
     "phase5_semantic_calibration.md": "a19c04579e7cd2994518f53a7a9d8a4e924a95b340131972cb2e706a217e5f71",
-    "phase5_semantic_validation_protocol.md": "ce670535f6f320ad8ff475e1b9404d5360e594ecf445c851d21e502e6559b68e",
-    "v3_semantic_validation.py": "f2b11ffd6aa793cfdd46994ee2219e0ed463244e0a0051afe51a7f7cb6e2341f",
+    "phase5_semantic_validation_protocol.md": "11961855ea597e6fc79a40d64ff47a95c1d183b0f7e08aeccf34f9e0b529eb0b",
+    "v3_semantic_validation.py": "d27c3bdb46347726bceed8cc12a0f2d02691aff5723e001b083b7bd5a6d90d9c",
     "v3_semantic_evaluation.py": "236fede7074a3692e80904bdb24b5618d94779d0ae295c07deaf8c57f7f5febc"
   },
   "claim_boundaries": [
@@ -104,6 +104,6 @@
     "Generated boundary/property probes were not applicable to the two calibration cases.",
     "Static cross-file checks do not prove dynamic imports or arbitrary runtime exports correct.",
     "The initial calibration contains two cases from one development repository.",
-    "The 120 paid live LLM and Hybrid trials remain pending until environment-injected provider access has valid authentication, billing/quota, and frozen-model availability."
+    "Paid live LLM and Hybrid results are claimed only from a separate complete Phase 3 artifact that passes the Phase 7 release audit."
   ]
 }

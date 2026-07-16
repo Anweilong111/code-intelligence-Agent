@@ -171,6 +171,12 @@ Every edit must be killed. A survivor prevents `verified_repair`. This catches
 many test-overfit and unrelated-edit patterns because the test oracle must show
 why each individual change is necessary.
 
+Each reverse-mutant workspace is disposable infrastructure rather than semantic
+evidence. Cleanup retries transient operating-system file locks. If the retry
+budget is exhausted, the validator emits a runtime warning and leaves the
+uniquely named workspace for later hygiene cleanup; it does not change the test
+outcome or terminate the remaining trials.
+
 This is patch-reversion mutation, not general mutation testing over every AST
 operator. The reported mutation kill rate must therefore be described as
 `reverse mutation kill rate`, not as a repository-wide mutation score.

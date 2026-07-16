@@ -54,7 +54,7 @@
     {
       "phase": "phase5",
       "artifact": "docs/v3/phase5_verification.json",
-      "sha256": "ef3a726cc3f1c1c4278cde1870164bd6c3cb989e9d636d444514b9c87bb35f96",
+      "sha256": "6ae38cad816729a5a8c46b297d426d3aee15beb9ef1b900cf464e22261bdfcee",
       "source_status": "pass",
       "gate_status": "pass",
       "phase_name": "Phase 5 patch semantic correctness",
@@ -398,18 +398,18 @@
     },
     "all_v3": {
       "status": "pass",
-      "passed": 133,
+      "passed": 135,
       "skipped": 1,
       "failed": 0,
       "deselected": 1276,
-      "duration_seconds": 8.56
+      "duration_seconds": 61.21
     },
     "full_pytest": {
       "status": "pass",
-      "passed": 1408,
+      "passed": 1410,
       "skipped": 2,
       "failed": 0,
-      "duration_seconds": 755.54
+      "duration_seconds": 931.9
     },
     "release_hygiene": {
       "status": "pass",
@@ -424,10 +424,10 @@
     ],
     "phase5_and_repair_regression": {
       "status": "pass",
-      "passed": 85,
+      "passed": 56,
       "skipped": 1,
       "failed": 0,
-      "duration_seconds": 22.28
+      "duration_seconds": 10.86
     },
     "skip_explanation": "The Windows host did not permit two unit tests to create symbolic links. Deterministic traversal rejection and runtime workspace symlink scans remain covered.",
     "latest_general_regression_source": "docs/v3/phase5_verification.json",

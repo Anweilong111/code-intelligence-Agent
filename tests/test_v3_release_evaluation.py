@@ -34,7 +34,7 @@ def test_current_v3_release_is_offline_ready_but_live_trials_remain_pending():
     assert strategies["llm"]["evidence_state"] == "pending"
     assert strategies["llm"]["pass_at_1"] is None
     assert strategies["hybrid"]["actual_cost_usd"] is None
-    assert payload["latest_regression"]["full_pytest"]["passed"] == 1408
+    assert payload["latest_regression"]["full_pytest"]["passed"] == 1410
     assert payload["latest_regression"]["latest_general_regression_source"] == (
         "docs/v3/phase5_verification.json"
     )
@@ -213,7 +213,7 @@ def test_committed_phase7_verification_hashes_release_artifacts():
     assert verification["status"] == "partial"
     assert verification["offline_release_status"] == "pass"
     assert verification["complete_release_status"] == "pending"
-    assert verification["tests"]["full_pytest"]["passed"] == 1408
+    assert verification["tests"]["full_pytest"]["passed"] == 1410
     for relative_path, expected_hash in verification["artifacts"].items():
         path = ROOT / relative_path
         assert path.is_file(), relative_path

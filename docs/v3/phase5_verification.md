@@ -6,10 +6,10 @@ Phase 5 passes its implementation, calibration, regression, and release-hygiene
 gates. A repair can no longer reach `verified_repair` after targeted and full
 regression alone. It must also receive a complete semantic pass.
 
-The trial implementation fingerprint now includes the frozen provider-access
-preflight that runs before repository preparation and Trial submission. The
-preflight is excluded from pass@k and semantic repair claims; the semantic
-acceptance contract itself did not change.
+The trial implementation now retries transient operating-system locks while
+cleaning disposable reverse-mutation workspaces. Exhausted cleanup emits a
+runtime warning instead of terminating the paid batch. This changes the trial
+implementation fingerprint but not the semantic acceptance contract.
 
 ## Implemented Gate
 
@@ -56,9 +56,9 @@ successes and do not enter pass@1/pass@3.
 
 | Gate | Result | Duration |
 | --- | --- | ---: |
-| Phase 5 + repair regression | 85 passed, 1 skipped | 22.28 s |
-| All V3 tests | 133 passed, 1 skipped | 8.56 s |
-| Full pytest suite | 1408 passed, 2 skipped | 755.54 s |
+| Phase 5 + repair regression | 56 passed, 1 skipped | 10.86 s |
+| All V3 tests | 135 passed, 1 skipped | 61.21 s |
+| Full pytest suite | 1410 passed, 2 skipped | 931.90 s |
 | Release hygiene | 5/5 checks, 525 candidate files | n/a |
 
 The two full-suite skips attempt to create symbolic links on Windows; the host
@@ -79,9 +79,8 @@ paths and is LF-normalized.
 - Cross-file import analysis is static and does not resolve arbitrary dynamic
   imports or exports.
 - API compatibility is intentionally strict and may reject valid refactors.
-- Live Rule/LLM/Hybrid repair rates remain unavailable until the paid 120-trial
-  evaluation runs with environment-injected provider access that has valid
-  authentication, billing/quota, and frozen-model availability.
+- Live Rule/LLM/Hybrid repair rates are claimed only from a separate complete
+  120-trial artifact that passes the Phase 7 release audit.
 
 See the [semantic validation protocol](phase5_semantic_validation_protocol.md)
 and [machine-readable calibration](phase5_semantic_calibration.json) for the

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import ast
 import difflib
+import gc
 import shutil
 import tempfile
+import time
 import warnings
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Iterator
 
 from code_intelligence_agent.core.models import PatchCandidate
 from code_intelligence_agent.evaluation.v3_real_bug_reproduction import (
@@ -23,6 +26,7 @@ from code_intelligence_agent.tools.semantic_patch_validation import (
 
 SCHEMA_VERSION = "v3_semantic_validation_v1"
 SUPPORTED_SEMANTIC_TEST_MODULES = frozenset({"pytest", "unittest"})
+_TEMPORARY_CLEANUP_DELAYS = (0.0, 0.05, 0.2)
 
 
 def validate_v3_semantic_candidate(
@@ -634,11 +638,11 @@ def _reverse_mutation_check(
                 }
             )
             continue
-        with tempfile.TemporaryDirectory(
+        with _temporary_workspace(
             prefix=f"cia_v3_reverse_{index}_",
             dir=patched.parent,
         ) as temporary:
-            mutant = Path(temporary) / "repository"
+            mutant = temporary / "repository"
             try:
                 shutil.copytree(
                     patched,
@@ -760,6 +764,43 @@ def _reverse_mutation_check(
         "surviving_mutation_count": len(survivors),
         "mutations": mutations,
     }
+
+
+@contextmanager
+def _temporary_workspace(*, prefix: str, dir: Path) -> Iterator[Path]:
+    temporary = Path(tempfile.mkdtemp(prefix=prefix, dir=dir))
+    try:
+        yield temporary
+    finally:
+        _cleanup_temporary_workspace(temporary)
+
+
+def _cleanup_temporary_workspace(
+    path: Path,
+    *,
+    delays: tuple[float, ...] = _TEMPORARY_CLEANUP_DELAYS,
+    sleeper: Any = time.sleep,
+) -> bool:
+    last_error: OSError | None = None
+    for delay in delays or (0.0,):
+        if delay > 0:
+            sleeper(delay)
+        try:
+            shutil.rmtree(path)
+        except FileNotFoundError:
+            return True
+        except OSError as exc:
+            last_error = exc
+            gc.collect()
+        else:
+            return True
+    warnings.warn(
+        "temporary semantic workspace cleanup failed after retries: "
+        f"{type(last_error).__name__ if last_error else 'OSError'}",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+    return False
 
 
 def _configured_semantic_commands_check(

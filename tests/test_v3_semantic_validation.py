@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 from pathlib import Path
 
 import pytest
@@ -54,6 +55,75 @@ def test_semantic_validation_runs_differential_mutation_and_property_gates(
     assert checks["target_behavior_differential"]["patched_execution_reused"] is False
     assert checks["reverse_mutation_sensitivity"]["killed_mutation_count"] == 1
     assert checks["manifest_semantic_commands"]["status"] == "pass"
+
+
+def test_reverse_mutation_cleanup_retries_transient_windows_file_lock(
+    tmp_path,
+    monkeypatch,
+):
+    old = "def repair(value):\n    return value\n"
+    new = "def repair(value):\n    return value + 1\n"
+    seed, patched = _repositories(tmp_path, {"app.py": old}, {"app.py": new})
+    region = _region("app.py", "repair", old)
+    monkeypatch.setattr(semantic, "execute_test_commands", _fake_test_execution)
+    real_rmtree = shutil.rmtree
+    cleanup_attempts = 0
+
+    def flaky_rmtree(path, *args, **kwargs):
+        nonlocal cleanup_attempts
+        if Path(path).name.startswith("cia_v3_reverse_"):
+            cleanup_attempts += 1
+            if cleanup_attempts == 1:
+                error = PermissionError("file is in use")
+                error.winerror = 32
+                raise error
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(semantic.shutil, "rmtree", flaky_rmtree)
+
+    result = semantic.validate_v3_semantic_candidate(
+        _candidate(region, new),
+        editable_regions=[region],
+        seed_repository=seed,
+        patched_repository=patched,
+        case=_case(),
+        python_executable="python",
+        targeted_timeout=10,
+        regression_timeout=10,
+    )
+
+    assert result["status"] == "pass", result
+    assert cleanup_attempts == 2
+
+
+def test_temporary_workspace_cleanup_exhaustion_is_nonfatal(
+    tmp_path,
+    monkeypatch,
+):
+    workspace = tmp_path / "cia_v3_reverse_locked"
+    workspace.mkdir()
+    (workspace / "locked.png").write_bytes(b"image")
+    real_rmtree = shutil.rmtree
+    cleanup_attempts = 0
+
+    def locked_rmtree(path, *args, **kwargs):
+        nonlocal cleanup_attempts
+        cleanup_attempts += 1
+        error = PermissionError("file is still in use")
+        error.winerror = 32
+        raise error
+
+    monkeypatch.setattr(semantic.shutil, "rmtree", locked_rmtree)
+    with pytest.warns(RuntimeWarning, match="cleanup failed after retries"):
+        cleaned = semantic._cleanup_temporary_workspace(
+            workspace,
+            delays=(0.0, 0.0, 0.0),
+            sleeper=lambda _: None,
+        )
+
+    assert cleaned is False
+    assert cleanup_attempts == 3
+    real_rmtree(workspace)
 
 
 def test_semantic_validation_rejects_public_api_signature_change(
