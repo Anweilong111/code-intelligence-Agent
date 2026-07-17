@@ -144,6 +144,31 @@ accepted cases participate in reproduction planning, while rejected cases remain
 excluded. The machine-readable run and artifact record is
 `docs/v4/phase1_post_acceptance_replay.json`.
 
+## First Five-Case Batch
+
+Run `29610882460` on commit
+`a7d00c4f535bb25670a0ebd1fb50680f9c1e4694` exercised the complete frozen
+Thefuck selection in one shared exact runtime. The accepted case 16 passed again.
+Cases 17, 8, 20, and 1 were preserved as non-pass evidence and did not change the
+catalog. Their checkout and test-overlay gates passed, but preparation stopped
+before any tests ran because the original adapter was deliberately bound to the
+case-16 `tests/test_types.py` and `setup.py` source hashes.
+
+The four revisions represent Thefuck versions 3.3, 3.23, 3.1, and 3.29 rather
+than 3.4, and two versions also declare a different console-entry-point layout.
+The reproduction profile therefore uses explicit case-bound preparation sets.
+Each set binds the compatibility plugin, static distribution metadata, and entry
+points to the exact historical source hashes for that case; it does not widen a
+project-level hash allowlist. Profile validation also requires every variant to
+materialize each declared repository pytest plugin. The next Linux batch must
+validate these variants before any candidate can transition to accepted.
+
+The artifact ZIP SHA-256 is
+`9be4bf5425dd9311111ee0115bf6974cab6c4aefb1f4ee1ea2037a5208776153`.
+The per-case outcomes, fingerprints, rejected source assertions, and audited
+replacement hashes are recorded in
+`docs/v4/phase1_thefuck_batch_attempt_1.json`.
+
 ## Evidence
 
 The workflow uploads only the case set, bootstrap plan/result, Linux reproduction

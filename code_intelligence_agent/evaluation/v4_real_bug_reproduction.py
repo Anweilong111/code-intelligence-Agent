@@ -35,6 +35,7 @@ SUPPORTED_EXECUTION_MODULES = {"nose", "pytest", "unittest"}
 ADAPTABLE_MODULES = {"nox", "py.test", "tox"}
 SAFE_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 SAFE_PYTHON_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
+SAFE_CASE_ID_PATTERN = re.compile(r"^bugsinpy-[a-z0-9-]+-[1-9][0-9]*$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 REPOSITORY_RUNTIME_SUPPORT_ROOT = ".cia-runtime-support"
 RuntimeProbe = Callable[[Path, str, list[str]], dict[str, Any]]
@@ -106,56 +107,31 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
                         f"profiles.pythonpath_entry_is_unsafe:"
                         f"{project}:{field}:{index}"
                     )
-        preparation_paths: set[str] = set()
-        for index, file_value in enumerate(_list(profile.get("preparation_files"))):
-            preparation_file = _dict(file_value)
-            path = str(preparation_file.get("path") or "")
-            content = preparation_file.get("content")
-            reason = str(preparation_file.get("reason") or "")
-            expected_sha256 = str(preparation_file.get("sha256") or "").lower()
-            if not _safe_relative_path(path):
+        errors.extend(
+            _validate_preparation_file_set(
+                project,
+                _list(profile.get("preparation_files")),
+            )
+        )
+        for case_id, files_value in _dict(
+            profile.get("case_preparation_files")
+        ).items():
+            if not SAFE_CASE_ID_PATTERN.fullmatch(str(case_id)):
                 errors.append(
-                    f"profiles.preparation_file_path_is_unsafe:{project}:{index}"
+                    f"profiles.case_preparation_case_id_is_invalid:{project}:{case_id}"
                 )
-            normalized_path = PurePosixPath(path.replace("\\", "/")).as_posix()
-            if normalized_path in preparation_paths:
+            if not isinstance(files_value, list) or not files_value:
                 errors.append(
-                    f"profiles.preparation_file_path_is_duplicate:{project}:{index}"
+                    f"profiles.case_preparation_files_are_invalid:{project}:{case_id}"
                 )
-            preparation_paths.add(normalized_path)
-            if not isinstance(content, str) or len(content.encode("utf-8")) > 4096:
-                errors.append(
-                    f"profiles.preparation_file_content_is_invalid:{project}:{index}"
+                continue
+            errors.extend(
+                _validate_preparation_file_set(
+                    project,
+                    files_value,
+                    case_id=str(case_id),
                 )
-            elif (
-                not SHA256_PATTERN.fullmatch(expected_sha256)
-                or hashlib.sha256(content.encode("utf-8")).hexdigest()
-                != expected_sha256
-            ):
-                errors.append(
-                    f"profiles.preparation_file_sha256_is_invalid:{project}:{index}"
-                )
-            if not reason:
-                errors.append(
-                    f"profiles.preparation_file_reason_is_required:{project}:{index}"
-                )
-            source_path = str(preparation_file.get("source_path") or "")
-            source_text_sha256 = str(
-                preparation_file.get("source_text_sha256") or ""
-            ).lower()
-            if bool(source_path) != bool(source_text_sha256):
-                errors.append(
-                    f"profiles.preparation_source_assertion_is_incomplete:"
-                    f"{project}:{index}"
-                )
-            elif source_path and (
-                not _safe_relative_path(source_path)
-                or not SHA256_PATTERN.fullmatch(source_text_sha256)
-            ):
-                errors.append(
-                    f"profiles.preparation_source_assertion_is_invalid:"
-                    f"{project}:{index}"
-                )
+            )
         seen_plugins: set[str] = set()
         for index, plugin_value in enumerate(
             _list(profile.get("repository_pytest_plugins"))
@@ -185,6 +161,65 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
                 errors.append(f"profiles.command_rewrite_is_invalid:{project}:{index}")
             if not str(rewrite.get("reason") or ""):
                 errors.append(f"profiles.command_rewrite_reason_is_required:{project}:{index}")
+    return errors
+
+
+def _validate_preparation_file_set(
+    project: str,
+    files: list[Any],
+    *,
+    case_id: str = "",
+) -> list[str]:
+    errors: list[str] = []
+    scope = f"{project}:{case_id}" if case_id else project
+    preparation_paths: set[str] = set()
+    for index, file_value in enumerate(files):
+        preparation_file = _dict(file_value)
+        path = str(preparation_file.get("path") or "")
+        content = preparation_file.get("content")
+        reason = str(preparation_file.get("reason") or "")
+        expected_sha256 = str(preparation_file.get("sha256") or "").lower()
+        if not _safe_relative_path(path):
+            errors.append(
+                f"profiles.preparation_file_path_is_unsafe:{scope}:{index}"
+            )
+        normalized_path = PurePosixPath(path.replace("\\", "/")).as_posix()
+        if normalized_path in preparation_paths:
+            errors.append(
+                f"profiles.preparation_file_path_is_duplicate:{scope}:{index}"
+            )
+        preparation_paths.add(normalized_path)
+        if not isinstance(content, str) or len(content.encode("utf-8")) > 4096:
+            errors.append(
+                f"profiles.preparation_file_content_is_invalid:{scope}:{index}"
+            )
+        elif (
+            not SHA256_PATTERN.fullmatch(expected_sha256)
+            or hashlib.sha256(content.encode("utf-8")).hexdigest()
+            != expected_sha256
+        ):
+            errors.append(
+                f"profiles.preparation_file_sha256_is_invalid:{scope}:{index}"
+            )
+        if not reason:
+            errors.append(
+                f"profiles.preparation_file_reason_is_required:{scope}:{index}"
+            )
+        source_path = str(preparation_file.get("source_path") or "")
+        source_text_sha256 = str(
+            preparation_file.get("source_text_sha256") or ""
+        ).lower()
+        if bool(source_path) != bool(source_text_sha256):
+            errors.append(
+                f"profiles.preparation_source_assertion_is_incomplete:{scope}:{index}"
+            )
+        elif source_path and (
+            not _safe_relative_path(source_path)
+            or not SHA256_PATTERN.fullmatch(source_text_sha256)
+        ):
+            errors.append(
+                f"profiles.preparation_source_assertion_is_invalid:{scope}:{index}"
+            )
     return errors
 
 
@@ -390,6 +425,16 @@ def adapt_v4_case_for_reproduction(
     *,
     project_profile: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    case_id = str(case.get("case_id") or "")
+    case_preparation = _dict(project_profile.get("case_preparation_files"))
+    has_case_preparation = case_id in case_preparation
+    preparation_files = copy.deepcopy(
+        _list(
+            case_preparation.get(case_id)
+            if has_case_preparation
+            else project_profile.get("preparation_files")
+        )
+    )
     rewrites = {
         str(_dict(item).get("from") or ""): _dict(item)
         for item in _list(project_profile.get("command_module_rewrites"))
@@ -446,15 +491,13 @@ def adapt_v4_case_for_reproduction(
         ],
     }
     adapted = {
-        "case_id": str(case.get("case_id") or ""),
+        "case_id": case_id,
         "repository": copy.deepcopy(_dict(case.get("repository"))),
         "bug_commit_sha": str(case.get("bug_commit_sha") or ""),
         "fix_commit_sha": str(case.get("fix_commit_sha") or ""),
         "python_version": str(environment.get("python_version") or ""),
         "test_overlay_paths": overlay_paths,
-        "preparation_files": copy.deepcopy(
-            _list(project_profile.get("preparation_files"))
-        ),
+        "preparation_files": preparation_files,
         "targeted_test_commands": adapted_commands,
         "regression_command": regression_command,
         "test_environment": test_environment,
@@ -463,8 +506,9 @@ def adapt_v4_case_for_reproduction(
         "status": "pass" if not errors else "adapter_required",
         "errors": errors,
         "applied_command_rewrites": applied_rewrites,
-        "preparation_file_count": len(
-            _list(project_profile.get("preparation_files"))
+        "preparation_file_count": len(preparation_files),
+        "preparation_profile_scope": (
+            f"case:{case_id}" if has_case_preparation else "project_default"
         ),
         "repository_pytest_plugins": copy.deepcopy(
             test_environment["repository_pytest_plugins"]
@@ -875,9 +919,25 @@ def _profile_materializes_python_module(
     profile: dict[str, Any],
     module: str,
 ) -> bool:
+    file_sets = [_list(profile.get("preparation_files"))]
+    file_sets.extend(
+        _list(value)
+        for value in _dict(profile.get("case_preparation_files")).values()
+    )
+    return bool(file_sets) and all(
+        _preparation_set_materializes_python_module(profile, files, module)
+        for files in file_sets
+    )
+
+
+def _preparation_set_materializes_python_module(
+    profile: dict[str, Any],
+    files: list[Any],
+    module: str,
+) -> bool:
     preparation_paths = {
         PurePosixPath(str(_dict(item).get("path") or "").replace("\\", "/")).as_posix()
-        for item in _list(profile.get("preparation_files"))
+        for item in files
         if str(_dict(item).get("path") or "")
     }
     module_path = PurePosixPath(*module.split("."))

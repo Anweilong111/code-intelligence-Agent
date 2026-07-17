@@ -303,7 +303,113 @@
           "source_path": "setup.py",
           "source_text_sha256": "07e9035d664c9b1eb833442b5df1676b28d4848cdc58a71794dce7a96e92485c"
         }
-      ]
+      ],
+      "case_preparation_files": {
+        "bugsinpy-thefuck-17": [
+          {
+            "path": ".cia-runtime-support/cia_legacy_pytest.py",
+            "content": "\"\"\"Compatibility for The Fuck's 2016 tests under pytest 3.10.1.\"\"\"\n\nimport os\n\nimport pytest\n\n\ndef pytest_configure(config):\n    del config\n    if pytest.__version__ != \"3.10.1\":\n        raise RuntimeError(\"legacy pytest adapter requires pytest==3.10.1\")\n    from _pytest import runner\n\n    if not hasattr(runner, \"_update_current_test_var\"):\n        raise RuntimeError(\"pytest current-test hook is unavailable\")\n\n    def clear_current_test(_item, _when):\n        os.environ.pop(\"PYTEST_CURRENT_TEST\", None)\n\n    runner._update_current_test_var = clear_current_test\n",
+            "sha256": "6676f3717bfd738abfae0c2ff49b837546b16fb26f65b57138dc91b2ebe6915b",
+            "reason": "Restore the 2016 test suite's pre-PYTEST_CURRENT_TEST environment semantics while retaining the benchmark-pinned pytest 3.10.1 runner.",
+            "source_path": "tests/test_types.py",
+            "source_text_sha256": "1470a42043a04e7769503350a5d5327c1fcc6b716a24d9bf5077f0fc355077c4"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.3.dist-info/METADATA",
+            "content": "Metadata-Version: 2.1\nName: thefuck\nVersion: 3.3\nSummary: Magnificent app which corrects your previous console command\nHome-page: https://github.com/nvbn/thefuck\nAuthor: Vladimir Iakovlev\nAuthor-email: nvbn.rm@gmail.com\nLicense: MIT\nRequires-Dist: psutil\nRequires-Dist: colorama\nRequires-Dist: six\nRequires-Dist: decorator\n",
+            "sha256": "ce97f150db347f677225d0810abf945b26a15a4655765e9dd1089424f6432724",
+            "reason": "Materialize Thefuck 3.3 distribution metadata from the audited setup.py without executing repository code.",
+            "source_path": "setup.py",
+            "source_text_sha256": "d66aba432f3cafcabd3efd9a1928982d9d7c11677ef32899de249c680f254073"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.3.dist-info/entry_points.txt",
+            "content": "[console_scripts]\nthefuck = thefuck.main:main\nthefuck-alias = thefuck.main:print_alias\nfuck = thefuck.main:how_to_configure_alias\n",
+            "sha256": "81ec2428fe6293e8d3f784c3713def1c1eb575955b3e58be6d33680cdbc297e2",
+            "reason": "Reproduce the three console entry points declared by the audited Thefuck 3.3 setup.py.",
+            "source_path": "setup.py",
+            "source_text_sha256": "d66aba432f3cafcabd3efd9a1928982d9d7c11677ef32899de249c680f254073"
+          }
+        ],
+        "bugsinpy-thefuck-8": [
+          {
+            "path": ".cia-runtime-support/cia_legacy_pytest.py",
+            "content": "\"\"\"Compatibility for The Fuck's 2016 tests under pytest 3.10.1.\"\"\"\n\nimport os\n\nimport pytest\n\n\ndef pytest_configure(config):\n    del config\n    if pytest.__version__ != \"3.10.1\":\n        raise RuntimeError(\"legacy pytest adapter requires pytest==3.10.1\")\n    from _pytest import runner\n\n    if not hasattr(runner, \"_update_current_test_var\"):\n        raise RuntimeError(\"pytest current-test hook is unavailable\")\n\n    def clear_current_test(_item, _when):\n        os.environ.pop(\"PYTEST_CURRENT_TEST\", None)\n\n    runner._update_current_test_var = clear_current_test\n",
+            "sha256": "6676f3717bfd738abfae0c2ff49b837546b16fb26f65b57138dc91b2ebe6915b",
+            "reason": "Restore the historical test suite's pre-PYTEST_CURRENT_TEST environment semantics while retaining the benchmark-pinned pytest 3.10.1 runner.",
+            "source_path": "tests/test_types.py",
+            "source_text_sha256": "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.23.dist-info/METADATA",
+            "content": "Metadata-Version: 2.1\nName: thefuck\nVersion: 3.23\nSummary: Magnificent app which corrects your previous console command\nHome-page: https://github.com/nvbn/thefuck\nAuthor: Vladimir Iakovlev\nAuthor-email: nvbn.rm@gmail.com\nLicense: MIT\nRequires-Dist: psutil\nRequires-Dist: colorama\nRequires-Dist: six\nRequires-Dist: decorator\n",
+            "sha256": "9947a9d993538d199de3f10ce71d676d207af8ab60e443206a46012c9bd2bb42",
+            "reason": "Materialize Thefuck 3.23 distribution metadata from the audited setup.py without executing repository code.",
+            "source_path": "setup.py",
+            "source_text_sha256": "658fc95ab4bc7d6cfbaf0c3dda60dcbf3cd9330d0e606575f76f47613d1a76ce"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.23.dist-info/entry_points.txt",
+            "content": "[console_scripts]\nthefuck = thefuck.entrypoints.main:main\nfuck = thefuck.entrypoints.not_configured:main\n",
+            "sha256": "073b2710a57b90b2a68f80673e2added7777c30efe17aafa7d9a26ac79211de7",
+            "reason": "Reproduce the two console entry points declared by the audited Thefuck 3.23 setup.py.",
+            "source_path": "setup.py",
+            "source_text_sha256": "658fc95ab4bc7d6cfbaf0c3dda60dcbf3cd9330d0e606575f76f47613d1a76ce"
+          }
+        ],
+        "bugsinpy-thefuck-20": [
+          {
+            "path": ".cia-runtime-support/cia_legacy_pytest.py",
+            "content": "\"\"\"Compatibility for The Fuck's 2016 tests under pytest 3.10.1.\"\"\"\n\nimport os\n\nimport pytest\n\n\ndef pytest_configure(config):\n    del config\n    if pytest.__version__ != \"3.10.1\":\n        raise RuntimeError(\"legacy pytest adapter requires pytest==3.10.1\")\n    from _pytest import runner\n\n    if not hasattr(runner, \"_update_current_test_var\"):\n        raise RuntimeError(\"pytest current-test hook is unavailable\")\n\n    def clear_current_test(_item, _when):\n        os.environ.pop(\"PYTEST_CURRENT_TEST\", None)\n\n    runner._update_current_test_var = clear_current_test\n",
+            "sha256": "6676f3717bfd738abfae0c2ff49b837546b16fb26f65b57138dc91b2ebe6915b",
+            "reason": "Restore the historical test suite's pre-PYTEST_CURRENT_TEST environment semantics while retaining the benchmark-pinned pytest 3.10.1 runner.",
+            "source_path": "tests/test_types.py",
+            "source_text_sha256": "671621c33969ddd3fb857507bae8028eae39b70d1aca8c9cb6a201821f06774c"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.1.dist-info/METADATA",
+            "content": "Metadata-Version: 2.1\nName: thefuck\nVersion: 3.1\nSummary: Magnificent app which corrects your previous console command\nHome-page: https://github.com/nvbn/thefuck\nAuthor: Vladimir Iakovlev\nAuthor-email: nvbn.rm@gmail.com\nLicense: MIT\nRequires-Dist: psutil\nRequires-Dist: colorama\nRequires-Dist: six\nRequires-Dist: decorator\n",
+            "sha256": "dcd77d2305e3d8f46b57ad65062a7eee63c215defc6477559a7a5f4667d7c739",
+            "reason": "Materialize Thefuck 3.1 distribution metadata from the audited setup.py without executing repository code.",
+            "source_path": "setup.py",
+            "source_text_sha256": "c84cd30a4151123531da5e814a3c46d75d49ec9fbba2421373737715f5d9a749"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.1.dist-info/entry_points.txt",
+            "content": "[console_scripts]\nthefuck = thefuck.main:main\nthefuck-alias = thefuck.main:print_alias\nfuck = thefuck.main:how_to_configure_alias\n",
+            "sha256": "81ec2428fe6293e8d3f784c3713def1c1eb575955b3e58be6d33680cdbc297e2",
+            "reason": "Reproduce the three console entry points declared by the audited Thefuck 3.1 setup.py.",
+            "source_path": "setup.py",
+            "source_text_sha256": "c84cd30a4151123531da5e814a3c46d75d49ec9fbba2421373737715f5d9a749"
+          }
+        ],
+        "bugsinpy-thefuck-1": [
+          {
+            "path": ".cia-runtime-support/cia_legacy_pytest.py",
+            "content": "\"\"\"Compatibility for The Fuck's 2016 tests under pytest 3.10.1.\"\"\"\n\nimport os\n\nimport pytest\n\n\ndef pytest_configure(config):\n    del config\n    if pytest.__version__ != \"3.10.1\":\n        raise RuntimeError(\"legacy pytest adapter requires pytest==3.10.1\")\n    from _pytest import runner\n\n    if not hasattr(runner, \"_update_current_test_var\"):\n        raise RuntimeError(\"pytest current-test hook is unavailable\")\n\n    def clear_current_test(_item, _when):\n        os.environ.pop(\"PYTEST_CURRENT_TEST\", None)\n\n    runner._update_current_test_var = clear_current_test\n",
+            "sha256": "6676f3717bfd738abfae0c2ff49b837546b16fb26f65b57138dc91b2ebe6915b",
+            "reason": "Restore the historical test suite's pre-PYTEST_CURRENT_TEST environment semantics while retaining the benchmark-pinned pytest 3.10.1 runner.",
+            "source_path": "tests/test_types.py",
+            "source_text_sha256": "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.29.dist-info/METADATA",
+            "content": "Metadata-Version: 2.1\nName: thefuck\nVersion: 3.29\nSummary: Magnificent app which corrects your previous console command\nHome-page: https://github.com/nvbn/thefuck\nAuthor: Vladimir Iakovlev\nAuthor-email: nvbn.rm@gmail.com\nLicense: MIT\nRequires-Dist: psutil\nRequires-Dist: colorama\nRequires-Dist: six\nRequires-Dist: decorator\n",
+            "sha256": "8a6fdf60c5d33e9548139034ebea54ebc30e5d39e31c4708f16743b12a1b3bee",
+            "reason": "Materialize Thefuck 3.29 distribution metadata from the audited setup.py without executing repository code.",
+            "source_path": "setup.py",
+            "source_text_sha256": "c4c857c806fa402a0fb593790ab4da9d524090c3e90e8eef1612d126c40f7e09"
+          },
+          {
+            "path": ".cia-runtime-support/thefuck-3.29.dist-info/entry_points.txt",
+            "content": "[console_scripts]\nthefuck = thefuck.entrypoints.main:main\nfuck = thefuck.entrypoints.not_configured:main\n",
+            "sha256": "073b2710a57b90b2a68f80673e2added7777c30efe17aafa7d9a26ac79211de7",
+            "reason": "Reproduce the two console entry points declared by the audited Thefuck 3.29 setup.py.",
+            "source_path": "setup.py",
+            "source_text_sha256": "c4c857c806fa402a0fb593790ab4da9d524090c3e90e8eef1612d126c40f7e09"
+          }
+        ]
+      }
     }
   }
 }

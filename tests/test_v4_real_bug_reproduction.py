@@ -74,6 +74,69 @@ def test_thefuck_profile_binds_hashed_legacy_adapter_to_repository_paths():
     ]
 
 
+def test_thefuck_case_variants_bind_exact_historical_metadata():
+    profiles = load_json_object(PROFILES_PATH)
+    profile = profiles["project_profiles"]["thefuck"]
+    catalog = load_json_object(CATALOG_PATH)
+    cases = {item["case_id"]: item for item in catalog["cases"]}
+    expected = {
+        "bugsinpy-thefuck-17": (
+            "3.3",
+            "1470a42043a04e7769503350a5d5327c1fcc6b716a24d9bf5077f0fc355077c4",
+            "d66aba432f3cafcabd3efd9a1928982d9d7c11677ef32899de249c680f254073",
+        ),
+        "bugsinpy-thefuck-8": (
+            "3.23",
+            "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2",
+            "658fc95ab4bc7d6cfbaf0c3dda60dcbf3cd9330d0e606575f76f47613d1a76ce",
+        ),
+        "bugsinpy-thefuck-20": (
+            "3.1",
+            "671621c33969ddd3fb857507bae8028eae39b70d1aca8c9cb6a201821f06774c",
+            "c84cd30a4151123531da5e814a3c46d75d49ec9fbba2421373737715f5d9a749",
+        ),
+        "bugsinpy-thefuck-1": (
+            "3.29",
+            "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2",
+            "c4c857c806fa402a0fb593790ab4da9d524090c3e90e8eef1612d126c40f7e09",
+        ),
+    }
+
+    for case_id, (version, test_hash, setup_hash) in expected.items():
+        adapted, audit = adapt_v4_case_for_reproduction(
+            cases[case_id],
+            project_profile=profile,
+        )
+        files = adapted["preparation_files"]
+        assert audit["status"] == "pass"
+        assert audit["preparation_profile_scope"] == f"case:{case_id}"
+        assert files[0]["source_text_sha256"] == test_hash
+        assert files[1]["source_text_sha256"] == setup_hash
+        assert files[2]["source_text_sha256"] == setup_hash
+        assert f"thefuck-{version}.dist-info" in files[1]["path"]
+        assert f"Version: {version}\n" in files[1]["content"]
+
+
+def test_case_preparation_variant_rejects_tampering_and_missing_plugin():
+    profiles = load_json_object(PROFILES_PATH)
+    variants = profiles["project_profiles"]["thefuck"]["case_preparation_files"]
+    variants["bugsinpy-thefuck-17"][1]["content"] += "changed\n"
+
+    assert (
+        "profiles.preparation_file_sha256_is_invalid:"
+        "thefuck:bugsinpy-thefuck-17:1"
+        in validate_reproduction_profiles(profiles)
+    )
+
+    profiles = load_json_object(PROFILES_PATH)
+    variants = profiles["project_profiles"]["thefuck"]["case_preparation_files"]
+    variants["bugsinpy-thefuck-17"].pop(0)
+    assert (
+        "profiles.repository_pytest_plugin_is_not_materialized:thefuck:0"
+        in validate_reproduction_profiles(profiles)
+    )
+
+
 def test_profile_validation_rejects_unmaterialized_plugin_and_tampered_file():
     profiles = _profiles()
     profiles["project_profiles"]["demo"]["repository_pytest_plugins"] = [

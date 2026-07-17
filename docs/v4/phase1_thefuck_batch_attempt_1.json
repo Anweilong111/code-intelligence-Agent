@@ -1,0 +1,121 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-thefuck-batch-attempt-1",
+  "verified_date": "2026-07-18",
+  "status": "completed_with_candidate_preparation_blockers",
+  "workflow_run": {
+    "run_id": 29610882460,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29610882460",
+    "head_sha": "a7d00c4f535bb25670a0ebd1fb50680f9c1e4694",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-07-17T20:21:15Z",
+    "completed_at": "2026-07-17T20:24:00Z"
+  },
+  "artifact": {
+    "artifact_id": 8418714400,
+    "name": "v4-phase1-linux-thefuck-all-thefuck-selection",
+    "size_bytes": 19990,
+    "sha256": "9be4bf5425dd9311111ee0115bf6974cab6c4aefb1f4ee1ea2037a5208776153",
+    "expired": false,
+    "expires_at": "2026-08-16T20:23:57Z",
+    "safe_unique_member_count": 15,
+    "raw_artifact_committed": false
+  },
+  "batch": {
+    "case_count": 5,
+    "pass_count": 1,
+    "non_pass_count": 4,
+    "accepted_case_delta": 0,
+    "cases": [
+      {
+        "case_id": "bugsinpy-thefuck-16",
+        "status": "pass",
+        "reason": "real_bug_reproduced",
+        "evidence_sha256": "3cdd425d9db63bbc44c8ef6f08523522da7e067a8743fab6289bc80cf0de8700",
+        "classification": "accepted_baseline_replay"
+      },
+      {
+        "case_id": "bugsinpy-thefuck-17",
+        "status": "fail",
+        "reason": "preparation_failed",
+        "evidence_sha256": "8bc433e4cc26f7c4e2ac8d72855ddcd8404adfb70aaa4f9579a24bd5e6ba258d",
+        "classification": "case_specific_adapter_required",
+        "failed_source_assertions": [
+          "setup.py:METADATA",
+          "setup.py:entry_points.txt"
+        ]
+      },
+      {
+        "case_id": "bugsinpy-thefuck-8",
+        "status": "fail",
+        "reason": "preparation_failed",
+        "evidence_sha256": "6b88c1ac2ff134dc0a109219c714533ca0612dcac6c2a1e90a7df94855824d14",
+        "classification": "case_specific_adapter_required",
+        "failed_source_assertions": [
+          "tests/test_types.py:cia_legacy_pytest.py",
+          "setup.py:METADATA",
+          "setup.py:entry_points.txt"
+        ]
+      },
+      {
+        "case_id": "bugsinpy-thefuck-20",
+        "status": "fail",
+        "reason": "preparation_failed",
+        "evidence_sha256": "db0b6836a5bf7ae93231d46d8ae6ec293746f57c016bbb77f956bc012dcf4fe3",
+        "classification": "case_specific_adapter_required",
+        "failed_source_assertions": [
+          "tests/test_types.py:cia_legacy_pytest.py",
+          "setup.py:METADATA",
+          "setup.py:entry_points.txt"
+        ]
+      },
+      {
+        "case_id": "bugsinpy-thefuck-1",
+        "status": "fail",
+        "reason": "preparation_failed",
+        "evidence_sha256": "09f1e0741ea4a00fc9a00cf5de774b88fb04016b3096c097e0fbf9ff11a6802f",
+        "classification": "case_specific_adapter_required",
+        "failed_source_assertions": [
+          "tests/test_types.py:cia_legacy_pytest.py",
+          "setup.py:METADATA",
+          "setup.py:entry_points.txt"
+        ]
+      }
+    ]
+  },
+  "source_audit": {
+    "bug_and_fix_source_hashes_match_per_case": true,
+    "cases": {
+      "bugsinpy-thefuck-17": {
+        "version": "3.3",
+        "tests_test_types_sha256": "1470a42043a04e7769503350a5d5327c1fcc6b716a24d9bf5077f0fc355077c4",
+        "setup_py_sha256": "d66aba432f3cafcabd3efd9a1928982d9d7c11677ef32899de249c680f254073"
+      },
+      "bugsinpy-thefuck-8": {
+        "version": "3.23",
+        "tests_test_types_sha256": "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2",
+        "setup_py_sha256": "658fc95ab4bc7d6cfbaf0c3dda60dcbf3cd9330d0e606575f76f47613d1a76ce"
+      },
+      "bugsinpy-thefuck-20": {
+        "version": "3.1",
+        "tests_test_types_sha256": "671621c33969ddd3fb857507bae8028eae39b70d1aca8c9cb6a201821f06774c",
+        "setup_py_sha256": "c84cd30a4151123531da5e814a3c46d75d49ec9fbba2421373737715f5d9a749"
+      },
+      "bugsinpy-thefuck-1": {
+        "version": "3.29",
+        "tests_test_types_sha256": "0ae67a7136f73c31c88436db464540bb60c525947b3263eaa3ad8194d3ebe5a2",
+        "setup_py_sha256": "c4c857c806fa402a0fb593790ab4da9d524090c3e90e8eef1612d126c40f7e09"
+      }
+    }
+  },
+  "claims": {
+    "batch_evidence_preserved_candidate_non_pass_results": true,
+    "accepted_baseline_remained_replayable": true,
+    "candidate_tests_executed": false,
+    "candidate_failures_are_test_failures": false,
+    "source_hash_gate_prevented_wrong_adapter_use": true,
+    "catalog_changed": false,
+    "model_calls": 0
+  }
+}
