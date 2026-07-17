@@ -58,6 +58,36 @@ Frozen official artifact:
 - Installed allowlist: `win_unicode_console/`, `run.py`
 - Installed files: 12
 
+## Hash-Pinned Conda Python Binary Adapter
+
+The first Linux CI attempt exposed a different packaging gap. PyPI publishes no
+Linux wheel for `psutil==5.7.0`, while a normal source install would execute its
+build backend and native compiler. V4 does not relax `--only-binary=:all:` and
+does not execute that source distribution. Instead, a declared archive may
+replace exactly one matching pip requirement while the full requirement remains
+in the final `pip freeze` audit.
+
+The Linux adapter accepts only a fixed `conda.anaconda.org` HTTPS URL, byte size,
+SHA-256, package/version, conda build, `linux-64` subdir, wheel ABI tag,
+site-packages source root, distribution metadata directory, native module roots,
+and native suffix allowlist. It rejects links, special tar members, duplicate or
+escaping paths, excessive member count/expanded size/compression ratio, unexpected
+file types, ABI drift, metadata drift, and destination conflicts. It verifies
+both `info/index.json` and the installed `WHEEL`/`METADATA`; no conda post-link,
+repository setup, package build, or other archive script is executed.
+
+Frozen conda-forge artifact:
+
+- URL: `https://conda.anaconda.org/conda-forge/linux-64/psutil-5.7.0-py37h8f50634_1.tar.bz2`
+- Size: `329921` bytes
+- Conda-forge API MD5: `9c5b3e84c0952a7cacb069c18ae1932a` (matched locally)
+- SHA-256: `631700db237d5f71f0fb86449774da55b349e93a67f3aba3e1af8df5a78fd66b`
+- Conda build: `py37h8f50634_1`
+- Wheel tag: `cp37-cp37m-linux_x86_64`
+- Selected files: 18, including two ABI-matched `.so` files and six
+  `.dist-info` files
+- Excluded trees: `psutil/tests`, `psutil/__pycache__`
+
 ## Real Thefuck Result
 
 The isolated runtime reached `status=pass` with exact Python `3.7.0` and all
@@ -86,6 +116,16 @@ all five Thefuck development candidates are blocked before checkout with
 plan fingerprint is
 `6b148be6c882adfeb15fa822397bf3cfa439303e83648c14edd3286f28ded6b7`.
 
+The first Linux CI run (`29600980774`, commit `93a6a92`) successfully completed
+the public detached checkout and exact Python `3.7.0` provisioning, then failed
+the isolated dependency stage because PyPI had no binary distribution for
+`psutil==5.7.0`. Its bootstrap result is retained with
+`reason=dependency_install_failed` and fingerprint
+`7dbf08059d9a0cbd354ae00801c17035d7fd9096fa5dc50fbff5dad4f1f9b615`.
+No targeted or regression test ran, so this attempt changes the accepted-case
+count by zero. The failure is the evidence that motivated the narrower conda
+binary adapter above; adapter implementation alone is not a reproduction result.
+
 ## Commands
 
 ```powershell
@@ -110,7 +150,7 @@ python -m code_intelligence_agent v4-bootstrap-runtime run `
 
 ## Next Gate
 
-The next valid step for Thefuck is a Linux CI or container reproduction using the
-same fixed SHAs, dependency contract, and three acceptance gates. The Windows
-result is retained as auditable platform-blocker evidence and is not counted among
-the 50 accepted V4 benchmark cases.
+The next valid step for Thefuck is to rerun Linux CI with the hash-pinned binary
+adapter, then execute the same fixed SHAs and all three acceptance gates. The
+Windows result and first Linux failure remain auditable evidence and are not
+counted among the 50 accepted V4 benchmark cases.

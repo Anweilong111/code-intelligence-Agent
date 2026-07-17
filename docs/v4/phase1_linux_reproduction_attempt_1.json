@@ -1,0 +1,46 @@
+{
+  "schema_version": "4.0",
+  "evidence_id": "v4-phase1-linux-thefuck-16-attempt-1",
+  "observed_date": "2026-07-18",
+  "repository": "Anweilong111/code-intelligence-Agent",
+  "workflow_run": {
+    "run_id": 29600980774,
+    "job_id": 87952740081,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29600980774",
+    "commit_sha": "93a6a925c7140617ea290fe776b52e1b02a74839",
+    "conclusion": "failure",
+    "failed_step": "Build and execute isolated runtime plan"
+  },
+  "artifact": {
+    "artifact_id": 8415035916,
+    "name": "v4-phase1-linux-thefuck-16",
+    "size": 2743,
+    "sha256": "18514964d279cfef89df6f7252b1906ff11a36791b48a2da9f27af6f29bcee38"
+  },
+  "bootstrap": {
+    "project": "thefuck",
+    "python_version": "3.7.0",
+    "plan_sha256": "9977102052271784c8fada2e595e241ca4c8083fca310f2c14aad6944f661ed7",
+    "result_sha256": "7dbf08059d9a0cbd354ae00801c17035d7fd9096fa5dc50fbff5dad4f1f9b615",
+    "status": "fail",
+    "reason": "dependency_install_failed",
+    "blocking_requirement": "psutil==5.7.0",
+    "blocking_detail": "No matching binary distribution found on PyPI for Linux and Python 3.7."
+  },
+  "execution": {
+    "targeted_tests_ran": false,
+    "regression_tests_ran": false,
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "model_calls": 0,
+    "accepted_case_count_delta": 0
+  },
+  "planned_remediation": {
+    "strategy": "hash_pinned_conda_python_binary",
+    "package_url": "https://conda.anaconda.org/conda-forge/linux-64/psutil-5.7.0-py37h8f50634_1.tar.bz2",
+    "package_size": 329921,
+    "package_md5": "9c5b3e84c0952a7cacb069c18ae1932a",
+    "package_sha256": "631700db237d5f71f0fb86449774da55b349e93a67f3aba3e1af8df5a78fd66b",
+    "status": "implemented_locally_not_yet_ci_verified"
+  }
+}

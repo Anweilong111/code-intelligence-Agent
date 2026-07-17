@@ -7,6 +7,11 @@ on:
       - codex/code-intelligence-agent-v4
     paths:
       - .github/workflows/v4-phase1-linux-reproduction.yml
+      - code_intelligence_agent/evaluation/v4_reproduction_environment.py
+      - code_intelligence_agent/evaluation/v4_real_bug_reproduction.py
+      - datasets/v4_agent_effectiveness/real_bug_seed_catalog.json
+      - datasets/v4_agent_effectiveness/reproduction_profiles.json
+      - datasets/v4_agent_effectiveness/selection_plan.json
 
 permissions:
   contents: read
@@ -116,6 +121,12 @@ jobs:
         run: |
           {
             echo "## V4 Phase 1 Linux reproduction"
+            if [ -f outputs_v4/linux/bootstrap_result.json ]; then
+              echo '```json'
+              outputs_v4/ci-host/bin/python -c \
+                "import json; p=json.load(open('outputs_v4/linux/bootstrap_result.json')); print(json.dumps({'status': p['status'], 'reason': p['reason'], 'commands': [{'stage': c['stage'], 'status': c['status'], 'reason': c['reason']} for c in p['commands']]}, indent=2))"
+              echo '```'
+            fi
             for report in \
               outputs_v4/linux/reproduction/bugsinpy-thefuck-16/v4_reproduction.md; do
               if [ -f "${report}" ]; then

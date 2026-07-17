@@ -9,9 +9,11 @@ import re
 import stat
 import subprocess
 import sys
+import tarfile
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
+from email.parser import BytesParser
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 from urllib.parse import urlparse
@@ -38,9 +40,21 @@ PACKAGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 Runner = Callable[..., subprocess.CompletedProcess]
 RuntimeProbe = Callable[[Path, str, list[str]], dict[str, Any]]
 ArchiveFetcher = Callable[[str, str, int], bytes]
-ALLOWED_ARCHIVE_HOSTS = {"files.pythonhosted.org"}
+PURE_PYTHON_ARCHIVE_HOSTS = {"files.pythonhosted.org"}
+CONDA_BINARY_ARCHIVE_HOSTS = {"conda.anaconda.org"}
 MAX_MANUAL_ARCHIVE_SIZE = 50 * 1024 * 1024
 MAX_MANUAL_ARCHIVE_EXPANDED_SIZE = 100 * 1024 * 1024
+MAX_MANUAL_ARCHIVE_MEMBERS = 10000
+CONDA_DIST_INFO_FILES = {
+    "INSTALLER",
+    "LICENSE",
+    "METADATA",
+    "RECORD",
+    "WHEEL",
+    "entry_points.txt",
+    "namespace_packages.txt",
+    "top_level.txt",
+}
 
 
 def validate_bootstrap_requirements(requirements: list[str]) -> list[str]:
@@ -91,7 +105,12 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         expected_size = archive.get("size")
         source_root = str(archive.get("source_root") or "")
         members = [str(value) for value in _list(archive.get("install_members"))]
+        excluded_members = [
+            str(value) for value in _list(archive.get("exclude_members"))
+        ]
         platforms = [str(value) for value in _list(archive.get("platforms"))]
+        archive_type = str(archive.get("archive_type") or "")
+        artifact_kind = str(archive.get("artifact_kind") or "pure_python")
         prefix = f"manual_archive:{index}"
         if (
             not PACKAGE_NAME_PATTERN.fullmatch(archive_id)
@@ -108,9 +127,16 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         if not version or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.+-]*", version):
             errors.append(f"{prefix}:version_is_invalid")
         parsed = urlparse(url)
+        allowed_hosts = (
+            PURE_PYTHON_ARCHIVE_HOSTS
+            if archive_type == "zip"
+            else CONDA_BINARY_ARCHIVE_HOSTS
+            if archive_type == "conda-tar-bz2"
+            else set()
+        )
         if (
             parsed.scheme != "https"
-            or parsed.hostname not in ALLOWED_ARCHIVE_HOSTS
+            or parsed.hostname not in allowed_hosts
             or parsed.username
             or parsed.password
             or parsed.query
@@ -126,8 +152,79 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
             or expected_size > MAX_MANUAL_ARCHIVE_SIZE
         ):
             errors.append(f"{prefix}:size_is_invalid")
-        if str(archive.get("archive_type") or "") != "zip":
-            errors.append(f"{prefix}:archive_type_must_be_zip")
+        if archive_type not in {"zip", "conda-tar-bz2"}:
+            errors.append(f"{prefix}:archive_type_is_invalid")
+        if archive_type == "zip" and artifact_kind != "pure_python":
+            errors.append(f"{prefix}:zip_artifact_kind_must_be_pure_python")
+        if archive_type == "conda-tar-bz2":
+            if artifact_kind != "conda_python_binary":
+                errors.append(f"{prefix}:conda_artifact_kind_is_invalid")
+            if archive.get("replaces_pip_requirement") is not True:
+                errors.append(f"{prefix}:conda_archive_must_replace_requirement")
+            if platforms != ["linux"]:
+                errors.append(f"{prefix}:conda_archive_platform_must_be_linux")
+            if str(archive.get("conda_subdir") or "") != "linux-64":
+                errors.append(f"{prefix}:conda_subdir_must_be_linux_64")
+            if not re.fullmatch(
+                r"[A-Za-z0-9_.+-]+", str(archive.get("conda_build") or "")
+            ):
+                errors.append(f"{prefix}:conda_build_is_invalid")
+            if not re.fullmatch(
+                r"cp\d+-cp\d+[a-z]*-linux_x86_64",
+                str(archive.get("wheel_tag") or ""),
+            ):
+                errors.append(f"{prefix}:wheel_tag_is_invalid")
+            expected_filename = (
+                f"{package}-{version}-{archive.get('conda_build')}.tar.bz2"
+            )
+            if PurePosixPath(parsed.path).name != expected_filename:
+                errors.append(f"{prefix}:conda_url_filename_mismatch")
+            if not re.fullmatch(
+                r"lib/python\d+\.\d+/site-packages", source_root
+            ):
+                errors.append(f"{prefix}:conda_source_root_is_invalid")
+            dist_info_dir = str(archive.get("dist_info_dir") or "")
+            if (
+                not _safe_relative_path(dist_info_dir)
+                or "/" in dist_info_dir.replace("\\", "/")
+                or not dist_info_dir.endswith(".dist-info")
+                or dist_info_dir not in members
+            ):
+                errors.append(f"{prefix}:dist_info_dir_is_invalid")
+            native_module_roots = [
+                str(value)
+                for value in _list(archive.get("native_module_roots"))
+            ]
+            if (
+                not native_module_roots
+                or len(set(native_module_roots)) != len(native_module_roots)
+                or any(
+                    not _safe_relative_path(value)
+                    or not any(
+                        value == member.rstrip("/")
+                        or value.startswith(member.rstrip("/") + "/")
+                        for member in members
+                        if not member.endswith(".dist-info")
+                    )
+                    for value in native_module_roots
+                )
+            ):
+                errors.append(f"{prefix}:native_module_roots_are_invalid")
+            native_suffixes = [
+                str(value)
+                for value in _list(archive.get("allowed_native_suffixes"))
+            ]
+            if (
+                not native_suffixes
+                or len(set(native_suffixes)) != len(native_suffixes)
+                or any(
+                    not re.fullmatch(
+                        r"\.cpython-\d+[a-z]*-x86_64-linux-gnu\.so", value
+                    )
+                    for value in native_suffixes
+                )
+            ):
+                errors.append(f"{prefix}:allowed_native_suffixes_are_invalid")
         if not _safe_relative_path(source_root):
             errors.append(f"{prefix}:source_root_is_unsafe")
         if not members:
@@ -137,6 +234,11 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         for member in members:
             if not _safe_relative_path(member):
                 errors.append(f"{prefix}:install_member_is_unsafe")
+        if len(set(excluded_members)) != len(excluded_members):
+            errors.append(f"{prefix}:exclude_members_are_duplicated")
+        for member in excluded_members:
+            if not _safe_relative_path(member):
+                errors.append(f"{prefix}:exclude_member_is_unsafe")
         if platforms and (
             len(set(platforms)) != len(platforms)
             or any(value not in {"darwin", "linux", "windows"} for value in platforms)
@@ -161,6 +263,7 @@ def build_environment_bootstrap_plan(
     if not project_profile:
         raise ValueError(f"Unknown project profile: {project}")
     observed_platform = execution_platform or _host_execution_platform()
+    major_minor = ".".join(python_version.split(".")[:2])
     requirements = [
         str(value) for value in _list(project_profile.get("bootstrap_requirements"))
     ]
@@ -186,12 +289,64 @@ def build_environment_bootstrap_plan(
         str(canonicalize_name(str(_dict(value).get("package") or "")))
         for value in manual_archives
     }
-    overlap = sorted(requirement_names & archive_names)
-    if overlap:
+    replacing_archive_names = {
+        str(canonicalize_name(str(_dict(value).get("package") or "")))
+        for value in manual_archives
+        if _dict(value).get("replaces_pip_requirement") is True
+    }
+    unsupported_overlap = sorted(
+        (requirement_names & archive_names) - replacing_archive_names
+    )
+    if unsupported_overlap:
         raise ValueError(
             "Packages cannot use both pip and manual archive installation: "
-            + ",".join(overlap)
+            + ",".join(unsupported_overlap)
         )
+    requirement_versions = {
+        str(canonicalize_name(Requirement(value).name)): list(
+            Requirement(value).specifier
+        )[0].version
+        for value in requirements
+    }
+    for archive_value in manual_archives:
+        archive = _dict(archive_value)
+        if archive.get("replaces_pip_requirement") is not True:
+            continue
+        name = str(canonicalize_name(str(archive.get("package") or "")))
+        if name not in requirement_versions:
+            raise ValueError(
+                f"Manual archive replacement has no matching requirement: {name}"
+            )
+        if requirement_versions[name] != str(archive.get("version") or ""):
+            raise ValueError(
+                f"Manual archive replacement version mismatch: {name}"
+            )
+        if archive.get("artifact_kind") == "conda_python_binary":
+            compact_version = major_minor.replace(".", "")
+            wheel_parts = str(archive.get("wheel_tag") or "").split("-")
+            if (
+                str(archive.get("source_root") or "")
+                != f"lib/python{major_minor}/site-packages"
+                or not str(archive.get("conda_build") or "").startswith(
+                    f"py{compact_version}"
+                )
+                or len(wheel_parts) != 3
+                or wheel_parts[0] != f"cp{compact_version}"
+                or not wheel_parts[1].startswith(f"cp{compact_version}")
+                or any(
+                    f".cpython-{compact_version}" not in str(value)
+                    for value in _list(archive.get("allowed_native_suffixes"))
+                )
+            ):
+                raise ValueError(
+                    f"Manual archive Python ABI mismatch: {name}"
+                )
+    pip_requirements = [
+        value
+        for value in requirements
+        if str(canonicalize_name(Requirement(value).name))
+        not in replacing_archive_names
+    ]
     runtime_profile = _dict(
         _dict(profiles.get("runtime_profiles")).get(python_version)
     )
@@ -224,7 +379,6 @@ def build_environment_bootstrap_plan(
         if observed_platform == "windows"
         else environment_path / "bin" / "python"
     )
-    major_minor = ".".join(python_version.split(".")[:2])
     site_packages_path = (
         environment_path / "Lib" / "site-packages"
         if observed_platform == "windows"
@@ -246,7 +400,7 @@ def build_environment_bootstrap_plan(
         "--disable-pip-version-check",
         "--only-binary=:all:",
         "--no-deps",
-        *requirements,
+        *pip_requirements,
     ]
     check_command = [str(target_python), "-m", "pip", "check"]
     audit_command = [str(target_python), "-m", "pip", "freeze", "--all"]
@@ -268,6 +422,7 @@ def build_environment_bootstrap_plan(
         "target_python": str(target_python),
         "site_packages_path": str(site_packages_path),
         "requirements": requirements,
+        "pip_requirements": pip_requirements,
         "manual_python_archives": manual_archives,
         "required_runtime_modules": sorted(
             {
@@ -293,9 +448,7 @@ def build_environment_bootstrap_plan(
         },
         "policy": {
             "dependency_source": (
-                "pypi_binary_wheels_and_hash_pinned_pure_python_archives"
-                if manual_archives
-                else "pypi_binary_wheels_only"
+                _expected_dependency_source(manual_archives)
             ),
             "exact_versions_required": True,
             "direct_urls_allowed": False,
@@ -304,6 +457,10 @@ def build_environment_bootstrap_plan(
             "repository_setup_script_allowed": False,
             "repository_project_install_allowed": False,
             "manual_archive_install_allowed": bool(manual_archives),
+            "hash_pinned_native_archive_install_allowed": any(
+                _dict(value).get("artifact_kind") == "conda_python_binary"
+                for value in manual_archives
+            ),
             "manual_archive_setup_execution_allowed": False,
             "explicit_execution_authorization_required": True,
             "shared_base_runtime_mutation_allowed": False,
@@ -384,7 +541,12 @@ def execute_environment_bootstrap(
         network_policy="allow",
     )
     install_result = _run_command(
-        [str(value) for value in _list(_dict(plan.get("commands")).get("install_dependencies"))],
+        [
+            str(value)
+            for value in _list(
+                _dict(plan.get("commands")).get("install_dependencies")
+            )
+        ],
         timeout=install_timeout,
         runner=runner,
         environment=install_env,
@@ -502,14 +664,19 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         errors.append("plan_sha256_mismatch")
     requirements = [str(value) for value in _list(plan.get("requirements"))]
     errors.extend(validate_bootstrap_requirements(requirements))
+    pip_requirements = [
+        str(value) for value in _list(plan.get("pip_requirements"))
+    ]
     manual_archives = _list(plan.get("manual_python_archives"))
     errors.extend(validate_manual_python_archives(manual_archives))
-    policy = _dict(plan.get("policy"))
-    expected_dependency_source = (
-        "pypi_binary_wheels_and_hash_pinned_pure_python_archives"
-        if manual_archives
-        else "pypi_binary_wheels_only"
+    expected_pip_requirements = _pip_requirements_for_archives(
+        requirements,
+        manual_archives,
     )
+    if pip_requirements != expected_pip_requirements:
+        errors.append("pip_requirements_mismatch")
+    policy = _dict(plan.get("policy"))
+    expected_dependency_source = _expected_dependency_source(manual_archives)
     if policy.get("dependency_source") != expected_dependency_source:
         errors.append("unsafe_policy:dependency_source")
     required_policy = {
@@ -520,6 +687,10 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         "repository_setup_script_allowed": False,
         "repository_project_install_allowed": False,
         "manual_archive_install_allowed": bool(manual_archives),
+        "hash_pinned_native_archive_install_allowed": any(
+            _dict(value).get("artifact_kind") == "conda_python_binary"
+            for value in manual_archives
+        ),
         "manual_archive_setup_execution_allowed": False,
         "explicit_execution_authorization_required": True,
         "shared_base_runtime_mutation_allowed": False,
@@ -588,7 +759,7 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         "--disable-pip-version-check",
         "--only-binary=:all:",
         "--no-deps",
-        *requirements,
+        *pip_requirements,
     ]
     expected_check = [str(target_python), "-m", "pip", "check"]
     expected_audit = [str(target_python), "-m", "pip", "freeze", "--all"]
@@ -659,6 +830,11 @@ def _bootstrap_result(
             "manual_archive_setup_scripts_executed": False,
             "manual_archive_count": len(
                 _list(plan.get("manual_python_archives"))
+            ),
+            "manual_binary_archive_count": sum(
+                1
+                for value in _list(plan.get("manual_python_archives"))
+                if _dict(value).get("artifact_kind") == "conda_python_binary"
             ),
             "shared_base_runtime_mutated": False,
             "model_calls": 0,
@@ -824,7 +1000,9 @@ def _install_manual_python_archive(
     expected_size = int(archive.get("size") or 0)
     isolated_root = Path(str(plan.get("isolated_runtime_root") or "")).resolve()
     cache_path = (
-        isolated_root / ".bootstrap_artifacts" / f"{expected_sha256}.zip"
+        isolated_root
+        / ".bootstrap_artifacts"
+        / f"{expected_sha256}{_archive_cache_suffix(archive)}"
     ).resolve()
     site_packages = Path(str(plan.get("site_packages_path") or "")).resolve()
     if not _within(cache_path, isolated_root) or not _within(
@@ -867,10 +1045,7 @@ def _install_manual_python_archive(
             )
         writes, archive_errors = _validated_archive_writes(
             archive_bytes,
-            source_root=str(archive.get("source_root") or ""),
-            install_members=[
-                str(value) for value in _list(archive.get("install_members"))
-            ],
+            archive=archive,
         )
         if archive_errors:
             return _manual_archive_result(
@@ -926,7 +1101,11 @@ def _install_manual_python_archive(
         return {
             "stage": stage,
             "status": "pass",
-            "reason": "hash_pinned_pure_python_archive_installed",
+            "reason": (
+                "hash_pinned_conda_python_binary_installed"
+                if archive.get("artifact_kind") == "conda_python_binary"
+                else "hash_pinned_pure_python_archive_installed"
+            ),
             "returncode": None,
             "archive_id": archive_id,
             "archive_sha256": observed_sha256,
@@ -937,7 +1116,7 @@ def _install_manual_python_archive(
             "files": file_evidence,
             "setup_script_executed": False,
         }
-    except (OSError, ValueError, zipfile.BadZipFile) as exc:
+    except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as exc:
         return _manual_archive_result(
             stage,
             archive,
@@ -948,16 +1127,31 @@ def _install_manual_python_archive(
 def _validated_archive_writes(
     archive_bytes: bytes,
     *,
-    source_root: str,
-    install_members: list[str],
+    archive: dict[str, Any],
+) -> tuple[list[tuple[str, bytes]], list[str]]:
+    if archive.get("archive_type") == "conda-tar-bz2":
+        return _validated_conda_archive_writes(archive_bytes, archive=archive)
+    return _validated_zip_archive_writes(archive_bytes, archive=archive)
+
+
+def _validated_zip_archive_writes(
+    archive_bytes: bytes,
+    *,
+    archive: dict[str, Any],
 ) -> tuple[list[tuple[str, bytes]], list[str]]:
     errors: list[str] = []
     selected: dict[str, bytes] = {}
+    source_root = str(archive.get("source_root") or "")
+    install_members = [
+        str(value) for value in _list(archive.get("install_members"))
+    ]
     matched_members = {member: False for member in install_members}
     seen_names: set[str] = set()
     expanded_size = 0
     source_prefix = source_root.rstrip("/") + "/"
     with zipfile.ZipFile(io.BytesIO(archive_bytes), "r") as archive_file:
+        if len(archive_file.infolist()) > MAX_MANUAL_ARCHIVE_MEMBERS:
+            return [], ["archive_member_count_limit_exceeded"]
         for info in archive_file.infolist():
             name = info.filename.replace("\\", "/")
             if not _safe_relative_path(name) or name in seen_names:
@@ -1004,6 +1198,221 @@ def _validated_archive_writes(
     return sorted(selected.items()), sorted(set(errors))
 
 
+def _validated_conda_archive_writes(
+    archive_bytes: bytes,
+    *,
+    archive: dict[str, Any],
+) -> tuple[list[tuple[str, bytes]], list[str]]:
+    errors: list[str] = []
+    selected: dict[str, bytes] = {}
+    source_root = str(archive.get("source_root") or "")
+    source_prefix = source_root.rstrip("/") + "/"
+    install_members = [
+        str(value) for value in _list(archive.get("install_members"))
+    ]
+    excluded_members = [
+        str(value).rstrip("/")
+        for value in _list(archive.get("exclude_members"))
+    ]
+    matched_members = {member: False for member in install_members}
+    seen_names: set[str] = set()
+    expanded_size = 0
+    metadata_payloads: dict[str, bytes] = {}
+    with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:bz2") as archive_file:
+        members = archive_file.getmembers()
+        if len(members) > MAX_MANUAL_ARCHIVE_MEMBERS:
+            return [], ["archive_member_count_limit_exceeded"]
+        for info in members:
+            name = info.name.replace("\\", "/")
+            if not _safe_relative_path(name) or name in seen_names:
+                errors.append("archive_member_path_is_unsafe_or_duplicated")
+                continue
+            seen_names.add(name)
+            if info.issym() or info.islnk():
+                errors.append("archive_link_member_is_forbidden")
+                continue
+            if not (info.isfile() or info.isdir()):
+                errors.append("archive_special_member_is_forbidden")
+                continue
+            expanded_size += int(info.size)
+            if expanded_size > MAX_MANUAL_ARCHIVE_EXPANDED_SIZE:
+                errors.append("archive_expanded_size_limit_exceeded")
+            metadata_paths = {
+                "info/index.json",
+                source_prefix + str(archive.get("dist_info_dir") or "") + "/WHEEL",
+                source_prefix
+                + str(archive.get("dist_info_dir") or "")
+                + "/METADATA",
+            }
+            if info.isfile() and name in metadata_paths:
+                extracted = archive_file.extractfile(info)
+                if extracted is None:
+                    errors.append("archive_metadata_cannot_be_read")
+                else:
+                    metadata_payloads[name] = extracted.read()
+            if info.isdir() or not name.startswith(source_prefix):
+                continue
+            relative = name[len(source_prefix) :]
+            if any(
+                relative == excluded or relative.startswith(excluded + "/")
+                for excluded in excluded_members
+            ):
+                continue
+            matched = False
+            for member in install_members:
+                normalized_member = member.rstrip("/")
+                if relative == normalized_member or relative.startswith(
+                    normalized_member + "/"
+                ):
+                    matched_members[member] = True
+                    matched = True
+            if not matched:
+                continue
+            if not _safe_relative_path(relative) or not _allowed_conda_install_file(
+                relative,
+                archive=archive,
+            ):
+                errors.append("archive_selected_member_type_is_not_allowed")
+                continue
+            if relative in selected:
+                errors.append("archive_install_destination_is_duplicated")
+                continue
+            extracted = archive_file.extractfile(info)
+            if extracted is None:
+                errors.append("archive_selected_member_cannot_be_read")
+            else:
+                selected[relative] = extracted.read()
+    errors.extend(_validate_conda_archive_metadata(metadata_payloads, archive=archive))
+    for member, matched in matched_members.items():
+        if not matched:
+            errors.append(f"archive_install_member_not_found:{member}")
+    if not selected:
+        errors.append("archive_contains_no_selected_python_files")
+    if len(archive_bytes) and expanded_size > len(archive_bytes) * 1000:
+        errors.append("archive_compression_ratio_limit_exceeded")
+    return sorted(selected.items()), sorted(set(errors))
+
+
+def _validate_conda_archive_metadata(
+    metadata_payloads: dict[str, bytes],
+    *,
+    archive: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    index_payload = metadata_payloads.get("info/index.json")
+    if index_payload is None:
+        errors.append("conda_index_metadata_is_missing")
+    else:
+        try:
+            index = _dict(json.loads(index_payload.decode("utf-8")))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            errors.append("conda_index_metadata_is_invalid")
+        else:
+            expected = {
+                "name": str(archive.get("package") or ""),
+                "version": str(archive.get("version") or ""),
+                "build": str(archive.get("conda_build") or ""),
+                "subdir": str(archive.get("conda_subdir") or ""),
+            }
+            for key, value in expected.items():
+                if str(index.get(key) or "") != value:
+                    errors.append(f"conda_index_{key}_mismatch")
+    metadata_root = (
+        str(archive.get("source_root") or "").rstrip("/")
+        + "/"
+        + str(archive.get("dist_info_dir") or "")
+    )
+    wheel_path = metadata_root + "/WHEEL"
+    wheel_payload = metadata_payloads.get(wheel_path)
+    if wheel_payload is None:
+        errors.append("conda_wheel_metadata_is_missing")
+    else:
+        try:
+            wheel_text = wheel_payload.decode("utf-8")
+        except UnicodeDecodeError:
+            errors.append("conda_wheel_metadata_is_invalid")
+        else:
+            expected_tag = "Tag: " + str(archive.get("wheel_tag") or "")
+            if expected_tag not in wheel_text.splitlines():
+                errors.append("conda_wheel_tag_mismatch")
+            if "Root-Is-Purelib: false" not in wheel_text.splitlines():
+                errors.append("conda_wheel_must_be_platform_binary")
+    distribution_payload = metadata_payloads.get(metadata_root + "/METADATA")
+    if distribution_payload is None:
+        errors.append("conda_distribution_metadata_is_missing")
+    else:
+        try:
+            distribution = BytesParser().parsebytes(distribution_payload)
+        except (TypeError, ValueError):
+            errors.append("conda_distribution_metadata_is_invalid")
+        else:
+            if str(distribution.get("Name") or "") != str(
+                archive.get("package") or ""
+            ):
+                errors.append("conda_distribution_name_mismatch")
+            if str(distribution.get("Version") or "") != str(
+                archive.get("version") or ""
+            ):
+                errors.append("conda_distribution_version_mismatch")
+    return errors
+
+
+def _allowed_conda_install_file(relative: str, *, archive: dict[str, Any]) -> bool:
+    pure_path = PurePosixPath(relative)
+    dist_info_marker = str(archive.get("dist_info_dir") or "")
+    if (
+        relative.endswith((".py", ".pyi"))
+        and pure_path.parts[0] != dist_info_marker
+    ):
+        return True
+    if any(
+        relative.endswith(str(value))
+        for value in _list(archive.get("allowed_native_suffixes"))
+    ) and any(
+        relative == str(value).rstrip("/")
+        or relative.startswith(str(value).rstrip("/") + "/")
+        for value in _list(archive.get("native_module_roots"))
+    ):
+        return True
+    return (
+        len(pure_path.parts) == 2
+        and pure_path.parts[0] == dist_info_marker
+        and pure_path.name in CONDA_DIST_INFO_FILES
+    )
+
+
+def _archive_cache_suffix(archive: dict[str, Any]) -> str:
+    return ".tar.bz2" if archive.get("archive_type") == "conda-tar-bz2" else ".zip"
+
+
+def _pip_requirements_for_archives(
+    requirements: list[str],
+    archives: list[Any],
+) -> list[str]:
+    replacements = {
+        str(canonicalize_name(str(_dict(value).get("package") or "")))
+        for value in archives
+        if _dict(value).get("replaces_pip_requirement") is True
+    }
+    return [
+        requirement
+        for requirement in requirements
+        if str(canonicalize_name(Requirement(requirement).name)) not in replacements
+    ]
+
+
+def _expected_dependency_source(archives: list[Any]) -> str:
+    kinds = {
+        str(_dict(value).get("artifact_kind") or "pure_python")
+        for value in archives
+    }
+    if "conda_python_binary" in kinds:
+        return "pypi_binary_wheels_and_hash_pinned_conda_python_binaries"
+    if archives:
+        return "pypi_binary_wheels_and_hash_pinned_pure_python_archives"
+    return "pypi_binary_wheels_only"
+
+
 def _manual_archive_result(
     stage: str,
     archive: dict[str, Any],
@@ -1023,7 +1432,8 @@ def _manual_archive_result(
 
 def _fetch_manual_archive(url: str, proxy_url: str, expected_size: int) -> bytes:
     parsed = urlparse(url)
-    if parsed.scheme != "https" or parsed.hostname not in ALLOWED_ARCHIVE_HOSTS:
+    allowed_hosts = PURE_PYTHON_ARCHIVE_HOSTS | CONDA_BINARY_ARCHIVE_HOSTS
+    if parsed.scheme != "https" or parsed.hostname not in allowed_hosts:
         raise ValueError("Manual archive URL is not allowed.")
     handlers: list[Any] = []
     if proxy_url:
@@ -1047,7 +1457,7 @@ def _fetch_manual_archive(url: str, proxy_url: str, expected_size: int) -> bytes
         final_url = urlparse(response.geturl())
         if (
             final_url.scheme != "https"
-            or final_url.hostname not in ALLOWED_ARCHIVE_HOSTS
+            or final_url.hostname not in allowed_hosts
         ):
             raise ValueError("Manual archive redirect is not allowed.")
         payload = response.read(expected_size + 1)

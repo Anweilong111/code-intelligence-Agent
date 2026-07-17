@@ -1,0 +1,64 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-conda-python-binary-adapter",
+  "verified_date": "2026-07-18",
+  "status": "pass_local_linux_ci_pending",
+  "scope": "Hash-pinned conda Python binary extraction for psutil 5.7.0 on Linux CPython 3.7",
+  "source_artifact": {
+    "url": "https://conda.anaconda.org/conda-forge/linux-64/psutil-5.7.0-py37h8f50634_1.tar.bz2",
+    "size": 329921,
+    "conda_forge_api_md5": "9c5b3e84c0952a7cacb069c18ae1932a",
+    "local_md5": "9c5b3e84c0952a7cacb069c18ae1932a",
+    "sha256": "631700db237d5f71f0fb86449774da55b349e93a67f3aba3e1af8df5a78fd66b",
+    "restricted_fetch_result": "pass"
+  },
+  "metadata_contract": {
+    "package": "psutil",
+    "version": "5.7.0",
+    "conda_build": "py37h8f50634_1",
+    "conda_subdir": "linux-64",
+    "wheel_tag": "cp37-cp37m-linux_x86_64",
+    "selected_file_count": 18,
+    "selected_native_file_count": 2,
+    "selected_dist_info_file_count": 6,
+    "archive_validation_errors": []
+  },
+  "safety_contract": {
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "conda_post_link_script_executed": false,
+    "source_build_executed": false,
+    "shared_base_runtime_mutated": false,
+    "links_and_special_members_allowed": false,
+    "path_escape_allowed": false,
+    "unexpected_native_suffix_allowed": false,
+    "model_calls": 0
+  },
+  "verification": {
+    "focused_tests": {
+      "command": "pytest -q tests/test_v4_reproduction_environment.py tests/test_v4_linux_reproduction_workflow.py",
+      "status": "pass",
+      "passed": 18
+    },
+    "v4_cli_release_tests": {
+      "command": "pytest -q tests/test_v4_experiment_protocol.py tests/test_v4_real_bug_benchmark.py tests/test_v4_real_bug_reproduction.py tests/test_v4_reproduction_environment.py tests/test_v4_linux_reproduction_workflow.py tests/test_main_cli.py tests/test_release_hygiene_audit.py",
+      "status": "pass",
+      "passed": 67
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5
+    },
+    "optional_full_suite": {
+      "status": "stopped_without_observed_failure",
+      "progress_percent": 34,
+      "reason": "Legacy minute-scale repository execution tests made the optional full-suite run disproportionate to this isolated V4 change."
+    }
+  },
+  "benchmark_claim": {
+    "linux_reproduction_verified": false,
+    "accepted_case_count_delta": 0,
+    "next_gate": "GitHub Actions must pass runtime bootstrap, readiness, bug targeted failure, fix targeted pass, and fix full regression."
+  }
+}

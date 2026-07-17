@@ -221,6 +221,39 @@
             "win_unicode_console",
             "run.py"
           ]
+        },
+        {
+          "archive_id": "psutil-5.7.0-conda-linux-cp37",
+          "package": "psutil",
+          "version": "5.7.0",
+          "url": "https://conda.anaconda.org/conda-forge/linux-64/psutil-5.7.0-py37h8f50634_1.tar.bz2",
+          "sha256": "631700db237d5f71f0fb86449774da55b349e93a67f3aba3e1af8df5a78fd66b",
+          "size": 329921,
+          "archive_type": "conda-tar-bz2",
+          "artifact_kind": "conda_python_binary",
+          "platforms": [
+            "linux"
+          ],
+          "source_root": "lib/python3.7/site-packages",
+          "install_members": [
+            "psutil",
+            "psutil-5.7.0.dist-info"
+          ],
+          "dist_info_dir": "psutil-5.7.0.dist-info",
+          "native_module_roots": [
+            "psutil"
+          ],
+          "exclude_members": [
+            "psutil/tests",
+            "psutil/__pycache__"
+          ],
+          "replaces_pip_requirement": true,
+          "conda_build": "py37h8f50634_1",
+          "conda_subdir": "linux-64",
+          "wheel_tag": "cp37-cp37m-linux_x86_64",
+          "allowed_native_suffixes": [
+            ".cpython-37m-x86_64-linux-gnu.so"
+          ]
         }
       ],
       "required_runtime_modules": [

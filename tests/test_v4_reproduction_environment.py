@@ -3,12 +3,15 @@ from __future__ import annotations
 import copy
 import hashlib
 import io
+import json
 import subprocess
+import tarfile
 import zipfile
 from pathlib import Path
 
 import pytest
 
+from code_intelligence_agent.evaluation import v4_reproduction_environment
 from code_intelligence_agent.evaluation.v4_reproduction_environment import (
     build_environment_bootstrap_plan,
     environment_bootstrap_plan_fingerprint,
@@ -66,6 +69,7 @@ def test_bootstrap_plan_uses_exact_base_runtime_and_isolated_target(tmp_path):
     ]
     assert "--only-binary=:all:" in plan["commands"]["install_dependencies"]
     assert "--no-deps" in plan["commands"]["install_dependencies"]
+    assert plan["pip_requirements"] == plan["requirements"]
     assert plan["policy"]["repository_setup_script_allowed"] is False
     assert plan["policy"]["shared_base_runtime_mutation_allowed"] is False
     assert validate_environment_bootstrap_plan(plan) == []
@@ -255,6 +259,21 @@ def test_bootstrap_plan_detects_command_tampering(tmp_path):
     assert "install_dependencies_command_mismatch" in errors
 
 
+def test_bootstrap_plan_rejects_refingerprinted_pip_requirement_override(tmp_path):
+    plan = _plan(tmp_path)
+    tampered = copy.deepcopy(plan)
+    tampered["pip_requirements"].append("unregistered-package==1.0")
+    tampered["commands"]["install_dependencies"].append(
+        "unregistered-package==1.0"
+    )
+    tampered["plan_sha256"] = environment_bootstrap_plan_fingerprint(tampered)
+
+    errors = validate_environment_bootstrap_plan(tampered)
+
+    assert "plan_sha256_mismatch" not in errors
+    assert "pip_requirements_mismatch" in errors
+
+
 def test_bootstrap_plan_rejects_refingerprinted_site_packages_redirect(tmp_path):
     plan = _plan(tmp_path)
     tampered = copy.deepcopy(plan)
@@ -341,6 +360,90 @@ def test_hash_pinned_pure_python_archive_is_installed_without_setup(tmp_path):
     assert not (site_packages / "setup.py").exists()
 
 
+def test_hash_pinned_conda_binary_replaces_missing_linux_wheel(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        v4_reproduction_environment,
+        "_host_execution_platform",
+        lambda: "linux",
+    )
+    archive_bytes = _conda_binary_archive_bytes()
+    profiles = _profiles()
+    profiles["runtime_profiles"]["3.11.9"]["relative_executables"] = {
+        "windows": "cpython-3.11.9/python.exe",
+        "linux": "cpython-3.11.9/bin/python",
+    }
+    project = profiles["project_profiles"]["demo"]
+    project["bootstrap_requirements"].append("psutil==5.7.0")
+    project["required_runtime_modules"].append("psutil")
+    project["manual_python_archives"] = [_conda_archive_profile(archive_bytes)]
+    base = tmp_path / "base"
+    python = base / "cpython-3.11.9" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.write_text("fixture", encoding="utf-8")
+    plan = build_environment_bootstrap_plan(
+        profiles=profiles,
+        project="demo",
+        python_version="3.11.9",
+        base_runtime_root=base,
+        isolated_runtime_root=tmp_path / "isolated",
+        execution_platform="linux",
+    )
+
+    def fake_runner(command, **kwargs):
+        del kwargs
+        if command[1:3] == ["-m", "venv"]:
+            target = Path(plan["target_python"])
+            target.parent.mkdir(parents=True)
+            target.write_text("fixture", encoding="utf-8")
+        if command[-2:] == ["freeze", "--all"]:
+            output = "\n".join(plan["requirements"]) + "\n"
+        else:
+            output = "3.11.9\n" if "-c" in command else "ok\n"
+        return subprocess.CompletedProcess(command, 0, stdout=output, stderr="")
+
+    result = execute_environment_bootstrap(
+        plan,
+        authorize_dependency_install=True,
+        runner=fake_runner,
+        runtime_probe=lambda python, version, modules: {
+            "status": "pass",
+            "reason": "fixture",
+            "python": str(python),
+            "version": version,
+            "available_modules": modules,
+            "missing_modules": [],
+        },
+        archive_fetcher=lambda url, proxy, size: archive_bytes,
+    )
+
+    install_command = plan["commands"]["install_dependencies"]
+    site_packages = Path(plan["site_packages_path"])
+    archive_stage = next(
+        stage
+        for stage in result["commands"]
+        if stage["stage"]
+        == "install_manual_archive:psutil-5.7.0-conda-linux-cp311"
+    )
+    assert "psutil==5.7.0" in plan["requirements"]
+    assert "psutil==5.7.0" not in plan["pip_requirements"]
+    assert "psutil==5.7.0" not in install_command
+    assert result["status"] == "pass"
+    assert result["policy"]["manual_binary_archive_count"] == 1
+    assert archive_stage["reason"] == "hash_pinned_conda_python_binary_installed"
+    assert archive_stage["setup_script_executed"] is False
+    assert (site_packages / "psutil" / "__init__.py").is_file()
+    assert (
+        site_packages
+        / "psutil"
+        / "_psutil_linux.cpython-311-x86_64-linux-gnu.so"
+    ).is_file()
+    assert (site_packages / "psutil-5.7.0.dist-info" / "METADATA").is_file()
+    assert not (site_packages / "psutil" / "tests").exists()
+
+
 def test_manual_archive_profile_rejects_remote_host_and_unsafe_member():
     errors = validate_manual_python_archives(
         [
@@ -360,6 +463,37 @@ def test_manual_archive_profile_rejects_remote_host_and_unsafe_member():
 
     assert "manual_archive:0:source_url_is_not_allowed" in errors
     assert "manual_archive:0:install_member_is_unsafe" in errors
+
+
+def test_conda_archive_profile_rejects_wrong_registry():
+    profile = _conda_archive_profile(b"fixture")
+    assert validate_manual_python_archives([profile]) == []
+    profile["url"] = (
+        "https://files.pythonhosted.org/packages/"
+        "psutil-5.7.0-py311h123_0.tar.bz2"
+    )
+
+    errors = validate_manual_python_archives([profile])
+
+    assert "manual_archive:0:source_url_is_not_allowed" in errors
+
+
+def test_conda_binary_archive_rejects_metadata_drift_and_links():
+    drifted = _conda_binary_archive_bytes(index_version="5.7.1")
+    _, drift_errors = (
+        v4_reproduction_environment._validated_conda_archive_writes(
+            drifted,
+            archive=_conda_archive_profile(drifted),
+        )
+    )
+    linked = _conda_binary_archive_bytes(include_link=True)
+    _, link_errors = v4_reproduction_environment._validated_conda_archive_writes(
+        linked,
+        archive=_conda_archive_profile(linked),
+    )
+
+    assert "conda_index_version_mismatch" in drift_errors
+    assert "archive_link_member_is_forbidden" in link_errors
 
 
 def _plan(tmp_path: Path) -> dict:
@@ -409,4 +543,78 @@ def _manual_archive_bytes() -> bytes:
         archive.writestr("demo_console-0.5/demo_console/__init__.py", "VALUE = 1\n")
         archive.writestr("demo_console-0.5/run.py", "VALUE = 2\n")
         archive.writestr("demo_console-0.5/setup.py", "raise RuntimeError()\n")
+    return payload.getvalue()
+
+
+def _conda_archive_profile(archive_bytes: bytes) -> dict:
+    return {
+        "archive_id": "psutil-5.7.0-conda-linux-cp311",
+        "package": "psutil",
+        "version": "5.7.0",
+        "url": (
+            "https://conda.anaconda.org/conda-forge/linux-64/"
+            "psutil-5.7.0-py311h123_0.tar.bz2"
+        ),
+        "sha256": hashlib.sha256(archive_bytes).hexdigest(),
+        "size": len(archive_bytes),
+        "archive_type": "conda-tar-bz2",
+        "artifact_kind": "conda_python_binary",
+        "platforms": ["linux"],
+        "source_root": "lib/python3.11/site-packages",
+        "install_members": ["psutil", "psutil-5.7.0.dist-info"],
+        "dist_info_dir": "psutil-5.7.0.dist-info",
+        "native_module_roots": ["psutil"],
+        "exclude_members": ["psutil/tests", "psutil/__pycache__"],
+        "replaces_pip_requirement": True,
+        "conda_build": "py311h123_0",
+        "conda_subdir": "linux-64",
+        "wheel_tag": "cp311-cp311-linux_x86_64",
+        "allowed_native_suffixes": [".cpython-311-x86_64-linux-gnu.so"],
+    }
+
+
+def _conda_binary_archive_bytes(
+    *,
+    index_version: str = "5.7.0",
+    include_link: bool = False,
+) -> bytes:
+    payload = io.BytesIO()
+    index = {
+        "name": "psutil",
+        "version": index_version,
+        "build": "py311h123_0",
+        "subdir": "linux-64",
+    }
+    files = {
+        "info/index.json": json.dumps(index).encode("utf-8"),
+        "lib/python3.11/site-packages/psutil/__init__.py": b"VALUE = 1\n",
+        (
+            "lib/python3.11/site-packages/psutil/"
+            "_psutil_linux.cpython-311-x86_64-linux-gnu.so"
+        ): b"fixture-native-binary",
+        "lib/python3.11/site-packages/psutil/tests/test_demo.py": b"VALUE = 2\n",
+        (
+            "lib/python3.11/site-packages/psutil-5.7.0.dist-info/WHEEL"
+        ): (
+            b"Wheel-Version: 1.0\n"
+            b"Root-Is-Purelib: false\n"
+            b"Tag: cp311-cp311-linux_x86_64\n"
+        ),
+        (
+            "lib/python3.11/site-packages/psutil-5.7.0.dist-info/METADATA"
+        ): b"Metadata-Version: 2.1\nName: psutil\nVersion: 5.7.0\n",
+    }
+    with tarfile.open(fileobj=payload, mode="w:bz2") as archive:
+        for name, content in files.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            info.mode = 0o644
+            archive.addfile(info, io.BytesIO(content))
+        if include_link:
+            link = tarfile.TarInfo(
+                "lib/python3.11/site-packages/psutil/unsafe-link"
+            )
+            link.type = tarfile.SYMTYPE
+            link.linkname = "../../../../escape"
+            archive.addfile(link)
     return payload.getvalue()

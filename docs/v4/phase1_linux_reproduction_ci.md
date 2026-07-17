@@ -8,9 +8,9 @@ not exclude those tests or count the case as reproduced. The Linux CI lane runs
 the same fixed SHAs and three acceptance gates on the required platform.
 
 The workflow is defined in
-`.github/workflows/v4-phase1-linux-reproduction.yml`. Its first automatic run is
-limited to the V4 branch and to changes in that workflow file. It can also be
-started manually after the initial checkpoint.
+`.github/workflows/v4-phase1-linux-reproduction.yml`. Automatic runs are limited
+to the V4 branch and the workflow, bootstrapper, fixed catalog, selection plan,
+and reproduction profile paths. It can also be started manually.
 
 ## Runtime Construction
 
@@ -19,11 +19,17 @@ orchestrator. The target repository tests use a separate exact Python `3.7.0`
 runtime created from the runner's preinstalled Miniconda and the conda-forge full
 repodata. The V4 bootstrapper then creates a copied project-isolated environment,
 installs only exact binary-wheel requirements, executes `pip check`, audits every
-frozen distribution with `pip freeze`, and probes the required modules.
+frozen distribution with `pip freeze`, and probes the required modules. A missing
+PyPI wheel may be replaced only by a profile-declared, fixed-hash conda Python
+binary whose package/version, conda build, platform, Python ABI, metadata, member
+paths, and native suffixes all pass validation. Extraction never executes archive
+scripts.
 
 Runtime profiles now support both Windows and Linux executable mappings. Platform
-specific dependencies are also explicit: `win_unicode_console` and its hash-pinned
-manual archive apply only on Windows and are absent from the Linux plan.
+specific dependencies are also explicit: `win_unicode_console` applies only on
+Windows, while the audited `psutil==5.7.0` conda binary applies only on Linux and
+replaces that single pip install candidate without removing it from the frozen
+distribution audit.
 
 ## Security Boundary
 
@@ -53,6 +59,16 @@ The job must satisfy all of the following:
 
 Until the workflow produces a passing hashed reproduction artifact, no new case is
 added to the accepted V4 benchmark denominator.
+
+## First Attempt
+
+Run `29600980774` on commit
+`93a6a925c7140617ea290fe776b52e1b02a74839` failed in the isolated runtime step.
+Exact Python `3.7.0` provisioning passed, but pip reported no Linux binary for
+`psutil==5.7.0`. The later readiness and reproduction steps were skipped. The
+failure is classified as `dependency_install_failed`, not as a benchmark test or
+repair failure, and contributes zero accepted cases. The machine-readable record
+is `docs/v4/phase1_linux_reproduction_attempt_1.json`.
 
 ## Evidence
 
