@@ -8373,7 +8373,7 @@
     },
     {
       "case_id": "bugsinpy-thefuck-16",
-      "status": "candidate",
+      "status": "accepted",
       "benchmark_split": "development",
       "repository": {
         "url": "https://github.com/nvbn/thefuck",
@@ -8428,10 +8428,10 @@
         "cross_function"
       ],
       "difficulty_evidence": {
-        "multi_file": "Gold metadata changes more than one source file; final classification remains pending reproduction review.",
-        "cross_function": "Gold metadata touches multiple named symbols; final causal classification remains pending reproduction review."
+        "multi_file": "The fix changes four source files: Bash, Fish, and Zsh shell alias implementations plus CorrectedCommand logging in the shared types module.",
+        "cross_function": "The defect requires consistent environment-variable placement across Bash.app_alias, Fish.app_alias, and Zsh.app_alias; the target behavior is distributed across multiple shell-specific functions rather than one local statement."
       },
-      "difficulty_review_status": "pending_manual_review",
+      "difficulty_review_status": "verified",
       "environment": {
         "python_version": "3.7.0",
         "environment_profile_id": "",
@@ -8459,20 +8459,80 @@
         }
       },
       "reproduction": {
-        "status": "pending",
+        "status": "pass",
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v4/github_actions/run_29607565685/extracted/reproduction/bugsinpy-thefuck-16/v4_reproduction.json",
+        "evidence_sha256": "6fedf804b4154ad702f25a8010c76743513e624fceeb1000b84c36f4efc7491a",
+        "evidence_file_sha256": "140663f66c46ca74d94bb6bcddc54e7aed748ffdd89b8a95f90b7efe90516f67",
+        "completed_at": "2026-07-17T19:29:45.362078+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
         "bug_targeted": {
-          "status": "pending"
+          "status": "fail",
+          "command_count": 2,
+          "test_count": 2,
+          "passed": 0,
+          "failed": 2,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_targeted": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 2,
+          "test_count": 2,
+          "passed": 2,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_full_regression": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1216,
+          "passed": 1155,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 61,
+          "environment_blocker": false
         },
         "acceptance": {
-          "reproducible": false
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
         },
-        "evidence_artifact": ""
+        "plan": {
+          "plan_sha256": "0caa4bec5165ddd65e09490d20c7f7cb4bb6d28b04b5729704e3cecd6112b434",
+          "profiles_sha256": "0db99ae051daabe04be35a69150fdf4edc3f1813b7e00d71ec63bf3ea807a204"
+        },
+        "workflow": {
+          "run_id": 29607565685,
+          "job_id": 87974392899,
+          "head_sha": "c9e16e8e16c2babc3c7ef28e597afb18254c99ba",
+          "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29607565685",
+          "conclusion": "success"
+        },
+        "artifact": {
+          "artifact_id": 8417507997,
+          "name": "v4-phase1-linux-thefuck-16",
+          "sha256": "4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb",
+          "size_bytes": 12199,
+          "plan_file_sha256": "44f18bb4b28f17c0ede6b72b4108931c1798660ac88b2a5c596d66a4909ec4c9"
+        },
+        "verification_artifact": "docs/v4/phase1_linux_reproduction_attempt_3.json",
+        "test_overlay_policy": "copy_declared_tests_from_fix_to_bug",
+        "gold_patch_visible_to_execution": false,
+        "repository_setup_script_executed": false,
+        "repository_project_installed": false,
+        "model_calls": 0,
+        "raw_artifact_committed": false,
+        "source": "v4_linux_ci_reproduction"
       },
       "provenance": {
         "benchmark": "BugsInPy",
@@ -10927,21 +10987,21 @@
       "rejection_evidence": {}
     }
   ],
-  "manifest_sha256": "38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527",
+  "manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
   "summary": {
     "case_count": 75,
-    "accepted_case_count": 20,
-    "candidate_case_count": 50,
+    "accepted_case_count": 21,
+    "candidate_case_count": 49,
     "rejected_case_count": 5,
     "repository_count": 16,
-    "accepted_repository_count": 5,
+    "accepted_repository_count": 6,
     "accepted_split_counts": {
-      "development": 7,
+      "development": 8,
       "validation": 8,
       "test": 5
     },
     "candidate_split_counts": {
-      "development": 5,
+      "development": 4,
       "validation": 10,
       "test": 35
     },

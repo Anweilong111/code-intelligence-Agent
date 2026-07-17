@@ -374,9 +374,11 @@ def _legacy_v3_case() -> dict:
         },
         "reproduction": {
             "evidence_status": "validated",
+            "evidence_sha256": "e" * 64,
             "bug_targeted": {"status": "fail"},
             "fix_targeted": {"status": "pass"},
             "fix_full_regression": {"status": "pass"},
             "acceptance": {"reproducible": True},
+            "raw_artifact_committed": False,
         },
     }

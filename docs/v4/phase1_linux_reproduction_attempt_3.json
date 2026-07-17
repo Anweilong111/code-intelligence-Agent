@@ -1,0 +1,90 @@
+{
+  "schema_version": "4.0",
+  "evidence_id": "v4-phase1-linux-thefuck-16-attempt-3",
+  "observed_date": "2026-07-18",
+  "attestation_reference": "docs/v4/phase1_linux_reproduction_attempt_3.json",
+  "repository": "Anweilong111/code-intelligence-Agent",
+  "workflow_run": {
+    "run_id": 29607565685,
+    "job_id": 87974392899,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29607565685",
+    "head_sha": "c9e16e8e16c2babc3c7ef28e597afb18254c99ba",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-07-17T19:27:06Z",
+    "updated_at": "2026-07-17T19:29:48Z"
+  },
+  "artifact": {
+    "artifact_id": 8417507997,
+    "name": "v4-phase1-linux-thefuck-16",
+    "size_bytes": 12199,
+    "sha256": "4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb",
+    "plan_member": "thefuck_reproduction_plan.json",
+    "plan_file_sha256": "44f18bb4b28f17c0ede6b72b4108931c1798660ac88b2a5c596d66a4909ec4c9",
+    "evidence_member": "reproduction/bugsinpy-thefuck-16/v4_reproduction.json",
+    "expired": false
+  },
+  "bootstrap": {
+    "status": "pass",
+    "reason": "isolated_runtime_ready",
+    "python_version": "3.7.0",
+    "plan_sha256": "0d07e08ee37fde07567a0b68d111c432e2b8eaff6d8e3fa41b5a106fbd26b840",
+    "result_sha256": "9f3b27f65632bd53a4bb094d25d7ffa9f9b116f97cb2f387bb3ed2cb7049a6ed",
+    "frozen_requirement_count": 20,
+    "frozen_requirement_match_count": 20,
+    "pip_check": "pass"
+  },
+  "reproduction": {
+    "case_id": "bugsinpy-thefuck-16",
+    "plan_sha256": "0caa4bec5165ddd65e09490d20c7f7cb4bb6d28b04b5729704e3cecd6112b434",
+    "profiles_sha256": "0db99ae051daabe04be35a69150fdf4edc3f1813b7e00d71ec63bf3ea807a204",
+    "evidence_sha256": "6fedf804b4154ad702f25a8010c76743513e624fceeb1000b84c36f4efc7491a",
+    "evidence_file_sha256": "140663f66c46ca74d94bb6bcddc54e7aed748ffdd89b8a95f90b7efe90516f67",
+    "evidence_reference": "outputs_v4/github_actions/run_29607565685/extracted/reproduction/bugsinpy-thefuck-16/v4_reproduction.json",
+    "bug_targeted_failed": true,
+    "fix_targeted_passed": true,
+    "fix_full_regression_passed": true,
+    "reproducible": true,
+    "bug_targeted": {
+      "passed": 0,
+      "failed": 2,
+      "test_count": 2
+    },
+    "fix_targeted": {
+      "passed": 2,
+      "failed": 0,
+      "test_count": 2
+    },
+    "fix_full_regression": {
+      "passed": 1155,
+      "failed": 0,
+      "skipped": 61,
+      "test_count": 1216
+    }
+  },
+  "difficulty_review": {
+    "status": "verified",
+    "source": "BugsInPy bug_patch.txt at commit 11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "evidence": {
+      "multi_file": "The fix changes four source files: Bash, Fish, and Zsh shell alias implementations plus CorrectedCommand logging in the shared types module.",
+      "cross_function": "The defect requires consistent environment-variable placement across Bash.app_alias, Fish.app_alias, and Zsh.app_alias; the target behavior is distributed across multiple shell-specific functions rather than one local statement."
+    }
+  },
+  "safety": {
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "source_build_executed": false,
+    "tests_modified_or_excluded": false,
+    "shared_base_runtime_mutated": false,
+    "model_calls": 0,
+    "raw_artifact_committed": false
+  },
+  "benchmark_claim": {
+    "acceptance_eligible": true,
+    "catalog_update_status": "accepted_after_validated_ingestion",
+    "accepted_case_count_delta": 1,
+    "accepted_case_count_after": 21,
+    "catalog_manifest_sha256_after": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+    "acceptance_audit": "docs/v4/phase1_thefuck_16_acceptance_audit.json"
+  }
+}

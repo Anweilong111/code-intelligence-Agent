@@ -4,6 +4,8 @@ import copy
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from code_intelligence_agent.evaluation.v4_real_bug_benchmark import (
     catalog_fingerprint,
     load_json_object,
@@ -21,6 +23,12 @@ from code_intelligence_agent.evaluation.v4_real_bug_reproduction import (
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_PATH = (
     ROOT / "datasets" / "v4_agent_effectiveness" / "reproduction_profiles.json"
+)
+CATALOG_PATH = (
+    ROOT / "datasets" / "v4_agent_effectiveness" / "real_bug_seed_catalog.json"
+)
+SELECTION_PATH = (
+    ROOT / "datasets" / "v4_agent_effectiveness" / "selection_plan.json"
 )
 
 
@@ -111,11 +119,52 @@ def test_plan_preserves_frozen_candidate_order_and_reports_ready_runtime(tmp_pat
     )
 
     assert [item["case_id"] for item in plan["items"]] == ["bugsinpy-demo-1"]
+    assert plan["items"][0]["catalog_status"] == "candidate"
     assert plan["summary"]["ready_count"] == 1
     assert plan["summary"]["blocked_count"] == 0
+    assert plan["summary"]["catalog_status_counts"] == {
+        "candidate": 1,
+        "accepted": 0,
+    }
     assert plan["items"][0]["execution_contract"]["setup_script_executed"] is False
     assert plan["items"][0]["execution_contract"]["gold_patch_visible"] is False
     assert reproduction_plan_fingerprint(plan) == plan["plan_sha256"]
+
+
+def test_plan_keeps_accepted_case_replayable_after_catalog_transition(tmp_path):
+    plan = build_reproduction_plan(
+        catalog=load_json_object(CATALOG_PATH),
+        selection_plan=load_json_object(SELECTION_PATH),
+        profiles=load_json_object(PROFILES_PATH),
+        runtime_root=tmp_path,
+        case_ids={"bugsinpy-thefuck-16"},
+        execution_platform="linux",
+    )
+
+    assert len(plan["items"]) == 1
+    assert plan["items"][0]["case_id"] == "bugsinpy-thefuck-16"
+    assert plan["items"][0]["catalog_status"] == "accepted"
+    assert plan["summary"]["catalog_status_counts"] == {
+        "candidate": 0,
+        "accepted": 1,
+    }
+
+
+def test_plan_does_not_replay_rejected_case(tmp_path):
+    catalog = _catalog()
+    case = catalog["cases"][0]
+    case["status"] = "rejected"
+    case["rejection_reason"] = "fixture_rejection"
+    case["rejection_evidence"] = {"summary": "Rejected by fixture policy."}
+    catalog["manifest_sha256"] = catalog_fingerprint(catalog)
+
+    with pytest.raises(ValueError, match="selection_plan.case_not_in_inventory"):
+        build_reproduction_plan(
+            catalog=catalog,
+            selection_plan=_selection_plan(),
+            profiles=_profiles(),
+            runtime_root=tmp_path,
+        )
 
 
 def test_plan_blocks_missing_exact_runtime_without_checkout(tmp_path):

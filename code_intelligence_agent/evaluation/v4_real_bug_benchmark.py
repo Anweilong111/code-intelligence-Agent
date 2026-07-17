@@ -870,6 +870,12 @@ def _validate_accepted_reproduction(
     errors: list[str],
 ) -> None:
     reproduction = _dict(case.get("reproduction"))
+    if reproduction.get("evidence_status") != "validated":
+        errors.append(f"{prefix}.accepted_case_requires_validated_evidence")
+    if not SHA256_PATTERN.fullmatch(str(reproduction.get("evidence_sha256") or "")):
+        errors.append(f"{prefix}.accepted_case_evidence_sha256_is_invalid")
+    if reproduction.get("raw_artifact_committed") is not False:
+        errors.append(f"{prefix}.accepted_case_raw_artifact_must_remain_uncommitted")
     if str(_dict(reproduction.get("bug_targeted")).get("status") or "") != "fail":
         errors.append(f"{prefix}.accepted_case_requires_bug_target_failure")
     if str(_dict(reproduction.get("fix_targeted")).get("status") or "") != "pass":
@@ -879,6 +885,25 @@ def _validate_accepted_reproduction(
     acceptance = _dict(reproduction.get("acceptance"))
     if acceptance.get("reproducible") is not True:
         errors.append(f"{prefix}.accepted_case_requires_reproducible_evidence")
+    if reproduction.get("source") == "v4_linux_ci_reproduction":
+        if reproduction.get("status") != "pass":
+            errors.append(f"{prefix}.v4_evidence_status_must_pass")
+        if not SHA256_PATTERN.fullmatch(
+            str(reproduction.get("evidence_file_sha256") or "")
+        ):
+            errors.append(f"{prefix}.v4_evidence_file_sha256_is_invalid")
+        artifact = _dict(reproduction.get("artifact"))
+        if not SHA256_PATTERN.fullmatch(str(artifact.get("sha256") or "")):
+            errors.append(f"{prefix}.v4_artifact_sha256_is_invalid")
+        workflow = _dict(reproduction.get("workflow"))
+        if workflow.get("conclusion") != "success":
+            errors.append(f"{prefix}.v4_workflow_must_succeed")
+        if reproduction.get("repository_setup_script_executed") is not False:
+            errors.append(f"{prefix}.v4_setup_script_must_not_execute")
+        if reproduction.get("repository_project_installed") is not False:
+            errors.append(f"{prefix}.v4_repository_project_must_not_install")
+        if _int(reproduction.get("model_calls"), -1) != 0:
+            errors.append(f"{prefix}.v4_reproduction_model_calls_must_be_zero")
 
 
 def summarize_catalog(catalog: dict[str, Any]) -> dict[str, Any]:

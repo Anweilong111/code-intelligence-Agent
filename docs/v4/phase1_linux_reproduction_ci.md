@@ -98,11 +98,32 @@ an exact content hash and a canonical source-text hash; plugin loading is limite
 to modules that resolve inside an approved repository-relative `PYTHONPATH` and
 does not follow symlinks.
 
-The two historical failure nodes pass locally under exact Python `3.7.0` and
-pytest `3.10.1`. This is compatibility evidence only. A third Linux run must still
-pass the complete acceptance contract before the candidate can enter the
-benchmark. Details are recorded in
+The two historical failure nodes passed locally under exact Python `3.7.0` and
+pytest `3.10.1`. At that checkpoint this was compatibility evidence only; the
+candidate remained outside the accepted benchmark. Details are recorded in
 `docs/v4/phase1_legacy_harness_adapter_verification.json`.
+
+## Third Attempt
+
+Run `29607565685` on commit
+`c9e16e8e16c2babc3c7ef28e597afb18254c99ba` passed every workflow step. The bug
+revision failed both target nodes with assertion failures, the fixed revision
+passed both target nodes, and the complete fixed regression reported
+`1155 passed`, `61 skipped`, and zero failures across 1216 tests. The artifact ZIP
+SHA-256 is
+`4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb`;
+the internal evidence SHA-256 is
+`6fedf804b4154ad702f25a8010c76743513e624fceeb1000b84c36f4efc7491a`.
+
+The V4 acceptance command validated the ZIP member paths and types, artifact,
+plan, and evidence hashes, fixed SHAs, exact runtime, preparation-file source
+assertions, command argv, non-empty test counts, and all four acceptance booleans.
+`bugsinpy-thefuck-16` then became accepted case 21, increasing accepted
+repositories from five to six. The updated catalog manifest is
+`01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262`.
+Machine-readable evidence is in
+`docs/v4/phase1_linux_reproduction_attempt_3.json` and
+`docs/v4/phase1_thefuck_16_acceptance_audit.json`.
 
 ## Evidence
 

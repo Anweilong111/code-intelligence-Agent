@@ -2,7 +2,7 @@
   "schema_version": "4.0",
   "verification_id": "v4-phase1-thefuck-legacy-harness-adapter",
   "verified_date": "2026-07-18",
-  "status": "pass_local_linux_ci_pending",
+  "status": "pass_linux_ci_verified",
   "case_id": "bugsinpy-thefuck-16",
   "source_contract": {
     "bugsinpy_commit": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
@@ -83,11 +83,23 @@
         "cia_legacy_pytest"
       ],
       "observed_test_duration_seconds": 0.08
+    },
+    "linux_ci_full_regression": {
+      "workflow_run_id": 29607565685,
+      "workflow_job_id": 87974392899,
+      "commit_sha": "c9e16e8e16c2babc3c7ef28e597afb18254c99ba",
+      "artifact_sha256": "4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb",
+      "evidence_sha256": "6fedf804b4154ad702f25a8010c76743513e624fceeb1000b84c36f4efc7491a",
+      "status": "pass",
+      "fix_full_regression_passed": 1155,
+      "fix_full_regression_failed": 0,
+      "fix_full_regression_skipped": 61
     }
   },
   "benchmark_claim": {
-    "case_accepted": false,
-    "accepted_case_count_delta": 0,
-    "reason": "Local verification covers the two prior failures only; the Linux full regression gate remains mandatory."
+    "case_accepted": true,
+    "accepted_case_count_delta": 1,
+    "accepted_case_count_after": 21,
+    "catalog_manifest_sha256_after": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262"
   }
 }

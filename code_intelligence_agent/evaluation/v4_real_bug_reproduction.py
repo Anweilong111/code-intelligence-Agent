@@ -224,10 +224,10 @@ def build_reproduction_plan(
         raise ValueError("Invalid selection plan structure: " + ";".join(plan_errors))
 
     root = Path(runtime_root).resolve()
-    candidate_by_id = {
+    reproducible_by_id = {
         str(case.get("case_id") or ""): case
         for case in [_dict(item) for item in _list(catalog.get("cases"))]
-        if case.get("status") == "candidate"
+        if case.get("status") in {"candidate", "accepted"}
     }
     items: list[dict[str, Any]] = []
     sequence = 0
@@ -251,9 +251,11 @@ def build_reproduction_plan(
             case_id = f"bugsinpy-{project.lower()}-{int(bug_id_value)}"
             if case_ids and case_id not in case_ids:
                 continue
-            case = candidate_by_id.get(case_id)
+            case = reproducible_by_id.get(case_id)
             if case is None:
-                raise ValueError(f"Selection plan candidate missing from catalog: {case_id}")
+                raise ValueError(
+                    f"Selection plan reproducible case missing from catalog: {case_id}"
+                )
             sequence += 1
             adapted, adaptation = adapt_v4_case_for_reproduction(
                 case,
@@ -304,6 +306,7 @@ def build_reproduction_plan(
                     "sequence": sequence,
                     "project_sequence": project_index,
                     "case_id": case_id,
+                    "catalog_status": str(case.get("status") or ""),
                     "project": project,
                     "owner_repo": str(project_plan.get("owner_repo") or ""),
                     "benchmark_split": split,
@@ -790,6 +793,10 @@ def _summarize_plan(items: list[dict[str, Any]]) -> dict[str, Any]:
         "case_count": len(items),
         "ready_count": sum(item.get("readiness") == "ready" for item in items),
         "blocked_count": sum(item.get("readiness") != "ready" for item in items),
+        "catalog_status_counts": {
+            status: sum(item.get("catalog_status") == status for item in items)
+            for status in ("candidate", "accepted")
+        },
         "split_counts": {
             split: sum(item.get("benchmark_split") == split for item in items)
             for split in ("development", "validation", "test")
@@ -844,7 +851,7 @@ def _blocked_evidence(
 def _inventory_projection(catalog: dict[str, Any]) -> dict[str, Any]:
     cases: list[dict[str, Any]] = []
     for case in [_dict(value) for value in _list(catalog.get("cases"))]:
-        if case.get("status") != "candidate":
+        if case.get("status") not in {"candidate", "accepted"}:
             continue
         provenance = _dict(case.get("provenance"))
         benchmark_case = str(provenance.get("benchmark_case") or "")
@@ -964,12 +971,40 @@ def build_arg_parser() -> argparse.ArgumentParser:
     run.add_argument("--targeted-timeout", type=int, default=120)
     run.add_argument("--regression-timeout", type=int, default=900)
     run.add_argument("--require-pass", action="store_true")
+    accept = subparsers.add_parser("accept")
+    accept.add_argument("catalog")
+    accept.add_argument("artifact_archive")
+    accept.add_argument("attestation")
+    accept.add_argument("catalog_output")
+    accept.add_argument("audit_output")
+    accept.add_argument("--require-pass", action="store_true")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
     args = build_arg_parser().parse_args(argv)
     catalog = load_json_object(args.catalog)
+    if args.command == "accept":
+        from code_intelligence_agent.evaluation.v4_real_bug_evidence import (
+            accept_v4_reproduction_artifact,
+            write_v4_acceptance_artifacts,
+        )
+
+        accepted_catalog, audit = accept_v4_reproduction_artifact(
+            catalog,
+            args.artifact_archive,
+            load_json_object(args.attestation),
+        )
+        paths = write_v4_acceptance_artifacts(
+            accepted_catalog,
+            audit,
+            catalog_output=args.catalog_output,
+            audit_output=args.audit_output,
+        )
+        print(json.dumps({"audit": audit, "paths": paths}, indent=2, ensure_ascii=False))
+        if args.require_pass and audit["status"] != "pass":
+            raise SystemExit(1)
+        return
     selection_plan = load_json_object(args.selection_plan)
     profiles = load_json_object(args.profiles)
     if args.command == "plan":
@@ -994,7 +1029,7 @@ def main(argv: list[str] | None = None) -> None:
         case_ids={args.case_id},
     )
     if not plan["items"]:
-        raise SystemExit(f"Unknown candidate case: {args.case_id}")
+        raise SystemExit(f"Unknown reproducible case: {args.case_id}")
     case = next(
         item
         for item in _list(catalog.get("cases"))

@@ -15,7 +15,7 @@ installed.
 
 ## Execution Contract
 
-For each candidate, the planner preserves the project and bug order from
+For each selected case, the planner preserves the project and bug order from
 `selection_plan.json`, then checks:
 
 1. The catalog and reproduction profile schemas pass validation.
@@ -28,6 +28,10 @@ For each candidate, the planner preserves the project and bug order from
 
 Only an item with no blocker receives `readiness=ready`. The `run` command refuses
 to checkout or execute a blocked item and writes a blocker evidence record instead.
+Catalog cases in either `candidate` or `accepted` state remain replayable so a
+successful acceptance transition cannot break CI reproduction. Rejected cases are
+excluded. Every plan item records `catalog_status`, and the summary reports both
+status counts independently from runtime readiness.
 
 The only initial command rewrite is Cookiecutter's BugsInPy `tox <pytest-node>`
 form to a direct bounded `pytest <pytest-node>` invocation. This avoids tox
@@ -80,6 +84,33 @@ python -m code_intelligence_agent v4-reproduce run `
   --case-id <case-id> `
   --require-pass
 ```
+
+## Evidence Acceptance
+
+Passing a reproduction run does not update the benchmark catalog by itself. The
+Linux workflow first uploads the reproduction plan and evidence as a raw artifact.
+A committed attestation then binds the workflow run, artifact ID, archive size and
+SHA-256, plan/evidence member paths, file hashes, case/SHA identity, difficulty
+review, and safety claims. The acceptance command reads ZIP members directly
+without extracting them, rejects unsafe paths and archive bombs, recomputes every
+fingerprint, validates all three test gates, and updates the catalog only when the
+complete audit has zero errors.
+
+```powershell
+python -m code_intelligence_agent v4-reproduce accept `
+  datasets\v4_agent_effectiveness\real_bug_seed_catalog.json `
+  outputs_v4\github_actions\<run-id>\<artifact-name>.zip `
+  docs\v4\phase1_linux_reproduction_attempt_3.json `
+  datasets\v4_agent_effectiveness\real_bug_seed_catalog.json `
+  docs\v4\phase1_thefuck_16_acceptance_audit.json `
+  --require-pass
+```
+
+The first accepted V4 case is `bugsinpy-thefuck-16`. Its authenticated Linux CI
+artifact proves the bug target fails, the fix target passes, and the complete fix
+regression passes with 1,155 passed and 61 skipped tests. The transition raised the
+catalog from 20 to 21 accepted cases, leaving 29 further new-case acceptances for
+the Phase 1 target of 50.
 
 ## Next Gate
 

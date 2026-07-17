@@ -2,7 +2,7 @@
   "schema_version": "4.0",
   "verification_id": "v4-phase1-conda-python-binary-adapter",
   "verified_date": "2026-07-18",
-  "status": "pass_local_linux_ci_pending",
+  "status": "pass_linux_ci_verified",
   "scope": "Hash-pinned conda Python binary extraction for psutil 5.7.0 on Linux CPython 3.7",
   "source_artifact": {
     "url": "https://conda.anaconda.org/conda-forge/linux-64/psutil-5.7.0-py37h8f50634_1.tar.bz2",
@@ -54,11 +54,21 @@
       "status": "stopped_without_observed_failure",
       "progress_percent": 34,
       "reason": "Legacy minute-scale repository execution tests made the optional full-suite run disproportionate to this isolated V4 change."
+    },
+    "linux_ci": {
+      "workflow_run_id": 29607565685,
+      "commit_sha": "c9e16e8e16c2babc3c7ef28e597afb18254c99ba",
+      "bootstrap_result_sha256": "9f3b27f65632bd53a4bb094d25d7ffa9f9b116f97cb2f387bb3ed2cb7049a6ed",
+      "status": "pass",
+      "reason": "isolated_runtime_ready",
+      "frozen_requirement_match_count": 20,
+      "frozen_requirement_count": 20
     }
   },
   "benchmark_claim": {
-    "linux_reproduction_verified": false,
-    "accepted_case_count_delta": 0,
-    "next_gate": "GitHub Actions must pass runtime bootstrap, readiness, bug targeted failure, fix targeted pass, and fix full regression."
+    "linux_reproduction_verified": true,
+    "accepted_case_count_delta": 1,
+    "accepted_case_count_after": 21,
+    "case_id": "bugsinpy-thefuck-16"
   }
 }

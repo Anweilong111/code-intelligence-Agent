@@ -1,0 +1,78 @@
+{
+  "schema_version": "4.0",
+  "audit_id": "v4-reproduction-acceptance:bugsinpy-thefuck-16",
+  "status": "pass",
+  "case_id": "bugsinpy-thefuck-16",
+  "error_count": 0,
+  "errors": [],
+  "before_summary": {
+    "case_count": 75,
+    "accepted_case_count": 20,
+    "candidate_case_count": 50,
+    "rejected_case_count": 5,
+    "repository_count": 16,
+    "accepted_repository_count": 5,
+    "accepted_split_counts": {
+      "development": 7,
+      "validation": 8,
+      "test": 5
+    },
+    "candidate_split_counts": {
+      "development": 5,
+      "validation": 10,
+      "test": 35
+    },
+    "accepted_difficulty_categories": [
+      "cross_function",
+      "dataflow",
+      "high_similarity_candidates",
+      "multi_file",
+      "real_traceback",
+      "root_error_separated",
+      "static_negative"
+    ]
+  },
+  "after_summary": {
+    "case_count": 75,
+    "accepted_case_count": 21,
+    "candidate_case_count": 49,
+    "rejected_case_count": 5,
+    "repository_count": 16,
+    "accepted_repository_count": 6,
+    "accepted_split_counts": {
+      "development": 8,
+      "validation": 8,
+      "test": 5
+    },
+    "candidate_split_counts": {
+      "development": 4,
+      "validation": 10,
+      "test": 35
+    },
+    "accepted_difficulty_categories": [
+      "cross_function",
+      "dataflow",
+      "high_similarity_candidates",
+      "multi_file",
+      "real_traceback",
+      "root_error_separated",
+      "static_negative"
+    ]
+  },
+  "before_manifest_sha256": "38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527",
+  "after_manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+  "workflow": {
+    "run_id": 29607565685,
+    "head_sha": "c9e16e8e16c2babc3c7ef28e597afb18254c99ba",
+    "conclusion": "success"
+  },
+  "artifact": {
+    "artifact_id": 8417507997,
+    "expected_sha256": "4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb",
+    "observed_sha256": "4d7ecce6d11b39ea4953afe126cbf52e34645244f266c825c6277448dbb380fb",
+    "expected_size_bytes": 12199,
+    "observed_size_bytes": 12199
+  },
+  "raw_artifact_committed": false,
+  "gold_patch_visible_to_execution": false
+}
