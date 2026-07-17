@@ -1,6 +1,6 @@
 {
   "schema_version": "4.0",
-  "generated_at": "2026-07-17T13:28:45.311483+00:00",
+  "generated_at": "2026-07-17T15:34:11.788397+00:00",
   "status": "pass",
   "reason": "v4_phase0_protocol_frozen",
   "protocol_path": "datasets/v4_agent_effectiveness/experiment_protocol.json",
@@ -114,7 +114,7 @@
     "tag_matches": true
   },
   "current_environment": {
-    "head_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "head_commit": "55d799db51c3b4277834b56931fff59b3883adec",
     "branch": "codex/code-intelligence-agent-v4",
     "python_version": "3.13.12",
     "platform": "win32"

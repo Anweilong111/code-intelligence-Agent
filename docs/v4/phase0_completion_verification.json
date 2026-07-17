@@ -1,0 +1,133 @@
+{
+  "schema_version": "v4_phase0_completion_v1",
+  "verified_at": "2026-07-17",
+  "status": "pass",
+  "scope": "V4 experiment-contract freeze, offline regression, release hygiene, and clean source archive",
+  "source_commit": "55d799db51c3b4277834b56931fff59b3883adec",
+  "branch": "codex/code-intelligence-agent-v4",
+  "baseline": {
+    "tag": "v3-baseline",
+    "expected_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "resolved_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "tag_matches": true
+  },
+  "protocol_audit": {
+    "status": "pass",
+    "schema_version": "4.0",
+    "protocol_sha256": "3375dda3486f617262a5ec68245ffc5e8f1d7dc37e4f4308f963935fb361395b",
+    "error_count": 0,
+    "warning_count": 0,
+    "frozen_prompt_count": 7,
+    "live_model_called": false,
+    "benchmark_manifest_locked": false,
+    "reason": "Phase 0 freezes the contract; Phase 1 must build and lock the 50-case manifest."
+  },
+  "worktree_regression": {
+    "status": "pass",
+    "command": "python -m pytest -q --basetemp outputs_v4/pytest_v4_phase0_release_green",
+    "passed": 1426,
+    "skipped": 2,
+    "failed": 0,
+    "duration_seconds": 1236.64,
+    "model_and_github_credentials_removed_from_test_process": true,
+    "removed_environment_names": [
+      "CIA_LLM_API_KEY",
+      "DEEPSEEK_API_KEY",
+      "ALIBABA_API_KEY",
+      "DASHSCOPE_API_KEY",
+      "CIA_JUDGE_API_KEY",
+      "CIA_LOCALIZATION_LLM_API_KEY",
+      "CIA_REPLAN_LLM_API_KEY",
+      "CIA_INTENT_LLM_API_KEY",
+      "GITHUB_TOKEN"
+    ],
+    "raw_environment_values_recorded": false,
+    "basetemp_policy": "ignored_outputs_v4_directory"
+  },
+  "release_hygiene": {
+    "status": "pass",
+    "candidate_source": "git",
+    "candidate_file_count": 544,
+    "passed_check_count": 5,
+    "check_count": 5,
+    "failed_check_count": 0,
+    "raw_api_key_findings": 0,
+    "tool_signature_findings": 0,
+    "outputs_v4_ignored": true
+  },
+  "clean_archive": {
+    "status": "pass",
+    "tested_commit": "55d799db51c3b4277834b56931fff59b3883adec",
+    "archive_format": "zip",
+    "archive_sha256": "8d0ee2e782bfded8541a1331bfe8af7a7ac35ff0fda8c1ba8c72cee485f18a34",
+    "archive_size_bytes": 3100473,
+    "archive_file_count": 669,
+    "git_metadata_present": false,
+    "top_level_outputs_count": 0,
+    "release_hygiene": {
+      "status": "pass",
+      "candidate_source": "filesystem_snapshot",
+      "candidate_file_count": 542,
+      "passed_check_count": 5,
+      "check_count": 5,
+      "failed_check_count": 0,
+      "raw_api_key_findings": 0
+    },
+    "release_focused_tests": {
+      "status": "pass",
+      "passed": 31,
+      "failed": 0,
+      "duration_seconds": 6.29,
+      "coverage": [
+        "V4 experiment protocol and RunRecord validation",
+        "top-level CLI routing",
+        "V3 packaging hash compatibility",
+        "Git and filesystem-snapshot release hygiene"
+      ]
+    }
+  },
+  "resolved_verification_findings": [
+    {
+      "finding": "The V3 architecture document still stated that 60 LLM and 60 Hybrid trials had not run.",
+      "resolution": "Replaced the stale boundary with the completed 120/120 live-trial and 423/423 RunRecord result, then updated the V3 packaging hash.",
+      "regression_tested": true
+    },
+    {
+      "finding": "The first full regression inherited external model credentials and spent substantial time in provider-sensitive paths.",
+      "resolution": "Final release regression explicitly removed all model and GitHub credential environment variables before pytest.",
+      "regression_tested": true
+    },
+    {
+      "finding": "V4 pytest artifacts were not ignored, so a deliberately contaminated hygiene fixture became visible to the repository-level secret scan.",
+      "resolution": "Added outputs_v4/ to .gitignore and a V4 regression assertion; the strict secret scan remained unchanged.",
+      "regression_tested": true
+    }
+  ],
+  "artifacts": {
+    "datasets/v4_agent_effectiveness/experiment_protocol.json": "d646850a1bf621f18f12ffeea393e16094d1828ceb1555a9df293ce804a23a14",
+    "code_intelligence_agent/evaluation/v4_experiment_protocol.py": "161b5efe46082491ef3d25534fac01d6cb510656ce02374168b832447f64652e",
+    "tests/test_v4_experiment_protocol.py": "acb5b0dad3ceb42facb3b56c1caf6015a2e3e0eb800d908e7d77e087b5b8bc1b",
+    "docs/v4/phase0_experiment_protocol.md": "9beaf44d2b030470ae2855e30dd3ccb2c5b5f92eb4900cb1975b154bf3833aa9",
+    "docs/v4/phase0_verification.json": "68b5c8f323c79ae38799c938ecab6821a0778f584646d36121ac8a34ef924d5f"
+  },
+  "claim_boundaries": [
+    "Phase 0 did not call a live model and does not report a V4 repair rate.",
+    "The 50-case repository-disjoint benchmark manifest does not exist yet and must be locked in Phase 1.",
+    "No claim is made that Full Agent, LLM Planner, Reflection, Memory, Graph, or Routed Hybrid improves outcomes.",
+    "Live V4 data disclosure requires a new explicit user authorization after the 20-case pilot launch gate is ready.",
+    "The clean archive proves source reproducibility only; it is not a repair-effectiveness result."
+  ],
+  "next_gate": {
+    "phase": "Phase 1",
+    "objective": "Build, reproduce, repository-disjointly split, and hash-lock at least 50 real Python bugs from at least 15 repositories.",
+    "live_model_calls_allowed": false,
+    "completion_requirements": [
+      "50 accepted reproducible cases",
+      "10 development, 15 validation, and 25 blind-test cases",
+      "no repository overlap across splits",
+      "rejected-case catalog with explicit reasons",
+      "model-context leakage audit",
+      "hashed benchmark manifest"
+    ]
+  }
+}

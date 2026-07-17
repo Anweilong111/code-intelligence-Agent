@@ -2,7 +2,7 @@
 
 - Status: `pass`
 - Reason: `release_hygiene_clean`
-- Candidate Files: `542`
+- Candidate Files: `544`
 - Candidate Source: `git`
 - Checks: `5/5` pass
 
