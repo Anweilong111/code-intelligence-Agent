@@ -262,11 +262,13 @@ Rule。provider retry 属于同一 trial，不会增加 pass@k 分母。
 来自 LLM generator family，Rule 候选没有产生 verified repair。因此本实验不
 声称 Hybrid 优于 LLM，也不把规则候选的前置筛选归因为成功来源。
 
-### 7.4 当前 live 边界
+### 7.5 最终 live 边界
 
-冻结协议要求每个案例 1 次 Rule、3 次 LLM、3 次 Hybrid。Rule 的 20 次 trial
-已完成；60 次 LLM 与 60 次 Hybrid 尚未运行。只有完整 120 次 live trial、零
-缺失 identity、RunRecord audit 通过后，完整发布门才允许输出真实模型修复率。
+冻结协议要求每个案例 1 次 Rule、3 次 LLM、3 次 Hybrid。最终评估已完成
+20 次 Rule、60 次 LLM 与 60 次 Hybrid trial，模型评估矩阵为 120/120，且所有
+trial identity 均完整。连同候选与审计记录共生成 423 条 RunRecord，423/423
+通过审计。因此本节可以报告真实模型修复率；这些结果仍只适用于冻结的
+20-case、6-repository 数据集、指定模型和协议，不外推为任意 Python 缺陷的成功率。
 
 ## 8. 补丁验证与语义正确性
 

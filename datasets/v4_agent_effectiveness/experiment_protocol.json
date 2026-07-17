@@ -1,0 +1,631 @@
+{
+  "schema_version": "4.0",
+  "protocol_name": "code-intelligence-agent-v4-agent-effectiveness",
+  "frozen_at": "2026-07-17",
+  "baseline": {
+    "tag": "v3-baseline",
+    "commit_sha": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "v3_live_model_trials": 120,
+    "v3_run_records": 423,
+    "v3_test_status": "1412_passed_2_skipped"
+  },
+  "runtime": {
+    "controller_python": "3.13.12",
+    "benchmark_default_python": "3.11",
+    "case_python_override_policy": "pinned_manifest_and_repository_metadata_only",
+    "requirements_path": "requirements-dev.txt",
+    "requirements_sha256": "18d19a0704ae981f2f26e7f3fe5239433971fbd477c3bcca00fe71cbc2c0cbea",
+    "repository_revision_policy": "full_40_character_sha_only",
+    "environment_isolation": "one_container_per_repository_commit_python_and_dependency_fingerprint",
+    "live_trial_platform": "linux_container",
+    "default_network_policy": "disabled"
+  },
+  "frozen_artifacts": [
+    {
+      "id": "requirements_dev",
+      "path": "requirements-dev.txt",
+      "sha256": "18d19a0704ae981f2f26e7f3fe5239433971fbd477c3bcca00fe71cbc2c0cbea"
+    },
+    {
+      "id": "v3_experiment_protocol",
+      "path": "datasets/v3_real_bugs/experiment_protocol.json",
+      "sha256": "0df68dc9bd5473e22a96c3835f5e1f89313a6fdb61f2049491802d4588b31fb4"
+    },
+    {
+      "id": "v3_protocol_validator",
+      "path": "code_intelligence_agent/evaluation/v3_experiment_protocol.py",
+      "sha256": "fa823c03a902f8e06d78011636bd3c96ee42c5ae0075765ac0df0799e377d975"
+    },
+    {
+      "id": "v3_repair_evaluation",
+      "path": "code_intelligence_agent/evaluation/v3_repair_evaluation.py",
+      "sha256": "611c0f308dd510b1c5bea1a7a56d0e3aec1d04c3c9afab27a68033ad0b864d70"
+    },
+    {
+      "id": "v3_release_evaluation",
+      "path": "code_intelligence_agent/evaluation/v3_release_evaluation.py",
+      "sha256": "ffcb31b76e064c15017be8612866ec4e8bee1f60bcab2c3727a2d50132d7837b"
+    },
+    {
+      "id": "v4_protocol_validator",
+      "path": "code_intelligence_agent/evaluation/v4_experiment_protocol.py",
+      "sha256": "161b5efe46082491ef3d25534fac01d6cb510656ce02374168b832447f64652e"
+    }
+  ],
+  "benchmark": {
+    "minimum_cases": 50,
+    "minimum_repositories": 15,
+    "split_case_counts": {
+      "development": 10,
+      "validation": 15,
+      "test": 25
+    },
+    "split_policy": "repository_disjoint",
+    "repository_overlap_allowed": false,
+    "blind_test_locked_before_live_calls": true,
+    "blind_test_may_tune_prompts_weights_or_thresholds": false,
+    "manifest_lock_policy": "separate_hashed_manifest_required_before_live_trials",
+    "ablation_case_count": 20,
+    "ablation_selection_policy": "predeclared_stratified_hard_cases_before_live_calls",
+    "required_difficulty_categories": [
+      "static_negative",
+      "cross_function",
+      "dataflow",
+      "multi_file",
+      "root_error_separated",
+      "high_similarity_candidates",
+      "real_traceback"
+    ],
+    "required_case_fields": [
+      "case_id",
+      "repository",
+      "license",
+      "source_url",
+      "bug_commit_sha",
+      "fix_commit_sha",
+      "targeted_tests",
+      "regression_tests",
+      "ground_truth_files",
+      "ground_truth_functions",
+      "difficulty_categories",
+      "reproduction_evidence"
+    ],
+    "reproduction_contract": {
+      "bug_commit_targeted_tests": "must_fail_for_expected_reason",
+      "fix_commit_targeted_tests": "must_pass",
+      "fix_commit_regression_tests": "must_pass_when_environment_oracle_is_available",
+      "unreproducible_case_policy": "rejected_catalog_with_reason"
+    },
+    "model_context_excludes": [
+      "gold_patch",
+      "fix_commit_content",
+      "hidden_test_answer"
+    ]
+  },
+  "live_launch_gates": {
+    "offline_protocol_audit_required": true,
+    "benchmark_manifest_lock_required": true,
+    "provider_preflight_required": true,
+    "explicit_user_authorization_required": true,
+    "live_calls_allowed_in_phase0": false,
+    "pilot_case_count": 20,
+    "pilot_split_policy": "development_and_validation_only",
+    "pilot_excludes_blind_test": true,
+    "pilot_allocations": [
+      "fixed_workflow",
+      "full_agent"
+    ],
+    "pilot_trials_per_allocation": 3,
+    "pilot_must_pass_run_record_audit_before_final": true,
+    "final_launch_requires_cost_projection": true,
+    "final_launch_requires_zero_unauthorized_dangerous_actions": true
+  },
+  "cold_repository_evaluation": {
+    "repository_count": 50,
+    "selection_policy": "frozen_before_execution_and_not_used_for_feature_tuning",
+    "disjoint_from_benchmark_and_development": true,
+    "required_environment_types": [
+      "poetry",
+      "uv",
+      "tox",
+      "nox",
+      "monorepo",
+      "multi_package",
+      "multiple_python_versions",
+      "native_extension",
+      "external_service"
+    ],
+    "startup_or_accurate_blocker_target": 45,
+    "maximum_unauthorized_dangerous_actions": 0,
+    "container_required": true,
+    "default_network_disabled": true,
+    "repository_process_receives_model_key": false
+  },
+  "model": {
+    "provider": "deepseek",
+    "model_id": "deepseek-v4-pro",
+    "api_base": "https://api.deepseek.com",
+    "endpoint": "/chat/completions",
+    "temperature": 0,
+    "maximum_output_tokens_per_call": 20000,
+    "thinking": "enabled",
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 300,
+    "api_key_source": "environment_only",
+    "api_key_env_names": [
+      "CIA_LLM_API_KEY",
+      "DEEPSEEK_API_KEY"
+    ],
+    "provider_retry": {
+      "maximum_retries": 2,
+      "retryable_categories": [
+        "network",
+        "timeout",
+        "rate_limit",
+        "http_5xx"
+      ],
+      "backoff_seconds": [
+        2,
+        8
+      ]
+    },
+    "access_preflight": {
+      "enabled": true,
+      "prompt_id": "provider_access_preflight_v4",
+      "request_prompt_sha256": "730d18f4a3b546e8bc27048a8489bd04e10b875263c11fabcb85f953a1eb7a52",
+      "max_output_tokens": 16,
+      "thinking": "disabled",
+      "reasoning_effort": null,
+      "runs_once_per_evaluation": true,
+      "counts_as_repair_trial": false,
+      "success_condition": "http_200_valid_chat_completion_envelope_exact_model_and_access_ok"
+    },
+    "model_catalog_source": "https://api-docs.deepseek.com/api/list-models"
+  },
+  "randomness": {
+    "independent_trials_per_allocation": 3,
+    "seed": null,
+    "seed_policy": "not_claimed_without_provider_contract_support",
+    "independence_unit": "case_experiment_allocation_trial",
+    "share_state_between_trials": false,
+    "share_candidate_history_between_trials": false,
+    "provider_retry_creates_new_trial": false,
+    "memory_scope": "current_trial_plus_frozen_advisory_memory_snapshot",
+    "pass_at_k_policy": "case_succeeds_when_any_of_first_k_independent_trials_has_verified_repair"
+  },
+  "pricing": {
+    "snapshot_id": "deepseek-v4-pro-2026-07-14-v3-comparable",
+    "as_of": "2026-07-14",
+    "currency": "USD",
+    "unit": "per_million_tokens",
+    "cache_hit_input_usd_per_million_tokens": 0.003625,
+    "cache_miss_input_usd_per_million_tokens": 0.435,
+    "output_usd_per_million_tokens": 0.87,
+    "source_urls": [
+      "https://api-docs.deepseek.com/quick_start/pricing",
+      "https://api-docs.deepseek.com/api/list-models"
+    ],
+    "live_launch_policy": "revalidate_provider_price_and_model_availability_then_version_protocol_if_changed",
+    "cost_policy": "provider_usage_with_cache_hit_cache_miss_and_output_tokens_preserved"
+  },
+  "prompts": [
+    {
+      "id": "agent_policy_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/agent_policy_v4.txt",
+      "sha256": "d9e94a9c1a22fb41779d663d39da5c31c8c2b3ddb630d5496a8cb72e6e534f3f"
+    },
+    {
+      "id": "patch_generation_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/patch_generation_v4.txt",
+      "sha256": "671c5b05b70e6b9abe4ee1172f0a3151234d32f3bbb0a873244c90122da9c9f9"
+    },
+    {
+      "id": "reflection_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/reflection_v4.txt",
+      "sha256": "cae3478a849d89511fc14b5cd69182ef61c9d28ef16b21683ce03e4b3dc4537e"
+    },
+    {
+      "id": "localization_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/localization_v4.txt",
+      "sha256": "aea59ff513006603ba841ac88ebfe0ec1c764fcbe269233e23451aaa41fe5430"
+    },
+    {
+      "id": "router_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/router_v4.txt",
+      "sha256": "818186ad8749ab1daa245c02543a4a299be331bfe0c505eb50172ad13a8c5f81"
+    },
+    {
+      "id": "semantic_risk_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/semantic_risk_v4.txt",
+      "sha256": "27f5c7a05523d0c547743cc89952632e0330fdb5513d35039ebc580446baecce"
+    },
+    {
+      "id": "provider_access_preflight_v4",
+      "version": "4.0.0",
+      "path": "datasets/v4_agent_effectiveness/prompts/provider_access_preflight_v4.txt",
+      "sha256": "730d18f4a3b546e8bc27048a8489bd04e10b875263c11fabcb85f953a1eb7a52"
+    }
+  ],
+  "policy_variants": {
+    "fixed_workflow": {
+      "planner_mode": "fixed",
+      "action_selection": "static_sequence",
+      "reflection_enabled": false,
+      "memory_mode": "none",
+      "planner_advisory": false,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    },
+    "rule_planner": {
+      "planner_mode": "rule",
+      "action_selection": "adaptive",
+      "reflection_enabled": false,
+      "memory_mode": "none",
+      "planner_advisory": false,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    },
+    "llm_planner": {
+      "planner_mode": "llm",
+      "action_selection": "adaptive",
+      "reflection_enabled": false,
+      "memory_mode": "none",
+      "planner_advisory": true,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    },
+    "no_reflection": {
+      "planner_mode": "llm",
+      "action_selection": "adaptive",
+      "reflection_enabled": false,
+      "memory_mode": "structured",
+      "planner_advisory": true,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    },
+    "no_memory": {
+      "planner_mode": "llm",
+      "action_selection": "adaptive",
+      "reflection_enabled": true,
+      "memory_mode": "none",
+      "planner_advisory": true,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    },
+    "full_agent": {
+      "planner_mode": "llm",
+      "action_selection": "adaptive",
+      "reflection_enabled": true,
+      "memory_mode": "structured",
+      "planner_advisory": true,
+      "registered_actions_only": true,
+      "safety_controller": "deterministic_authoritative"
+    }
+  },
+  "budgets": {
+    "comparison_policy": "hard_caps_are_identical_for_every_allocation_within_each_experiment",
+    "unused_budget_policy": "record_but_do_not_force_consumption",
+    "groups": {
+      "repair_equal_budget_v4": {
+        "maximum_model_input_tokens": 180000,
+        "maximum_model_output_tokens": 20000,
+        "maximum_total_model_tokens": 200000,
+        "maximum_candidates": 3,
+        "maximum_actions": 12,
+        "maximum_reflection_rounds": 2,
+        "maximum_wall_time_seconds": 1800,
+        "maximum_cost_usd": 1.0
+      }
+    }
+  },
+  "experiments": {
+    "primary_agent_effectiveness": {
+      "case_count": 50,
+      "trials_per_allocation": 3,
+      "allocation_axis": "policy_variant",
+      "allocations": [
+        "fixed_workflow",
+        "full_agent"
+      ],
+      "patch_strategy": "llm_only",
+      "allocation_budget_groups": {
+        "fixed_workflow": "repair_equal_budget_v4",
+        "full_agent": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "primary_claim_split": "test",
+      "paired_case_analysis": true
+    },
+    "component_ablation": {
+      "case_count": 20,
+      "trials_per_allocation": 3,
+      "allocation_axis": "policy_variant",
+      "allocations": [
+        "fixed_workflow",
+        "rule_planner",
+        "llm_planner",
+        "no_reflection",
+        "no_memory",
+        "full_agent"
+      ],
+      "patch_strategy": "llm_only",
+      "allocation_budget_groups": {
+        "fixed_workflow": "repair_equal_budget_v4",
+        "rule_planner": "repair_equal_budget_v4",
+        "llm_planner": "repair_equal_budget_v4",
+        "no_reflection": "repair_equal_budget_v4",
+        "no_memory": "repair_equal_budget_v4",
+        "full_agent": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "selection_policy": "predeclared_stratified_hard_cases",
+      "selection_frozen_before_live_calls": true,
+      "selection_uses_trial_outcomes": false
+    },
+    "routed_hybrid": {
+      "case_count": 50,
+      "trials_per_allocation": 3,
+      "allocation_axis": "patch_strategy",
+      "allocations": [
+        "llm_only",
+        "naive_hybrid",
+        "routed_hybrid"
+      ],
+      "policy_variant": "full_agent",
+      "allocation_budget_groups": {
+        "llm_only": "repair_equal_budget_v4",
+        "naive_hybrid": "repair_equal_budget_v4",
+        "routed_hybrid": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "paired_case_analysis": true
+    }
+  },
+  "action_registry": [
+    {
+      "action_id": "clone_or_load_repository",
+      "category": "repository",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "discover_repository_structure",
+      "category": "observation",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "discover_tests",
+      "category": "observation",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "diagnose_environment",
+      "category": "environment",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "run_repository_tests",
+      "category": "verification",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "collect_dynamic_evidence",
+      "category": "localization",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "localize_fault",
+      "category": "localization",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "generate_rule_patch_candidates",
+      "category": "generation",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "generate_llm_patch_candidates",
+      "category": "generation",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "generate_hybrid_patch_candidates",
+      "category": "generation",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "validate_patch_in_sandbox",
+      "category": "verification",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "run_llm_patch_reflection_loop",
+      "category": "reflection",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "emit_blocker_report",
+      "category": "reporting",
+      "allows_free_form_shell": false
+    },
+    {
+      "action_id": "generate_final_agent_report",
+      "category": "reporting",
+      "allows_free_form_shell": false
+    }
+  ],
+  "localization_protocol": {
+    "candidate_unit": "python_function",
+    "signals": [
+      "static_rule",
+      "traceback",
+      "sbfl",
+      "dynamic_slice",
+      "program_graph_ppr",
+      "semantic",
+      "complexity",
+      "history"
+    ],
+    "fusion_training_split": "validation",
+    "fusion_test_split": "test",
+    "fusion_model": "interpretable_pairwise_or_linear_ranker",
+    "per_function_contribution_required": true,
+    "ablation_variants": [
+      "rule_only",
+      "graph_only",
+      "dynamic_only",
+      "semantic_only",
+      "fusion",
+      "without_rule",
+      "without_graph",
+      "without_dynamic",
+      "without_semantic"
+    ]
+  },
+  "success_authority": {
+    "llm_judge_is_authoritative": false,
+    "required_for_verified_repair": [
+      "ast_valid",
+      "safety_gate",
+      "targeted_tests",
+      "full_regression",
+      "hidden_boundary_tests",
+      "api_type_compatibility",
+      "differential_execution",
+      "mutation_sensitivity"
+    ],
+    "without_complete_oracle": "unverified_suggestion",
+    "reflection_success_definition": "verified_repair_whose_winning_candidate_has_reflection_round_at_least_one",
+    "hidden_oracle_may_enter_model_context": false
+  },
+  "retention_gates": {
+    "routed_hybrid": {
+      "keep_if_verified_repair_rate_gain_percentage_points_at_least": 5,
+      "or_maximum_verified_repair_rate_drop_percentage_points": 3,
+      "and_cost_per_verified_repair_reduction_percent_at_least": 20,
+      "otherwise": "remove_from_default_strategy"
+    },
+    "graph": {
+      "keep_default_weight_only_with_blind_test_or_hard_subgroup_gain": true,
+      "otherwise": "publish_negative_result_and_reduce_default_weight"
+    },
+    "semantic_memory": {
+      "keep_only_with_reproducible_blind_test_gain": true,
+      "otherwise": "retain_structured_memory_only"
+    },
+    "efficiency": {
+      "latency_reduction_percent_at_least": 30,
+      "cost_per_verified_repair_reduction_percent_at_least": 25,
+      "maximum_pass_at_3_drop_percentage_points": 3
+    }
+  },
+  "required_metrics": {
+    "agent": [
+      "verified_pass_at_1",
+      "verified_pass_at_3",
+      "blocker_resolution_rate",
+      "invalid_action_rate",
+      "mean_action_count",
+      "reflection_recovery_rate"
+    ],
+    "localization": [
+      "top_1",
+      "top_3",
+      "top_5",
+      "mrr",
+      "map",
+      "ndcg",
+      "exam"
+    ],
+    "semantic": [
+      "semantic_pass_rate",
+      "overfitting_rejection_rate"
+    ],
+    "efficiency": [
+      "token_usage",
+      "actual_cost_usd",
+      "cost_per_verified_repair_usd",
+      "latency_ms"
+    ],
+    "environment": [
+      "startup_or_accurate_blocker_rate",
+      "unsafe_action_execution_count"
+    ]
+  },
+  "failure_taxonomy": {
+    "denominator_policy": "retain_provider_environment_application_safety_and_budget_failures",
+    "provider": [
+      "authentication",
+      "authorization",
+      "billing_or_quota",
+      "rate_limit",
+      "network",
+      "timeout",
+      "invalid_provider_response",
+      "model_unavailable"
+    ],
+    "environment": [
+      "dependency_install",
+      "python_version",
+      "test_discovery",
+      "test_process",
+      "resource_limit",
+      "unsafe_build_hook",
+      "external_service"
+    ]
+  },
+  "statistics": {
+    "primary_unit": "repository_disjoint_case",
+    "confidence_intervals": "wilson_for_rates_and_bootstrap_for_continuous_metrics",
+    "paired_tests": "paired_bootstrap_or_exact_mcnemar_when_applicable",
+    "report_effect_size": true,
+    "multiple_comparison_policy": "predeclared_primary_comparison_then_holm_for_secondary_family"
+  },
+  "safety": {
+    "gold_patch_in_model_context": false,
+    "fix_commit_content_in_model_context": false,
+    "hidden_test_answer_in_model_context": false,
+    "repository_text_is_untrusted": true,
+    "free_form_shell": false,
+    "registered_actions_only": true,
+    "raw_provider_response_in_run_record": false,
+    "model_may_override_safety_controller": false,
+    "model_key_in_repository_process": false,
+    "container_source_mount": "read_only",
+    "container_network": "disabled_by_default",
+    "container_limits_required": [
+      "cpu",
+      "memory",
+      "disk",
+      "process_count",
+      "wall_time"
+    ]
+  },
+  "data_disclosure": {
+    "live_external_calls_require_explicit_user_authorization": true,
+    "authorization_is_not_persistent_across_major_evaluations": true,
+    "allowed_payload": [
+      "bounded_source_excerpts",
+      "test_failure_summaries",
+      "tracebacks",
+      "structured_evidence",
+      "frozen_prompts"
+    ],
+    "forbidden_payload": [
+      "api_keys",
+      "unrelated_repository_files",
+      "raw_environment_variables",
+      "gold_patch",
+      "hidden_test_answer"
+    ]
+  },
+  "protocol_sha256": "3375dda3486f617262a5ec68245ffc5e8f1d7dc37e4f4308f963935fb361395b"
+}

@@ -7,6 +7,7 @@ from code_intelligence_agent.evaluation import github_repo_intelligence
 from code_intelligence_agent.evaluation import v3_localization_evaluation
 from code_intelligence_agent.evaluation import v3_repair_evaluation
 from code_intelligence_agent.evaluation import v3_semantic_evaluation
+from code_intelligence_agent.evaluation import v4_experiment_protocol
 
 
 def test_top_level_cli_keeps_local_static_analysis(tmp_path, capsys):
@@ -150,4 +151,32 @@ def test_top_level_cli_routes_v3_semantic_evaluation(monkeypatch):
         "outputs_v3/semantic",
         "--case-id",
         "bugsinpy-pysnooper-3",
+    ]
+
+
+def test_top_level_cli_routes_v4_protocol_audit(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v4_protocol_audit_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v4_experiment_protocol,
+        "main",
+        fake_v4_protocol_audit_main,
+    )
+
+    cli_module.main(
+        [
+            "v4-protocol-audit",
+            "datasets/v4_agent_effectiveness/experiment_protocol.json",
+            "outputs_v4/phase0",
+            "--require-pass",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "datasets/v4_agent_effectiveness/experiment_protocol.json",
+        "outputs_v4/phase0",
+        "--require-pass",
     ]

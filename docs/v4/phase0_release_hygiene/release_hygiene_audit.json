@@ -1,0 +1,47 @@
+{
+  "status": "pass",
+  "reason": "release_hygiene_clean",
+  "candidate_file_count": 540,
+  "candidate_source": "git",
+  "check_count": 5,
+  "passed_check_count": 5,
+  "failed_check_count": 0,
+  "failed_checks": [],
+  "checks": [
+    {
+      "name": "gitignore_release_outputs_and_secrets",
+      "passed": true,
+      "evidence": "required ignore patterns present",
+      "offender_count": 0,
+      "offenders": []
+    },
+    {
+      "name": "no_tracked_local_outputs_or_binary_docs",
+      "passed": true,
+      "evidence": "git candidate set excludes local caches, outputs, coverage, and docx",
+      "offender_count": 0,
+      "offenders": []
+    },
+    {
+      "name": "no_raw_api_keys",
+      "passed": true,
+      "evidence": "no sk-style raw API keys in candidate text files",
+      "offender_count": 0,
+      "offenders": []
+    },
+    {
+      "name": "public_docs_keep_sandbox_authority_boundary",
+      "passed": true,
+      "evidence": "LLM judge is not documented as pytest/sandbox replacement",
+      "offender_count": 0,
+      "offenders": []
+    },
+    {
+      "name": "public_docs_have_no_tool_signature_traces",
+      "passed": true,
+      "evidence": "public docs avoid assistant/tool generation signatures",
+      "offender_count": 0,
+      "offenders": []
+    }
+  ]
+}

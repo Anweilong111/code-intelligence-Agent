@@ -1,0 +1,326 @@
+{
+  "schema_version": "4.0",
+  "generated_at": "2026-07-17T13:28:45.311483+00:00",
+  "status": "pass",
+  "reason": "v4_phase0_protocol_frozen",
+  "protocol_path": "datasets/v4_agent_effectiveness/experiment_protocol.json",
+  "protocol_sha256": "3375dda3486f617262a5ec68245ffc5e8f1d7dc37e4f4308f963935fb361395b",
+  "protocol_validation": {
+    "status": "pass",
+    "error_count": 0,
+    "warning_count": 0,
+    "errors": [],
+    "warnings": [],
+    "prompt_hashes": {
+      "agent_policy_v4": "d9e94a9c1a22fb41779d663d39da5c31c8c2b3ddb630d5496a8cb72e6e534f3f",
+      "patch_generation_v4": "671c5b05b70e6b9abe4ee1172f0a3151234d32f3bbb0a873244c90122da9c9f9",
+      "reflection_v4": "cae3478a849d89511fc14b5cd69182ef61c9d28ef16b21683ce03e4b3dc4537e",
+      "localization_v4": "aea59ff513006603ba841ac88ebfe0ec1c764fcbe269233e23451aaa41fe5430",
+      "router_v4": "818186ad8749ab1daa245c02543a4a299be331bfe0c505eb50172ad13a8c5f81",
+      "semantic_risk_v4": "27f5c7a05523d0c547743cc89952632e0330fdb5513d35039ebc580446baecce",
+      "provider_access_preflight_v4": "730d18f4a3b546e8bc27048a8489bd04e10b875263c11fabcb85f953a1eb7a52"
+    },
+    "protocol_sha256": "3375dda3486f617262a5ec68245ffc5e8f1d7dc37e4f4308f963935fb361395b"
+  },
+  "run_record_schema": {
+    "$id": "code-intelligence-agent-v4-trial-run-record",
+    "schema_version": "4.0",
+    "record_granularity": "one_case_allocation_trial",
+    "required_sections": [
+      "case",
+      "experiment",
+      "policy",
+      "budget",
+      "action_trace",
+      "model",
+      "usage",
+      "cost",
+      "timing",
+      "validation",
+      "outcome",
+      "failure",
+      "model_context",
+      "artifacts",
+      "timestamps"
+    ],
+    "required_lists": [
+      "candidates"
+    ],
+    "policy_variants": [
+      "fixed_workflow",
+      "full_agent",
+      "llm_planner",
+      "no_memory",
+      "no_reflection",
+      "rule_planner"
+    ],
+    "patch_strategies": [
+      "llm_only",
+      "naive_hybrid",
+      "routed_hybrid"
+    ],
+    "benchmark_splits": [
+      "development",
+      "test",
+      "validation"
+    ],
+    "outcome_statuses": [
+      "budget_exhausted",
+      "environment_blocker",
+      "failed",
+      "provider_blocker",
+      "safety_rejected",
+      "unverified_suggestion",
+      "verified_repair"
+    ],
+    "failure_layers": [
+      "budget",
+      "controller",
+      "environment",
+      "full_regression",
+      "generation",
+      "localization",
+      "none",
+      "planning",
+      "provider",
+      "safety",
+      "semantic_validation",
+      "syntax",
+      "targeted_test"
+    ],
+    "semantic_gates": [
+      "hidden_boundary_tests",
+      "api_type_compatibility",
+      "differential_execution",
+      "mutation_sensitivity"
+    ],
+    "forbidden_recursive_fields": [
+      "api_key",
+      "authorization",
+      "chain_of_thought",
+      "private_reasoning",
+      "raw",
+      "raw_response",
+      "response_body",
+      "secret",
+      "shell_command"
+    ],
+    "private_reasoning_policy": "never_persisted"
+  },
+  "baseline": {
+    "tag": "v3-baseline",
+    "expected_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "resolved_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "tag_matches": true
+  },
+  "current_environment": {
+    "head_commit": "43268748cbfb4abb1f54c2e8d41da96e5ba1d92a",
+    "branch": "codex/code-intelligence-agent-v4",
+    "python_version": "3.13.12",
+    "platform": "win32"
+  },
+  "benchmark": {
+    "minimum_cases": 50,
+    "minimum_repositories": 15,
+    "split_case_counts": {
+      "development": 10,
+      "validation": 15,
+      "test": 25
+    },
+    "split_policy": "repository_disjoint",
+    "repository_overlap_allowed": false,
+    "blind_test_locked_before_live_calls": true,
+    "blind_test_may_tune_prompts_weights_or_thresholds": false,
+    "manifest_lock_policy": "separate_hashed_manifest_required_before_live_trials",
+    "ablation_case_count": 20,
+    "ablation_selection_policy": "predeclared_stratified_hard_cases_before_live_calls",
+    "required_difficulty_categories": [
+      "static_negative",
+      "cross_function",
+      "dataflow",
+      "multi_file",
+      "root_error_separated",
+      "high_similarity_candidates",
+      "real_traceback"
+    ],
+    "required_case_fields": [
+      "case_id",
+      "repository",
+      "license",
+      "source_url",
+      "bug_commit_sha",
+      "fix_commit_sha",
+      "targeted_tests",
+      "regression_tests",
+      "ground_truth_files",
+      "ground_truth_functions",
+      "difficulty_categories",
+      "reproduction_evidence"
+    ],
+    "reproduction_contract": {
+      "bug_commit_targeted_tests": "must_fail_for_expected_reason",
+      "fix_commit_targeted_tests": "must_pass",
+      "fix_commit_regression_tests": "must_pass_when_environment_oracle_is_available",
+      "unreproducible_case_policy": "rejected_catalog_with_reason"
+    },
+    "model_context_excludes": [
+      "gold_patch",
+      "fix_commit_content",
+      "hidden_test_answer"
+    ]
+  },
+  "experiments": {
+    "primary_agent_effectiveness": {
+      "case_count": 50,
+      "trials_per_allocation": 3,
+      "allocation_axis": "policy_variant",
+      "allocations": [
+        "fixed_workflow",
+        "full_agent"
+      ],
+      "patch_strategy": "llm_only",
+      "allocation_budget_groups": {
+        "fixed_workflow": "repair_equal_budget_v4",
+        "full_agent": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "primary_claim_split": "test",
+      "paired_case_analysis": true
+    },
+    "component_ablation": {
+      "case_count": 20,
+      "trials_per_allocation": 3,
+      "allocation_axis": "policy_variant",
+      "allocations": [
+        "fixed_workflow",
+        "rule_planner",
+        "llm_planner",
+        "no_reflection",
+        "no_memory",
+        "full_agent"
+      ],
+      "patch_strategy": "llm_only",
+      "allocation_budget_groups": {
+        "fixed_workflow": "repair_equal_budget_v4",
+        "rule_planner": "repair_equal_budget_v4",
+        "llm_planner": "repair_equal_budget_v4",
+        "no_reflection": "repair_equal_budget_v4",
+        "no_memory": "repair_equal_budget_v4",
+        "full_agent": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "selection_policy": "predeclared_stratified_hard_cases",
+      "selection_frozen_before_live_calls": true,
+      "selection_uses_trial_outcomes": false
+    },
+    "routed_hybrid": {
+      "case_count": 50,
+      "trials_per_allocation": 3,
+      "allocation_axis": "patch_strategy",
+      "allocations": [
+        "llm_only",
+        "naive_hybrid",
+        "routed_hybrid"
+      ],
+      "policy_variant": "full_agent",
+      "allocation_budget_groups": {
+        "llm_only": "repair_equal_budget_v4",
+        "naive_hybrid": "repair_equal_budget_v4",
+        "routed_hybrid": "repair_equal_budget_v4"
+      },
+      "same_model_for_all_allocations": true,
+      "retain_all_failures_in_denominator": true,
+      "paired_case_analysis": true
+    }
+  },
+  "budgets": {
+    "comparison_policy": "hard_caps_are_identical_for_every_allocation_within_each_experiment",
+    "unused_budget_policy": "record_but_do_not_force_consumption",
+    "groups": {
+      "repair_equal_budget_v4": {
+        "maximum_model_input_tokens": 180000,
+        "maximum_model_output_tokens": 20000,
+        "maximum_total_model_tokens": 200000,
+        "maximum_candidates": 3,
+        "maximum_actions": 12,
+        "maximum_reflection_rounds": 2,
+        "maximum_wall_time_seconds": 1800,
+        "maximum_cost_usd": 1.0
+      }
+    }
+  },
+  "frozen_model": {
+    "provider": "deepseek",
+    "model_id": "deepseek-v4-pro",
+    "api_base": "https://api.deepseek.com",
+    "endpoint": "/chat/completions",
+    "temperature": 0,
+    "maximum_output_tokens_per_call": 20000,
+    "thinking": "enabled",
+    "reasoning_effort": "high",
+    "request_timeout_seconds": 300,
+    "api_key_source": "environment_only",
+    "api_key_env_names": [
+      "CIA_LLM_API_KEY",
+      "DEEPSEEK_API_KEY"
+    ],
+    "provider_retry": {
+      "maximum_retries": 2,
+      "retryable_categories": [
+        "network",
+        "timeout",
+        "rate_limit",
+        "http_5xx"
+      ],
+      "backoff_seconds": [
+        2,
+        8
+      ]
+    },
+    "access_preflight": {
+      "enabled": true,
+      "prompt_id": "provider_access_preflight_v4",
+      "request_prompt_sha256": "730d18f4a3b546e8bc27048a8489bd04e10b875263c11fabcb85f953a1eb7a52",
+      "max_output_tokens": 16,
+      "thinking": "disabled",
+      "reasoning_effort": null,
+      "runs_once_per_evaluation": true,
+      "counts_as_repair_trial": false,
+      "success_condition": "http_200_valid_chat_completion_envelope_exact_model_and_access_ok"
+    },
+    "model_catalog_source": "https://api-docs.deepseek.com/api/list-models"
+  },
+  "frozen_pricing": {
+    "snapshot_id": "deepseek-v4-pro-2026-07-14-v3-comparable",
+    "as_of": "2026-07-14",
+    "currency": "USD",
+    "unit": "per_million_tokens",
+    "cache_hit_input_usd_per_million_tokens": 0.003625,
+    "cache_miss_input_usd_per_million_tokens": 0.435,
+    "output_usd_per_million_tokens": 0.87,
+    "source_urls": [
+      "https://api-docs.deepseek.com/quick_start/pricing",
+      "https://api-docs.deepseek.com/api/list-models"
+    ],
+    "live_launch_policy": "revalidate_provider_price_and_model_availability_then_version_protocol_if_changed",
+    "cost_policy": "provider_usage_with_cache_hit_cache_miss_and_output_tokens_preserved"
+  },
+  "prompt_hashes": {
+    "agent_policy_v4": "d9e94a9c1a22fb41779d663d39da5c31c8c2b3ddb630d5496a8cb72e6e534f3f",
+    "patch_generation_v4": "671c5b05b70e6b9abe4ee1172f0a3151234d32f3bbb0a873244c90122da9c9f9",
+    "reflection_v4": "cae3478a849d89511fc14b5cd69182ef61c9d28ef16b21683ce03e4b3dc4537e",
+    "localization_v4": "aea59ff513006603ba841ac88ebfe0ec1c764fcbe269233e23451aaa41fe5430",
+    "router_v4": "818186ad8749ab1daa245c02543a4a299be331bfe0c505eb50172ad13a8c5f81",
+    "semantic_risk_v4": "27f5c7a05523d0c547743cc89952632e0330fdb5513d35039ebc580446baecce",
+    "provider_access_preflight_v4": "730d18f4a3b546e8bc27048a8489bd04e10b875263c11fabcb85f953a1eb7a52"
+  },
+  "notes": [
+    "This audit is offline and does not call a model.",
+    "A separate hashed benchmark manifest must be locked before live V4 trials.",
+    "Every comparison allocation shares one frozen budget group and model.",
+    "Run records persist structured evidence and actions, never private reasoning or raw provider responses.",
+    "Live external calls require a new explicit user authorization for V4."
+  ]
+}

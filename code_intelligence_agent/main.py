@@ -40,6 +40,13 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_v4_protocol_audit(raw_argv):
+        from code_intelligence_agent.evaluation.v4_experiment_protocol import (
+            main as v4_protocol_audit_main,
+        )
+
+        v4_protocol_audit_main(raw_argv[1:])
+        return
     if _should_route_to_v3_release_evaluation(raw_argv):
         from code_intelligence_agent.evaluation.v3_release_evaluation import (
             main as v3_release_evaluation_main,
@@ -132,6 +139,14 @@ def _should_route_to_repo_agent(argv: list[str]) -> bool:
 
 def _should_route_to_v3_repair_evaluation(argv: list[str]) -> bool:
     return bool(argv and argv[0] in {"v3-repair-eval", "v3-repair-evaluation"})
+
+
+def _should_route_to_v4_protocol_audit(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {"v4-protocol-audit", "v4-experiment-protocol-audit"}
+    )
 
 
 def _should_route_to_v3_release_evaluation(argv: list[str]) -> bool:

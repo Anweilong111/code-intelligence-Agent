@@ -99,7 +99,7 @@
     }
   ],
   "artifacts": {
-    "docs/v3/v3_architecture_and_agent_design_cn.md": "a6f0c665e0beb2f7d867ef3a61aabf121f41f98754151b261e5ebca8c00dd515",
+    "docs/v3/v3_architecture_and_agent_design_cn.md": "d86f2ad5e520c581d7c77154ea0740a8776b3a4c5139f63e6e82d997fc1304d1",
     "docs/v3/v3_ten_minute_demo_guide_cn.md": "02b7ab598cc6ebafc506ff1cc1855817952c65edbb1718daafe3ba8d5ab6dd7a",
     "docs/career/v3_resume_interview_pack_cn.md": "6525e031b919d89bf3a910aaac56ec12b78e871c1ed910d34e7c6fe6964dcd5b",
     "tests/test_v3_release_packaging_docs.py": "e874761aa522ae401ca144cf4e2b903c05d27b8f47ac55ece3e4fc47820e2586",
