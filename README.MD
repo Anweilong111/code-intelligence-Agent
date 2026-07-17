@@ -2,9 +2,8 @@
 
 ## V3 Real-Bug Benchmark Status
 
-V3 is upgrading the evaluation from deterministic offline fixtures to real
-Python defects, real failing tests, and later live-LLM repair trials. Phase 1 is
-complete at the data/oracle level:
+V3 evaluates real Python defects, real failing tests, and live-LLM repair trials.
+The benchmark and final repair evaluation are complete under the frozen protocol:
 
 - 25 fixed-SHA BugsInPy cases imported from 6 repositories with 0 import errors.
 - 20 cases independently satisfy bug-target failure, fix-target pass, and fixed
@@ -12,8 +11,10 @@ complete at the data/oracle level:
 - 8 exact Windows CPython/dependency profiles bind all 25 cases.
 - Raw checkouts and test logs remain ignored; committed cases contain checksummed
   evidence summaries without local absolute paths.
-- These numbers do not represent a live-LLM repair rate. Rule/LLM/Hybrid trials,
-  pass@1/pass@3, token cost, latency, and reflection recovery are Phase 3 work.
+- The final run completed 120/120 independent live trials: 20 cases x 3 LLM
+  trials and 20 cases x 3 Hybrid trials using `deepseek-v4-pro`.
+- LLM achieved pass@1 `0.40` and pass@3 `0.50`; Hybrid achieved pass@1 `0.30`
+  and pass@3 `0.45`. These are case-level real-repair rates, not fixture results.
 
 Evidence: [Phase 1 protocol](docs/v3/phase1_real_bug_benchmark_protocol.md),
 [accepted catalog](docs/v3/phase1_real_bug_catalog.md), and
@@ -161,34 +162,40 @@ Evidence: [Phase 6 protocol](docs/v3/phase6_memory_and_security_protocol.md),
 
 ## V3 Unified Release Status
 
-Phase 7 now aggregates all committed V3 evidence without filling missing live
-metrics with Rule, fixture, or calibration results:
+Phase 7 aggregates the offline Phase 0-6 evidence with the completed live
+evaluation. The complete release status is `pass` and `claim_eligible=true`:
 
-- Offline Phase 0-6 evidence is `pass`; complete V3 release is `pending`.
-- Benchmark, environment, localization, Rule repair, semantic calibration,
-  memory, and security values are labeled by evidence type and source artifact.
-- LLM/Hybrid pass@1, pass@3, verified repair, Reflection, token, cost, latency,
-  failure taxonomy, and generator attribution remain JSON `null`/`pending` until
-  all `120/120` live trials pass RunRecord and completeness audits.
-- Wilson 95% intervals expose small-sample uncertainty; V2/V3 differences are
-  withheld when protocols differ.
-- A nominally passing live artifact with 119 trials, missing model metadata, or
-  missing strategy metrics cannot unlock the release gate.
+- Exactly `120/120` independent trials completed with `0` missing. All `423`
+  candidate RunRecords passed schema and completeness audit.
+- LLM repaired `10/20` cases within three trials and `8/20` on trial 1. Hybrid
+  repaired `9/20` within three trials and `6/20` on trial 1.
+- Reflection recovered at least one repair in `7/20` LLM cases and `3/20`
+  Hybrid cases. Verified candidates passed targeted tests, full regression, and
+  the applicable semantic validation gates.
+- LLM cost `$1.839613`; Hybrid cost `$1.006873`; provider preflight cost
+  `$0.000035`. Mean per-trial cost was `$0.0307` and `$0.0168` respectively.
+- The report retains one Hybrid provider timeout and every syntax, safety,
+  targeted-test, regression, semantic, and generation failure in the denominator.
+- Rule pass@1/pass@3 remained `0/20`. All `22` verified Hybrid candidates were
+  LLM-generated, so this experiment does not claim a Hybrid or Rule uplift.
+- Wilson 95% intervals expose the 20-case sample uncertainty. V2/V3 differences
+  remain `not_comparable` where their datasets or protocols differ.
 
-Reproduce the current offline result with:
+Reproduce the complete release decision from a live evaluation artifact with:
 
 ```powershell
 python -m code_intelligence_agent v3-release-eval `
-  outputs_v3/phase7_release `
+  docs/v3 `
   --root . `
-  --require-offline-pass
+  --live-evaluation outputs_v3/phase3_live_20260717_334eee/evaluation.json `
+  --require-complete
 ```
 
 Evidence: [Phase 7 protocol](docs/v3/phase7_release_protocol.md),
 [unified report](docs/v3/phase7_unified_evaluation.md), and
 [machine-readable report](docs/v3/phase7_unified_evaluation.json). The exact
 test, hygiene, artifact-hash, and claim-boundary evidence is recorded in the
-[Phase 7 offline verification](docs/v3/phase7_offline_verification.md).
+[Phase 7 final verification](docs/v3/phase7_final_verification.md).
 
 V3 presentation and interview material:
 
@@ -197,9 +204,8 @@ V3 presentation and interview material:
 - [Chinese resume and interview pack](docs/career/v3_resume_interview_pack_cn.md)
 - [Clean-archive packaging verification](docs/v3/phase7_packaging_verification.md)
 
-These V3 documents use only committed evidence. Live LLM/Hybrid repair metrics
-remain pending until all 120 trials satisfy the frozen protocol and unified
-release audit.
+The committed report stores aggregate metrics, hashes, and selected audited
+examples, but not API keys, raw prompts, provider payloads, or private reasoning.
 
 面向公开 Python GitHub 仓库的代码智能分析与受控修复 Agent。`agent` 子命令接收 `owner/repo` 或 GitHub URL，自动完成仓库发现、源码筛选、结构建模、测试环境诊断、函数级缺陷定位、补丁候选生成、sandbox 验证、反思修复和 blocker 报告；本地路径入口支持静态分析，但不等价于完整 GitHub Agent 执行链。
 

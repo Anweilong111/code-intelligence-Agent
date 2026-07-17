@@ -1,10 +1,10 @@
 {
   "schema_version": "v3_phase7_unified_evaluation_v1",
-  "status": "partial",
-  "reason": "offline_release_evidence_passed_live_trials_pending",
+  "status": "pass",
+  "reason": "all_v3_release_gates_passed",
   "offline_release_status": "pass",
-  "complete_release_status": "pending",
-  "claim_eligible": false,
+  "complete_release_status": "pass",
+  "claim_eligible": true,
   "phase_evidence": [
     {
       "phase": "phase0",
@@ -72,15 +72,920 @@
   ],
   "phase_evidence_errors": [],
   "live_evaluation": {
-    "status": "pending",
-    "reason": "live_evaluation_artifact_not_supplied",
-    "source": "none",
-    "sha256": "",
+    "status": "pass",
+    "reason": "complete_live_evaluation_validated",
+    "source": "outputs_v3/phase3_live_20260717_334eee/evaluation.json",
+    "sha256": "0b2c92e7df1a99088ecb19d72f4922d816f09134b3d05d20f51352098b6acaa1",
     "errors": [],
-    "case_count": 0,
+    "case_count": 20,
+    "record_count": 423,
     "expected_trial_count": 120,
-    "observed_trial_count": 0,
-    "metrics": {}
+    "observed_trial_count": 120,
+    "missing_trial_count": 0,
+    "metrics": {
+      "llm": {
+        "case_denominator": 20,
+        "expected_trials_per_case": 3,
+        "observed_trial_count": 60,
+        "record_count": 127,
+        "pass_at_1": 0.4,
+        "pass_at_1_count": 8,
+        "pass_at_3": 0.5,
+        "pass_at_3_count": 10,
+        "verified_repair_rate": 0.5,
+        "verified_repair_case_count": 10,
+        "reflection_recovery_rate": 0.35,
+        "reflection_recovery_case_count": 7,
+        "ast_valid_rate": 0.923729,
+        "ast_valid_denominator": 118,
+        "safety_pass_rate": 0.70339,
+        "safety_denominator": 118,
+        "targeted_test_pass_rate": 0.385542,
+        "targeted_test_denominator": 83,
+        "full_regression_pass_rate": 0.8125,
+        "full_regression_denominator": 32,
+        "semantic_validation_pass_rate": 0.961538,
+        "semantic_validation_denominator": 26,
+        "semantic_validation_attempted_denominator": 26,
+        "semantic_validation_blocker_count": 0,
+        "semantic_validation_not_applicable_count": 0,
+        "semantic_claim_eligible_record_count": 25,
+        "semantic_claim_eligible_rate": 0.961538,
+        "api_contract_pass_rate": 1.0,
+        "api_contract_denominator": 26,
+        "workspace_consistency_pass_rate": 1.0,
+        "workspace_consistency_denominator": 26,
+        "patch_minimality_pass_rate": 1.0,
+        "patch_minimality_denominator": 26,
+        "target_differential_pass_rate": 1.0,
+        "target_differential_denominator": 26,
+        "generated_boundary_probe_count": 0,
+        "generated_boundary_case_count": 0,
+        "manifest_semantic_command_count": 0,
+        "reverse_mutation_count": 27,
+        "reverse_mutation_kill_rate": 0.962963,
+        "reverse_mutation_killed_count": 26,
+        "reverse_mutation_surviving_count": 1,
+        "token_usage": {
+          "input_tokens": 4681854,
+          "cache_hit_input_tokens": 2617344,
+          "cache_miss_input_tokens": 2064510,
+          "output_tokens": 1071337,
+          "reasoning_tokens": 838874
+        },
+        "actual_cost_usd": 1.83961291,
+        "latency_ms": 15739038.0,
+        "provider_retry_count": 7,
+        "provider_blocker_record_count": 0,
+        "environment_blocker_record_count": 0,
+        "winning_generator_families": {
+          "llm": 25
+        },
+        "failure_layers": {
+          "full_regression": 6,
+          "generation": 9,
+          "safety": 26,
+          "semantic_validation": 1,
+          "syntax": 9,
+          "targeted_test": 51
+        },
+        "failure_categories": {
+          "full_regression:test_assertion_failure": 6,
+          "generation:candidate_schema_or_scope_invalid": 2,
+          "generation:invalid_json_response": 1,
+          "generation:model_returned_no_files": 6,
+          "safety:dangerous_api_added:open": 2,
+          "safety:decorator_changed": 1,
+          "safety:duplicate_failed_combined_patch": 3,
+          "safety:duplicate_failed_patch": 5,
+          "safety:signature_changed": 15,
+          "semantic_validation:one_or_more_reverse_mutations_survived": 1,
+          "syntax:invalid_python_ast": 9,
+          "targeted_test:syntax_error": 15,
+          "targeted_test:test_assertion_failure": 36
+        }
+      },
+      "hybrid": {
+        "case_denominator": 20,
+        "expected_trials_per_case": 3,
+        "observed_trial_count": 60,
+        "record_count": 296,
+        "pass_at_1": 0.3,
+        "pass_at_1_count": 6,
+        "pass_at_3": 0.45,
+        "pass_at_3_count": 9,
+        "verified_repair_rate": 0.45,
+        "verified_repair_case_count": 9,
+        "reflection_recovery_rate": 0.15,
+        "reflection_recovery_case_count": 3,
+        "ast_valid_rate": 0.921933,
+        "ast_valid_denominator": 269,
+        "safety_pass_rate": 0.821561,
+        "safety_denominator": 269,
+        "targeted_test_pass_rate": 0.153846,
+        "targeted_test_denominator": 221,
+        "full_regression_pass_rate": 0.676471,
+        "full_regression_denominator": 34,
+        "semantic_validation_pass_rate": 0.956522,
+        "semantic_validation_denominator": 23,
+        "semantic_validation_attempted_denominator": 23,
+        "semantic_validation_blocker_count": 0,
+        "semantic_validation_not_applicable_count": 0,
+        "semantic_claim_eligible_record_count": 22,
+        "semantic_claim_eligible_rate": 0.956522,
+        "api_contract_pass_rate": 1.0,
+        "api_contract_denominator": 23,
+        "workspace_consistency_pass_rate": 1.0,
+        "workspace_consistency_denominator": 23,
+        "patch_minimality_pass_rate": 1.0,
+        "patch_minimality_denominator": 23,
+        "target_differential_pass_rate": 1.0,
+        "target_differential_denominator": 23,
+        "generated_boundary_probe_count": 0,
+        "generated_boundary_case_count": 0,
+        "manifest_semantic_command_count": 0,
+        "reverse_mutation_count": 24,
+        "reverse_mutation_kill_rate": 0.958333,
+        "reverse_mutation_killed_count": 23,
+        "reverse_mutation_surviving_count": 1,
+        "token_usage": {
+          "input_tokens": 4388118,
+          "cache_hit_input_tokens": 4170880,
+          "cache_miss_input_tokens": 217238,
+          "output_tokens": 1031328,
+          "reasoning_tokens": 817991
+        },
+        "actual_cost_usd": 1.00687333,
+        "latency_ms": 15563464.0,
+        "provider_retry_count": 10,
+        "provider_blocker_record_count": 1,
+        "environment_blocker_record_count": 0,
+        "winning_generator_families": {
+          "llm": 22
+        },
+        "failure_layers": {
+          "full_regression": 11,
+          "generation": 26,
+          "provider": 1,
+          "safety": 27,
+          "semantic_validation": 1,
+          "syntax": 21,
+          "targeted_test": 187
+        },
+        "failure_categories": {
+          "full_regression:syntax_error": 1,
+          "full_regression:test_assertion_failure": 10,
+          "generation:candidate_schema_or_scope_invalid": 3,
+          "generation:invalid_json_response": 1,
+          "generation:model_returned_no_files": 7,
+          "generation:no_rule_patch_candidates_generated": 15,
+          "provider:timeout": 1,
+          "safety:combined_patch_too_large": 2,
+          "safety:dangerous_api_added:open": 2,
+          "safety:duplicate_failed_combined_patch": 2,
+          "safety:duplicate_failed_patch": 4,
+          "safety:patch_too_large": 1,
+          "safety:scope_not_limited_to_original_function": 2,
+          "safety:signature_changed": 14,
+          "semantic_validation:one_or_more_reverse_mutations_survived": 1,
+          "syntax:invalid_python_ast": 21,
+          "targeted_test:syntax_error": 35,
+          "targeted_test:test_assertion_failure": 152
+        }
+      }
+    },
+    "provider_model_metadata": {
+      "status": "pass",
+      "model_record_count": 249,
+      "missing_core_metadata_count": 0,
+      "protocol_provider": "deepseek",
+      "protocol_model_id": "deepseek-v4-pro",
+      "temperature": 0,
+      "thinking": "enabled",
+      "reasoning_effort": "high",
+      "protocol_prompt_hashes": {
+        "judge_v3": "6cca02f6af7d2f1f348ac98b3b5d7be23fe35b90c209f8be310e869beef2ca88",
+        "localization_v3": "1ed1c43aa72804e37b8d2788a953fde6bc96cdf7d1d77c361beecbeb1e4a2b86",
+        "patch_generation_v3": "c5898a77322fc5aa1394cc538c97bde51bda31affcde0f0610eba80231259c47",
+        "planner_v3": "c6d2ca2b7a0f26c7bad2b28ddefad06017ab12a6a0ab9f258685f141bcf5d771",
+        "provider_access_preflight_v3": "08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa",
+        "reflection_v3": "0778d16ec733db013a30567626b0de50524de5c7398530f932d2a8428bd0faa2"
+      },
+      "observed_providers": [
+        "deepseek"
+      ],
+      "observed_model_ids": [
+        "deepseek-v4-pro"
+      ],
+      "observed_prompt_ids": [
+        "patch_generation_v3",
+        "reflection_v3"
+      ],
+      "provider_response_models": [
+        "deepseek-v4-pro"
+      ],
+      "observed_call_dates": [
+        "2026-07-16"
+      ],
+      "request_prompt_hash_count": 149,
+      "request_prompt_hash_set_sha256": "7c0b465ef17435d058ccbf59d47293c028aa54be933b80afa1e5b9923972f1b9",
+      "system_prompt_hash_count": 2,
+      "system_prompt_hash_set_sha256": "a9b554f4846c7ef41e2ae49aa88e6ca87dc0b620d6a2b2a2efc7c90a05806bae",
+      "raw_prompts_persisted": false,
+      "raw_provider_payloads_persisted": false
+    },
+    "provider_access_preflight": {
+      "schema_version": "v3_provider_access_preflight_v1",
+      "performed": true,
+      "counted_as_repair_trial": false,
+      "cost_attribution": "provider_preflight_overhead",
+      "provider": "deepseek",
+      "protocol_model_id": "deepseek-v4-pro",
+      "prompt_id": "provider_access_preflight_v3",
+      "prompt_template_sha256": "08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa",
+      "request_prompt_sha256": "4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd",
+      "response_content_retained": false,
+      "response_content_used_for_repair": false,
+      "started_at": "2026-07-16T20:36:40.460676+00:00",
+      "status": "pass",
+      "reason": "provider_access_verified",
+      "observed_model_id": "deepseek-v4-pro",
+      "latency_ms": 1072,
+      "usage": {
+        "source": "provider_usage",
+        "input_tokens": 69,
+        "cache_hit_input_tokens": 0,
+        "cache_miss_input_tokens": 69,
+        "output_tokens": 6,
+        "reasoning_tokens": 0,
+        "total_tokens": 75
+      },
+      "actual_cost_usd": 3.5235e-05,
+      "request_metadata": {
+        "status": "pass",
+        "provider": "deepseek",
+        "model": "deepseek-v4-pro",
+        "response_model": "deepseek-v4-pro",
+        "response_id": "c620099e-5b5b-46ea-b583-8728ec21446e",
+        "response_object": "chat.completion",
+        "response_created": 1784234201,
+        "response_choice_count": 1,
+        "finish_reason": "stop",
+        "latency_ms": 1072,
+        "timeout_seconds": 300,
+        "request_timeout_mode": "isolated_total",
+        "temperature": 0.0,
+        "max_tokens": 16,
+        "thinking": "disabled",
+        "reasoning_effort": null,
+        "prompt_chars": 75,
+        "prompt_sha256": "sha256:4ee9209b03518fb9edab4aba6eedec48ab057eb4f340df0b4f08efa817b4acdd",
+        "system_prompt_sha256": "sha256:08b9678b3cbf41ef34edfe8480e34ab9fe37b32a070c3dc1837f7f85c37cd5fa",
+        "response_chars": 16,
+        "response_sha256": "sha256:08e2c358ce13cb67f94ebb35b0f67c8763190a857c0db68da6eb196dfe9da46a",
+        "provider_attempt_count": 1,
+        "provider_retry_count": 0,
+        "provider_retry_reasons": [],
+        "provider_retry_delays_seconds": []
+      },
+      "failure": {
+        "layer": "none",
+        "category": "none",
+        "reason": ""
+      },
+      "completed_at": "2026-07-16T20:36:41.535364+00:00"
+    },
+    "run_record_evidence": {
+      "status": "pass",
+      "source": "outputs_v3/phase3_live_20260717_334eee/run_records.jsonl",
+      "sha256": "574fa23283105a7f75f0953e50de0cf53a5d7e6909f914438d206d07f530cdb8",
+      "record_count": 423,
+      "expected_record_count": 423,
+      "errors": [],
+      "raw_records_persisted_in_release_report": false
+    },
+    "trial_cost_latency_distribution": {
+      "llm": {
+        "trial_count": 60,
+        "cost_usd": {
+          "status": "measured",
+          "count": 60,
+          "total": 1.839612912,
+          "mean": 0.030660215,
+          "population_variance": 0.000294631,
+          "population_stddev": 0.017164815,
+          "minimum": 0.000742603,
+          "median": 0.027320523,
+          "maximum": 0.071783671
+        },
+        "latency_ms": {
+          "status": "measured",
+          "count": 60,
+          "total": 15739038.0,
+          "mean": 262317.3,
+          "population_variance": 35610901096.21,
+          "population_stddev": 188708.508,
+          "minimum": 11947.0,
+          "median": 271833.5,
+          "maximum": 721925.0
+        }
+      },
+      "hybrid": {
+        "trial_count": 60,
+        "cost_usd": {
+          "status": "measured",
+          "count": 60,
+          "total": 1.00687333,
+          "mean": 0.016781222,
+          "population_variance": 0.000192845,
+          "population_stddev": 0.013886877,
+          "minimum": 0.0,
+          "median": 0.01791562,
+          "maximum": 0.052864622
+        },
+        "latency_ms": {
+          "status": "measured",
+          "count": 60,
+          "total": 15563464.0,
+          "mean": 259391.067,
+          "population_variance": 36811340043.529,
+          "population_stddev": 191862.816,
+          "minimum": 12248.0,
+          "median": 234143.5,
+          "maximum": 714628.0
+        }
+      }
+    },
+    "case_examples": {
+      "direct_repair": {
+        "status": "measured",
+        "case_id": "bugsinpy-fastapi-4",
+        "strategy": "llm",
+        "trial_index": 1,
+        "run_id": "6f331f43-8f65-4c89-b6d5-c0958d3eeaf6",
+        "candidate_id": "bugsinpy-fastapi-4-llm-t1-c1-llm-direct",
+        "generator_family": "llm",
+        "generator_id": "llm_direct",
+        "reflection_round": 0,
+        "outcome": "verified_repair",
+        "direct_success": true,
+        "reflection_recovered": false,
+        "failure_layer": "none",
+        "failure_category": "none",
+        "validation": {
+          "ast_valid": true,
+          "safety_gate": "pass",
+          "targeted_tests": "pass",
+          "full_regression": "pass",
+          "semantic_validation": "pass",
+          "semantic_justification": "all_required_semantic_gates_passed",
+          "semantic_validation_details": {
+            "schema_version": "v3_semantic_validation_v1",
+            "status": "pass",
+            "reason": "all_required_semantic_gates_passed",
+            "claim_eligible": true,
+            "required_check_count": 6,
+            "passed_required_check_count": 6,
+            "failed_check_ids": [],
+            "blocker_check_ids": [],
+            "incomplete_check_ids": [],
+            "checks": [
+              {
+                "check_id": "api_contract_compatibility",
+                "status": "pass",
+                "required": true,
+                "reason": "api_and_type_contracts_compatible",
+                "changed_file_count": 1,
+                "removed_contracts": [],
+                "changed_contracts": [],
+                "added_contracts": [],
+                "signature_change_allowed": false,
+                "allowed_contract_changes": [],
+                "parse_errors": []
+              },
+              {
+                "check_id": "static_semantic_diff",
+                "status": "pass",
+                "required": true,
+                "reason": "static_semantic_checks_not_blocked",
+                "blocked_reasons": [],
+                "warning_count": 0,
+                "files": [
+                  {
+                    "status": "pass",
+                    "blocked_reasons": [],
+                    "warnings": [],
+                    "risk_score": 0.0,
+                    "old_summary": {
+                      "top_level_definitions": [
+                        "generate_operation_id",
+                        "generate_operation_summary",
+                        "get_openapi",
+                        "get_openapi_operation_metadata",
+                        "get_openapi_operation_parameters",
+                        "get_openapi_operation_request_body",
+                        "get_openapi_params",
+                        "get_openapi_path",
+                        "get_openapi_security_definitions"
+                      ],
+                      "top_level_assignments": [
+                        "status_code_ranges",
+                        "validation_error_definition",
+                        "validation_error_response_definition"
+                      ],
+                      "import_count": 16,
+                      "ast_node_count": 1686
+                    },
+                    "new_summary": {
+                      "top_level_definitions": [
+                        "generate_operation_id",
+                        "generate_operation_summary",
+                        "get_openapi",
+                        "get_openapi_operation_metadata",
+                        "get_openapi_operation_parameters",
+                        "get_openapi_operation_request_body",
+                        "get_openapi_params",
+                        "get_openapi_path",
+                        "get_openapi_security_definitions"
+                      ],
+                      "top_level_assignments": [
+                        "status_code_ranges",
+                        "validation_error_definition",
+                        "validation_error_response_definition"
+                      ],
+                      "import_count": 16,
+                      "ast_node_count": 1751,
+                      "removed_definitions": []
+                    },
+                    "path": "fastapi/openapi/utils.py",
+                    "function_id": "fastapi/openapi/utils.py::__module__",
+                    "region_kind": "module"
+                  }
+                ]
+              },
+              {
+                "check_id": "patched_workspace_consistency",
+                "status": "pass",
+                "required": true,
+                "reason": "candidate_reflected_and_cross_file_imports_consistent",
+                "edit_count": 1,
+                "changed_module_count": 1,
+                "cross_file_broken_import_count": 0,
+                "errors": [],
+                "parse_errors": [],
+                "import_scan_warnings": [],
+                "broken_imports": [],
+                "edits": [
+                  {
+                    "index": 0,
+                    "path": "fastapi/openapi/utils.py",
+                    "region_kind": "module",
+                    "replacement_reflected": true,
+                    "replacement_occurrence_count": 1
+                  }
+                ]
+              },
+              {
+                "check_id": "patch_minimality",
+                "status": "pass",
+                "required": true,
+                "reason": "patch_within_static_minimality_budget",
+                "edit_count": 1,
+                "changed_file_count": 1,
+                "changed_line_count": 10,
+                "original_line_count": 311,
+                "minimality_score": 0.875,
+                "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+                "errors": [],
+                "edits": [
+                  {
+                    "path": "fastapi/openapi/utils.py",
+                    "function_id": "fastapi/openapi/utils.py::__module__",
+                    "changed_lines": 10,
+                    "original_lines": 311,
+                    "line_change_ratio": 0.032154
+                  }
+                ]
+              },
+              {
+                "check_id": "generated_boundary_property_probe",
+                "status": "not_applicable",
+                "required": false,
+                "reason": "no_supported_generated_boundary_probe",
+                "probe_count": 0,
+                "case_count": 0,
+                "probes": []
+              },
+              {
+                "check_id": "target_behavior_differential",
+                "status": "pass",
+                "required": true,
+                "reason": "bug_seed_fails_while_patched_target_passes",
+                "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+                "bug_seed_execution": {
+                  "status": "fail",
+                  "reason": "one_or_more_commands_failed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "fail",
+                      "returncode": 1,
+                      "test_count": 1,
+                      "passed": 0,
+                      "failed": 1,
+                      "timeout": false
+                    }
+                  ]
+                },
+                "patched_execution": {
+                  "status": "pass",
+                  "reason": "all_commands_passed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "pass",
+                      "returncode": 0,
+                      "test_count": 1,
+                      "passed": 1,
+                      "failed": 0,
+                      "timeout": false
+                    }
+                  ]
+                },
+                "patched_execution_reused": true
+              },
+              {
+                "check_id": "reverse_mutation_sensitivity",
+                "status": "pass",
+                "required": true,
+                "reason": "every_reverse_mutation_was_killed",
+                "mutation_count": 1,
+                "killed_mutation_count": 1,
+                "surviving_mutation_count": 0,
+                "mutations": [
+                  {
+                    "index": 0,
+                    "path": "fastapi/openapi/utils.py",
+                    "status": "pass",
+                    "reason": "reverse_mutation_killed_by_targeted_tests",
+                    "killed_by": "targeted_tests",
+                    "targeted": {
+                      "status": "fail",
+                      "reason": "one_or_more_commands_failed",
+                      "environment_blocker": false,
+                      "result_count": 1,
+                      "results": [
+                        {
+                          "status": "fail",
+                          "returncode": 1,
+                          "test_count": 1,
+                          "passed": 0,
+                          "failed": 1,
+                          "timeout": false
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "check_id": "manifest_semantic_commands",
+                "status": "not_applicable",
+                "required": false,
+                "reason": "no_manifest_semantic_commands",
+                "commands": []
+              }
+            ],
+            "gold_patch_used": false,
+            "fix_commit_content_used": false,
+            "llm_judge_authoritative": false
+          }
+        },
+        "total_tokens": 45498,
+        "actual_cost_usd": 0.006399691,
+        "latency_ms": 103073.0,
+        "patch_sha256": "90a82de97994b52cabf3c0f091613c2eb0f86acbf0fb7c088864de2dfbad6277",
+        "validation_sha256": "719c5febacf435b26ed156295c325a58fbf4c808d70023eda3d48a023b84f821"
+      },
+      "reflection_repair": {
+        "status": "measured",
+        "case_id": "bugsinpy-black-10",
+        "strategy": "hybrid",
+        "trial_index": 2,
+        "run_id": "dd4c0707-c5cf-420d-adb3-b520ce9679aa",
+        "candidate_id": "bugsinpy-black-10-hybrid-t2-c7-llm-reflection-2",
+        "generator_family": "llm",
+        "generator_id": "llm_reflection",
+        "reflection_round": 2,
+        "outcome": "verified_repair",
+        "direct_success": false,
+        "reflection_recovered": true,
+        "failure_layer": "none",
+        "failure_category": "none",
+        "validation": {
+          "ast_valid": true,
+          "safety_gate": "pass",
+          "targeted_tests": "pass",
+          "full_regression": "pass",
+          "semantic_validation": "pass",
+          "semantic_justification": "all_required_semantic_gates_passed",
+          "semantic_validation_details": {
+            "schema_version": "v3_semantic_validation_v1",
+            "status": "pass",
+            "reason": "all_required_semantic_gates_passed",
+            "claim_eligible": true,
+            "required_check_count": 6,
+            "passed_required_check_count": 6,
+            "failed_check_ids": [],
+            "blocker_check_ids": [],
+            "incomplete_check_ids": [],
+            "checks": [
+              {
+                "check_id": "api_contract_compatibility",
+                "status": "pass",
+                "required": true,
+                "reason": "api_and_type_contracts_compatible",
+                "changed_file_count": 1,
+                "removed_contracts": [],
+                "changed_contracts": [],
+                "added_contracts": [],
+                "signature_change_allowed": false,
+                "allowed_contract_changes": [],
+                "parse_errors": []
+              },
+              {
+                "check_id": "static_semantic_diff",
+                "status": "pass",
+                "required": true,
+                "reason": "static_semantic_checks_not_blocked",
+                "blocked_reasons": [],
+                "warning_count": 0,
+                "files": [
+                  {
+                    "status": "pass",
+                    "blocked_reasons": [],
+                    "warnings": [],
+                    "risk_score": 0.0,
+                    "old_summary": {
+                      "parameters": [
+                        "debug",
+                        "tokens"
+                      ],
+                      "parameter_reads": [
+                        "debug",
+                        "tokens"
+                      ],
+                      "control_flow_count": 14,
+                      "return_count": 1,
+                      "raise_count": 1,
+                      "assert_count": 1,
+                      "call_count": 12,
+                      "constant_return_only": false,
+                      "exception_swallowing_patterns": []
+                    },
+                    "new_summary": {
+                      "parameters": [
+                        "debug",
+                        "tokens"
+                      ],
+                      "parameter_reads": [
+                        "debug",
+                        "tokens"
+                      ],
+                      "control_flow_count": 16,
+                      "return_count": 1,
+                      "raise_count": 1,
+                      "assert_count": 1,
+                      "call_count": 18,
+                      "constant_return_only": false,
+                      "exception_swallowing_patterns": []
+                    },
+                    "path": "blib2to3/pgen2/driver.py",
+                    "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens",
+                    "region_kind": "function"
+                  }
+                ]
+              },
+              {
+                "check_id": "patched_workspace_consistency",
+                "status": "pass",
+                "required": true,
+                "reason": "candidate_reflected_and_cross_file_imports_consistent",
+                "edit_count": 1,
+                "changed_module_count": 1,
+                "cross_file_broken_import_count": 0,
+                "errors": [],
+                "parse_errors": [],
+                "import_scan_warnings": [],
+                "broken_imports": [],
+                "edits": [
+                  {
+                    "index": 0,
+                    "path": "blib2to3/pgen2/driver.py",
+                    "region_kind": "function",
+                    "replacement_reflected": true,
+                    "replacement_occurrence_count": 1
+                  }
+                ]
+              },
+              {
+                "check_id": "patch_minimality",
+                "status": "pass",
+                "required": true,
+                "reason": "patch_within_static_minimality_budget",
+                "edit_count": 1,
+                "changed_file_count": 1,
+                "changed_line_count": 8,
+                "original_line_count": 58,
+                "minimality_score": 0.9,
+                "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+                "errors": [],
+                "edits": [
+                  {
+                    "path": "blib2to3/pgen2/driver.py",
+                    "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens",
+                    "changed_lines": 8,
+                    "original_lines": 58,
+                    "line_change_ratio": 0.137931
+                  }
+                ]
+              },
+              {
+                "check_id": "generated_boundary_property_probe",
+                "status": "not_applicable",
+                "required": false,
+                "reason": "no_supported_generated_boundary_probe",
+                "probe_count": 0,
+                "case_count": 0,
+                "probes": [
+                  {
+                    "status": "not_run",
+                    "reason": "no_supported_boundary_probe_for_candidate",
+                    "rule_id": "",
+                    "case_count": 0,
+                    "forbidden_exceptions": [],
+                    "results": [],
+                    "timeout": false,
+                    "returncode": 0,
+                    "path": "blib2to3/pgen2/driver.py",
+                    "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens"
+                  }
+                ]
+              },
+              {
+                "check_id": "target_behavior_differential",
+                "status": "pass",
+                "required": true,
+                "reason": "bug_seed_fails_while_patched_target_passes",
+                "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+                "bug_seed_execution": {
+                  "status": "fail",
+                  "reason": "one_or_more_commands_failed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "fail",
+                      "returncode": 1,
+                      "test_count": 1,
+                      "passed": 0,
+                      "failed": 1,
+                      "timeout": false
+                    }
+                  ]
+                },
+                "patched_execution": {
+                  "status": "pass",
+                  "reason": "all_commands_passed",
+                  "environment_blocker": false,
+                  "result_count": 1,
+                  "results": [
+                    {
+                      "status": "pass",
+                      "returncode": 0,
+                      "test_count": 1,
+                      "passed": 1,
+                      "failed": 0,
+                      "timeout": false
+                    }
+                  ]
+                },
+                "patched_execution_reused": true
+              },
+              {
+                "check_id": "reverse_mutation_sensitivity",
+                "status": "pass",
+                "required": true,
+                "reason": "every_reverse_mutation_was_killed",
+                "mutation_count": 1,
+                "killed_mutation_count": 1,
+                "surviving_mutation_count": 0,
+                "mutations": [
+                  {
+                    "index": 0,
+                    "path": "blib2to3/pgen2/driver.py",
+                    "status": "pass",
+                    "reason": "reverse_mutation_killed_by_targeted_tests",
+                    "killed_by": "targeted_tests",
+                    "targeted": {
+                      "status": "fail",
+                      "reason": "one_or_more_commands_failed",
+                      "environment_blocker": false,
+                      "result_count": 1,
+                      "results": [
+                        {
+                          "status": "fail",
+                          "returncode": 1,
+                          "test_count": 1,
+                          "passed": 0,
+                          "failed": 1,
+                          "timeout": false
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "check_id": "manifest_semantic_commands",
+                "status": "not_applicable",
+                "required": false,
+                "reason": "no_manifest_semantic_commands",
+                "commands": []
+              }
+            ],
+            "gold_patch_used": false,
+            "fix_commit_content_used": false,
+            "llm_judge_authoritative": false
+          }
+        },
+        "total_tokens": 45038,
+        "actual_cost_usd": 0.009145643,
+        "latency_ms": 174978.0,
+        "patch_sha256": "c153cddb2d27b527fe758504bf936c45b2d951ca21710cd1834d0b7b4b290143",
+        "validation_sha256": "3291bfbfd9b1377fb3e0c668bda3c75fb600d3e0c884ca99a1adeb23d9818d42"
+      },
+      "failed_repair": {
+        "status": "measured",
+        "case_id": "bugsinpy-black-2",
+        "strategy": "llm",
+        "trial_index": 1,
+        "run_id": "49ae57fb-5f1f-4e6d-a360-66c9b952a22b",
+        "candidate_id": "bugsinpy-black-2-llm-t1-c1-llm-direct",
+        "generator_family": "llm",
+        "generator_id": "llm_direct",
+        "reflection_round": 0,
+        "outcome": "failed",
+        "direct_success": false,
+        "reflection_recovered": false,
+        "failure_layer": "targeted_test",
+        "failure_category": "test_assertion_failure",
+        "validation": {
+          "ast_valid": true,
+          "safety_gate": "pass",
+          "targeted_tests": "fail",
+          "full_regression": "not_run",
+          "semantic_validation": "not_run",
+          "semantic_justification": "Targeted tests did not pass."
+        },
+        "total_tokens": 53011,
+        "actual_cost_usd": 0.015915838,
+        "latency_ms": 279258.0,
+        "patch_sha256": "3ede3f5f0507f40b0a0a5ca4602acc48cf3eeb7dc6c1ba0b7ae2cf4736ec0248",
+        "validation_sha256": "1423ab997e6e8f96b07fe7395801e5ba65d237c73bff22a057e52079c9c7d19a"
+      },
+      "provider_blocker": {
+        "status": "measured",
+        "case_id": "bugsinpy-black-2",
+        "strategy": "hybrid",
+        "trial_index": 2,
+        "run_id": "41e89eab-e444-4436-a468-b1c190848eea",
+        "candidate_id": "bugsinpy-black-2-hybrid-t2-c5-llm-direct",
+        "generator_family": "llm",
+        "generator_id": "llm_direct",
+        "reflection_round": 0,
+        "outcome": "provider_blocker",
+        "direct_success": false,
+        "reflection_recovered": false,
+        "failure_layer": "provider",
+        "failure_category": "timeout",
+        "validation": {
+          "ast_valid": null,
+          "safety_gate": "not_run",
+          "targeted_tests": "not_run",
+          "full_regression": "not_run",
+          "semantic_validation": "not_run",
+          "semantic_justification": "Model provider request did not produce a candidate."
+        },
+        "total_tokens": 0,
+        "actual_cost_usd": 0.0,
+        "latency_ms": 300025.0,
+        "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "validation_sha256": "7a24f34bb432b17c0420d4cbb2a14f538288b585bcdded2617e99ce2c95121d1"
+      }
+    }
   },
   "metric_registry": {
     "benchmark": {
@@ -190,53 +1095,155 @@
           "targeted_test:test_assertion_failure": 49
         },
         "winning_generator_families": {},
+        "provider_blocker_record_count": 0,
+        "environment_blocker_record_count": 0,
         "source": "docs/v3/phase3_offline_verification.json"
       },
       "llm": {
-        "evidence_state": "pending",
+        "evidence_state": "measured",
         "case_denominator": 20,
-        "required_trial_count": 60,
-        "observed_trial_count": 0,
-        "pass_at_1": null,
-        "pass_at_3": null,
-        "verified_repair_rate": null,
-        "reflection_recovery_rate": null,
-        "ast_valid_rate": null,
-        "safety_pass_rate": null,
-        "targeted_test_pass_rate": null,
-        "full_regression_pass_rate": null,
-        "semantic_claim_eligible_rate": null,
-        "actual_cost_usd": null,
-        "latency_ms": null,
-        "token_usage": {},
-        "failure_layers": {},
-        "failure_categories": {},
-        "winning_generator_families": {},
-        "source": "pending_live_evaluation",
-        "reason": "llm_requires_20_cases_x_3_independent_trials"
+        "observed_trial_count": 60,
+        "pass_at_1": 0.4,
+        "pass_at_1_count": 8,
+        "pass_at_1_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 8,
+          "denominator": 20,
+          "lower": 0.218804,
+          "upper": 0.613422
+        },
+        "pass_at_3": 0.5,
+        "pass_at_3_count": 10,
+        "pass_at_3_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 10,
+          "denominator": 20,
+          "lower": 0.299295,
+          "upper": 0.700705
+        },
+        "verified_repair_rate": 0.5,
+        "reflection_recovery_rate": 0.35,
+        "ast_valid_rate": 0.923729,
+        "safety_pass_rate": 0.70339,
+        "targeted_test_pass_rate": 0.385542,
+        "full_regression_pass_rate": 0.8125,
+        "semantic_claim_eligible_rate": 0.961538,
+        "actual_cost_usd": 1.83961291,
+        "latency_ms": 15739038.0,
+        "token_usage": {
+          "input_tokens": 4681854,
+          "cache_hit_input_tokens": 2617344,
+          "cache_miss_input_tokens": 2064510,
+          "output_tokens": 1071337,
+          "reasoning_tokens": 838874
+        },
+        "failure_layers": {
+          "full_regression": 6,
+          "generation": 9,
+          "safety": 26,
+          "semantic_validation": 1,
+          "syntax": 9,
+          "targeted_test": 51
+        },
+        "failure_categories": {
+          "full_regression:test_assertion_failure": 6,
+          "generation:candidate_schema_or_scope_invalid": 2,
+          "generation:invalid_json_response": 1,
+          "generation:model_returned_no_files": 6,
+          "safety:dangerous_api_added:open": 2,
+          "safety:decorator_changed": 1,
+          "safety:duplicate_failed_combined_patch": 3,
+          "safety:duplicate_failed_patch": 5,
+          "safety:signature_changed": 15,
+          "semantic_validation:one_or_more_reverse_mutations_survived": 1,
+          "syntax:invalid_python_ast": 9,
+          "targeted_test:syntax_error": 15,
+          "targeted_test:test_assertion_failure": 36
+        },
+        "winning_generator_families": {
+          "llm": 25
+        },
+        "provider_blocker_record_count": 0,
+        "environment_blocker_record_count": 0,
+        "source": "outputs_v3/phase3_live_20260717_334eee/evaluation.json"
       },
       "hybrid": {
-        "evidence_state": "pending",
+        "evidence_state": "measured",
         "case_denominator": 20,
-        "required_trial_count": 60,
-        "observed_trial_count": 0,
-        "pass_at_1": null,
-        "pass_at_3": null,
-        "verified_repair_rate": null,
-        "reflection_recovery_rate": null,
-        "ast_valid_rate": null,
-        "safety_pass_rate": null,
-        "targeted_test_pass_rate": null,
-        "full_regression_pass_rate": null,
-        "semantic_claim_eligible_rate": null,
-        "actual_cost_usd": null,
-        "latency_ms": null,
-        "token_usage": {},
-        "failure_layers": {},
-        "failure_categories": {},
-        "winning_generator_families": {},
-        "source": "pending_live_evaluation",
-        "reason": "hybrid_requires_20_cases_x_3_independent_trials"
+        "observed_trial_count": 60,
+        "pass_at_1": 0.3,
+        "pass_at_1_count": 6,
+        "pass_at_1_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 6,
+          "denominator": 20,
+          "lower": 0.145475,
+          "upper": 0.518977
+        },
+        "pass_at_3": 0.45,
+        "pass_at_3_count": 9,
+        "pass_at_3_wilson_95pct": {
+          "status": "measured",
+          "method": "wilson_95pct",
+          "successes": 9,
+          "denominator": 20,
+          "lower": 0.258195,
+          "upper": 0.657918
+        },
+        "verified_repair_rate": 0.45,
+        "reflection_recovery_rate": 0.15,
+        "ast_valid_rate": 0.921933,
+        "safety_pass_rate": 0.821561,
+        "targeted_test_pass_rate": 0.153846,
+        "full_regression_pass_rate": 0.676471,
+        "semantic_claim_eligible_rate": 0.956522,
+        "actual_cost_usd": 1.00687333,
+        "latency_ms": 15563464.0,
+        "token_usage": {
+          "input_tokens": 4388118,
+          "cache_hit_input_tokens": 4170880,
+          "cache_miss_input_tokens": 217238,
+          "output_tokens": 1031328,
+          "reasoning_tokens": 817991
+        },
+        "failure_layers": {
+          "full_regression": 11,
+          "generation": 26,
+          "provider": 1,
+          "safety": 27,
+          "semantic_validation": 1,
+          "syntax": 21,
+          "targeted_test": 187
+        },
+        "failure_categories": {
+          "full_regression:syntax_error": 1,
+          "full_regression:test_assertion_failure": 10,
+          "generation:candidate_schema_or_scope_invalid": 3,
+          "generation:invalid_json_response": 1,
+          "generation:model_returned_no_files": 7,
+          "generation:no_rule_patch_candidates_generated": 15,
+          "provider:timeout": 1,
+          "safety:combined_patch_too_large": 2,
+          "safety:dangerous_api_added:open": 2,
+          "safety:duplicate_failed_combined_patch": 2,
+          "safety:duplicate_failed_patch": 4,
+          "safety:patch_too_large": 1,
+          "safety:scope_not_limited_to_original_function": 2,
+          "safety:signature_changed": 14,
+          "semantic_validation:one_or_more_reverse_mutations_survived": 1,
+          "syntax:invalid_python_ast": 21,
+          "targeted_test:syntax_error": 35,
+          "targeted_test:test_assertion_failure": 152
+        },
+        "winning_generator_families": {
+          "llm": 22
+        },
+        "provider_blocker_record_count": 1,
+        "environment_blocker_record_count": 0,
+        "source": "outputs_v3/phase3_live_20260717_334eee/evaluation.json"
       }
     },
     "planner": {
@@ -248,11 +1255,11 @@
       "source": "docs/v3/phase6_verification.json"
     },
     "reflection": {
-      "evidence_state": "pending",
-      "headline": "requires 120 live LLM/Hybrid trials",
-      "llm_rate": null,
-      "hybrid_rate": null,
-      "source": "pending_live_evaluation"
+      "evidence_state": "measured",
+      "headline": "live reflection recovery available",
+      "llm_rate": 0.35,
+      "hybrid_rate": 0.15,
+      "source": "outputs_v3/phase3_live_20260717_334eee/evaluation.json"
     },
     "semantic_validation": {
       "evidence_state": "calibration_only",
@@ -306,13 +1313,13 @@
       "source": "docs/v3/phase6_verification.json"
     },
     "cost_and_latency": {
-      "evidence_state": "partial",
-      "headline": "Rule cost USD 0; live LLM/Hybrid cost pending",
+      "evidence_state": "measured",
+      "headline": "Rule, LLM, and Hybrid cost/latency available",
       "rule_actual_cost_usd": 0.0,
-      "llm_actual_cost_usd": null,
-      "hybrid_actual_cost_usd": null,
-      "provider_preflight_actual_cost_usd": null,
-      "provider_preflight_latency_ms": null,
+      "llm_actual_cost_usd": 1.83961291,
+      "hybrid_actual_cost_usd": 1.00687333,
+      "provider_preflight_actual_cost_usd": 3.5235e-05,
+      "provider_preflight_latency_ms": 1072,
       "source": "docs/v3/phase3_offline_verification.json and live evaluation"
     }
   },
@@ -333,7 +1340,7 @@
     },
     "v2_v3_patch_repair": {
       "status": "not_comparable",
-      "reason": "V2 LLM metrics use deterministic fixtures; V3 live-model metrics are pending",
+      "reason": "V2 LLM metrics use deterministic fixtures while V3 uses a completed 120-trial live-model real-bug protocol; no uplift is calculated",
       "difference_claim_eligible": false
     },
     "v2_v3_memory": {
@@ -351,36 +1358,13 @@
     "phase4_localization_passed": true,
     "phase5_semantic_validation_passed": true,
     "phase6_memory_and_security_passed": true,
-    "live_provider_access_preflight_passed": false,
-    "live_llm_hybrid_120_trials_complete": false,
-    "rule_llm_hybrid_attribution_available": false,
-    "live_cost_latency_and_failure_taxonomy_available": false,
-    "full_v3_claim_eligible": false
+    "live_provider_access_preflight_passed": true,
+    "live_llm_hybrid_120_trials_complete": true,
+    "rule_llm_hybrid_attribution_available": true,
+    "live_cost_latency_and_failure_taxonomy_available": true,
+    "full_v3_claim_eligible": true
   },
-  "pending_requirements": [
-    {
-      "id": "environment_injected_provider_access",
-      "requirement": "Use an environment-injected provider key with valid authentication, billing/quota, and frozen-model access; never persist the key."
-    },
-    {
-      "id": "provider_access_preflight",
-      "requirement": "Record one passing frozen provider-access preflight with exact-model verification and separate token, cost, and latency overhead."
-    },
-    {
-      "id": "llm_trials",
-      "requirement": "Run 20 real bugs x 3 independent LLM trials (60 trials)."
-    },
-    {
-      "id": "hybrid_trials",
-      "requirement": "Run 20 real bugs x 3 independent Hybrid trials (60 trials)."
-    },
-    {
-      "id": "complete_live_artifact",
-      "requirement": "Supply a passing evaluation with 120/120 trials, zero missing trials, RunRecord audit pass, pass@1/pass@3, semantic verification, reflection, token, cost, latency, failure taxonomy, generator attribution, and a passing provider-access preflight.",
-      "current_live_status": "pending",
-      "validation_errors": []
-    }
-  ],
+  "pending_requirements": [],
   "latest_regression": {
     "phase6_core_regression": {
       "status": "pass",
@@ -442,12 +1426,572 @@
   },
   "case_examples": {
     "direct_live_repair": {
-      "status": "pending",
-      "reason": "live_trials_not_complete"
+      "status": "measured",
+      "case_id": "bugsinpy-fastapi-4",
+      "strategy": "llm",
+      "trial_index": 1,
+      "run_id": "6f331f43-8f65-4c89-b6d5-c0958d3eeaf6",
+      "candidate_id": "bugsinpy-fastapi-4-llm-t1-c1-llm-direct",
+      "generator_family": "llm",
+      "generator_id": "llm_direct",
+      "reflection_round": 0,
+      "outcome": "verified_repair",
+      "direct_success": true,
+      "reflection_recovered": false,
+      "failure_layer": "none",
+      "failure_category": "none",
+      "validation": {
+        "ast_valid": true,
+        "safety_gate": "pass",
+        "targeted_tests": "pass",
+        "full_regression": "pass",
+        "semantic_validation": "pass",
+        "semantic_justification": "all_required_semantic_gates_passed",
+        "semantic_validation_details": {
+          "schema_version": "v3_semantic_validation_v1",
+          "status": "pass",
+          "reason": "all_required_semantic_gates_passed",
+          "claim_eligible": true,
+          "required_check_count": 6,
+          "passed_required_check_count": 6,
+          "failed_check_ids": [],
+          "blocker_check_ids": [],
+          "incomplete_check_ids": [],
+          "checks": [
+            {
+              "check_id": "api_contract_compatibility",
+              "status": "pass",
+              "required": true,
+              "reason": "api_and_type_contracts_compatible",
+              "changed_file_count": 1,
+              "removed_contracts": [],
+              "changed_contracts": [],
+              "added_contracts": [],
+              "signature_change_allowed": false,
+              "allowed_contract_changes": [],
+              "parse_errors": []
+            },
+            {
+              "check_id": "static_semantic_diff",
+              "status": "pass",
+              "required": true,
+              "reason": "static_semantic_checks_not_blocked",
+              "blocked_reasons": [],
+              "warning_count": 0,
+              "files": [
+                {
+                  "status": "pass",
+                  "blocked_reasons": [],
+                  "warnings": [],
+                  "risk_score": 0.0,
+                  "old_summary": {
+                    "top_level_definitions": [
+                      "generate_operation_id",
+                      "generate_operation_summary",
+                      "get_openapi",
+                      "get_openapi_operation_metadata",
+                      "get_openapi_operation_parameters",
+                      "get_openapi_operation_request_body",
+                      "get_openapi_params",
+                      "get_openapi_path",
+                      "get_openapi_security_definitions"
+                    ],
+                    "top_level_assignments": [
+                      "status_code_ranges",
+                      "validation_error_definition",
+                      "validation_error_response_definition"
+                    ],
+                    "import_count": 16,
+                    "ast_node_count": 1686
+                  },
+                  "new_summary": {
+                    "top_level_definitions": [
+                      "generate_operation_id",
+                      "generate_operation_summary",
+                      "get_openapi",
+                      "get_openapi_operation_metadata",
+                      "get_openapi_operation_parameters",
+                      "get_openapi_operation_request_body",
+                      "get_openapi_params",
+                      "get_openapi_path",
+                      "get_openapi_security_definitions"
+                    ],
+                    "top_level_assignments": [
+                      "status_code_ranges",
+                      "validation_error_definition",
+                      "validation_error_response_definition"
+                    ],
+                    "import_count": 16,
+                    "ast_node_count": 1751,
+                    "removed_definitions": []
+                  },
+                  "path": "fastapi/openapi/utils.py",
+                  "function_id": "fastapi/openapi/utils.py::__module__",
+                  "region_kind": "module"
+                }
+              ]
+            },
+            {
+              "check_id": "patched_workspace_consistency",
+              "status": "pass",
+              "required": true,
+              "reason": "candidate_reflected_and_cross_file_imports_consistent",
+              "edit_count": 1,
+              "changed_module_count": 1,
+              "cross_file_broken_import_count": 0,
+              "errors": [],
+              "parse_errors": [],
+              "import_scan_warnings": [],
+              "broken_imports": [],
+              "edits": [
+                {
+                  "index": 0,
+                  "path": "fastapi/openapi/utils.py",
+                  "region_kind": "module",
+                  "replacement_reflected": true,
+                  "replacement_occurrence_count": 1
+                }
+              ]
+            },
+            {
+              "check_id": "patch_minimality",
+              "status": "pass",
+              "required": true,
+              "reason": "patch_within_static_minimality_budget",
+              "edit_count": 1,
+              "changed_file_count": 1,
+              "changed_line_count": 10,
+              "original_line_count": 311,
+              "minimality_score": 0.875,
+              "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+              "errors": [],
+              "edits": [
+                {
+                  "path": "fastapi/openapi/utils.py",
+                  "function_id": "fastapi/openapi/utils.py::__module__",
+                  "changed_lines": 10,
+                  "original_lines": 311,
+                  "line_change_ratio": 0.032154
+                }
+              ]
+            },
+            {
+              "check_id": "generated_boundary_property_probe",
+              "status": "not_applicable",
+              "required": false,
+              "reason": "no_supported_generated_boundary_probe",
+              "probe_count": 0,
+              "case_count": 0,
+              "probes": []
+            },
+            {
+              "check_id": "target_behavior_differential",
+              "status": "pass",
+              "required": true,
+              "reason": "bug_seed_fails_while_patched_target_passes",
+              "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+              "bug_seed_execution": {
+                "status": "fail",
+                "reason": "one_or_more_commands_failed",
+                "environment_blocker": false,
+                "result_count": 1,
+                "results": [
+                  {
+                    "status": "fail",
+                    "returncode": 1,
+                    "test_count": 1,
+                    "passed": 0,
+                    "failed": 1,
+                    "timeout": false
+                  }
+                ]
+              },
+              "patched_execution": {
+                "status": "pass",
+                "reason": "all_commands_passed",
+                "environment_blocker": false,
+                "result_count": 1,
+                "results": [
+                  {
+                    "status": "pass",
+                    "returncode": 0,
+                    "test_count": 1,
+                    "passed": 1,
+                    "failed": 0,
+                    "timeout": false
+                  }
+                ]
+              },
+              "patched_execution_reused": true
+            },
+            {
+              "check_id": "reverse_mutation_sensitivity",
+              "status": "pass",
+              "required": true,
+              "reason": "every_reverse_mutation_was_killed",
+              "mutation_count": 1,
+              "killed_mutation_count": 1,
+              "surviving_mutation_count": 0,
+              "mutations": [
+                {
+                  "index": 0,
+                  "path": "fastapi/openapi/utils.py",
+                  "status": "pass",
+                  "reason": "reverse_mutation_killed_by_targeted_tests",
+                  "killed_by": "targeted_tests",
+                  "targeted": {
+                    "status": "fail",
+                    "reason": "one_or_more_commands_failed",
+                    "environment_blocker": false,
+                    "result_count": 1,
+                    "results": [
+                      {
+                        "status": "fail",
+                        "returncode": 1,
+                        "test_count": 1,
+                        "passed": 0,
+                        "failed": 1,
+                        "timeout": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "check_id": "manifest_semantic_commands",
+              "status": "not_applicable",
+              "required": false,
+              "reason": "no_manifest_semantic_commands",
+              "commands": []
+            }
+          ],
+          "gold_patch_used": false,
+          "fix_commit_content_used": false,
+          "llm_judge_authoritative": false
+        }
+      },
+      "total_tokens": 45498,
+      "actual_cost_usd": 0.006399691,
+      "latency_ms": 103073.0,
+      "patch_sha256": "90a82de97994b52cabf3c0f091613c2eb0f86acbf0fb7c088864de2dfbad6277",
+      "validation_sha256": "719c5febacf435b26ed156295c325a58fbf4c808d70023eda3d48a023b84f821"
     },
     "reflection_live_repair": {
-      "status": "pending",
-      "reason": "live_trials_not_complete"
+      "status": "measured",
+      "case_id": "bugsinpy-black-10",
+      "strategy": "hybrid",
+      "trial_index": 2,
+      "run_id": "dd4c0707-c5cf-420d-adb3-b520ce9679aa",
+      "candidate_id": "bugsinpy-black-10-hybrid-t2-c7-llm-reflection-2",
+      "generator_family": "llm",
+      "generator_id": "llm_reflection",
+      "reflection_round": 2,
+      "outcome": "verified_repair",
+      "direct_success": false,
+      "reflection_recovered": true,
+      "failure_layer": "none",
+      "failure_category": "none",
+      "validation": {
+        "ast_valid": true,
+        "safety_gate": "pass",
+        "targeted_tests": "pass",
+        "full_regression": "pass",
+        "semantic_validation": "pass",
+        "semantic_justification": "all_required_semantic_gates_passed",
+        "semantic_validation_details": {
+          "schema_version": "v3_semantic_validation_v1",
+          "status": "pass",
+          "reason": "all_required_semantic_gates_passed",
+          "claim_eligible": true,
+          "required_check_count": 6,
+          "passed_required_check_count": 6,
+          "failed_check_ids": [],
+          "blocker_check_ids": [],
+          "incomplete_check_ids": [],
+          "checks": [
+            {
+              "check_id": "api_contract_compatibility",
+              "status": "pass",
+              "required": true,
+              "reason": "api_and_type_contracts_compatible",
+              "changed_file_count": 1,
+              "removed_contracts": [],
+              "changed_contracts": [],
+              "added_contracts": [],
+              "signature_change_allowed": false,
+              "allowed_contract_changes": [],
+              "parse_errors": []
+            },
+            {
+              "check_id": "static_semantic_diff",
+              "status": "pass",
+              "required": true,
+              "reason": "static_semantic_checks_not_blocked",
+              "blocked_reasons": [],
+              "warning_count": 0,
+              "files": [
+                {
+                  "status": "pass",
+                  "blocked_reasons": [],
+                  "warnings": [],
+                  "risk_score": 0.0,
+                  "old_summary": {
+                    "parameters": [
+                      "debug",
+                      "tokens"
+                    ],
+                    "parameter_reads": [
+                      "debug",
+                      "tokens"
+                    ],
+                    "control_flow_count": 14,
+                    "return_count": 1,
+                    "raise_count": 1,
+                    "assert_count": 1,
+                    "call_count": 12,
+                    "constant_return_only": false,
+                    "exception_swallowing_patterns": []
+                  },
+                  "new_summary": {
+                    "parameters": [
+                      "debug",
+                      "tokens"
+                    ],
+                    "parameter_reads": [
+                      "debug",
+                      "tokens"
+                    ],
+                    "control_flow_count": 16,
+                    "return_count": 1,
+                    "raise_count": 1,
+                    "assert_count": 1,
+                    "call_count": 18,
+                    "constant_return_only": false,
+                    "exception_swallowing_patterns": []
+                  },
+                  "path": "blib2to3/pgen2/driver.py",
+                  "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens",
+                  "region_kind": "function"
+                }
+              ]
+            },
+            {
+              "check_id": "patched_workspace_consistency",
+              "status": "pass",
+              "required": true,
+              "reason": "candidate_reflected_and_cross_file_imports_consistent",
+              "edit_count": 1,
+              "changed_module_count": 1,
+              "cross_file_broken_import_count": 0,
+              "errors": [],
+              "parse_errors": [],
+              "import_scan_warnings": [],
+              "broken_imports": [],
+              "edits": [
+                {
+                  "index": 0,
+                  "path": "blib2to3/pgen2/driver.py",
+                  "region_kind": "function",
+                  "replacement_reflected": true,
+                  "replacement_occurrence_count": 1
+                }
+              ]
+            },
+            {
+              "check_id": "patch_minimality",
+              "status": "pass",
+              "required": true,
+              "reason": "patch_within_static_minimality_budget",
+              "edit_count": 1,
+              "changed_file_count": 1,
+              "changed_line_count": 8,
+              "original_line_count": 58,
+              "minimality_score": 0.9,
+              "score_formula": "max(0,1-changed_lines/(80*edits)-0.05*(files-1))",
+              "errors": [],
+              "edits": [
+                {
+                  "path": "blib2to3/pgen2/driver.py",
+                  "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens",
+                  "changed_lines": 8,
+                  "original_lines": 58,
+                  "line_change_ratio": 0.137931
+                }
+              ]
+            },
+            {
+              "check_id": "generated_boundary_property_probe",
+              "status": "not_applicable",
+              "required": false,
+              "reason": "no_supported_generated_boundary_probe",
+              "probe_count": 0,
+              "case_count": 0,
+              "probes": [
+                {
+                  "status": "not_run",
+                  "reason": "no_supported_boundary_probe_for_candidate",
+                  "rule_id": "",
+                  "case_count": 0,
+                  "forbidden_exceptions": [],
+                  "results": [],
+                  "timeout": false,
+                  "returncode": 0,
+                  "path": "blib2to3/pgen2/driver.py",
+                  "function_id": "blib2to3/pgen2/driver.py::Driver.parse_tokens"
+                }
+              ]
+            },
+            {
+              "check_id": "target_behavior_differential",
+              "status": "pass",
+              "required": true,
+              "reason": "bug_seed_fails_while_patched_target_passes",
+              "expected_relation": "bug_seed_fail_and_patched_workspace_pass",
+              "bug_seed_execution": {
+                "status": "fail",
+                "reason": "one_or_more_commands_failed",
+                "environment_blocker": false,
+                "result_count": 1,
+                "results": [
+                  {
+                    "status": "fail",
+                    "returncode": 1,
+                    "test_count": 1,
+                    "passed": 0,
+                    "failed": 1,
+                    "timeout": false
+                  }
+                ]
+              },
+              "patched_execution": {
+                "status": "pass",
+                "reason": "all_commands_passed",
+                "environment_blocker": false,
+                "result_count": 1,
+                "results": [
+                  {
+                    "status": "pass",
+                    "returncode": 0,
+                    "test_count": 1,
+                    "passed": 1,
+                    "failed": 0,
+                    "timeout": false
+                  }
+                ]
+              },
+              "patched_execution_reused": true
+            },
+            {
+              "check_id": "reverse_mutation_sensitivity",
+              "status": "pass",
+              "required": true,
+              "reason": "every_reverse_mutation_was_killed",
+              "mutation_count": 1,
+              "killed_mutation_count": 1,
+              "surviving_mutation_count": 0,
+              "mutations": [
+                {
+                  "index": 0,
+                  "path": "blib2to3/pgen2/driver.py",
+                  "status": "pass",
+                  "reason": "reverse_mutation_killed_by_targeted_tests",
+                  "killed_by": "targeted_tests",
+                  "targeted": {
+                    "status": "fail",
+                    "reason": "one_or_more_commands_failed",
+                    "environment_blocker": false,
+                    "result_count": 1,
+                    "results": [
+                      {
+                        "status": "fail",
+                        "returncode": 1,
+                        "test_count": 1,
+                        "passed": 0,
+                        "failed": 1,
+                        "timeout": false
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "check_id": "manifest_semantic_commands",
+              "status": "not_applicable",
+              "required": false,
+              "reason": "no_manifest_semantic_commands",
+              "commands": []
+            }
+          ],
+          "gold_patch_used": false,
+          "fix_commit_content_used": false,
+          "llm_judge_authoritative": false
+        }
+      },
+      "total_tokens": 45038,
+      "actual_cost_usd": 0.009145643,
+      "latency_ms": 174978.0,
+      "patch_sha256": "c153cddb2d27b527fe758504bf936c45b2d951ca21710cd1834d0b7b4b290143",
+      "validation_sha256": "3291bfbfd9b1377fb3e0c668bda3c75fb600d3e0c884ca99a1adeb23d9818d42"
+    },
+    "failed_live_repair": {
+      "status": "measured",
+      "case_id": "bugsinpy-black-2",
+      "strategy": "llm",
+      "trial_index": 1,
+      "run_id": "49ae57fb-5f1f-4e6d-a360-66c9b952a22b",
+      "candidate_id": "bugsinpy-black-2-llm-t1-c1-llm-direct",
+      "generator_family": "llm",
+      "generator_id": "llm_direct",
+      "reflection_round": 0,
+      "outcome": "failed",
+      "direct_success": false,
+      "reflection_recovered": false,
+      "failure_layer": "targeted_test",
+      "failure_category": "test_assertion_failure",
+      "validation": {
+        "ast_valid": true,
+        "safety_gate": "pass",
+        "targeted_tests": "fail",
+        "full_regression": "not_run",
+        "semantic_validation": "not_run",
+        "semantic_justification": "Targeted tests did not pass."
+      },
+      "total_tokens": 53011,
+      "actual_cost_usd": 0.015915838,
+      "latency_ms": 279258.0,
+      "patch_sha256": "3ede3f5f0507f40b0a0a5ca4602acc48cf3eeb7dc6c1ba0b7ae2cf4736ec0248",
+      "validation_sha256": "1423ab997e6e8f96b07fe7395801e5ba65d237c73bff22a057e52079c9c7d19a"
+    },
+    "provider_blocker": {
+      "status": "measured",
+      "case_id": "bugsinpy-black-2",
+      "strategy": "hybrid",
+      "trial_index": 2,
+      "run_id": "41e89eab-e444-4436-a468-b1c190848eea",
+      "candidate_id": "bugsinpy-black-2-hybrid-t2-c5-llm-direct",
+      "generator_family": "llm",
+      "generator_id": "llm_direct",
+      "reflection_round": 0,
+      "outcome": "provider_blocker",
+      "direct_success": false,
+      "reflection_recovered": false,
+      "failure_layer": "provider",
+      "failure_category": "timeout",
+      "validation": {
+        "ast_valid": null,
+        "safety_gate": "not_run",
+        "targeted_tests": "not_run",
+        "full_regression": "not_run",
+        "semantic_validation": "not_run",
+        "semantic_justification": "Model provider request did not produce a candidate."
+      },
+      "total_tokens": 0,
+      "actual_cost_usd": 0.0,
+      "latency_ms": 300025.0,
+      "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "validation_sha256": "7a24f34bb432b17c0420d4cbb2a14f538288b585bcdded2617e99ce2c95121d1"
     },
     "rule_failure_taxonomy": {
       "status": "measured",
@@ -477,10 +2021,10 @@
     }
   },
   "claim_boundaries": [
-    "Offline Phase 0-6 evidence does not substitute for the pending 120 live LLM and Hybrid trials.",
+    "Offline Phase 0-6 evidence is combined with a validated 120-trial live LLM/Hybrid evaluation; neither substitutes for the other.",
     "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
     "V2/V3 numbers are not presented as improvements when their protocols differ.",
-    "A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
+    "A complete V3 release retains all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
     "Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.",
     "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows."
   ]

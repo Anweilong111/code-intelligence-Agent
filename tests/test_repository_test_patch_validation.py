@@ -824,7 +824,7 @@ def test_repository_test_patch_validation_allows_unchanged_baseline_failure(
     assert payload["verified_repair"] is False
     assert payload["verification_claim"] == (
         "targeted_candidate_with_baseline_caveat"
-    )
+    ), json.dumps(payload["regression_validation"], indent=2)
     assert payload["repair_ready"] is False
     assert payload["repair_validation_scope"] == (
         "narrow_and_unchanged_regression_baseline"

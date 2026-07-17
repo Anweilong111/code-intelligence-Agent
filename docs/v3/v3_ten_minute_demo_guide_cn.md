@@ -7,7 +7,8 @@
 1. 这是会观察、选择动作、执行、验证、反思和重规划的受控 Agent；
 2. 定位和修复结论来自可追溯程序证据，而不是只展示模型回答；
 3. pytest/sandbox 与语义检查决定修复是否成立；
-4. 当前 live LLM/Hybrid 指标仍待 120 次真实试验，系统不会补造结果。
+4. 120 次 live LLM/Hybrid 试验已完成，成功、失败、blocker、成本和延迟都能
+   追溯到冻结协议与 RunRecord。
 
 主演示不依赖网络和付费模型。公开 GitHub 运行和 live-model smoke 是可选附加项，
 避免现场网络、限流或 Key 问题占用全部时间。
@@ -61,27 +62,32 @@ Remove-Item Env:DEEPSEEK_API_KEY -ErrorAction SilentlyContinue
 
 ## 3. 主演示命令
 
-### 3.1 一键重建 V3 离线发布报告
+### 3.1 展示并重建 V3 最终发布报告
 
 ```powershell
+Get-Content docs/v3/phase7_unified_evaluation.md
+
 python -m code_intelligence_agent v3-release-eval `
   outputs_demo/v3_release `
   --root . `
-  --require-offline-pass `
+  --live-evaluation outputs_v3/phase3_live_20260717_334eee/evaluation.json `
+  --require-complete `
   --format markdown
 ```
 
-该命令会读取 Phase 0-6 的提交证据、校验 artifact 状态和 SHA，并生成统一
-JSON/Markdown 报告。当前正确输出是：
+第一条命令不需要网络，直接展示提交的脱敏最终证据。第二条命令只在本地保留
+原始 live artifact 时重建报告；它读取 Phase 0-6 证据、live evaluation 和
+RunRecord hash。当前正确输出是：
 
-- `status=partial`；
+- `status=pass`；
 - `offline_release_status=pass`；
-- `complete_release_status=pending`；
-- LLM/Hybrid 数值为 `null/pending`；
-- pending requirements 明确列出 60 LLM + 60 Hybrid trials。
+- `complete_release_status=pass`、`claim_eligible=true`；
+- `120/120` trial、`423/423` RunRecord audit pass；
+- LLM pass@1/pass@3 为 `0.40/0.50`，Hybrid 为 `0.30/0.45`；
+- pending requirements 为 `none`。
 
-`partial` 不是命令失败，而是完整发布证据尚不齐全。`--require-offline-pass`
-只要求离线门通过；`--require-complete` 在 live 试验缺失时必须非零退出。
+如果省略 `--live-evaluation`，新生成的报告会按设计回到 `partial`，因为发布器
+不会从已提交摘要反推出原始 live trial。这不改变已提交 final artifact 的状态。
 
 ### 3.2 可选：真实公开仓库 Agent
 
@@ -202,9 +208,10 @@ candidate -> AST -> scope/signature/safety -> targeted tests
           -> full regression -> semantic validation -> verified repair
 ```
 
-当前 Rule 在 20 个真实案例上 pass@1=0，这是保留的正式结果。LLM/Hybrid
-仍 pending，所以演示中不展示任何“真实模型修复率”。LLM Judge 只能排序，
-不能把失败测试判成成功。
+当前 Rule 在 20 个真实案例上 pass@1=0，这是保留的正式结果。真实 LLM 的
+pass@1/pass@3 为 0.40/0.50，Hybrid 为 0.30/0.45；Hybrid 的 22 个 verified
+winning record 全部来自 LLM generator family，因此不声称 Hybrid 或 Rule
+带来 uplift。LLM Judge 只能排序，不能把失败测试判成成功。
 
 ### 7:15-8:15：讲语义验证、记忆和安全
 
@@ -219,18 +226,19 @@ candidate -> AST -> scope/signature/safety -> targeted tests
 执行 3.1 的 `v3-release-eval` 命令，展示：
 
 - 七个 offline phase gate 均为 pass；
-- Wilson 区间保留小样本不确定性；
+- live 120/120、RunRecord 423/423 和 exact model audit 均为 pass；
+- LLM/Hybrid pass@1/pass@3 的 Wilson 区间保留小样本不确定性；
 - 119 个 trial 的伪完整 artifact 会被拒绝；
 - model ID 或 Prompt hash 漂移也会被拒绝；
-- live 缺失项保持 `null`。
+- 直接成功、Reflection 成功、失败和 provider timeout 都有脱敏实例。
 
 ### 9:30-10:00：用边界收尾
 
 ```text
 项目已经完成真实 benchmark、19/20 环境启动、困难定位、Rule 基线、语义门、
-记忆、安全和统一审计。当前完整回归是 1381 passed、2 个 Windows symlink
-fixture skip。剩余工作是 fresh key 下的 60 LLM + 60 Hybrid trial；完成前我
-不会在简历中写真实模型修复率。
+记忆、安全和统一审计，并完成 60 LLM + 60 Hybrid live trial。LLM 在三次内
+修复 10/20 个 case，Hybrid 修复 9/20；失败和 blocker 均保留。完整回归与
+clean archive 结果以 Phase 7 final verification 为准。
 ```
 
 ## 5. 面试时打开的五个文件
@@ -268,7 +276,7 @@ python -m code_intelligence_agent v3-repair-eval `
 python -m code_intelligence_agent v3-release-eval `
   outputs_v3/phase7_complete `
   --root . `
-  --live-evaluation outputs_v3/phase3_live/evaluation.json `
+  --live-evaluation outputs_v3/phase3_live_20260717_334eee/evaluation.json `
   --require-complete `
   --format markdown
 ```

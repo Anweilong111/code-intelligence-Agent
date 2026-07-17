@@ -8,10 +8,11 @@ aggregator is intentionally stricter than a dashboard: it can report offline
 readiness while refusing a complete release claim when live evidence is absent,
 incomplete, stale, or structurally invalid.
 
-The current committed result is `partial`. Phase 0-6 offline evidence passes,
-but the final frozen-protocol provider preflight returns HTTP 402 before any
-repository preparation or repair Trial. The required 60 LLM and 60 Hybrid
-trials therefore remain unsubmitted.
+The current committed result is `pass`. Phase 0-6 offline evidence passes, the
+frozen provider preflight verifies `deepseek-v4-pro`, and all 60 LLM plus 60
+Hybrid trials are present with zero missing trial identities. The historical
+HTTP 402 interruption remains documented in the offline Phase 3 artifact, but
+it no longer blocks the completed release.
 
 ## Evidence States
 
@@ -125,9 +126,10 @@ isolated runtimes and a changed startup policy, so the report labels the pair
 
 Localization, patch, and memory comparisons are also withheld because their
 datasets or semantics changed. V2 deterministic LLM fixtures can demonstrate
-orchestration but cannot be compared with pending V3 live-model repair rates.
+orchestration but cannot be compared as an uplift against the completed V3
+live-model real-bug repair rates.
 
-## Current Offline Result
+## Current Complete Result
 
 Measured evidence includes:
 
@@ -135,20 +137,28 @@ Measured evidence includes:
 - environment: 19/20 repository test processes started and terminated;
 - localization: frozen test Top-1/3/5 = 0.60/0.80/1.00;
 - Rule repair: pass@1/pass@3/verified repair = 0/0/0 on 20 cases;
+- LLM repair: pass@1 = 8/20 (0.40), pass@3 = 10/20 (0.50), with
+  Reflection recovery in 7/20 cases;
+- Hybrid repair: pass@1 = 6/20 (0.30), pass@3 = 9/20 (0.45), with
+  Reflection recovery in 3/20 cases;
+- all 22 verified Hybrid candidate records are attributed to the LLM generator
+  family; Rule candidates produced no verified repair in this benchmark;
+- 423 RunRecords pass audit; one Hybrid provider timeout remains explicitly
+  classified and retained rather than converted into a code-repair failure;
+- LLM/Hybrid cost is USD 1.839613/1.006873, with provider preflight overhead of
+  USD 0.000035 reported separately;
 - semantic calibration: 2/2 human fixes accepted, not Agent repairs;
 - memory: controlled completion 0.4286 -> 1.0000 with zero stale,
   conflicting, or advisory execution;
 - security: 8/8 hostile fixtures rejected, isolated, or accurately reported;
-- latest full regression: 1408 passed and 2 explicit Windows symlink skips in
-  755.54 seconds from 1410 collected tests.
-
-LLM/Hybrid repair, Reflection recovery, provider token usage, live cost, live
-latency, direct success examples, and Reflection success examples remain
-pending.
+- selected direct-success, Reflection-success, failed-repair, provider-blocker,
+  environment-blocker, and security-rejection examples are retained in the
+  unified report without copying raw prompts or provider payloads.
 
 ## Commands
 
-Offline pre-release evaluation:
+Offline pre-release evaluation, which intentionally remains `partial` without a
+live artifact:
 
 ```powershell
 python -m code_intelligence_agent v3-release-eval `
@@ -157,13 +167,13 @@ python -m code_intelligence_agent v3-release-eval `
   --require-offline-pass
 ```
 
-Complete evaluation after the live artifact exists:
+Complete evaluation with the frozen live artifact:
 
 ```powershell
 python -m code_intelligence_agent v3-release-eval `
   outputs_v3/phase7_release `
   --root . `
-  --live-evaluation outputs_v3/phase3_live/evaluation.json `
+  --live-evaluation outputs_v3/phase3_live_20260717_334eee/evaluation.json `
   --require-complete
 ```
 
@@ -171,8 +181,10 @@ python -m code_intelligence_agent v3-release-eval `
 
 ## Completion Boundary
 
-The committed Phase 7 report is an offline release-readiness artifact, not the
-final V3 result. Phase 7 can be marked complete only after the valid 120-trial
-artifact is supplied, the unified report transitions to `pass`, complete
-regression and release hygiene pass again, and every public metric links to its
-source artifact.
+The committed Phase 7 report is the final V3 aggregate result for the frozen
+20-case protocol. It is complete because the validated 120-trial artifact is
+supplied and the unified report is `pass`. This does not establish universal
+repair performance: the benchmark has 20 cases from six repositories, process
+isolation on Windows is not container-grade, and V2/V3 uplift is not claimed
+when protocols differ. Full regression, clean-archive execution, release
+hygiene, and artifact hashes remain separate final verification requirements.

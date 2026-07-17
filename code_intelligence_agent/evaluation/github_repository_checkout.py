@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import locale
 import os
 import re
 import shutil
@@ -426,28 +427,40 @@ def _run_subprocess_with_tree_timeout(
     timeout: int,
     check: bool,
 ) -> subprocess.CompletedProcess:
+    stdout_capture = tempfile.TemporaryFile() if capture_output else None
+    stderr_capture = tempfile.TemporaryFile() if capture_output else None
     kwargs: dict[str, Any] = {
         "cwd": cwd,
-        "stdout": subprocess.PIPE if capture_output else None,
-        "stderr": subprocess.PIPE if capture_output else None,
-        "text": text,
+        "stdout": stdout_capture,
+        "stderr": stderr_capture,
     }
     if os.name == "nt":
         kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     else:
         kwargs["start_new_session"] = True
 
-    process = subprocess.Popen(command, **kwargs)
     try:
-        stdout, stderr = process.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired as exc:
-        stdout, stderr = _kill_process_tree_and_collect_output(process)
-        raise subprocess.TimeoutExpired(
-            command,
-            timeout,
-            output=stdout if stdout is not None else exc.stdout,
-            stderr=stderr if stderr is not None else exc.stderr,
-        ) from exc
+        process = subprocess.Popen(command, **kwargs)
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            _terminate_process_tree_bounded(process)
+            stdout = _read_subprocess_capture(stdout_capture, text=text)
+            stderr = _read_subprocess_capture(stderr_capture, text=text)
+            raise subprocess.TimeoutExpired(
+                command,
+                timeout,
+                output=stdout,
+                stderr=stderr,
+            ) from exc
+
+        stdout = _read_subprocess_capture(stdout_capture, text=text)
+        stderr = _read_subprocess_capture(stderr_capture, text=text)
+    finally:
+        if stdout_capture is not None:
+            stdout_capture.close()
+        if stderr_capture is not None:
+            stderr_capture.close()
 
     completed = subprocess.CompletedProcess(
         command,
@@ -465,31 +478,59 @@ def _run_subprocess_with_tree_timeout(
     return completed
 
 
-def _kill_process_tree_and_collect_output(
-    process: subprocess.Popen,
-) -> tuple[str | bytes | None, str | bytes | None]:
+def _terminate_process_tree_bounded(process: subprocess.Popen) -> None:
     if process.poll() is None:
         if os.name == "nt":
+            system_root = Path(os.environ.get("SystemRoot", r"C:\Windows"))
+            taskkill = system_root / "System32" / "taskkill.exe"
             try:
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/PID", str(process.pid)],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
+                if taskkill.is_file():
+                    subprocess.run(
+                        [str(taskkill), "/F", "/T", "/PID", str(process.pid)],
+                        capture_output=True,
+                        text=True,
+                        timeout=2,
+                        check=False,
+                    )
             except (OSError, subprocess.TimeoutExpired):
-                process.kill()
+                pass
+            if process.poll() is None:
+                try:
+                    process.kill()
+                except OSError:
+                    pass
         else:
             try:
                 os.killpg(process.pid, signal.SIGKILL)
             except OSError:
                 process.kill()
     try:
-        return process.communicate(timeout=5)
+        process.wait(timeout=1)
     except subprocess.TimeoutExpired:
-        process.kill()
-        return process.communicate()
+        if process.poll() is None:
+            try:
+                process.kill()
+            except OSError:
+                pass
+        try:
+            process.wait(timeout=1)
+        except subprocess.TimeoutExpired:
+            pass
+
+
+def _read_subprocess_capture(
+    stream: Any | None,
+    *,
+    text: bool,
+) -> str | bytes | None:
+    if stream is None:
+        return None
+    stream.flush()
+    stream.seek(0)
+    data = stream.read()
+    if not text:
+        return data
+    return data.decode(locale.getpreferredencoding(False), errors="replace")
 
 
 def _checkout_from_archive(

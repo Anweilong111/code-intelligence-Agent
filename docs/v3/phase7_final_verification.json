@@ -1,0 +1,132 @@
+{
+  "schema_version": "v3_phase7_final_verification_v1",
+  "verified_at": "2026-07-17",
+  "status": "pass",
+  "phase": "Phase 7 final live evaluation and release audit",
+  "offline_release_status": "pass",
+  "complete_release_status": "pass",
+  "claim_eligible": true,
+  "experiment_identity": {
+    "trial_source_commit": "642f8568676823c62886e31c81f44b0d3678fe5f",
+    "protocol_sha256": "4780c0ab09f747cd63bb8bc979f3d20a798d42e9bd1206d16c20abd444454035",
+    "trial_implementation_sha256": "334eee5f35bcfee89252a2d4796e774e4258f810f05dd0653235d7d91e0a8cb3",
+    "provider": "deepseek",
+    "model_id": "deepseek-v4-pro",
+    "temperature": 0,
+    "thinking": "enabled",
+    "reasoning_effort": "high"
+  },
+  "live_evaluation": {
+    "status": "pass",
+    "case_count": 20,
+    "expected_trial_count": 120,
+    "observed_trial_count": 120,
+    "missing_trial_count": 0,
+    "run_record_count": 423,
+    "run_record_audit_status": "pass",
+    "evaluation_sha256": "0b2c92e7df1a99088ecb19d72f4922d816f09134b3d05d20f51352098b6acaa1",
+    "run_records_sha256": "574fa23283105a7f75f0953e50de0cf53a5d7e6909f914438d206d07f530cdb8",
+    "llm": {
+      "pass_at_1": 0.4,
+      "pass_at_1_count": 8,
+      "pass_at_3": 0.5,
+      "pass_at_3_count": 10,
+      "verified_repair_case_count": 10,
+      "reflection_recovery_case_count": 7,
+      "verified_trial_count": 25,
+      "direct_success_trial_count": 16,
+      "reflection_success_trial_count": 9,
+      "actual_cost_usd": 1.83961291,
+      "mean_trial_cost_usd": 0.030660215,
+      "mean_trial_latency_ms": 262317.3
+    },
+    "hybrid": {
+      "pass_at_1": 0.3,
+      "pass_at_1_count": 6,
+      "pass_at_3": 0.45,
+      "pass_at_3_count": 9,
+      "verified_repair_case_count": 9,
+      "reflection_recovery_case_count": 3,
+      "verified_trial_count": 22,
+      "direct_success_trial_count": 19,
+      "reflection_success_trial_count": 3,
+      "actual_cost_usd": 1.00687333,
+      "mean_trial_cost_usd": 0.016781222,
+      "mean_trial_latency_ms": 259391.067,
+      "provider_blocker_record_count": 1
+    },
+    "provider_preflight": {
+      "status": "pass",
+      "counted_as_repair_trial": false,
+      "actual_cost_usd": 0.000035235,
+      "latency_ms": 1072
+    },
+    "winning_generator_families": {
+      "rule": 0,
+      "llm_strategy_llm": 25,
+      "hybrid_strategy_llm": 22
+    }
+  },
+  "tests": {
+    "phase3_and_release_focused": {
+      "status": "pass",
+      "passed": 48,
+      "skipped": 0,
+      "failed": 0,
+      "duration_seconds": 5.78
+    },
+    "v3_focused": {
+      "status": "pass",
+      "passed": 137,
+      "skipped": 1,
+      "failed": 0,
+      "duration_seconds": 8.47
+    },
+    "full_pytest": {
+      "status": "pass",
+      "passed": 1412,
+      "skipped": 2,
+      "failed": 0,
+      "duration_seconds": 676.95,
+      "basetemp_policy": "workspace_local_to_avoid_host_temp_acl_instability",
+      "model_api_keys_present_in_test_process": false
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "failed_checks": 0,
+      "candidate_file_count": 527
+    }
+  },
+  "artifacts": {
+    "docs/v3/phase7_unified_evaluation.json": "78e26477c75af3f9f2e60edf6533c83280fbb83c793c7dc59c18ed910a7b7efc",
+    "docs/v3/phase7_unified_evaluation.md": "dadbdbfebdac9948eb9908e778383f97ddc732678ae06f3a92223867333d8ada",
+    "docs/v3/phase7_release_protocol.md": "3930c8b14df1b4ff8d81bb65de54a1e93a046605e81c6fff1aa8b346a5b2428d",
+    "code_intelligence_agent/evaluation/v3_release_evaluation.py": "ffcb31b76e064c15017be8612866ec4e8bee1f60bcab2c3727a2d50132d7837b",
+    "tests/test_v3_release_evaluation.py": "6a9e7572d0bc3ebe660af60eb19d01143a833941918b57cda3af0dad083fcf4e",
+    "datasets/v3_real_bugs/experiment_protocol.json": "0df68dc9bd5473e22a96c3835f5e1f89313a6fdb61f2049491802d4588b31fb4"
+  },
+  "artifact_audit": {
+    "status": "pass",
+    "raw_api_keys": 0,
+    "raw_prompts_persisted": false,
+    "raw_provider_payloads_persisted": false,
+    "absolute_local_paths_in_release_artifacts": 0,
+    "failed_trials_retained": true,
+    "provider_and_environment_blockers_separated": true,
+    "lf_normalized_files": [
+      "docs/v3/phase7_release_protocol.md",
+      "docs/v3/phase7_unified_evaluation.json",
+      "docs/v3/phase7_unified_evaluation.md",
+      "docs/v3/phase7_final_verification.json",
+      "docs/v3/phase7_final_verification.md"
+    ]
+  },
+  "claim_boundaries": [
+    "The repair rates cover 20 fixed BugsInPy cases from six repositories, not arbitrary Python repositories.",
+    "Hybrid did not outperform LLM in this run, and all verified Hybrid winners came from the LLM generator family.",
+    "V2 and V3 repair metrics are not treated as an uplift because their protocols differ.",
+    "Process-level Windows defenses are not a container-grade security boundary."
+  ]
+}

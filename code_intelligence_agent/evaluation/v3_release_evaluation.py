@@ -64,7 +64,7 @@ def evaluate_v3_release(
         frozen_protocol=frozen_protocol,
     )
     metric_registry = _build_metric_registry(phase_payloads, live)
-    comparisons = _build_comparison_registry(phase_payloads)
+    comparisons = _build_comparison_registry(phase_payloads, live=live)
     release_gates = {
         **offline_gates,
         "live_provider_access_preflight_passed": (
@@ -126,14 +126,7 @@ def evaluate_v3_release(
             "historical_metrics_compared_only_when_protocols_match": True,
         },
         "case_examples": _case_examples(phase_payloads, live),
-        "claim_boundaries": [
-            "Offline Phase 0-6 evidence does not substitute for the pending 120 live LLM and Hybrid trials.",
-            "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
-            "V2/V3 numbers are not presented as improvements when their protocols differ.",
-            "A complete V3 release requires all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
-            "Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.",
-            "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows.",
-        ],
+        "claim_boundaries": _claim_boundaries(complete=complete),
     }
 
 
@@ -235,6 +228,14 @@ def render_v3_release_markdown(payload: dict[str, Any]) -> str:
     provider_preflight = _dict(
         _dict(payload.get("live_evaluation")).get("provider_access_preflight")
     )
+    run_record_evidence = _dict(
+        _dict(payload.get("live_evaluation")).get("run_record_evidence")
+    )
+    trial_distributions = _dict(
+        _dict(payload.get("live_evaluation")).get(
+            "trial_cost_latency_distribution"
+        )
+    )
     lines.extend(
         [
             "",
@@ -244,8 +245,30 @@ def render_v3_release_markdown(payload: dict[str, Any]) -> str:
             "- Counted as repair trial: `false`",
             f"- Cost USD: `{_metric(provider_preflight.get('actual_cost_usd'))}`",
             f"- Latency ms: `{_metric(provider_preflight.get('latency_ms'))}`",
+            "",
+            "## RunRecord Evidence",
+            "",
+            f"- Status: `{run_record_evidence.get('status') or 'not_supplied'}`",
+            f"- Records: `{_int(run_record_evidence.get('record_count'))}`",
+            f"- SHA-256: `{run_record_evidence.get('sha256') or 'not_available'}`",
+            "- Raw RunRecords copied into release report: `false`",
+            "",
+            "## Trial Cost and Latency Distribution",
+            "",
+            "| Strategy | Trials | Cost mean | Cost stddev | Latency mean ms | Latency stddev ms |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
+    for strategy in LIVE_STRATEGIES:
+        distribution = _dict(trial_distributions.get(strategy))
+        cost = _dict(distribution.get("cost_usd"))
+        latency = _dict(distribution.get("latency_ms"))
+        lines.append(
+            f"| `{strategy}` | {_int(distribution.get('trial_count'))} | "
+            f"{_metric(cost.get('mean'))} | {_metric(cost.get('population_stddev'))} | "
+            f"{_metric(latency.get('mean'))} | "
+            f"{_metric(latency.get('population_stddev'))} |"
+        )
     environment = _dict(
         _dict(payload.get("metric_registry")).get("repository_environment")
     )
@@ -268,6 +291,22 @@ def render_v3_release_markdown(payload: dict[str, Any]) -> str:
             _interval_row("Localization Top-3", localization.get("top3_wilson_95pct")),
             _interval_row("Localization Top-5", localization.get("top5_wilson_95pct")),
             _interval_row("Rule pass@1", rule.get("pass_at_1_wilson_95pct")),
+            _interval_row(
+                "LLM pass@1",
+                _dict(strategy_metrics.get("llm")).get("pass_at_1_wilson_95pct"),
+            ),
+            _interval_row(
+                "LLM pass@3",
+                _dict(strategy_metrics.get("llm")).get("pass_at_3_wilson_95pct"),
+            ),
+            _interval_row(
+                "Hybrid pass@1",
+                _dict(strategy_metrics.get("hybrid")).get("pass_at_1_wilson_95pct"),
+            ),
+            _interval_row(
+                "Hybrid pass@3",
+                _dict(strategy_metrics.get("hybrid")).get("pass_at_3_wilson_95pct"),
+            ),
         ]
     )
     lines.extend(
@@ -284,6 +323,42 @@ def render_v3_release_markdown(payload: dict[str, Any]) -> str:
         lines.append(
             f"| `{name}` | `{item.get('status')}` | {_md(item.get('reason') or '')} |"
         )
+    lines.extend(
+        [
+            "",
+            "## Generator Attribution",
+            "",
+            "| Strategy | Winning generator families | Provider blockers | Environment blockers |",
+            "| --- | --- | ---: | ---: |",
+        ]
+    )
+    for strategy in ("rule", "llm", "hybrid"):
+        item = _dict(strategy_metrics.get(strategy))
+        lines.append(
+            f"| `{strategy}` | {_md(_mapping_summary(item.get('winning_generator_families')))} | "
+            f"{_int(item.get('provider_blocker_record_count'))} | "
+            f"{_int(item.get('environment_blocker_record_count'))} |"
+        )
+    examples = _dict(payload.get("case_examples"))
+    lines.extend(
+        [
+            "",
+            "## Audited Live Examples",
+            "",
+            "| Type | Status | Case | Strategy/trial | Generator | Outcome or failure |",
+            "| --- | --- | --- | --- | --- | --- |",
+            _case_example_row("Direct repair", examples.get("direct_live_repair")),
+            _case_example_row(
+                "Reflection repair",
+                examples.get("reflection_live_repair"),
+            ),
+            _case_example_row("Failed repair", examples.get("failed_live_repair")),
+            _case_example_row("Provider blocker", examples.get("provider_blocker")),
+            "",
+            f"- Environment blockers: `{_int(_dict(examples.get('environment_blocker')).get('count'))}`",
+            f"- Controlled security cases: `{_int(_dict(examples.get('security_rejections')).get('case_count'))}`",
+        ]
+    )
     lines.extend(["", "## Pending Requirements", ""])
     for value in _list(payload.get("pending_requirements")):
         item = _dict(value)
@@ -458,12 +533,14 @@ def _load_live_evaluation(
             "metrics": {},
         }
     payload: dict[str, Any]
+    source_path: Path | None = None
     source_label = "in_memory:live_evaluation"
     if isinstance(source, dict):
         payload = _dict(source)
         digest = _sha256_json(payload)
     else:
         path = Path(source).resolve()
+        source_path = path
         source_label = _portable_source_label(root, path)
         if not path.is_file():
             return {
@@ -492,7 +569,17 @@ def _load_live_evaluation(
                 "metrics": {},
             }
         digest = _sha256_file(path)
+    run_record_evidence, run_records = _load_live_run_record_evidence(
+        root,
+        source_path,
+        expected_record_count=_int(payload.get("record_count")),
+    )
     errors = _validate_live_evaluation(payload, frozen_protocol)
+    if run_record_evidence.get("status") == "invalid":
+        errors.extend(
+            f"run_record_evidence:{value}"
+            for value in _list(run_record_evidence.get("errors"))
+        )
     completeness = _dict(payload.get("completeness"))
     return {
         "status": "pass" if not errors else "invalid",
@@ -517,7 +604,170 @@ def _load_live_evaluation(
         "provider_access_preflight": _dict(
             payload.get("provider_access_preflight")
         ),
-        "case_examples": _extract_live_case_examples(payload),
+        "run_record_evidence": run_record_evidence,
+        "trial_cost_latency_distribution": _trial_cost_latency_distribution(
+            run_records
+        ),
+        "case_examples": _extract_live_case_examples(
+            payload,
+            run_records=run_records,
+        ),
+    }
+
+
+def _load_live_run_record_evidence(
+    root: Path,
+    evaluation_path: Path | None,
+    *,
+    expected_record_count: int,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    if evaluation_path is None:
+        return (
+            {
+                "status": "not_supplied",
+                "source": "none",
+                "sha256": "",
+                "record_count": 0,
+                "expected_record_count": expected_record_count,
+                "errors": [],
+                "raw_records_persisted_in_release_report": False,
+            },
+            [],
+        )
+    path = evaluation_path.with_name("run_records.jsonl")
+    if not path.is_file():
+        return (
+            {
+                "status": "not_supplied",
+                "source": _portable_source_label(root, path),
+                "sha256": "",
+                "record_count": 0,
+                "expected_record_count": expected_record_count,
+                "errors": [],
+                "raw_records_persisted_in_release_report": False,
+            },
+            [],
+        )
+    records: list[dict[str, Any]] = []
+    errors: list[str] = []
+    seen_run_ids: set[str] = set()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+        errors.append("artifact_unreadable")
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            record = _dict(json.loads(line))
+        except json.JSONDecodeError:
+            errors.append(f"invalid_json_line:{line_number}")
+            continue
+        if not record:
+            errors.append(f"record_not_object:{line_number}")
+            continue
+        run_id = str(record.get("run_id") or "")
+        if not run_id:
+            errors.append(f"run_id_missing:{line_number}")
+        elif run_id in seen_run_ids:
+            errors.append(f"duplicate_run_id:{run_id}")
+        else:
+            seen_run_ids.add(run_id)
+        records.append(record)
+    if len(records) != expected_record_count:
+        errors.append(
+            f"record_count_mismatch:{len(records)}!={expected_record_count}"
+        )
+    return (
+        {
+            "status": "pass" if not errors else "invalid",
+            "source": _portable_source_label(root, path),
+            "sha256": _sha256_file(path),
+            "record_count": len(records),
+            "expected_record_count": expected_record_count,
+            "errors": errors,
+            "raw_records_persisted_in_release_report": False,
+        },
+        records,
+    )
+
+
+def _trial_cost_latency_distribution(
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    grouped: dict[tuple[str, str], dict[str, float]] = {}
+    for record in records:
+        strategy = _dict(record.get("strategy"))
+        mode = str(strategy.get("mode") or "")
+        trial_id = str(strategy.get("trial_id") or "")
+        if mode not in LIVE_STRATEGIES or not trial_id:
+            continue
+        totals = grouped.setdefault(
+            (mode, trial_id),
+            {"cost_usd": 0.0, "latency_ms": 0.0},
+        )
+        totals["cost_usd"] += _float(
+            _dict(record.get("cost")).get("actual_cost_usd")
+        )
+        totals["latency_ms"] += _float(
+            _dict(record.get("timing")).get("latency_ms")
+        )
+    result: dict[str, Any] = {}
+    for mode in LIVE_STRATEGIES:
+        rows = [
+            totals
+            for (strategy, _), totals in grouped.items()
+            if strategy == mode
+        ]
+        result[mode] = {
+            "trial_count": len(rows),
+            "cost_usd": _distribution(
+                [row["cost_usd"] for row in rows],
+                digits=9,
+            ),
+            "latency_ms": _distribution(
+                [row["latency_ms"] for row in rows],
+                digits=3,
+            ),
+        }
+    return result
+
+
+def _distribution(values: list[float], *, digits: int) -> dict[str, Any]:
+    if not values:
+        return {
+            "status": "not_available",
+            "count": 0,
+            "total": None,
+            "mean": None,
+            "population_variance": None,
+            "population_stddev": None,
+            "minimum": None,
+            "median": None,
+            "maximum": None,
+        }
+    ordered = sorted(values)
+    count = len(ordered)
+    total = sum(ordered)
+    mean = total / count
+    variance = sum((value - mean) ** 2 for value in ordered) / count
+    midpoint = count // 2
+    median = (
+        ordered[midpoint]
+        if count % 2
+        else (ordered[midpoint - 1] + ordered[midpoint]) / 2
+    )
+    return {
+        "status": "measured",
+        "count": count,
+        "total": round(total, digits),
+        "mean": round(mean, digits),
+        "population_variance": round(variance, digits),
+        "population_stddev": round(math.sqrt(variance), digits),
+        "minimum": round(ordered[0], digits),
+        "median": round(median, digits),
+        "maximum": round(ordered[-1], digits),
     }
 
 
@@ -904,6 +1154,12 @@ def _repair_metric(
         "winning_generator_families": _dict(
             source_row.get("winning_generator_families")
         ),
+        "provider_blocker_record_count": _int(
+            source_row.get("provider_blocker_record_count")
+        ),
+        "environment_blocker_record_count": _int(
+            source_row.get("environment_blocker_record_count")
+        ),
         "source": source,
     }
 
@@ -936,6 +1192,8 @@ def _pending_repair_metric(strategy: str) -> dict[str, Any]:
 
 def _build_comparison_registry(
     phases: dict[str, dict[str, Any]],
+    *,
+    live: dict[str, Any],
 ) -> dict[str, Any]:
     paired = _dict(_dict(phases.get("phase2")).get("paired_baseline"))
     protocols_identical = bool(paired.get("protocols_identical"))
@@ -960,7 +1218,12 @@ def _build_comparison_registry(
         },
         "v2_v3_patch_repair": {
             "status": "not_comparable",
-            "reason": "V2 LLM metrics use deterministic fixtures; V3 live-model metrics are pending",
+            "reason": (
+                "V2 LLM metrics use deterministic fixtures while V3 uses a completed "
+                "120-trial live-model real-bug protocol; no uplift is calculated"
+                if live.get("status") == "pass"
+                else "V2 LLM metrics use deterministic fixtures; V3 live-model metrics are pending"
+            ),
             "difference_claim_eligible": False,
         },
         "v2_v3_memory": {
@@ -969,6 +1232,22 @@ def _build_comparison_registry(
             "difference_claim_eligible": False,
         },
     }
+
+
+def _claim_boundaries(*, complete: bool) -> list[str]:
+    live_boundary = (
+        "Offline Phase 0-6 evidence is combined with a validated 120-trial live LLM/Hybrid evaluation; neither substitutes for the other."
+        if complete
+        else "Offline Phase 0-6 evidence does not substitute for the pending 120 live LLM and Hybrid trials."
+    )
+    return [
+        live_boundary,
+        "Rule metrics, human-fix semantic calibration, and deterministic memory/security fixtures are not live-model repair rates.",
+        "V2/V3 numbers are not presented as improvements when their protocols differ.",
+        "A complete V3 release retains all failed trials, provider blockers, environment blockers, token usage, cost, latency, and generator attribution in the denominator.",
+        "Provider-access preflight overhead is reported separately and never counted as a repair Trial or pass@k success.",
+        "Process-level repository defenses do not provide container-grade isolation for native child processes on Windows.",
+    ]
 
 
 def _pending_live_requirements(live: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1016,14 +1295,31 @@ def _case_examples(
     rule = _dict(_dict(phases.get("phase3")).get("rule_baseline"))
     security = _dict(_dict(phases.get("phase6")).get("security_evaluation"))
     live_examples = _dict(live.get("case_examples"))
+    missing_reason = (
+        "example_not_available_in_live_artifact"
+        if live.get("status") == "pass"
+        else "live_trials_not_complete"
+    )
     return {
         "direct_live_repair": live_examples.get("direct_repair") or {
             "status": "pending",
-            "reason": "live_trials_not_complete",
+            "reason": missing_reason,
         },
         "reflection_live_repair": live_examples.get("reflection_repair") or {
             "status": "pending",
-            "reason": "live_trials_not_complete",
+            "reason": missing_reason,
+        },
+        "failed_live_repair": live_examples.get("failed_repair") or {
+            "status": "pending",
+            "reason": missing_reason,
+        },
+        "provider_blocker": live_examples.get("provider_blocker") or {
+            "status": "not_observed",
+            "reason": (
+                "no_provider_blocker_in_live_records"
+                if live.get("status") == "pass"
+                else "live_trials_not_complete"
+            ),
         },
         "rule_failure_taxonomy": {
             "status": "measured",
@@ -1046,28 +1342,145 @@ def _case_examples(
     }
 
 
-def _extract_live_case_examples(payload: dict[str, Any]) -> dict[str, Any]:
+def _extract_live_case_examples(
+    payload: dict[str, Any],
+    *,
+    run_records: list[dict[str, Any]],
+) -> dict[str, Any]:
     direct: dict[str, Any] = {}
     reflection: dict[str, Any] = {}
+    failed: dict[str, Any] = {}
+    provider_blocker: dict[str, Any] = {}
+    records_by_run_id = {
+        str(record.get("run_id") or ""): record
+        for record in run_records
+        if str(record.get("run_id") or "")
+    }
+    failed_case_ids: set[str] = set()
     for case_value in _list(payload.get("case_results")):
         case = _dict(case_value)
         case_id = str(case.get("case_id") or "")
-        for trial_value in _list(case.get("trials")):
-            trial = _dict(trial_value)
-            if str(trial.get("status") or "") != "verified_repair":
+        trials = [_dict(value) for value in _list(case.get("trials"))]
+        if trials and not any(
+            bool(trial.get("verified_repair")) for trial in trials
+        ):
+            failed_case_ids.add(case_id)
+        for trial in trials:
+            if not bool(trial.get("verified_repair")):
                 continue
-            example = {
-                "status": "measured",
-                "case_id": case_id,
-                "strategy": str(trial.get("strategy_mode") or ""),
-                "trial_index": _int(trial.get("trial_index")),
-                "generator": str(trial.get("best_generator") or ""),
-            }
-            if trial.get("reflection_recovered") and not reflection:
+            winning_run_id = str(trial.get("winning_run_id") or "")
+            winning_record = _dict(records_by_run_id.get(winning_run_id))
+            example = (
+                _run_record_example(winning_record)
+                if winning_record
+                else {
+                    "status": "measured",
+                    "case_id": case_id,
+                    "strategy": str(trial.get("strategy_mode") or ""),
+                    "trial_index": _int(trial.get("trial_index")),
+                    "run_id": winning_run_id,
+                    "generator_family": str(
+                        trial.get("winning_generator_family") or ""
+                    ),
+                    "generator_id": str(trial.get("winning_generator_id") or ""),
+                    "reflection_round": _int(
+                        trial.get("winning_reflection_round")
+                    ),
+                    "direct_success": bool(trial.get("direct_success")),
+                    "reflection_recovered": bool(
+                        trial.get("reflection_recovered")
+                    ),
+                }
+            )
+            if example.get("reflection_recovered") and not reflection:
                 reflection = example
-            elif not trial.get("reflection_recovered") and not direct:
+            elif example.get("direct_success") and not direct:
                 direct = example
-    return {"direct_repair": direct, "reflection_repair": reflection}
+    failure_priority = {
+        "targeted_test": 0,
+        "full_regression": 1,
+        "semantic_validation": 2,
+        "syntax": 3,
+        "safety": 4,
+        "generation": 5,
+    }
+    failed_candidates = [
+        record
+        for record in run_records
+        if (
+            str(_dict(record.get("outcome")).get("status") or "")
+            in {"failed", "safety_rejected"}
+            and str(_dict(record.get("case")).get("case_id") or "")
+            in failed_case_ids
+        )
+    ]
+    failed_candidates.sort(
+        key=lambda record: (
+            failure_priority.get(
+                str(_dict(record.get("failure")).get("layer") or ""),
+                99,
+            ),
+            str(_dict(record.get("case")).get("case_id") or ""),
+            _int(_dict(record.get("strategy")).get("trial_index")),
+        )
+    )
+    if failed_candidates:
+        failed = _run_record_example(failed_candidates[0])
+    for record in run_records:
+        if str(_dict(record.get("outcome")).get("status") or "") == (
+            "provider_blocker"
+        ):
+            provider_blocker = _run_record_example(record)
+            break
+    return {
+        "direct_repair": direct,
+        "reflection_repair": reflection,
+        "failed_repair": failed,
+        "provider_blocker": provider_blocker,
+    }
+
+
+def _run_record_example(record: dict[str, Any]) -> dict[str, Any]:
+    candidate = _dict(record.get("candidate"))
+    outcome = _dict(record.get("outcome"))
+    failure = _dict(record.get("failure"))
+    strategy = _dict(record.get("strategy"))
+    usage = _dict(record.get("usage"))
+    artifacts = _dict(record.get("artifacts"))
+    return {
+        "status": "measured",
+        "case_id": str(_dict(record.get("case")).get("case_id") or ""),
+        "strategy": str(strategy.get("mode") or ""),
+        "trial_index": _int(strategy.get("trial_index")),
+        "run_id": str(record.get("run_id") or ""),
+        "candidate_id": str(candidate.get("candidate_id") or ""),
+        "generator_family": str(candidate.get("generator_family") or ""),
+        "generator_id": str(candidate.get("generator_id") or ""),
+        "reflection_round": _int(candidate.get("reflection_round")),
+        "outcome": str(outcome.get("status") or ""),
+        "direct_success": bool(outcome.get("direct_success")),
+        "reflection_recovered": bool(outcome.get("reflection_recovered")),
+        "failure_layer": str(failure.get("layer") or ""),
+        "failure_category": str(failure.get("category") or ""),
+        "validation": _dict(record.get("validation")),
+        "total_tokens": _int(usage.get("total_tokens")),
+        "actual_cost_usd": _float(
+            _dict(record.get("cost")).get("actual_cost_usd")
+        ),
+        "latency_ms": _float(_dict(record.get("timing")).get("latency_ms")),
+        "patch_sha256": _optional_artifact_sha256(artifacts.get("patch")),
+        "validation_sha256": _optional_artifact_sha256(
+            artifacts.get("validation")
+        ),
+    }
+
+
+def _optional_artifact_sha256(value: Any) -> str:
+    path_text = str(value or "")
+    if not path_text:
+        return ""
+    path = Path(path_text)
+    return _sha256_file(path) if path.is_file() else ""
 
 
 def _wilson_interval(successes: int, denominator: int) -> dict[str, Any]:
@@ -1181,6 +1594,47 @@ def _interval_row(label: str, value: Any) -> str:
     return (
         f"| {label} | {successes}/{denominator} | "
         f"[{_float(interval.get('lower')):.4f}, {_float(interval.get('upper')):.4f}] |"
+    )
+
+
+def _mapping_summary(value: Any) -> str:
+    mapping = _dict(value)
+    if not mapping:
+        return "none"
+    return ", ".join(
+        f"{key}:{_int(mapping[key])}"
+        for key in sorted(mapping)
+    )
+
+
+def _case_example_row(label: str, value: Any) -> str:
+    example = _dict(value)
+    status = str(example.get("status") or "pending")
+    if status != "measured":
+        outcome = str(example.get("reason") or "not_available")
+        return (
+            f"| {label} | `{_md(status)}` | n/a | n/a | n/a | "
+            f"{_md(outcome)} |"
+        )
+    strategy = str(example.get("strategy") or "")
+    trial_index = _int(example.get("trial_index"))
+    generator = str(
+        example.get("generator_id")
+        or example.get("generator_family")
+        or "none"
+    )
+    outcome = str(example.get("outcome") or "")
+    failure_layer = str(example.get("failure_layer") or "")
+    failure_category = str(example.get("failure_category") or "")
+    outcome_or_failure = (
+        f"{failure_layer}:{failure_category}"
+        if failure_layer and failure_layer != "none"
+        else outcome or "none"
+    )
+    return (
+        f"| {label} | `measured` | `{_md(example.get('case_id') or '')}` | "
+        f"`{_md(strategy)}/{trial_index}` | `{_md(generator)}` | "
+        f"`{_md(outcome_or_failure)}` |"
     )
 
 

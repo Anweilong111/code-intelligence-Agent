@@ -1996,11 +1996,35 @@ def _normalize_failure_line(
     if cwd:
         text = text.replace(f"{cwd}/", "")
     if repository_root is not None:
-        root = str(Path(repository_root)).replace("\\", "/")
-        if root:
-            text = text.replace(f"{root}/", "")
+        root_path = Path(repository_root).resolve()
+        roots = {root_path.as_posix()}
+        try:
+            roots.add(root_path.relative_to(Path.cwd().resolve()).as_posix())
+        except ValueError:
+            pass
+        for root in sorted(roots, key=len, reverse=True):
+            if root:
+                text = text.replace(f"{root}/", "")
     text = text.replace("C:/Users/86257/AppData/Local/Temp/", "<temp>/")
-    return _normalize_failure_file_paths(text)
+    text = _normalize_failure_file_paths(text)
+    return _normalize_pytest_failure_path(text)
+
+
+def _normalize_pytest_failure_path(value: str) -> str:
+    collection_marker = " ERROR collecting "
+    if collection_marker in value:
+        path = value.split(collection_marker, 1)[1].strip(" _")
+        return f"ERROR collecting {_repo_relative_failure_path(path)}"
+    for prefix in ("ERROR collecting ", "FAILED "):
+        if not value.startswith(prefix):
+            continue
+        remainder = value[len(prefix) :]
+        path, separator, suffix = remainder.partition("::")
+        if not separator and prefix == "FAILED ":
+            path, separator, suffix = remainder.partition(" - ")
+        normalized_path = _repo_relative_failure_path(path)
+        return f"{prefix}{normalized_path}{separator}{suffix}"
+    return value
 
 
 def _normalize_failure_file_paths(value: str) -> str:

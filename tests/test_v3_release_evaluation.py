@@ -61,6 +61,10 @@ def test_complete_live_evaluation_unlocks_release_without_changing_rule_attribut
         "provider_preflight_actual_cost_usd"
     ] == 0.000001
     assert payload["pending_requirements"] == []
+    assert "validated 120-trial live" in payload["claim_boundaries"][0]
+    assert "completed 120-trial live-model" in payload["comparison_registry"][
+        "v2_v3_patch_repair"
+    ]["reason"]
 
 
 def test_nominally_passing_but_incomplete_live_artifact_is_rejected():
@@ -125,6 +129,110 @@ def test_complete_live_evaluation_rejects_unfrozen_or_retained_preflight_data():
     assert "provider_access_preflight_latency_invalid" in errors
 
 
+def test_file_live_evaluation_audits_run_records_and_publishes_examples(
+    tmp_path,
+):
+    live = _complete_live_evaluation()
+    records = _publication_run_records()
+    live["record_count"] = len(records)
+    live["case_results"] = [
+        {
+            "case_id": "case-direct",
+            "trials": [
+                {
+                    "strategy_mode": "llm",
+                    "trial_index": 1,
+                    "verified_repair": True,
+                    "winning_run_id": "direct-run",
+                }
+            ],
+        },
+        {
+            "case_id": "case-reflection",
+            "trials": [
+                {
+                    "strategy_mode": "hybrid",
+                    "trial_index": 1,
+                    "verified_repair": True,
+                    "winning_run_id": "reflection-run",
+                }
+            ],
+        },
+        {
+            "case_id": "case-fail",
+            "trials": [
+                {
+                    "strategy_mode": "llm",
+                    "trial_index": 2,
+                    "verified_repair": False,
+                    "winning_run_id": "",
+                }
+            ],
+        },
+    ]
+    patch = tmp_path / "selected.diff"
+    validation = tmp_path / "selected.validation.json"
+    patch.write_text("--- a/example.py\n+++ b/example.py\n", encoding="utf-8")
+    validation.write_text('{"status":"pass"}\n', encoding="utf-8")
+    records[0]["artifacts"] = {
+        "patch": str(patch),
+        "validation": str(validation),
+    }
+    evaluation_path = tmp_path / "evaluation.json"
+    evaluation_path.write_text(json.dumps(live), encoding="utf-8")
+    (tmp_path / "run_records.jsonl").write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+
+    payload = evaluate_v3_release(ROOT, live_evaluation=evaluation_path)
+
+    assert payload["status"] == "pass"
+    evidence = payload["live_evaluation"]["run_record_evidence"]
+    assert evidence["status"] == "pass"
+    assert evidence["record_count"] == 240
+    assert evidence["raw_records_persisted_in_release_report"] is False
+    distributions = payload["live_evaluation"][
+        "trial_cost_latency_distribution"
+    ]
+    assert distributions["llm"]["trial_count"] == 60
+    assert distributions["hybrid"]["trial_count"] == 60
+    examples = payload["case_examples"]
+    assert examples["direct_live_repair"]["run_id"] == "direct-run"
+    assert examples["direct_live_repair"]["patch_sha256"] == hashlib.sha256(
+        patch.read_bytes()
+    ).hexdigest()
+    assert examples["reflection_live_repair"]["run_id"] == "reflection-run"
+    assert examples["failed_live_repair"]["case_id"] == "case-fail"
+    assert examples["provider_blocker"]["failure_category"] == "timeout"
+    markdown = render_v3_release_markdown(payload)
+    assert "LLM pass@1" in markdown
+    assert "Audited Live Examples" in markdown
+
+
+def test_existing_but_incomplete_run_record_evidence_invalidates_live_release(
+    tmp_path,
+):
+    live = _complete_live_evaluation()
+    evaluation_path = tmp_path / "evaluation.json"
+    evaluation_path.write_text(json.dumps(live), encoding="utf-8")
+    (tmp_path / "run_records.jsonl").write_text(
+        json.dumps(_publication_run_records()[0]) + "\n",
+        encoding="utf-8",
+    )
+
+    payload = evaluate_v3_release(ROOT, live_evaluation=evaluation_path)
+
+    assert payload["status"] == "partial"
+    assert payload["live_evaluation"]["run_record_evidence"]["status"] == (
+        "invalid"
+    )
+    assert any(
+        error.startswith("run_record_evidence:record_count_mismatch")
+        for error in payload["live_evaluation"]["errors"]
+    )
+
+
 def test_missing_offline_phase_artifact_fails_offline_release(tmp_path):
     docs = tmp_path / "docs" / "v3"
     docs.mkdir(parents=True)
@@ -180,8 +288,7 @@ def test_release_writer_and_top_level_cli_preserve_partial_status(tmp_path, caps
     assert exc_info.value.code == 1
 
 
-def test_committed_phase7_offline_report_matches_current_phase_evidence():
-    fresh = evaluate_v3_release(ROOT)
+def test_committed_phase7_live_report_is_self_consistent():
     committed = json.loads(
         (ROOT / "docs" / "v3" / "phase7_unified_evaluation.json").read_text(
             encoding="utf-8"
@@ -191,10 +298,41 @@ def test_committed_phase7_offline_report_matches_current_phase_evidence():
         ROOT / "docs" / "v3" / "phase7_unified_evaluation.md"
     ).read_text(encoding="utf-8")
 
-    assert committed == fresh
-    assert committed_markdown == render_v3_release_markdown(fresh)
-    assert committed["status"] == "partial"
-    assert committed["claim_eligible"] is False
+    assert committed_markdown == render_v3_release_markdown(committed)
+    assert committed["status"] == "pass"
+    assert committed["complete_release_status"] == "pass"
+    assert committed["claim_eligible"] is True
+    assert committed["live_evaluation"]["observed_trial_count"] == 120
+    assert committed["live_evaluation"]["missing_trial_count"] == 0
+    assert committed["live_evaluation"]["run_record_evidence"]["status"] == "pass"
+    assert committed["live_evaluation"]["run_record_evidence"]["record_count"] == 423
+    assert committed["live_evaluation"]["provider_model_metadata"][
+        "observed_model_ids"
+    ] == ["deepseek-v4-pro"]
+    strategies = committed["metric_registry"]["repair_strategies"]
+    assert strategies["llm"]["pass_at_1"] == 0.4
+    assert strategies["llm"]["pass_at_3"] == 0.5
+    assert strategies["hybrid"]["pass_at_1"] == 0.3
+    assert strategies["hybrid"]["pass_at_3"] == 0.45
+    assert strategies["hybrid"]["winning_generator_families"] == {"llm": 22}
+    assert strategies["hybrid"]["provider_blocker_record_count"] == 1
+    distributions = committed["live_evaluation"][
+        "trial_cost_latency_distribution"
+    ]
+    assert distributions["llm"]["trial_count"] == 60
+    assert distributions["hybrid"]["trial_count"] == 60
+    assert committed["pending_requirements"] == []
+    assert committed["case_examples"]["direct_live_repair"]["status"] == "measured"
+    assert committed["case_examples"]["reflection_live_repair"]["status"] == (
+        "measured"
+    )
+    assert len(committed["case_examples"]["direct_live_repair"]["patch_sha256"]) == 64
+    assert committed["case_examples"]["provider_blocker"]["failure_category"] == (
+        "timeout"
+    )
+    serialized = json.dumps(committed, ensure_ascii=False)
+    assert "sk-" not in serialized
+    assert "D:\\" not in serialized
     assert b"\r\n" not in (
         ROOT / "docs" / "v3" / "phase7_unified_evaluation.json"
     ).read_bytes()
@@ -203,17 +341,20 @@ def test_committed_phase7_offline_report_matches_current_phase_evidence():
     ).read_bytes()
 
 
-def test_committed_phase7_verification_hashes_release_artifacts():
+def test_committed_phase7_final_verification_hashes_release_artifacts():
     verification = json.loads(
-        (ROOT / "docs" / "v3" / "phase7_offline_verification.json").read_text(
+        (ROOT / "docs" / "v3" / "phase7_final_verification.json").read_text(
             encoding="utf-8"
         )
     )
 
-    assert verification["status"] == "partial"
+    assert verification["status"] == "pass"
     assert verification["offline_release_status"] == "pass"
-    assert verification["complete_release_status"] == "pending"
-    assert verification["tests"]["full_pytest"]["passed"] == 1410
+    assert verification["complete_release_status"] == "pass"
+    assert verification["claim_eligible"] is True
+    assert verification["live_evaluation"]["observed_trial_count"] == 120
+    assert verification["live_evaluation"]["missing_trial_count"] == 0
+    assert verification["tests"]["full_pytest"]["status"] == "pass"
     for relative_path, expected_hash in verification["artifacts"].items():
         path = ROOT / relative_path
         assert path.is_file(), relative_path
@@ -320,3 +461,83 @@ def _strategy_metrics(*, pass1: float, pass3: float, cost: float) -> dict:
         "winning_generator_families": {"llm": 5},
         "token_usage": {"input_tokens": 1000, "output_tokens": 500},
     }
+
+
+def _publication_run_records() -> list[dict]:
+    records = []
+    for mode in ("llm", "hybrid"):
+        for trial_number in range(60):
+            for candidate_number in range(2):
+                records.append(
+                    {
+                        "run_id": f"{mode}-run-{trial_number}-{candidate_number}",
+                        "case": {"case_id": f"case-{mode}-{trial_number}"},
+                        "strategy": {
+                            "mode": mode,
+                            "trial_index": trial_number % 3 + 1,
+                            "trial_id": f"{mode}-trial-{trial_number}",
+                        },
+                        "candidate": {
+                            "candidate_id": (
+                                f"{mode}-candidate-{trial_number}-{candidate_number}"
+                            ),
+                            "generator_family": "llm",
+                            "generator_id": "llm_direct",
+                            "reflection_round": 0,
+                        },
+                        "usage": {"total_tokens": 100},
+                        "cost": {"actual_cost_usd": 0.01},
+                        "timing": {"latency_ms": 100.0},
+                        "validation": {
+                            "ast_valid": True,
+                            "safety_gate": "pass",
+                            "targeted_tests": "fail",
+                            "full_regression": "not_run",
+                            "semantic_validation": "not_run",
+                        },
+                        "outcome": {
+                            "status": "failed",
+                            "direct_success": False,
+                            "reflection_recovered": False,
+                        },
+                        "failure": {
+                            "layer": "targeted_test",
+                            "category": "test_assertion_failure",
+                        },
+                        "artifacts": {},
+                    }
+                )
+    direct = records[0]
+    direct["run_id"] = "direct-run"
+    direct["case"]["case_id"] = "case-direct"
+    direct["outcome"] = {
+        "status": "verified_repair",
+        "direct_success": True,
+        "reflection_recovered": False,
+    }
+    direct["failure"] = {"layer": "none", "category": "none"}
+    direct["validation"] = {
+        "ast_valid": True,
+        "safety_gate": "pass",
+        "targeted_tests": "pass",
+        "full_regression": "pass",
+        "semantic_validation": "pass",
+    }
+    failed = records[2]
+    failed["case"]["case_id"] = "case-fail"
+    reflection = records[120]
+    reflection["run_id"] = "reflection-run"
+    reflection["case"]["case_id"] = "case-reflection"
+    reflection["candidate"]["generator_id"] = "llm_reflection"
+    reflection["candidate"]["reflection_round"] = 1
+    reflection["outcome"] = {
+        "status": "verified_repair",
+        "direct_success": False,
+        "reflection_recovered": True,
+    }
+    reflection["failure"] = {"layer": "none", "category": "none"}
+    blocker = records[122]
+    blocker["case"]["case_id"] = "case-provider"
+    blocker["outcome"]["status"] = "provider_blocker"
+    blocker["failure"] = {"layer": "provider", "category": "timeout"}
+    return records

@@ -1,34 +1,36 @@
 {
   "schema_version": "v3_phase7_packaging_verification_v1",
-  "verified_at": "2026-07-15",
+  "verified_at": "2026-07-17",
   "status": "pass",
-  "scope": "V3 presentation material and clean git-archive reproducibility",
+  "scope": "V3 final live-result presentation material and clean git-archive reproducibility",
   "worktree_regression": {
     "status": "pass",
-    "passed": 1381,
+    "passed": 1412,
     "skipped": 2,
     "failed": 0,
-    "duration_seconds": 775.87,
+    "duration_seconds": 676.95,
+    "basetemp_policy": "workspace_local_to_avoid_host_temp_acl_instability",
+    "model_api_keys_present_in_test_process": false,
     "release_hygiene": {
       "status": "pass",
       "candidate_source": "git",
-      "candidate_file_count": 522,
+      "candidate_file_count": 527,
       "passed_check_count": 5,
       "check_count": 5,
       "failed_check_count": 0
     }
   },
   "clean_archive": {
-    "tested_commit": "408d8f1383bf77bdab121c04a308e19e7ae6306c",
+    "tested_commit": "pending_final_source_commit",
     "archive_format": "zip",
-    "archive_sha256": "292ad4ca1bed186f76e35a3cde0f7dd9202b10c0e29a5c4e6ebe96e6d8fc2f02",
+    "archive_sha256": "pending_final_source_archive",
     "git_metadata_present": false,
     "top_level_outputs_count": 0,
-    "candidate_file_count": 520,
+    "candidate_file_count": 527,
     "release_hygiene": {
       "status": "pass",
       "candidate_source": "filesystem_snapshot",
-      "candidate_file_count": 520,
+      "candidate_file_count": 527,
       "passed_check_count": 5,
       "check_count": 5,
       "failed_check_count": 0,
@@ -54,7 +56,9 @@
       "reported_status": "partial",
       "offline_status": "pass",
       "complete_status": "pending",
-      "claim_eligible": false
+      "claim_eligible": false,
+      "live_artifact_supplied": false,
+      "boundary": "A clean source archive omits ignored paid-run outputs; the committed final aggregate remains pass while an offline-only CLI rerun remains partial."
     },
     "agent_cli_help": {
       "status": "pass",
@@ -66,8 +70,12 @@
     "architecture_mermaid_diagram_count": 3,
     "ten_minute_demo_status": "pass",
     "chinese_resume_and_interview_pack_status": "pass",
-    "live_metrics_remain_pending": true,
+    "live_metrics_complete": true,
     "current_rule_pass_at_1": 0.0,
+    "current_llm_pass_at_1": 0.4,
+    "current_llm_pass_at_3": 0.5,
+    "current_hybrid_pass_at_1": 0.3,
+    "current_hybrid_pass_at_3": 0.45,
     "current_localization_top_1": 0.6,
     "current_localization_top_3": 0.8,
     "current_localization_top_5": 1.0
@@ -90,10 +98,10 @@
     }
   ],
   "artifacts": {
-    "docs/v3/v3_architecture_and_agent_design_cn.md": "62a6f8d5770c79732ab7448d8d0c547e688db082b5aebc058eb079735058f28a",
-    "docs/v3/v3_ten_minute_demo_guide_cn.md": "af5f50fa20d53fa0ff1a7f29377f2732e21b99b7dc2fe2b3b0f78626a9b596a9",
-    "docs/career/v3_resume_interview_pack_cn.md": "c3c3bc2bdefbaa94d1a1bbc8890f0c856a61e82bf265658ea07e6dbd4d486cda",
-    "tests/test_v3_release_packaging_docs.py": "31da03a12748dd0fafa18706775571a362129ef6793e6c703127ac82a6378b1f",
+    "docs/v3/v3_architecture_and_agent_design_cn.md": "a6f0c665e0beb2f7d867ef3a61aabf121f41f98754151b261e5ebca8c00dd515",
+    "docs/v3/v3_ten_minute_demo_guide_cn.md": "02b7ab598cc6ebafc506ff1cc1855817952c65edbb1718daafe3ba8d5ab6dd7a",
+    "docs/career/v3_resume_interview_pack_cn.md": "6525e031b919d89bf3a910aaac56ec12b78e871c1ed910d34e7c6fe6964dcd5b",
+    "tests/test_v3_release_packaging_docs.py": "e874761aa522ae401ca144cf4e2b903c05d27b8f47ac55ece3e4fc47820e2586",
     "code_intelligence_agent/evaluation/release_hygiene_audit.py": "adc4476d9eb2f6f2a1369047af50835c906f53d1ce94dc5eeede634f6691c74c",
     "tests/test_release_hygiene_audit.py": "9faec834a69c8a8a9feac689b6faa5d3f21a0aaea8a14a8e3421e61234d07ba6"
   },
@@ -107,7 +115,8 @@
   "claim_boundaries": [
     "The clean archive proves release-focused tests and CLI reproducibility for the tested source commit; it is not a live-model repair result.",
     "The packaging verification artifacts are committed after the tested source archive and are not part of that archive hash.",
-    "The 60 LLM and 60 Hybrid live trials remain pending and no live repair metric is inferred from documentation or clean-archive success.",
+    "The committed live metrics come from the validated external 120-trial artifact, not from documentation or clean-archive success.",
+    "Ignored paid-run outputs are intentionally absent from the clean source archive; the committed aggregate retains their hashes and sanitized evidence.",
     "Filesystem snapshot hygiene excludes runtime cache directories; the source commit is independently audited through the Git candidate set before archiving."
   ]
 }
