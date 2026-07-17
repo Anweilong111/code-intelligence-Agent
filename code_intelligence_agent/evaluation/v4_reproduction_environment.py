@@ -30,6 +30,7 @@ from code_intelligence_agent.evaluation.v3_real_bug_reproduction import (
 from code_intelligence_agent.evaluation.v4_real_bug_benchmark import load_json_object
 from code_intelligence_agent.evaluation.v4_real_bug_reproduction import (
     probe_runtime,
+    resolve_project_runtime_variant,
     validate_reproduction_profiles,
 )
 from code_intelligence_agent.tools.runtime_security import build_restricted_environment
@@ -255,6 +256,7 @@ def build_environment_bootstrap_plan(
     base_runtime_root: str | Path,
     isolated_runtime_root: str | Path,
     execution_platform: str | None = None,
+    case_id: str = "",
 ) -> dict[str, Any]:
     profile_errors = validate_reproduction_profiles(profiles)
     if profile_errors:
@@ -262,6 +264,15 @@ def build_environment_bootstrap_plan(
     project_profile = _dict(_dict(profiles.get("project_profiles")).get(project))
     if not project_profile:
         raise ValueError(f"Unknown project profile: {project}")
+    project_profile, runtime_variant = resolve_project_runtime_variant(
+        project_profile,
+        case_id,
+    )
+    if runtime_variant["status"] != "pass":
+        raise ValueError(
+            "Runtime variant resolution failed: "
+            + ";".join(_list(runtime_variant.get("errors")))
+        )
     observed_platform = execution_platform or _host_execution_platform()
     major_minor = ".".join(python_version.split(".")[:2])
     requirements = [
@@ -369,7 +380,10 @@ def build_environment_bootstrap_plan(
     )
     if not environment_template:
         raise ValueError(f"Isolated environment template is missing: {project}")
-    environment_relative = environment_template.format(version=python_version)
+    environment_relative = environment_template.format(
+        version=python_version,
+        case_id=case_id,
+    )
     if not _safe_relative_path(environment_relative):
         raise ValueError("Isolated environment path is unsafe.")
     isolated_root = Path(isolated_runtime_root).resolve()
@@ -406,9 +420,14 @@ def build_environment_bootstrap_plan(
     audit_command = [str(target_python), "-m", "pip", "freeze", "--all"]
     plan = {
         "schema_version": SCHEMA_VERSION,
-        "plan_id": f"v4-bootstrap:{project}:py{python_version}",
+        "plan_id": (
+            f"v4-bootstrap:{project}:{runtime_variant['variant_id']}:"
+            f"py{python_version}"
+        ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "project": project,
+        "case_id": case_id,
+        "runtime_variant": runtime_variant,
         "python_version": python_version,
         "execution_platform": observed_platform,
         "profiles_sha256": canonical_json_sha256(profiles),
@@ -664,6 +683,36 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         errors.append("plan_sha256_mismatch")
     requirements = [str(value) for value in _list(plan.get("requirements"))]
     errors.extend(validate_bootstrap_requirements(requirements))
+    runtime_variant = _dict(plan.get("runtime_variant"))
+    if runtime_variant.get("status") != "pass":
+        errors.append("runtime_variant_status_must_pass")
+    if str(runtime_variant.get("case_id") or "") != str(plan.get("case_id") or ""):
+        errors.append("runtime_variant_case_id_mismatch")
+    variant_id = str(runtime_variant.get("variant_id") or "")
+    requirements_sha256 = str(runtime_variant.get("requirements_sha256") or "")
+    requirements_line_ending = str(
+        runtime_variant.get("requirements_line_ending") or ""
+    )
+    line_separator = (
+        "\n"
+        if requirements_line_ending == "lf"
+        else "\r\n"
+        if requirements_line_ending == "crlf"
+        else ""
+    )
+    observed_requirements_sha256 = hashlib.sha256(
+        (
+            (line_separator.join(requirements) + line_separator)
+            if requirements and line_separator
+            else ""
+        ).encode("utf-8")
+    ).hexdigest()
+    if variant_id != "project_default" and (
+        not line_separator
+        or not re.fullmatch(r"[0-9a-f]{64}", requirements_sha256)
+        or requirements_sha256 != observed_requirements_sha256
+    ):
+        errors.append("runtime_variant_requirements_sha256_mismatch")
     pip_requirements = [
         str(value) for value in _list(plan.get("pip_requirements"))
     ]
@@ -815,6 +864,8 @@ def _bootstrap_result(
         "result_id": str(plan.get("plan_id") or "") + ":result",
         "plan_sha256": str(plan.get("plan_sha256") or ""),
         "project": str(plan.get("project") or ""),
+        "case_id": str(plan.get("case_id") or ""),
+        "runtime_variant": copy.deepcopy(_dict(plan.get("runtime_variant"))),
         "python_version": str(plan.get("python_version") or ""),
         "status": status,
         "reason": reason,
@@ -1538,6 +1589,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     plan.add_argument("output")
     plan.add_argument("--base-runtime-root", required=True)
     plan.add_argument("--isolated-runtime-root", required=True)
+    plan.add_argument("--case-id", default="")
     run = subparsers.add_parser("run")
     run.add_argument("plan")
     run.add_argument("output")
@@ -1558,6 +1610,7 @@ def main(argv: list[str] | None = None) -> None:
             python_version=args.python_version,
             base_runtime_root=args.base_runtime_root,
             isolated_runtime_root=args.isolated_runtime_root,
+            case_id=args.case_id,
         )
         write_bootstrap_artifact(plan, args.output)
         print(json.dumps(plan, indent=2, ensure_ascii=False))

@@ -18,7 +18,11 @@
       }
     },
     "3.7.3": {
-      "relative_executable": ""
+      "relative_executable": "cpython-3.7.3/python.exe",
+      "relative_executables": {
+        "windows": "cpython-3.7.3/python.exe",
+        "linux": "cpython-3.7.3/bin/python3.7"
+      }
     },
     "3.7.7": {
       "relative_executable": ""
@@ -79,7 +83,148 @@
       "execute_benchmark_setup_script": false,
       "dependency_install_requires_authorization": true,
       "native_build_adapter_required": false,
+      "required_execution_platform": "linux",
+      "runtime_variants": {
+        "pytest32-requests200": {
+          "case_ids": [
+            "bugsinpy-httpie-1"
+          ],
+          "isolated_environment_template": "httpie-pytest32-requests200-py{version}",
+          "bootstrap_requirements": [
+            "atomicwrites==1.4.0",
+            "attrs==19.3.0",
+            "blinker==1.4",
+            "brotlipy==0.7.0",
+            "certifi==2020.4.5.1",
+            "cffi==1.14.0",
+            "chardet==3.0.4",
+            "click==7.1.2",
+            "colorama==0.4.3",
+            "decorator==4.4.2",
+            "Flask==1.1.2",
+            "httpbin==0.7.0",
+            "idna==2.9",
+            "importlib-metadata==1.6.0",
+            "itsdangerous==1.1.0",
+            "Jinja2==2.11.2",
+            "MarkupSafe==1.1.1",
+            "mock==4.0.2",
+            "more-itertools==8.3.0",
+            "packaging==20.4",
+            "pluggy==0.13.1",
+            "py==1.8.1",
+            "pycparser==2.20",
+            "Pygments==2.6.1",
+            "pyparsing==2.4.7",
+            "pytest==3.2.1",
+            "pytest-httpbin==1.0.0",
+            "raven==6.10.0",
+            "requests==2.0.0",
+            "six==1.15.0",
+            "urllib3==1.25.9",
+            "wcwidth==0.1.9",
+            "Werkzeug==1.0.1",
+            "zipp==3.1.0"
+          ],
+          "requirements_line_ending": "crlf",
+          "requirements_sha256": "b709611f4749c06b107c06a97724177898dbf95904833ea2d00e92ed3e65f704"
+        },
+        "pytest54-requests223": {
+          "case_ids": [
+            "bugsinpy-httpie-2",
+            "bugsinpy-httpie-3"
+          ],
+          "isolated_environment_template": "httpie-pytest54-requests223-py{version}",
+          "bootstrap_requirements": [
+            "atomicwrites==1.4.0",
+            "attrs==19.3.0",
+            "blinker==1.4",
+            "brotlipy==0.7.0",
+            "certifi==2020.4.5.1",
+            "cffi==1.14.0",
+            "chardet==3.0.4",
+            "click==7.1.2",
+            "colorama==0.4.3",
+            "decorator==4.4.2",
+            "Flask==1.1.2",
+            "httpbin==0.7.0",
+            "idna==2.9",
+            "importlib-metadata==1.6.0",
+            "itsdangerous==1.1.0",
+            "Jinja2==2.11.2",
+            "MarkupSafe==1.1.1",
+            "mock==4.0.2",
+            "more-itertools==8.3.0",
+            "packaging==20.4",
+            "pluggy==0.13.1",
+            "py==1.8.1",
+            "pycparser==2.20",
+            "Pygments==2.6.1",
+            "pyparsing==2.4.7",
+            "pytest==5.4.2",
+            "pytest-httpbin==1.0.0",
+            "raven==6.10.0",
+            "requests==2.23.0",
+            "six==1.15.0",
+            "urllib3==1.25.9",
+            "wcwidth==0.1.9",
+            "Werkzeug==1.0.1",
+            "zipp==3.1.0"
+          ],
+          "requirements_line_ending": "crlf",
+          "requirements_sha256": "77de192562ac39d2d6a0ad4cbb1000e08c2da9d4ea6b26bd66f5adbd2805740c"
+        },
+        "pytest54-requests200": {
+          "case_ids": [
+            "bugsinpy-httpie-4",
+            "bugsinpy-httpie-5"
+          ],
+          "isolated_environment_template": "httpie-pytest54-requests200-py{version}",
+          "bootstrap_requirements": [
+            "atomicwrites==1.4.0",
+            "attrs==19.3.0",
+            "blinker==1.4",
+            "brotlipy==0.7.0",
+            "certifi==2020.4.5.1",
+            "cffi==1.14.0",
+            "chardet==3.0.4",
+            "click==7.1.2",
+            "colorama==0.4.3",
+            "decorator==4.4.2",
+            "Flask==1.1.2",
+            "httpbin==0.7.0",
+            "idna==2.9",
+            "importlib-metadata==1.6.0",
+            "itsdangerous==1.1.0",
+            "Jinja2==2.11.2",
+            "MarkupSafe==1.1.1",
+            "mock==4.0.2",
+            "more-itertools==8.3.0",
+            "packaging==20.4",
+            "pluggy==0.13.1",
+            "py==1.8.1",
+            "pycparser==2.20",
+            "Pygments==2.6.1",
+            "pyparsing==2.4.7",
+            "pytest==5.4.2",
+            "pytest-httpbin==1.0.0",
+            "raven==6.10.0",
+            "requests==2.0.0",
+            "six==1.15.0",
+            "urllib3==1.25.9",
+            "wcwidth==0.1.9",
+            "Werkzeug==1.0.1",
+            "zipp==3.1.0"
+          ],
+          "requirements_line_ending": "crlf",
+          "requirements_sha256": "f504fd7019795d6e32651a492581cef11a48cec8f879f388738dfdc0f747688b"
+        }
+      },
       "required_runtime_modules": [
+        "brotli",
+        "cffi",
+        "flask",
+        "httpbin",
         "pytest",
         "requests"
       ],

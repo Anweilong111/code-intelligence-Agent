@@ -36,8 +36,16 @@ ADAPTABLE_MODULES = {"nox", "py.test", "tox"}
 SAFE_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 SAFE_PYTHON_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
 SAFE_CASE_ID_PATTERN = re.compile(r"^bugsinpy-[a-z0-9-]+-[1-9][0-9]*$")
+SAFE_VARIANT_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 REPOSITORY_RUNTIME_SUPPORT_ROOT = ".cia-runtime-support"
+RUNTIME_VARIANT_OVERRIDE_FIELDS = {
+    "bootstrap_requirements",
+    "isolated_environment_template",
+    "manual_python_archives",
+    "required_runtime_modules",
+    "required_runtime_modules_by_platform",
+}
 RuntimeProbe = Callable[[Path, str, list[str]], dict[str, Any]]
 SUPPORTED_EXECUTION_PLATFORMS = {"any", "darwin", "linux", "windows"}
 
@@ -107,6 +115,98 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
                         f"profiles.pythonpath_entry_is_unsafe:"
                         f"{project}:{field}:{index}"
                     )
+        runtime_variant_case_ids: set[str] = set()
+        runtime_variants_value = profile.get("runtime_variants")
+        if runtime_variants_value is not None and (
+            not isinstance(runtime_variants_value, dict)
+            or not runtime_variants_value
+        ):
+            errors.append(f"profiles.runtime_variants_are_invalid:{project}")
+        for variant_id, variant_value in _dict(runtime_variants_value).items():
+            variant = _dict(variant_value)
+            scope = f"{project}:{variant_id}"
+            if not SAFE_VARIANT_ID_PATTERN.fullmatch(str(variant_id)):
+                errors.append(f"profiles.runtime_variant_id_is_invalid:{scope}")
+            if not isinstance(variant_value, dict):
+                errors.append(f"profiles.runtime_variant_is_not_object:{scope}")
+                continue
+            allowed_fields = {
+                "case_ids",
+                "requirements_line_ending",
+                "requirements_sha256",
+                *RUNTIME_VARIANT_OVERRIDE_FIELDS,
+            }
+            unknown_fields = sorted(set(variant) - allowed_fields)
+            errors.extend(
+                f"profiles.runtime_variant_field_is_unknown:{scope}:{field}"
+                for field in unknown_fields
+            )
+            variant_case_ids = [
+                str(value) for value in _list(variant.get("case_ids"))
+            ]
+            if not variant_case_ids:
+                errors.append(f"profiles.runtime_variant_case_ids_are_required:{scope}")
+            for case_id in variant_case_ids:
+                if not SAFE_CASE_ID_PATTERN.fullmatch(case_id):
+                    errors.append(
+                        f"profiles.runtime_variant_case_id_is_invalid:{scope}:{case_id}"
+                    )
+                if case_id in runtime_variant_case_ids:
+                    errors.append(
+                        f"profiles.runtime_variant_case_id_is_duplicate:"
+                        f"{project}:{case_id}"
+                    )
+                runtime_variant_case_ids.add(case_id)
+            requirements = [
+                str(value) for value in _list(variant.get("bootstrap_requirements"))
+            ]
+            requirements_sha256 = str(
+                variant.get("requirements_sha256") or ""
+            ).lower()
+            requirements_line_ending = str(
+                variant.get("requirements_line_ending") or ""
+            )
+            line_separator = (
+                "\n"
+                if requirements_line_ending == "lf"
+                else "\r\n"
+                if requirements_line_ending == "crlf"
+                else ""
+            )
+            observed_requirements_sha256 = hashlib.sha256(
+                (
+                    (line_separator.join(requirements) + line_separator)
+                    if requirements and line_separator
+                    else ""
+                ).encode("utf-8")
+            ).hexdigest()
+            if (
+                not requirements
+                or not line_separator
+                or not SHA256_PATTERN.fullmatch(requirements_sha256)
+                or requirements_sha256 != observed_requirements_sha256
+            ):
+                errors.append(
+                    f"profiles.runtime_variant_requirements_sha256_is_invalid:{scope}"
+                )
+            environment_template = str(
+                variant.get("isolated_environment_template") or ""
+            )
+            try:
+                rendered_environment = environment_template.format(
+                    version="3.7.3",
+                    case_id=variant_case_ids[0] if variant_case_ids else "case",
+                )
+            except (KeyError, ValueError):
+                rendered_environment = ""
+            if (
+                not environment_template
+                or "{version}" not in environment_template
+                or not _safe_relative_path(rendered_environment)
+            ):
+                errors.append(
+                    f"profiles.runtime_variant_environment_is_invalid:{scope}"
+                )
         errors.extend(
             _validate_preparation_file_set(
                 project,
@@ -223,6 +323,51 @@ def _validate_preparation_file_set(
     return errors
 
 
+def resolve_project_runtime_variant(
+    project_profile: dict[str, Any],
+    case_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    variants = _dict(project_profile.get("runtime_variants"))
+    effective = copy.deepcopy(project_profile)
+    effective.pop("runtime_variants", None)
+    if not variants:
+        return effective, {
+            "status": "pass",
+            "variant_id": "project_default",
+            "case_id": case_id,
+            "requirements_sha256": "",
+            "requirements_line_ending": "",
+        }
+    matches = [
+        (str(variant_id), _dict(value))
+        for variant_id, value in variants.items()
+        if case_id in [str(item) for item in _list(_dict(value).get("case_ids"))]
+    ]
+    if len(matches) != 1:
+        return effective, {
+            "status": "fail",
+            "variant_id": "",
+            "case_id": case_id,
+            "requirements_sha256": "",
+            "requirements_line_ending": "",
+            "errors": ["runtime_variant_mapping_missing_or_ambiguous"],
+        }
+    variant_id, variant = matches[0]
+    for field in RUNTIME_VARIANT_OVERRIDE_FIELDS:
+        if field in variant:
+            effective[field] = copy.deepcopy(variant[field])
+    return effective, {
+        "status": "pass",
+        "variant_id": variant_id,
+        "case_id": case_id,
+        "requirements_sha256": str(variant.get("requirements_sha256") or ""),
+        "requirements_line_ending": str(
+            variant.get("requirements_line_ending") or ""
+        ),
+        "errors": [],
+    }
+
+
 def build_reproduction_plan(
     *,
     catalog: dict[str, Any],
@@ -296,19 +441,51 @@ def build_reproduction_plan(
                 case,
                 project_profile=project_profile,
             )
+            runtime_project_profile, runtime_variant = (
+                resolve_project_runtime_variant(project_profile, case_id)
+            )
+            if runtime_variant["status"] != "pass":
+                adaptation["status"] = "adapter_required"
+                adaptation["errors"] = sorted(
+                    {
+                        *[str(value) for value in _list(adaptation.get("errors"))],
+                        *[
+                            str(value)
+                            for value in _list(runtime_variant.get("errors"))
+                        ],
+                    }
+                )
+            elif (
+                runtime_variant.get("variant_id") != "project_default"
+                and str(runtime_variant.get("requirements_sha256") or "")
+                != str(
+                    _dict(
+                        _dict(case.get("environment")).get("requirements")
+                    ).get("sha256")
+                    or ""
+                )
+            ):
+                adaptation["status"] = "adapter_required"
+                adaptation["errors"] = sorted(
+                    {
+                        *[str(value) for value in _list(adaptation.get("errors"))],
+                        "runtime_variant_source_requirements_sha256_mismatch",
+                    }
+                )
             version = str(_dict(case.get("environment")).get("python_version") or "")
             runtime_config = _project_runtime_config(
-                project_profile,
+                runtime_project_profile,
                 version=version,
                 fallback=_runtime_config_for_platform(
                     _dict(runtime_profiles.get(version)),
                     observed_platform,
                 ),
                 execution_platform=observed_platform,
+                case_id=case_id,
             )
             runtime = _resolve_runtime(root, version, runtime_config)
             modules = _required_runtime_modules(
-                project_profile,
+                runtime_project_profile,
                 observed_platform,
             )
             if runtime["status"] == "available":
@@ -333,7 +510,7 @@ def build_reproduction_plan(
             readiness, blockers = _reproduction_readiness(
                 adaptation=adaptation,
                 runtime=runtime,
-                project_profile=project_profile,
+                project_profile=runtime_project_profile,
                 execution_platform=observed_platform,
             )
             items.append(
@@ -353,6 +530,7 @@ def build_reproduction_plan(
                     "readiness": readiness,
                     "blockers": blockers,
                     "runtime": runtime,
+                    "runtime_variant": runtime_variant,
                     "adaptation": adaptation,
                     "execution_contract": {
                         "setup_script_executed": False,
@@ -742,11 +920,12 @@ def _project_runtime_config(
     version: str,
     fallback: dict[str, Any],
     execution_platform: str,
+    case_id: str = "",
 ) -> dict[str, Any]:
     template = str(project_profile.get("isolated_environment_template") or "")
     if not template:
         return copy.deepcopy(fallback)
-    environment_path = template.format(version=version)
+    environment_path = template.format(version=version, case_id=case_id)
     executable = (
         PurePosixPath(environment_path) / "Scripts" / "python.exe"
         if execution_platform == "windows"

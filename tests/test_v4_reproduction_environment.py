@@ -123,6 +123,90 @@ def test_bootstrap_plan_uses_linux_runtime_mapping(tmp_path):
     assert "windows_only" not in plan["required_runtime_modules"]
 
 
+def test_bootstrap_plan_selects_case_bound_runtime_variant(tmp_path):
+    profiles = _profiles()
+    requirements = ["pytest==7.4.4", "requests==2.31.0"]
+    profiles["project_profiles"]["demo"]["runtime_variants"] = {
+        "legacy-a": {
+            "case_ids": ["bugsinpy-demo-1", "bugsinpy-demo-2"],
+            "isolated_environment_template": "demo-legacy-a-py{version}",
+            "bootstrap_requirements": requirements,
+            "requirements_line_ending": "lf",
+            "requirements_sha256": hashlib.sha256(
+                ("\n".join(requirements) + "\n").encode("utf-8")
+            ).hexdigest(),
+        }
+    }
+    base = tmp_path / "base"
+    python = base / "cpython-3.11.9" / "python.exe"
+    python.parent.mkdir(parents=True)
+    python.write_text("fixture", encoding="utf-8")
+
+    plan = build_environment_bootstrap_plan(
+        profiles=profiles,
+        project="demo",
+        python_version="3.11.9",
+        base_runtime_root=base,
+        isolated_runtime_root=tmp_path / "isolated",
+        case_id="bugsinpy-demo-2",
+    )
+
+    assert plan["case_id"] == "bugsinpy-demo-2"
+    assert plan["runtime_variant"]["variant_id"] == "legacy-a"
+    assert plan["requirements"] == requirements
+    assert plan["environment_relative_path"] == "demo-legacy-a-py3.11.9"
+    assert validate_environment_bootstrap_plan(plan) == []
+
+
+def test_bootstrap_plan_rejects_unknown_case_runtime_variant(tmp_path):
+    profiles = _profiles()
+    requirements = ["pytest==7.4.4"]
+    profiles["project_profiles"]["demo"]["runtime_variants"] = {
+        "legacy-a": {
+            "case_ids": ["bugsinpy-demo-1"],
+            "isolated_environment_template": "demo-legacy-a-py{version}",
+            "bootstrap_requirements": requirements,
+            "requirements_line_ending": "lf",
+            "requirements_sha256": hashlib.sha256(
+                ("\n".join(requirements) + "\n").encode("utf-8")
+            ).hexdigest(),
+        }
+    }
+    base = tmp_path / "base"
+    python = base / "cpython-3.11.9" / "python.exe"
+    python.parent.mkdir(parents=True)
+    python.write_text("fixture", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Runtime variant resolution failed"):
+        build_environment_bootstrap_plan(
+            profiles=profiles,
+            project="demo",
+            python_version="3.11.9",
+            base_runtime_root=base,
+            isolated_runtime_root=tmp_path / "isolated",
+            case_id="bugsinpy-demo-2",
+        )
+
+
+def test_bootstrap_plan_detects_refingerprinted_runtime_variant_hash_drift(
+    tmp_path,
+):
+    plan = _plan(tmp_path)
+    plan["runtime_variant"] = {
+        "status": "pass",
+        "variant_id": "legacy-a",
+        "case_id": "",
+        "requirements_sha256": "f" * 64,
+        "requirements_line_ending": "lf",
+        "errors": [],
+    }
+    plan["plan_sha256"] = environment_bootstrap_plan_fingerprint(plan)
+
+    assert "runtime_variant_requirements_sha256_mismatch" in (
+        validate_environment_bootstrap_plan(plan)
+    )
+
+
 def test_bootstrap_without_authorization_executes_nothing(tmp_path):
     plan = _plan(tmp_path)
     calls = 0

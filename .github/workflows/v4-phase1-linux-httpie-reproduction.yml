@@ -1,0 +1,251 @@
+name: V4 Phase 1 Linux HTTPie Reproduction
+
+on:
+  workflow_dispatch:
+    inputs:
+      case_set:
+        description: Bounded HTTPie reproduction set
+        required: true
+        default: phase1-httpie-primary
+        type: choice
+        options:
+          - first-candidate
+          - phase1-httpie-primary
+          - all-httpie-selection
+  push:
+    branches:
+      - codex/code-intelligence-agent-v4
+    paths:
+      - .github/workflows/v4-phase1-linux-httpie-reproduction.yml
+      - code_intelligence_agent/evaluation/v3_real_bug_reproduction.py
+      - code_intelligence_agent/evaluation/v4_reproduction_environment.py
+      - code_intelligence_agent/evaluation/v4_real_bug_reproduction.py
+      - datasets/v4_agent_effectiveness/real_bug_seed_catalog.json
+      - datasets/v4_agent_effectiveness/reproduction_profiles.json
+      - datasets/v4_agent_effectiveness/selection_plan.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4-phase1-linux-httpie-reproduction
+  cancel-in-progress: false
+
+jobs:
+  reproduce-httpie-selection:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Public detached checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote remove origin
+
+      - name: Create host orchestrator environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv outputs_v4/ci-host
+          outputs_v4/ci-host/bin/python -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --no-deps \
+            packaging==24.2
+
+      - name: Resolve bounded case set
+        shell: bash
+        env:
+          CASE_SET: ${{ inputs.case_set || 'all-httpie-selection' }}
+        run: |
+          set -euo pipefail
+          mkdir -p outputs_v4/linux-httpie
+          case "${CASE_SET}" in
+            first-candidate)
+              case_ids=(bugsinpy-httpie-2)
+              ;;
+            phase1-httpie-primary)
+              case_ids=(
+                bugsinpy-httpie-2
+                bugsinpy-httpie-1
+                bugsinpy-httpie-3
+                bugsinpy-httpie-4
+              )
+              ;;
+            all-httpie-selection)
+              case_ids=(
+                bugsinpy-httpie-2
+                bugsinpy-httpie-1
+                bugsinpy-httpie-3
+                bugsinpy-httpie-4
+                bugsinpy-httpie-5
+              )
+              ;;
+            *)
+              echo "Unsupported case set: ${CASE_SET}" >&2
+              exit 2
+              ;;
+          esac
+          printf '%s\n' "${case_ids[@]}" > outputs_v4/linux-httpie/case_ids.txt
+
+      - name: Provision exact Python 3.7.3 base runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CONDA_PKGS_DIRS="${RUNNER_TEMP}/conda-pkgs"
+          /usr/share/miniconda/bin/conda create \
+            --yes \
+            --copy \
+            --solver classic \
+            --override-channels \
+            --channel conda-forge \
+            --repodata-fn repodata.json \
+            --prefix "${GITHUB_WORKSPACE}/outputs_v3/runtimes/cpython-3.7.3" \
+            python=3.7.3
+          base_python="${GITHUB_WORKSPACE}/outputs_v3/runtimes/cpython-3.7.3/bin/python3.7"
+          test -f "${base_python}"
+          test ! -L "${base_python}"
+          "${base_python}" -c \
+            'import sys; assert sys.version_info[:3] == (3, 7, 3), sys.version'
+
+      - name: Build three isolated historical runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          host_python="outputs_v4/ci-host/bin/python"
+          representatives=(
+            bugsinpy-httpie-1
+            bugsinpy-httpie-2
+            bugsinpy-httpie-4
+          )
+          for case_id in "${representatives[@]}"; do
+            suffix="${case_id##*-}"
+            plan="outputs_v4/linux-httpie/bootstrap_plan_${suffix}.json"
+            result="outputs_v4/linux-httpie/bootstrap_result_${suffix}.json"
+            "${host_python}" -m code_intelligence_agent v4-bootstrap-runtime plan \
+              datasets/v4_agent_effectiveness/reproduction_profiles.json \
+              httpie \
+              3.7.3 \
+              "${plan}" \
+              --base-runtime-root outputs_v3/runtimes \
+              --isolated-runtime-root outputs_v4/runtimes \
+              --case-id "${case_id}"
+            "${host_python}" -m code_intelligence_agent v4-bootstrap-runtime run \
+              "${plan}" \
+              "${result}" \
+              --authorize-dependency-install \
+              --require-pass
+          done
+
+      - name: Verify Linux readiness plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          host_python="outputs_v4/ci-host/bin/python"
+          mapfile -t case_ids < outputs_v4/linux-httpie/case_ids.txt
+          case_args=()
+          for case_id in "${case_ids[@]}"; do
+            case_args+=(--case-id "${case_id}")
+          done
+          "${host_python}" -m code_intelligence_agent v4-reproduce plan \
+            datasets/v4_agent_effectiveness/real_bug_seed_catalog.json \
+            datasets/v4_agent_effectiveness/selection_plan.json \
+            datasets/v4_agent_effectiveness/reproduction_profiles.json \
+            outputs_v4/linux-httpie/httpie_reproduction_plan.json \
+            --runtime-root outputs_v4/runtimes \
+            --project httpie \
+            "${case_args[@]}"
+          "${host_python}" -c \
+            "import json; ids=[x.strip() for x in open('outputs_v4/linux-httpie/case_ids.txt') if x.strip()]; p=json.load(open('outputs_v4/linux-httpie/httpie_reproduction_plan.json')); assert [x['case_id'] for x in p['items']] == ids, p['items']; assert p['summary']['ready_count'] == len(ids) and p['summary']['blocked_count'] == 0, p['summary']; assert len({x['runtime_variant']['variant_id'] for x in p['items']}) <= 3"
+
+      - name: Collect selected reproduction evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          host_python="outputs_v4/ci-host/bin/python"
+          collection_status=0
+          while IFS= read -r case_id; do
+            if ! "${host_python}" -m code_intelligence_agent v4-reproduce run \
+              datasets/v4_agent_effectiveness/real_bug_seed_catalog.json \
+              datasets/v4_agent_effectiveness/selection_plan.json \
+              datasets/v4_agent_effectiveness/reproduction_profiles.json \
+              "outputs_v4/linux-httpie/reproduction/${case_id}" \
+              --runtime-root outputs_v4/runtimes \
+              --case-id "${case_id}" \
+              --targeted-timeout 180 \
+              --regression-timeout 900 \
+              --require-pass; then
+              echo "${case_id} did not satisfy all reproduction gates"
+            fi
+            evidence="outputs_v4/linux-httpie/reproduction/${case_id}/v4_reproduction.json"
+            if [ ! -f "${evidence}" ]; then
+              echo "Missing evidence for ${case_id}" >&2
+              collection_status=1
+              continue
+            fi
+            if ! "${host_python}" -c \
+              "import json,sys; from code_intelligence_agent.evaluation.v4_real_bug_reproduction import reproduction_evidence_fingerprint; e=json.load(open(sys.argv[1])); assert e['case_id'] == sys.argv[2]; assert e['evidence_sha256'] == reproduction_evidence_fingerprint(e)" \
+              "${evidence}" "${case_id}"; then
+              collection_status=1
+            fi
+          done < outputs_v4/linux-httpie/case_ids.txt
+          if ! "${host_python}" -c \
+            "import json,pathlib; p=json.load(open('outputs_v4/linux-httpie/httpie_reproduction_plan.json')); accepted={x['case_id'] for x in p['items'] if x['catalog_status']=='accepted'}; rows={x:json.load(open(pathlib.Path('outputs_v4/linux-httpie/reproduction')/x/'v4_reproduction.json')) for x in [y.strip() for y in open('outputs_v4/linux-httpie/case_ids.txt') if y.strip()]}; assert all(rows[x]['status']=='pass' and rows[x]['acceptance']['reproducible'] is True for x in accepted)"; then
+            collection_status=1
+          fi
+          if [ "${collection_status}" -ne 0 ]; then
+            exit "${collection_status}"
+          fi
+          "${host_python}" -c \
+            "import json,pathlib; ids=[x.strip() for x in open('outputs_v4/linux-httpie/case_ids.txt') if x.strip()]; plan=json.load(open('outputs_v4/linux-httpie/httpie_reproduction_plan.json')); status={x['case_id']:x['catalog_status'] for x in plan['items']}; rows=[json.load(open(pathlib.Path('outputs_v4/linux-httpie/reproduction')/x/'v4_reproduction.json')) for x in ids]; payload={'schema_version':'4.0','batch_id':'v4-phase1-linux-httpie-selection','case_ids':ids,'case_count':len(rows),'pass_count':sum(x['status']=='pass' for x in rows),'non_pass_count':sum(x['status']!='pass' for x in rows),'cases':[{'case_id':x['case_id'],'catalog_status':status[x['case_id']],'status':x['status'],'reason':x['reason'],'evidence_sha256':x['evidence_sha256']} for x in rows]}; pathlib.Path('outputs_v4/linux-httpie/batch_summary.json').write_text(json.dumps(payload,indent=2)+'\n',encoding='utf-8')"
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## V4 Phase 1 Linux HTTPie reproduction"
+            for result in outputs_v4/linux-httpie/bootstrap_result_*.json; do
+              if [ -f "${result}" ]; then
+                echo '```json'
+                outputs_v4/ci-host/bin/python -c \
+                  "import json,sys; p=json.load(open(sys.argv[1])); print(json.dumps({'case_id':p['case_id'],'variant':p['runtime_variant']['variant_id'],'status':p['status'],'reason':p['reason']},indent=2))" \
+                  "${result}"
+                echo '```'
+              fi
+            done
+            if [ -f outputs_v4/linux-httpie/batch_summary.json ]; then
+              echo '```json'
+              cat outputs_v4/linux-httpie/batch_summary.json
+              echo '```'
+            fi
+            if [ -f outputs_v4/linux-httpie/case_ids.txt ]; then
+              while IFS= read -r case_id; do
+                report="outputs_v4/linux-httpie/reproduction/${case_id}/v4_reproduction.md"
+                if [ -f "${report}" ]; then
+                  cat "${report}"
+                fi
+              done < outputs_v4/linux-httpie/case_ids.txt
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload auditable evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v4-phase1-linux-httpie-${{ inputs.case_set || 'all-httpie-selection' }}
+          path: |
+            outputs_v4/linux-httpie/bootstrap_plan_*.json
+            outputs_v4/linux-httpie/bootstrap_result_*.json
+            outputs_v4/linux-httpie/batch_summary.json
+            outputs_v4/linux-httpie/case_ids.txt
+            outputs_v4/linux-httpie/httpie_reproduction_plan.json
+            outputs_v4/linux-httpie/reproduction/*/v4_reproduction.json
+            outputs_v4/linux-httpie/reproduction/*/v4_reproduction.md
+          if-no-files-found: warn
+          retention-days: 30

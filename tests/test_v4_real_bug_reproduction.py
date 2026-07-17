@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -137,6 +138,39 @@ def test_case_preparation_variant_rejects_tampering_and_missing_plugin():
     )
 
 
+def test_runtime_variant_validation_rejects_hash_drift_and_duplicate_case():
+    profiles = _profiles()
+    profiles["project_profiles"]["demo"]["runtime_variants"] = {
+        "legacy-a": {
+            "case_ids": ["bugsinpy-demo-1"],
+            "isolated_environment_template": "demo-a-py{version}",
+            "bootstrap_requirements": ["pytest==7.4.4"],
+            "requirements_line_ending": "lf",
+            "requirements_sha256": "f" * 64,
+        },
+        "legacy-b": {
+            "case_ids": ["bugsinpy-demo-1"],
+            "isolated_environment_template": "demo-b-py{version}",
+            "bootstrap_requirements": ["pytest==7.4.4"],
+            "requirements_line_ending": "lf",
+            "requirements_sha256": hashlib.sha256(
+                b"pytest==7.4.4\n"
+            ).hexdigest(),
+        },
+    }
+
+    errors = validate_reproduction_profiles(profiles)
+
+    assert (
+        "profiles.runtime_variant_requirements_sha256_is_invalid:demo:legacy-a"
+        in errors
+    )
+    assert (
+        "profiles.runtime_variant_case_id_is_duplicate:demo:bugsinpy-demo-1"
+        in errors
+    )
+
+
 def test_profile_validation_rejects_unmaterialized_plugin_and_tampered_file():
     profiles = _profiles()
     profiles["project_profiles"]["demo"]["repository_pytest_plugins"] = [
@@ -207,10 +241,67 @@ def test_plan_keeps_accepted_case_replayable_after_catalog_transition(tmp_path):
     assert len(plan["items"]) == 1
     assert plan["items"][0]["case_id"] == "bugsinpy-thefuck-16"
     assert plan["items"][0]["catalog_status"] == "accepted"
+    assert plan["items"][0]["runtime_variant"]["variant_id"] == "project_default"
+    assert "runtime_variant_source_requirements_sha256_mismatch" not in (
+        plan["items"][0]["adaptation"]["errors"]
+    )
     assert plan["summary"]["catalog_status_counts"] == {
         "candidate": 0,
         "accepted": 1,
     }
+
+
+def test_httpie_selection_maps_five_cases_to_three_hashed_runtime_variants(
+    tmp_path,
+):
+    variants = {
+        "pytest32-requests200": ["bugsinpy-httpie-1"],
+        "pytest54-requests223": [
+            "bugsinpy-httpie-2",
+            "bugsinpy-httpie-3",
+        ],
+        "pytest54-requests200": [
+            "bugsinpy-httpie-4",
+            "bugsinpy-httpie-5",
+        ],
+    }
+    for variant_id in variants:
+        python = tmp_path / f"httpie-{variant_id}-py3.7.3" / "bin" / "python"
+        python.parent.mkdir(parents=True)
+        python.write_text("fixture", encoding="utf-8")
+
+    plan = build_reproduction_plan(
+        catalog=load_json_object(CATALOG_PATH),
+        selection_plan=load_json_object(SELECTION_PATH),
+        profiles=load_json_object(PROFILES_PATH),
+        runtime_root=tmp_path,
+        projects={"httpie"},
+        execution_platform="linux",
+        runtime_probe=lambda python, version, modules: {
+            "status": "pass",
+            "reason": "fixture",
+            "python": str(python),
+            "version": version,
+            "available_modules": modules,
+            "missing_modules": [],
+        },
+    )
+
+    assert plan["summary"]["ready_count"] == 5
+    assert plan["summary"]["blocked_count"] == 0
+    by_variant = {}
+    for item in plan["items"]:
+        by_variant.setdefault(item["runtime_variant"]["variant_id"], []).append(
+            item["case_id"]
+        )
+        assert item["runtime_variant"]["requirements_sha256"] == (
+            next(
+                case["environment"]["requirements"]["sha256"]
+                for case in load_json_object(CATALOG_PATH)["cases"]
+                if case["case_id"] == item["case_id"]
+            )
+        )
+    assert by_variant == variants
 
 
 def test_plan_does_not_replay_rejected_case(tmp_path):
