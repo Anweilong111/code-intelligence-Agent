@@ -99,6 +99,26 @@
       "candidate_file_count": 527
     }
   },
+  "clean_archive": {
+    "status": "pass",
+    "tested_commit": "93c10f051e417f5e8e67d7b1bf6a7e2f6e4fd480",
+    "archive_format": "zip",
+    "archive_sha256": "cf2802847f8903ae72b8beb3471920dcc976cb0965c23215a691990d100ac768",
+    "archive_size_bytes": 3059500,
+    "git_metadata_present": false,
+    "top_level_outputs_count": 0,
+    "candidate_source": "filesystem_snapshot",
+    "candidate_file_count": 527,
+    "release_hygiene_status": "pass",
+    "release_hygiene_passed_checks": 5,
+    "release_hygiene_check_count": 5,
+    "release_test_passed": 38,
+    "release_test_failed": 0,
+    "release_test_duration_seconds": 4.73,
+    "offline_release_status": "pass",
+    "complete_release_status_without_external_live_artifact": "pending",
+    "agent_cli_help_status": "pass"
+  },
   "artifacts": {
     "docs/v3/phase7_unified_evaluation.json": "78e26477c75af3f9f2e60edf6533c83280fbb83c793c7dc59c18ed910a7b7efc",
     "docs/v3/phase7_unified_evaluation.md": "dadbdbfebdac9948eb9908e778383f97ddc732678ae06f3a92223867333d8ada",

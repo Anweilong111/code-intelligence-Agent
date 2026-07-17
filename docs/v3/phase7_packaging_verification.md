@@ -33,14 +33,15 @@ RunRecord audit.
 
 | Check | Result |
 | --- | --- |
-| Tested commit | `408d8f1383bf77bdab121c04a308e19e7ae6306c` |
-| ZIP SHA-256 | `292ad4ca1bed186f76e35a3cde0f7dd9202b10c0e29a5c4e6ebe96e6d8fc2f02` |
+| Tested commit | `93c10f051e417f5e8e67d7b1bf6a7e2f6e4fd480` |
+| ZIP SHA-256 | `cf2802847f8903ae72b8beb3471920dcc976cb0965c23215a691990d100ac768` |
+| ZIP size | 3,059,500 bytes |
 | Git metadata | absent |
 | Top-level outputs | 0 |
-| Source files | 520 |
+| Source files | 527 |
 | Candidate source | `filesystem_snapshot` |
-| Release hygiene | 5/5 pass over 520 candidates |
-| Release-focused tests | 33 passed in 5.09 s |
+| Release hygiene | 5/5 pass over 527 candidates |
+| Release-focused tests | 38 passed in 4.73 s |
 | Unified release CLI | offline pass, complete pending |
 | Agent CLI | help/route pass |
 
@@ -71,7 +72,7 @@ Create the archive from the tested commit:
 ```powershell
 git archive --format=zip `
   --output=source.zip `
-  408d8f1383bf77bdab121c04a308e19e7ae6306c
+  93c10f051e417f5e8e67d7b1bf6a7e2f6e4fd480
 ```
 
 After extracting into a directory without `.git`, run:
@@ -101,8 +102,10 @@ python -m code_intelligence_agent v3-release-eval `
 
 ## Boundary
 
-The archive verifies the source commit before these verification artifacts are
-added. The Git candidate set is also audited in the main worktree. Neither
-clean-archive success nor documentation quality substitutes for the validated
-120-trial live artifact. Conversely, live repair success does not substitute
-for source tests, release hygiene, or archive reproducibility.
+The archive verifies the source commit before the final measured values are
+written into these verification artifacts. Those subsequent edits are
+documentation-only and are not part of the archive hash. The Git candidate set
+is also audited in the main worktree. Neither clean-archive success nor
+documentation quality substitutes for the validated 120-trial live artifact.
+Conversely, live repair success does not substitute for source tests, release
+hygiene, or archive reproducibility.

@@ -62,3 +62,17 @@ ACL initialization; no model API key was present in the test process.
 The machine-readable verification file also records release-hygiene and
 clean-archive evidence. Values are added only after the corresponding commands
 finish; a documentation pass never substitutes for those executable gates.
+
+## Clean Archive
+
+Git commit `93c10f051e417f5e8e67d7b1bf6a7e2f6e4fd480` was exported as a
+3,059,500-byte ZIP with SHA-256
+`cf2802847f8903ae72b8beb3471920dcc976cb0965c23215a691990d100ac768`.
+The extracted snapshot contained no Git metadata or top-level outputs. Its 527
+source candidates passed all 5 hygiene checks, and its release-focused suite
+passed 38 tests in 4.73 seconds.
+
+The archive-local release CLI correctly reports offline `pass`, complete
+`pending`, and `claim_eligible=false` because ignored paid-run outputs are not
+part of a source archive. The committed aggregate above remains the authority
+for the separately audited 120-trial live result.

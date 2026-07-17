@@ -21,9 +21,10 @@
     }
   },
   "clean_archive": {
-    "tested_commit": "pending_final_source_commit",
+    "tested_commit": "93c10f051e417f5e8e67d7b1bf6a7e2f6e4fd480",
     "archive_format": "zip",
-    "archive_sha256": "pending_final_source_archive",
+    "archive_sha256": "cf2802847f8903ae72b8beb3471920dcc976cb0965c23215a691990d100ac768",
+    "archive_size_bytes": 3059500,
     "git_metadata_present": false,
     "top_level_outputs_count": 0,
     "candidate_file_count": 527,
@@ -38,9 +39,9 @@
     },
     "tests": {
       "status": "pass",
-      "passed": 33,
+      "passed": 38,
       "failed": 0,
-      "duration_seconds": 5.09,
+      "duration_seconds": 4.73,
       "coverage": [
         "V3 packaging documents",
         "V3 unified release evaluation",
@@ -114,7 +115,7 @@
   ],
   "claim_boundaries": [
     "The clean archive proves release-focused tests and CLI reproducibility for the tested source commit; it is not a live-model repair result.",
-    "The packaging verification artifacts are committed after the tested source archive and are not part of that archive hash.",
+    "The final measured values in the packaging verification artifacts are committed after the tested source archive and are not part of that archive hash.",
     "The committed live metrics come from the validated external 120-trial artifact, not from documentation or clean-archive success.",
     "Ignored paid-run outputs are intentionally absent from the clean source archive; the committed aggregate retains their hashes and sanitized evidence.",
     "Filesystem snapshot hygiene excludes runtime cache directories; the source commit is independently audited through the Git candidate set before archiving."
