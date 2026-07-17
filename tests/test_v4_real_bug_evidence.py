@@ -15,6 +15,7 @@ from code_intelligence_agent.evaluation.v4_real_bug_benchmark import (
 )
 from code_intelligence_agent.evaluation.v4_real_bug_evidence import (
     accept_v4_reproduction_artifact,
+    accept_v4_reproduction_artifact_batch,
 )
 from code_intelligence_agent.evaluation.v4_real_bug_reproduction import (
     reproduction_evidence_fingerprint,
@@ -150,6 +151,132 @@ def test_accept_cli_writes_validated_catalog_and_audit(tmp_path):
     assert audit["status"] == "pass"
 
 
+def test_batch_acceptance_validates_original_manifest_then_updates_atomically(
+    tmp_path,
+):
+    catalog = _batch_catalog()
+    archive, attestations = _batch_artifact(tmp_path, catalog)
+
+    accepted, audit = accept_v4_reproduction_artifact_batch(
+        catalog,
+        archive,
+        attestations,
+    )
+
+    assert audit["status"] == "pass", audit["errors"]
+    assert audit["atomic_all_or_nothing"] is True
+    assert audit["accepted_case_count"] == 2
+    assert audit["before_summary"]["accepted_case_count"] == 0
+    assert audit["after_summary"]["accepted_case_count"] == 2
+    assert all(item["status"] == "pass" for item in audit["individual_audits"])
+    assert {item["status"] for item in accepted["cases"]} == {"accepted"}
+    assert accepted["manifest_sha256"] == catalog_fingerprint(accepted)
+    assert validate_v4_catalog(accepted)["status"] == "pass"
+
+
+def test_batch_acceptance_rejects_all_cases_when_one_evidence_is_invalid(tmp_path):
+    catalog = _batch_catalog()
+    archive, attestations = _batch_artifact(
+        tmp_path,
+        catalog,
+        invalid_case_id="bugsinpy-demo-2",
+    )
+
+    result, audit = accept_v4_reproduction_artifact_batch(
+        catalog,
+        archive,
+        attestations,
+    )
+
+    assert audit["status"] == "fail"
+    assert audit["accepted_case_count"] == 0
+    assert any(
+        value.startswith(
+            "case:bugsinpy-demo-2:fix_targeted_command_args_mismatch"
+        )
+        for value in audit["errors"]
+    )
+    assert result == catalog
+    assert {item["status"] for item in result["cases"]} == {"candidate"}
+
+
+def test_batch_acceptance_rejects_mixed_artifact_identity_before_catalog_update(
+    tmp_path,
+):
+    catalog = _batch_catalog()
+    archive, attestations = _batch_artifact(tmp_path, catalog)
+    attestations[1]["artifact"]["artifact_id"] = 99
+
+    result, audit = accept_v4_reproduction_artifact_batch(
+        catalog,
+        archive,
+        attestations,
+    )
+
+    assert audit["status"] == "fail"
+    assert "batch_artifact_or_workflow_identity_mismatch" in audit["errors"]
+    assert audit["individual_audits"] == []
+    assert result == catalog
+
+
+def test_batch_acceptance_rejects_unknown_manifest_schema(tmp_path):
+    catalog = _batch_catalog()
+    archive, attestations = _batch_artifact(tmp_path, catalog)
+
+    result, audit = accept_v4_reproduction_artifact_batch(
+        catalog,
+        archive,
+        attestations,
+        manifest_schema_version="5.0",
+    )
+
+    assert audit["status"] == "fail"
+    assert "batch_manifest_schema_version_mismatch" in audit["errors"]
+    assert audit["individual_audits"] == []
+    assert result == catalog
+
+
+def test_accept_batch_cli_writes_one_atomic_catalog_and_audit(tmp_path):
+    catalog = _batch_catalog()
+    archive, attestations = _batch_artifact(tmp_path, catalog)
+    catalog_input = tmp_path / "catalog.json"
+    manifest_input = tmp_path / "batch_attestations.json"
+    catalog_output = tmp_path / "accepted_catalog.json"
+    audit_output = tmp_path / "acceptance_audit.json"
+    catalog_input.write_text(json.dumps(catalog), encoding="utf-8")
+    manifest_input.write_text(
+        json.dumps({"schema_version": "4.0", "attestations": attestations}),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "code_intelligence_agent",
+            "v4-reproduce",
+            "accept-batch",
+            str(catalog_input),
+            str(archive),
+            str(manifest_input),
+            str(catalog_output),
+            str(audit_output),
+            "--require-pass",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    accepted = json.loads(catalog_output.read_text(encoding="utf-8"))
+    audit = json.loads(audit_output.read_text(encoding="utf-8"))
+    assert audit["status"] == "pass"
+    assert audit["accepted_case_count"] == 2
+    assert {item["status"] for item in accepted["cases"]} == {"accepted"}
+
+
 def _catalog() -> dict:
     case = {
         "case_id": "bugsinpy-demo-1",
@@ -218,6 +345,180 @@ def _catalog() -> dict:
     catalog["manifest_sha256"] = catalog_fingerprint(catalog)
     assert validate_v4_catalog(catalog)["status"] == "pass"
     return catalog
+
+
+def _batch_catalog() -> dict:
+    catalog = _catalog()
+    second = copy.deepcopy(catalog["cases"][0])
+    second["case_id"] = "bugsinpy-demo-2"
+    second["source_url"] = "https://github.com/example/demo/commit/" + "d" * 40
+    second["bug_commit_sha"] = "c" * 40
+    second["fix_commit_sha"] = "d" * 40
+    second["repository"]["license_url"] = (
+        "https://github.com/example/demo/blob/" + "c" * 40 + "/LICENSE"
+    )
+    second["ground_truth"]["patch_sha256"] = "e" * 64
+    second["provenance"]["benchmark_case"] = "demo:2"
+    catalog["cases"].append(second)
+    catalog["summary"] = summarize_catalog(catalog)
+    catalog["manifest_sha256"] = catalog_fingerprint(catalog)
+    assert validate_v4_catalog(catalog)["status"] == "pass"
+    return catalog
+
+
+def _batch_artifact(
+    tmp_path: Path,
+    catalog: dict,
+    *,
+    invalid_case_id: str = "",
+) -> tuple[Path, list[dict]]:
+    preparation_file = {
+        "path": ".cia-runtime-support/fixture.py",
+        "sha256": "1" * 64,
+        "reason": "Fixture adapter.",
+        "source_path": "setup.py",
+        "source_text_sha256": "2" * 64,
+    }
+    items = []
+    for case in catalog["cases"]:
+        items.append(
+            {
+                "case_id": case["case_id"],
+                "project": "demo",
+                "owner_repo": "example/demo",
+                "benchmark_split": "development",
+                "bug_commit_sha": case["bug_commit_sha"],
+                "fix_commit_sha": case["fix_commit_sha"],
+                "readiness": "ready",
+                "blockers": [],
+                "execution_contract": {
+                    "setup_script_executed": False,
+                    "gold_patch_visible": False,
+                    "required_execution_platform": "linux",
+                    "observed_execution_platform": "linux",
+                    "test_overlay_paths": ["tests/test_core.py"],
+                    "targeted_test_commands": copy.deepcopy(
+                        case["targeted_tests"]
+                    ),
+                    "regression_command": copy.deepcopy(
+                        case["regression_tests"][0]
+                    ),
+                    "preparation_files": [copy.deepcopy(preparation_file)],
+                    "test_environment": {
+                        "pythonpath_entries": [".cia-runtime-support", "."],
+                        "optional_pythonpath_entries": [],
+                        "required_tools": [],
+                        "repository_pytest_plugins": ["fixture"],
+                    },
+                },
+            }
+        )
+    plan = {
+        "schema_version": "4.0",
+        "plan_id": "fixture-batch-plan",
+        "generated_at": "2026-07-18T00:00:00+00:00",
+        "catalog_manifest_sha256": catalog["manifest_sha256"],
+        "selection_plan_sha256": "3" * 64,
+        "profiles_sha256": "4" * 64,
+        "runtime_root_committed": False,
+        "repository_setup_scripts_executed": False,
+        "execution_platform": "linux",
+        "filters": {},
+        "items": items,
+        "summary": {
+            "case_count": len(items),
+            "ready_count": len(items),
+            "blocked_count": 0,
+        },
+    }
+    plan["plan_sha256"] = reproduction_plan_fingerprint(plan)
+    evidence_by_case = {}
+    for case in catalog["cases"]:
+        evidence = _evidence(case, plan, preparation_file)
+        if case["case_id"] == invalid_case_id:
+            evidence["fix_targeted"]["results"][0]["command_args"][-1] = (
+                "tests/test_core.py::test_other"
+            )
+            evidence["evidence_sha256"] = reproduction_evidence_fingerprint(
+                evidence
+            )
+        evidence_by_case[case["case_id"]] = evidence
+
+    plan_bytes = (json.dumps(plan, indent=2) + "\n").encode("utf-8")
+    evidence_bytes = {
+        case_id: (json.dumps(evidence, indent=2) + "\n").encode("utf-8")
+        for case_id, evidence in evidence_by_case.items()
+    }
+    plan_member = "thefuck_reproduction_plan.json"
+    archive = tmp_path / "batch_artifact.zip"
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as stream:
+        _write_zip_member(stream, plan_member, plan_bytes)
+        for case_id, content in evidence_bytes.items():
+            _write_zip_member(
+                stream,
+                f"reproduction/{case_id}/v4_reproduction.json",
+                content,
+            )
+    artifact_sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
+    attestations = []
+    for case in catalog["cases"]:
+        case_id = case["case_id"]
+        evidence = evidence_by_case[case_id]
+        content = evidence_bytes[case_id]
+        attestations.append(
+            {
+                "schema_version": "4.0",
+                "attestation_reference": f"docs/v4/{case_id}.json",
+                "workflow_run": {
+                    "run_id": 1,
+                    "job_id": 2,
+                    "url": (
+                        "https://github.com/Anweilong111/"
+                        "code-intelligence-Agent/actions/runs/1"
+                    ),
+                    "head_sha": "5" * 40,
+                    "conclusion": "success",
+                },
+                "artifact": {
+                    "artifact_id": 3,
+                    "name": "batch-fixture",
+                    "size_bytes": archive.stat().st_size,
+                    "sha256": artifact_sha256,
+                    "plan_member": plan_member,
+                    "plan_file_sha256": hashlib.sha256(plan_bytes).hexdigest(),
+                    "evidence_member": (
+                        f"reproduction/{case_id}/v4_reproduction.json"
+                    ),
+                },
+                "reproduction": {
+                    "case_id": case_id,
+                    "plan_sha256": plan["plan_sha256"],
+                    "profiles_sha256": plan["profiles_sha256"],
+                    "evidence_sha256": evidence["evidence_sha256"],
+                    "evidence_file_sha256": hashlib.sha256(content).hexdigest(),
+                    "evidence_reference": (
+                        f"outputs_v4/fixture/{case_id}/v4_reproduction.json"
+                    ),
+                    "reproducible": True,
+                },
+                "difficulty_review": {
+                    "status": "verified",
+                    "evidence": {
+                        "multi_file": "The fixture patch spans multiple files."
+                    },
+                },
+                "safety": {
+                    "repository_setup_script_executed": False,
+                    "repository_project_installed": False,
+                    "source_build_executed": False,
+                    "tests_modified_or_excluded": False,
+                    "shared_base_runtime_mutated": False,
+                    "raw_artifact_committed": False,
+                    "model_calls": 0,
+                },
+            }
+        )
+    return archive, attestations
 
 
 def _artifact(
@@ -421,7 +722,9 @@ def _evidence(case: dict, plan: dict, preparation_file: dict) -> dict:
         },
     }
     evidence["evidence_sha256"] = reproduction_evidence_fingerprint(evidence)
-    assert plan["items"][0]["case_id"] == evidence["case_id"]
+    assert evidence["case_id"] in {
+        item["case_id"] for item in plan["items"]
+    }
     return evidence
 
 

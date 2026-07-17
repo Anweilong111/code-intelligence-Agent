@@ -2,14 +2,14 @@
 
 - Status: `pass`
 - Locked: `False`
-- Manifest SHA-256: `38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527`
+- Manifest SHA-256: `13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7`
 - Cases: `75`
-- Accepted/candidate/rejected: `20` / `50` / `5`
-- Accepted repositories: `5`
+- Accepted/candidate/rejected: `23` / `47` / `5`
+- Accepted repositories: `6`
 
 | Split | Accepted | Candidate | Target |
 | --- | ---: | ---: | ---: |
-| development | 7 | 5 | 10 |
+| development | 10 | 2 | 10 |
 | validation | 8 | 10 | 15 |
 | test | 5 | 35 | 25 |
 

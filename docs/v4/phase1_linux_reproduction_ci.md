@@ -169,6 +169,34 @@ The per-case outcomes, fingerprints, rejected source assertions, and audited
 replacement hashes are recorded in
 `docs/v4/phase1_thefuck_batch_attempt_1.json`.
 
+## Second Five-Case Batch and Atomic Acceptance
+
+Run `29611900217` on commit
+`7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb` passed all 11 workflow steps and
+all five case-level three-gate reproductions. The exact Python 3.7.0 runtime
+matched all 20 frozen distributions, passed `pip check`, and resolved every
+required module. The accepted baseline remained reproducible, and each of the
+four case-bound historical adapters passed its source assertions before tests
+started. The artifact ZIP SHA-256 is
+`e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807`.
+
+The frozen Thefuck target is three accepted cases and case 16 was already
+accepted. Therefore only the next two candidates in pre-registered order,
+cases 17 and 8, were selected. Passing cases 20 and 1 remain candidates rather
+than post-result replacements. A new `accept-batch` command independently
+validated both selected cases against the same pre-update catalog manifest and
+then applied both transitions atomically. A failure in either attestation would
+have left both cases unchanged.
+
+The transition increased accepted cases from 21 to 23 and completed the
+development split at 10 accepted cases. The catalog manifest changed from
+`01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262` to
+`13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7`.
+The run record, manual difficulty attestations, and atomic acceptance audit are
+in `docs/v4/phase1_thefuck_batch_attempt_2.json`,
+`docs/v4/phase1_thefuck_17_and_8_attestations.json`, and
+`docs/v4/phase1_thefuck_17_and_8_acceptance_audit.json`.
+
 ## Evidence
 
 The workflow uploads only the case set, bootstrap plan/result, Linux reproduction

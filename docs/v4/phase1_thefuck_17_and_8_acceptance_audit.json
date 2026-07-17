@@ -1,0 +1,246 @@
+{
+  "schema_version": "4.0",
+  "audit_id": "v4-reproduction-batch-acceptance:44aa6c653391f442",
+  "status": "pass",
+  "case_ids": [
+    "bugsinpy-thefuck-17",
+    "bugsinpy-thefuck-8"
+  ],
+  "case_count": 2,
+  "accepted_case_count": 2,
+  "error_count": 0,
+  "errors": [],
+  "before_summary": {
+    "case_count": 75,
+    "accepted_case_count": 21,
+    "candidate_case_count": 49,
+    "rejected_case_count": 5,
+    "repository_count": 16,
+    "accepted_repository_count": 6,
+    "accepted_split_counts": {
+      "development": 8,
+      "validation": 8,
+      "test": 5
+    },
+    "candidate_split_counts": {
+      "development": 4,
+      "validation": 10,
+      "test": 35
+    },
+    "accepted_difficulty_categories": [
+      "cross_function",
+      "dataflow",
+      "high_similarity_candidates",
+      "multi_file",
+      "real_traceback",
+      "root_error_separated",
+      "static_negative"
+    ]
+  },
+  "after_summary": {
+    "case_count": 75,
+    "accepted_case_count": 23,
+    "candidate_case_count": 47,
+    "rejected_case_count": 5,
+    "repository_count": 16,
+    "accepted_repository_count": 6,
+    "accepted_split_counts": {
+      "development": 10,
+      "validation": 8,
+      "test": 5
+    },
+    "candidate_split_counts": {
+      "development": 2,
+      "validation": 10,
+      "test": 35
+    },
+    "accepted_difficulty_categories": [
+      "cross_function",
+      "dataflow",
+      "high_similarity_candidates",
+      "multi_file",
+      "real_traceback",
+      "root_error_separated",
+      "static_negative"
+    ]
+  },
+  "before_manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+  "after_manifest_sha256": "13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7",
+  "shared_identity": {
+    "workflow_run": {
+      "run_id": 29611900217,
+      "job_id": 87988256214,
+      "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+      "conclusion": "success"
+    },
+    "artifact": {
+      "artifact_id": 8419094292,
+      "name": "v4-phase1-linux-thefuck-all-thefuck-selection",
+      "size_bytes": 30851,
+      "sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+      "plan_member": "thefuck_reproduction_plan.json",
+      "plan_file_sha256": "e11cb9fe1a2a3a4c54522bad421ad9b2d3483d090be9c5f01df3c6ee2408023d"
+    }
+  },
+  "individual_audits": [
+    {
+      "schema_version": "4.0",
+      "audit_id": "v4-reproduction-acceptance:bugsinpy-thefuck-17",
+      "status": "pass",
+      "case_id": "bugsinpy-thefuck-17",
+      "error_count": 0,
+      "errors": [],
+      "before_summary": {
+        "case_count": 75,
+        "accepted_case_count": 21,
+        "candidate_case_count": 49,
+        "rejected_case_count": 5,
+        "repository_count": 16,
+        "accepted_repository_count": 6,
+        "accepted_split_counts": {
+          "development": 8,
+          "validation": 8,
+          "test": 5
+        },
+        "candidate_split_counts": {
+          "development": 4,
+          "validation": 10,
+          "test": 35
+        },
+        "accepted_difficulty_categories": [
+          "cross_function",
+          "dataflow",
+          "high_similarity_candidates",
+          "multi_file",
+          "real_traceback",
+          "root_error_separated",
+          "static_negative"
+        ]
+      },
+      "after_summary": {
+        "case_count": 75,
+        "accepted_case_count": 22,
+        "candidate_case_count": 48,
+        "rejected_case_count": 5,
+        "repository_count": 16,
+        "accepted_repository_count": 6,
+        "accepted_split_counts": {
+          "development": 9,
+          "validation": 8,
+          "test": 5
+        },
+        "candidate_split_counts": {
+          "development": 3,
+          "validation": 10,
+          "test": 35
+        },
+        "accepted_difficulty_categories": [
+          "cross_function",
+          "dataflow",
+          "high_similarity_candidates",
+          "multi_file",
+          "real_traceback",
+          "root_error_separated",
+          "static_negative"
+        ]
+      },
+      "before_manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+      "after_manifest_sha256": "83a0319868b47ecd3cf031d0bd1c5cb8ea9098f7df38e375f275e4e50d57bf8d",
+      "workflow": {
+        "run_id": 29611900217,
+        "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+        "conclusion": "success"
+      },
+      "artifact": {
+        "artifact_id": 8419094292,
+        "expected_sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+        "observed_sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+        "expected_size_bytes": 30851,
+        "observed_size_bytes": 30851
+      },
+      "raw_artifact_committed": false,
+      "gold_patch_visible_to_execution": false
+    },
+    {
+      "schema_version": "4.0",
+      "audit_id": "v4-reproduction-acceptance:bugsinpy-thefuck-8",
+      "status": "pass",
+      "case_id": "bugsinpy-thefuck-8",
+      "error_count": 0,
+      "errors": [],
+      "before_summary": {
+        "case_count": 75,
+        "accepted_case_count": 21,
+        "candidate_case_count": 49,
+        "rejected_case_count": 5,
+        "repository_count": 16,
+        "accepted_repository_count": 6,
+        "accepted_split_counts": {
+          "development": 8,
+          "validation": 8,
+          "test": 5
+        },
+        "candidate_split_counts": {
+          "development": 4,
+          "validation": 10,
+          "test": 35
+        },
+        "accepted_difficulty_categories": [
+          "cross_function",
+          "dataflow",
+          "high_similarity_candidates",
+          "multi_file",
+          "real_traceback",
+          "root_error_separated",
+          "static_negative"
+        ]
+      },
+      "after_summary": {
+        "case_count": 75,
+        "accepted_case_count": 22,
+        "candidate_case_count": 48,
+        "rejected_case_count": 5,
+        "repository_count": 16,
+        "accepted_repository_count": 6,
+        "accepted_split_counts": {
+          "development": 9,
+          "validation": 8,
+          "test": 5
+        },
+        "candidate_split_counts": {
+          "development": 3,
+          "validation": 10,
+          "test": 35
+        },
+        "accepted_difficulty_categories": [
+          "cross_function",
+          "dataflow",
+          "high_similarity_candidates",
+          "multi_file",
+          "real_traceback",
+          "root_error_separated",
+          "static_negative"
+        ]
+      },
+      "before_manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+      "after_manifest_sha256": "96273db38f9a980126927f4331817dcfce390dbc92408e5375097b05d25b62b8",
+      "workflow": {
+        "run_id": 29611900217,
+        "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+        "conclusion": "success"
+      },
+      "artifact": {
+        "artifact_id": 8419094292,
+        "expected_sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+        "observed_sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+        "expected_size_bytes": 30851,
+        "observed_size_bytes": 30851
+      },
+      "raw_artifact_committed": false,
+      "gold_patch_visible_to_execution": false
+    }
+  ],
+  "atomic_all_or_nothing": true,
+  "raw_artifact_committed": false,
+  "gold_patch_visible_to_execution": false
+}

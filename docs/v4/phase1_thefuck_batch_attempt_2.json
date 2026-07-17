@@ -1,0 +1,105 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-thefuck-batch-attempt-2",
+  "verified_date": "2026-07-18",
+  "status": "pass",
+  "workflow_run": {
+    "run_id": 29611900217,
+    "job_id": 87988256214,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29611900217",
+    "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-07-17T20:37:47Z",
+    "completed_at": "2026-07-17T20:41:04Z",
+    "successful_step_count": 11,
+    "failed_step_count": 0
+  },
+  "artifact": {
+    "artifact_id": 8419094292,
+    "name": "v4-phase1-linux-thefuck-all-thefuck-selection",
+    "size_bytes": 30851,
+    "sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+    "expired": false,
+    "expires_at": "2026-08-16T20:41:02Z",
+    "safe_unique_member_count": 15,
+    "raw_artifact_committed": false
+  },
+  "runtime": {
+    "status": "pass",
+    "python_version": "3.7.0",
+    "frozen_requirement_count": 20,
+    "frozen_requirement_match_count": 20,
+    "pip_check": "pass",
+    "missing_module_count": 0,
+    "repository_setup_script_executed": false,
+    "model_calls": 0
+  },
+  "batch": {
+    "case_count": 5,
+    "pass_count": 5,
+    "non_pass_count": 0,
+    "cases": [
+      {
+        "case_id": "bugsinpy-thefuck-16",
+        "evidence_sha256": "85d9caad5c838a380728ba02cc1df13ae21867404e8b5dee5c1a7878f8d28917",
+        "bug_targeted": {"passed": 0, "failed": 2, "test_count": 2},
+        "fix_targeted": {"passed": 2, "failed": 0, "test_count": 2},
+        "fix_full_regression": {"passed": 1155, "failed": 0, "skipped": 61, "test_count": 1216}
+      },
+      {
+        "case_id": "bugsinpy-thefuck-17",
+        "evidence_sha256": "f87e328c1be100ac34be8b8bdd8f7087b48e2e37c7d37dc09402ee8846084b9f",
+        "bug_targeted": {"passed": 2, "failed": 3, "test_count": 5},
+        "fix_targeted": {"passed": 5, "failed": 0, "test_count": 5},
+        "fix_full_regression": {"passed": 1133, "failed": 0, "skipped": 61, "test_count": 1194}
+      },
+      {
+        "case_id": "bugsinpy-thefuck-8",
+        "evidence_sha256": "5eefdc865dc7801a72d4be7f4181be6fa7e9f089bb08866cb52345d38b4fe7d1",
+        "bug_targeted": {"passed": 0, "failed": 3, "test_count": 3},
+        "fix_targeted": {"passed": 3, "failed": 0, "test_count": 3},
+        "fix_full_regression": {"passed": 1374, "failed": 0, "skipped": 61, "test_count": 1435}
+      },
+      {
+        "case_id": "bugsinpy-thefuck-20",
+        "evidence_sha256": "5a54351a5e0b809504d42234b56f07fe53ee73cbe94d6f7dee1f6b7bd5ec164a",
+        "bug_targeted": {"passed": 2, "failed": 2, "test_count": 4},
+        "fix_targeted": {"passed": 4, "failed": 0, "test_count": 4},
+        "fix_full_regression": {"passed": 1072, "failed": 0, "skipped": 58, "test_count": 1130}
+      },
+      {
+        "case_id": "bugsinpy-thefuck-1",
+        "evidence_sha256": "437b198b0fd1dd9dc4b96ac63d73e51178ca845a14d9587bd8f834b5bcca1813",
+        "bug_targeted": {"passed": 1, "failed": 1, "test_count": 2},
+        "fix_targeted": {"passed": 2, "failed": 0, "test_count": 2},
+        "fix_full_regression": {"passed": 1654, "failed": 0, "skipped": 62, "test_count": 1716}
+      }
+    ]
+  },
+  "selection_decision": {
+    "project_target_accepted_count": 3,
+    "accepted_before": ["bugsinpy-thefuck-16"],
+    "accept_next": ["bugsinpy-thefuck-17", "bugsinpy-thefuck-8"],
+    "passing_backfills_retained_as_candidates": [
+      "bugsinpy-thefuck-20",
+      "bugsinpy-thefuck-1"
+    ],
+    "reason": "Use the shortest frozen candidate prefix needed to satisfy the pre-registered project target without post-result backfill selection."
+  },
+  "atomic_acceptance": {
+    "status": "pass",
+    "case_ids": [
+      "bugsinpy-thefuck-17",
+      "bugsinpy-thefuck-8"
+    ],
+    "accepted_case_count_before": 21,
+    "accepted_case_count_after": 23,
+    "development_accepted_count_before": 8,
+    "development_accepted_count_after": 10,
+    "before_manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+    "after_manifest_sha256": "13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7",
+    "all_or_nothing": true,
+    "audit": "docs/v4/phase1_thefuck_17_and_8_acceptance_audit.json"
+  }
+}

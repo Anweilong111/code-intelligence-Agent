@@ -1038,23 +1038,40 @@ def build_arg_parser() -> argparse.ArgumentParser:
     accept.add_argument("catalog_output")
     accept.add_argument("audit_output")
     accept.add_argument("--require-pass", action="store_true")
+    accept_batch = subparsers.add_parser("accept-batch")
+    accept_batch.add_argument("catalog")
+    accept_batch.add_argument("artifact_archive")
+    accept_batch.add_argument("attestation_manifest")
+    accept_batch.add_argument("catalog_output")
+    accept_batch.add_argument("audit_output")
+    accept_batch.add_argument("--require-pass", action="store_true")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
     args = build_arg_parser().parse_args(argv)
     catalog = load_json_object(args.catalog)
-    if args.command == "accept":
+    if args.command in {"accept", "accept-batch"}:
         from code_intelligence_agent.evaluation.v4_real_bug_evidence import (
             accept_v4_reproduction_artifact,
+            accept_v4_reproduction_artifact_batch,
             write_v4_acceptance_artifacts,
         )
 
-        accepted_catalog, audit = accept_v4_reproduction_artifact(
-            catalog,
-            args.artifact_archive,
-            load_json_object(args.attestation),
-        )
+        if args.command == "accept":
+            accepted_catalog, audit = accept_v4_reproduction_artifact(
+                catalog,
+                args.artifact_archive,
+                load_json_object(args.attestation),
+            )
+        else:
+            manifest = load_json_object(args.attestation_manifest)
+            accepted_catalog, audit = accept_v4_reproduction_artifact_batch(
+                catalog,
+                args.artifact_archive,
+                _list(manifest.get("attestations")),
+                manifest_schema_version=str(manifest.get("schema_version") or ""),
+            )
         paths = write_v4_acceptance_artifacts(
             accepted_catalog,
             audit,

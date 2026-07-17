@@ -30,6 +30,7 @@ MAX_ARTIFACT_MEMBERS = 32
 MAX_ARTIFACT_ARCHIVE_BYTES = 16 * 1024 * 1024
 MAX_ARTIFACT_EXPANDED_BYTES = 8 * 1024 * 1024
 MAX_MEMBER_COMPRESSION_RATIO = 200
+MAX_BATCH_ACCEPTANCE_CASES = 16
 ACCEPTANCE_GATES = {
     "bug_targeted_failed": True,
     "fix_targeted_passed": True,
@@ -138,6 +139,123 @@ def accept_v4_reproduction_artifact(
         after_manifest=str(result.get("manifest_sha256") or ""),
         attestation=attestation,
         archive=archive,
+    )
+
+
+def accept_v4_reproduction_artifact_batch(
+    catalog: dict[str, Any],
+    artifact_archive: str | Path,
+    attestations: list[Any],
+    *,
+    manifest_schema_version: str = SCHEMA_VERSION,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Validate several cases against one pre-update manifest, then commit together."""
+    before_summary = summarize_catalog(catalog)
+    before_manifest = str(catalog.get("manifest_sha256") or "")
+    normalized = [_dict(value) for value in attestations]
+    case_ids = [
+        str(_dict(value.get("reproduction")).get("case_id") or "")
+        for value in normalized
+    ]
+    errors: list[str] = []
+    if manifest_schema_version != SCHEMA_VERSION:
+        errors.append("batch_manifest_schema_version_mismatch")
+    if not attestations:
+        errors.append("batch_attestations_are_required")
+    if len(attestations) > MAX_BATCH_ACCEPTANCE_CASES:
+        errors.append("batch_attestation_count_exceeded")
+    for index, value in enumerate(attestations):
+        if not isinstance(value, dict):
+            errors.append(f"batch_attestation_is_not_object:{index}")
+    duplicates = sorted(
+        {case_id for case_id in case_ids if case_ids.count(case_id) > 1}
+    )
+    errors.extend(f"batch_case_id_is_duplicate:{value}" for value in duplicates)
+
+    identities = [_batch_attestation_identity(value) for value in normalized]
+    if identities and any(value != identities[0] for value in identities[1:]):
+        errors.append("batch_artifact_or_workflow_identity_mismatch")
+    if errors:
+        return copy.deepcopy(catalog), _batch_acceptance_audit(
+            status="fail",
+            case_ids=case_ids,
+            errors=sorted(set(errors)),
+            before_summary=before_summary,
+            after_summary=before_summary,
+            before_manifest=before_manifest,
+            after_manifest=before_manifest,
+            attestations=normalized,
+            individual_audits=[],
+        )
+
+    individual_results: list[dict[str, Any]] = []
+    individual_audits: list[dict[str, Any]] = []
+    for attestation in normalized:
+        result, audit = accept_v4_reproduction_artifact(
+            catalog,
+            artifact_archive,
+            attestation,
+        )
+        individual_results.append(result)
+        individual_audits.append(audit)
+        if audit.get("status") != "pass":
+            case_id = str(audit.get("case_id") or "")
+            errors.extend(
+                f"case:{case_id}:{value}"
+                for value in _list(audit.get("errors"))
+            )
+    if errors:
+        return copy.deepcopy(catalog), _batch_acceptance_audit(
+            status="fail",
+            case_ids=case_ids,
+            errors=sorted(set(errors)),
+            before_summary=before_summary,
+            after_summary=before_summary,
+            before_manifest=before_manifest,
+            after_manifest=before_manifest,
+            attestations=normalized,
+            individual_audits=individual_audits,
+        )
+
+    merged = copy.deepcopy(catalog)
+    for case_id, individual_result in zip(case_ids, individual_results):
+        source_case = _find_case(individual_result, case_id)
+        target_case = _find_case(merged, case_id)
+        if source_case is None or target_case is None:
+            errors.append(f"batch_validated_case_missing:{case_id}")
+            continue
+        target_case.clear()
+        target_case.update(copy.deepcopy(source_case))
+    if not errors:
+        merged["summary"] = summarize_catalog(merged)
+        merged["manifest_sha256"] = catalog_fingerprint(merged)
+        final_audit = validate_v4_catalog(merged)
+        errors.extend(
+            f"updated_catalog:{value}"
+            for value in _list(final_audit.get("errors"))
+        )
+    if errors:
+        return copy.deepcopy(catalog), _batch_acceptance_audit(
+            status="fail",
+            case_ids=case_ids,
+            errors=sorted(set(errors)),
+            before_summary=before_summary,
+            after_summary=before_summary,
+            before_manifest=before_manifest,
+            after_manifest=before_manifest,
+            attestations=normalized,
+            individual_audits=individual_audits,
+        )
+    return merged, _batch_acceptance_audit(
+        status="pass",
+        case_ids=case_ids,
+        errors=[],
+        before_summary=before_summary,
+        after_summary=_dict(merged.get("summary")),
+        before_manifest=before_manifest,
+        after_manifest=str(merged.get("manifest_sha256") or ""),
+        attestations=normalized,
+        individual_audits=individual_audits,
     )
 
 
@@ -818,6 +936,64 @@ def _acceptance_audit(
             "expected_size_bytes": _int(artifact.get("size_bytes"), 0),
             "observed_size_bytes": _int(archive.get("artifact_size_bytes"), 0),
         },
+        "raw_artifact_committed": False,
+        "gold_patch_visible_to_execution": False,
+    }
+
+
+def _batch_attestation_identity(attestation: dict[str, Any]) -> dict[str, Any]:
+    workflow = _dict(attestation.get("workflow_run"))
+    artifact = _dict(attestation.get("artifact"))
+    return {
+        "workflow_run": {
+            "run_id": _int(workflow.get("run_id"), 0),
+            "job_id": _int(workflow.get("job_id"), 0),
+            "head_sha": str(workflow.get("head_sha") or ""),
+            "conclusion": str(workflow.get("conclusion") or ""),
+        },
+        "artifact": {
+            "artifact_id": _int(artifact.get("artifact_id"), 0),
+            "name": str(artifact.get("name") or ""),
+            "size_bytes": _int(artifact.get("size_bytes"), -1),
+            "sha256": str(artifact.get("sha256") or ""),
+            "plan_member": str(artifact.get("plan_member") or ""),
+            "plan_file_sha256": str(artifact.get("plan_file_sha256") or ""),
+        },
+    }
+
+
+def _batch_acceptance_audit(
+    *,
+    status: str,
+    case_ids: list[str],
+    errors: list[str],
+    before_summary: dict[str, Any],
+    after_summary: dict[str, Any],
+    before_manifest: str,
+    after_manifest: str,
+    attestations: list[dict[str, Any]],
+    individual_audits: list[dict[str, Any]],
+) -> dict[str, Any]:
+    identity = _batch_attestation_identity(attestations[0]) if attestations else {}
+    identity_hash = hashlib.sha256(
+        json.dumps(case_ids, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:16]
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "audit_id": f"v4-reproduction-batch-acceptance:{identity_hash}",
+        "status": status,
+        "case_ids": case_ids,
+        "case_count": len(case_ids),
+        "accepted_case_count": len(case_ids) if status == "pass" else 0,
+        "error_count": len(errors),
+        "errors": errors,
+        "before_summary": copy.deepcopy(before_summary),
+        "after_summary": copy.deepcopy(after_summary),
+        "before_manifest_sha256": before_manifest,
+        "after_manifest_sha256": after_manifest,
+        "shared_identity": identity,
+        "individual_audits": copy.deepcopy(individual_audits),
+        "atomic_all_or_nothing": True,
         "raw_artifact_committed": False,
         "gold_patch_visible_to_execution": False,
     }

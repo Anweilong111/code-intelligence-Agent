@@ -6,18 +6,18 @@
   "warnings": [],
   "summary": {
     "case_count": 75,
-    "accepted_case_count": 20,
-    "candidate_case_count": 50,
+    "accepted_case_count": 23,
+    "candidate_case_count": 47,
     "rejected_case_count": 5,
     "repository_count": 16,
-    "accepted_repository_count": 5,
+    "accepted_repository_count": 6,
     "accepted_split_counts": {
-      "development": 7,
+      "development": 10,
       "validation": 8,
       "test": 5
     },
     "candidate_split_counts": {
-      "development": 5,
+      "development": 2,
       "validation": 10,
       "test": 35
     },
@@ -31,5 +31,5 @@
       "static_negative"
     ]
   },
-  "manifest_sha256": "38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527"
+  "manifest_sha256": "13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7"
 }

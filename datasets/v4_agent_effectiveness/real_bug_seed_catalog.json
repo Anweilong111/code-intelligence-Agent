@@ -8564,7 +8564,7 @@
     },
     {
       "case_id": "bugsinpy-thefuck-17",
-      "status": "candidate",
+      "status": "accepted",
       "benchmark_split": "development",
       "repository": {
         "url": "https://github.com/nvbn/thefuck",
@@ -8617,10 +8617,10 @@
         "cross_function"
       ],
       "difficulty_evidence": {
-        "multi_file": "Gold metadata changes more than one source file; final classification remains pending reproduction review.",
-        "cross_function": "Gold metadata touches multiple named symbols; final causal classification remains pending reproduction review."
+        "multi_file": "The production fix changes both thefuck/shells/bash.py and thefuck/shells/zsh.py, while its regression test changes tests/shells/test_bash.py.",
+        "cross_function": "The fix coordinates Bash.app_alias, Bash.get_aliases, and Zsh.get_aliases: the generated alias exports TF_SHELL_ALIASES and both shell readers must consume the environment value without invoking an interactive Bash process."
       },
-      "difficulty_review_status": "pending_manual_review",
+      "difficulty_review_status": "verified",
       "environment": {
         "python_version": "3.7.0",
         "environment_profile_id": "",
@@ -8647,20 +8647,80 @@
         }
       },
       "reproduction": {
-        "status": "pending",
+        "status": "pass",
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v4/github_actions/run_29611900217/reproduction/bugsinpy-thefuck-17/v4_reproduction.json",
+        "evidence_sha256": "f87e328c1be100ac34be8b8bdd8f7087b48e2e37c7d37dc09402ee8846084b9f",
+        "evidence_file_sha256": "10423edb0e352c076744088413f7c44794e59a58919b8487bafce1295673fe5b",
+        "completed_at": "2026-07-17T20:40:26.939474+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
         "bug_targeted": {
-          "status": "pending"
+          "status": "fail",
+          "command_count": 2,
+          "test_count": 5,
+          "passed": 2,
+          "failed": 3,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_targeted": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 2,
+          "test_count": 5,
+          "passed": 5,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_full_regression": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1194,
+          "passed": 1133,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 61,
+          "environment_blocker": false
         },
         "acceptance": {
-          "reproducible": false
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
         },
-        "evidence_artifact": ""
+        "plan": {
+          "plan_sha256": "a12e00b31acc9773edce756e5cb3f067677a72ae59fc71b7aea24bdd7ba6c7f1",
+          "profiles_sha256": "2ee68f10997f743d6ed800d6420eae385cb50a47b25cb302b7316b9bf4bda31b"
+        },
+        "workflow": {
+          "run_id": 29611900217,
+          "job_id": 87988256214,
+          "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+          "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29611900217",
+          "conclusion": "success"
+        },
+        "artifact": {
+          "artifact_id": 8419094292,
+          "name": "v4-phase1-linux-thefuck-all-thefuck-selection",
+          "sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+          "size_bytes": 30851,
+          "plan_file_sha256": "e11cb9fe1a2a3a4c54522bad421ad9b2d3483d090be9c5f01df3c6ee2408023d"
+        },
+        "verification_artifact": "docs/v4/phase1_thefuck_17_and_8_attestations.json",
+        "test_overlay_policy": "copy_declared_tests_from_fix_to_bug",
+        "gold_patch_visible_to_execution": false,
+        "repository_setup_script_executed": false,
+        "repository_project_installed": false,
+        "model_calls": 0,
+        "raw_artifact_committed": false,
+        "source": "v4_linux_ci_reproduction"
       },
       "provenance": {
         "benchmark": "BugsInPy",
@@ -8811,7 +8871,7 @@
     },
     {
       "case_id": "bugsinpy-thefuck-8",
-      "status": "candidate",
+      "status": "accepted",
       "benchmark_split": "development",
       "repository": {
         "url": "https://github.com/nvbn/thefuck",
@@ -8862,9 +8922,9 @@
         "cross_function"
       ],
       "difficulty_evidence": {
-        "cross_function": "Gold metadata touches multiple named symbols; final causal classification remains pending reproduction review."
+        "cross_function": "The defect crosses _get_operations and _parse_operations in thefuck/rules/dnf_no_such_command.py: subprocess stdout arrives as bytes, while downstream matching must operate consistently on decoded text and a text regular expression."
       },
-      "difficulty_review_status": "pending_manual_review",
+      "difficulty_review_status": "verified",
       "environment": {
         "python_version": "3.7.0",
         "environment_profile_id": "",
@@ -8891,20 +8951,80 @@
         }
       },
       "reproduction": {
-        "status": "pending",
+        "status": "pass",
+        "evidence_status": "validated",
+        "evidence_artifact": "outputs_v4/github_actions/run_29611900217/reproduction/bugsinpy-thefuck-8/v4_reproduction.json",
+        "evidence_sha256": "5eefdc865dc7801a72d4be7f4181be6fa7e9f089bb08866cb52345d38b4fe7d1",
+        "evidence_file_sha256": "3ded4dbf414a2df95ddcec844e8bb88f8cef8d074c7fce15d0d3aa74c5601802",
+        "completed_at": "2026-07-17T20:40:49.792357+00:00",
+        "runtime": {
+          "status": "pass",
+          "expected_version": "3.7.0",
+          "observed_version": "3.7.0",
+          "exact_match": true
+        },
         "bug_targeted": {
-          "status": "pending"
+          "status": "fail",
+          "command_count": 2,
+          "test_count": 3,
+          "passed": 0,
+          "failed": 3,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_targeted": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 2,
+          "test_count": 3,
+          "passed": 3,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "environment_blocker": false
         },
         "fix_full_regression": {
-          "status": "pending"
+          "status": "pass",
+          "command_count": 1,
+          "test_count": 1435,
+          "passed": 1374,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 61,
+          "environment_blocker": false
         },
         "acceptance": {
-          "reproducible": false
+          "bug_targeted_failed": true,
+          "fix_targeted_passed": true,
+          "fix_full_regression_passed": true,
+          "reproducible": true
         },
-        "evidence_artifact": ""
+        "plan": {
+          "plan_sha256": "a12e00b31acc9773edce756e5cb3f067677a72ae59fc71b7aea24bdd7ba6c7f1",
+          "profiles_sha256": "2ee68f10997f743d6ed800d6420eae385cb50a47b25cb302b7316b9bf4bda31b"
+        },
+        "workflow": {
+          "run_id": 29611900217,
+          "job_id": 87988256214,
+          "head_sha": "7a17e7fa71bdb42564aa382b8bcd05b5ba34eecb",
+          "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29611900217",
+          "conclusion": "success"
+        },
+        "artifact": {
+          "artifact_id": 8419094292,
+          "name": "v4-phase1-linux-thefuck-all-thefuck-selection",
+          "sha256": "e6e6e60ff69c816c474e48d09f3e28ecf0705c4e1d32c3859707db51c6ccb807",
+          "size_bytes": 30851,
+          "plan_file_sha256": "e11cb9fe1a2a3a4c54522bad421ad9b2d3483d090be9c5f01df3c6ee2408023d"
+        },
+        "verification_artifact": "docs/v4/phase1_thefuck_17_and_8_attestations.json",
+        "test_overlay_policy": "copy_declared_tests_from_fix_to_bug",
+        "gold_patch_visible_to_execution": false,
+        "repository_setup_script_executed": false,
+        "repository_project_installed": false,
+        "model_calls": 0,
+        "raw_artifact_committed": false,
+        "source": "v4_linux_ci_reproduction"
       },
       "provenance": {
         "benchmark": "BugsInPy",
@@ -10987,21 +11107,21 @@
       "rejection_evidence": {}
     }
   ],
-  "manifest_sha256": "01cab7473c0ce19b81a37fcf9f030b12809212152188fe3de1652589af40b262",
+  "manifest_sha256": "13cd41846c31ae6bf1443e9c2fc16a44afb2af88a36b29583262026fbb2215d7",
   "summary": {
     "case_count": 75,
-    "accepted_case_count": 21,
-    "candidate_case_count": 49,
+    "accepted_case_count": 23,
+    "candidate_case_count": 47,
     "rejected_case_count": 5,
     "repository_count": 16,
     "accepted_repository_count": 6,
     "accepted_split_counts": {
-      "development": 8,
+      "development": 10,
       "validation": 8,
       "test": 5
     },
     "candidate_split_counts": {
-      "development": 4,
+      "development": 2,
       "validation": 10,
       "test": 35
     },
