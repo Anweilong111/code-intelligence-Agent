@@ -1,0 +1,37 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-post-acceptance-replay",
+  "verified_date": "2026-07-18",
+  "status": "pass",
+  "case_id": "bugsinpy-thefuck-16",
+  "catalog_status_at_run": "accepted",
+  "workflow_run": {
+    "run_id": 29610144866,
+    "job_id": 87982641076,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29610144866",
+    "head_sha": "90448197dc066af1f31e2dde09107824250c5000",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-07-17T20:09:03Z",
+    "completed_at": "2026-07-17T20:11:47Z",
+    "successful_step_count": 10,
+    "failed_step_count": 0
+  },
+  "artifact": {
+    "artifact_id": 8418447258,
+    "name": "v4-phase1-linux-thefuck-16",
+    "size_bytes": 12245,
+    "sha256": "6663a1ae578c0b288a07fdaec514cf8e01fc8aed8f226ede22ab69d52eb72474",
+    "expired": false,
+    "expires_at": "2026-08-16T20:11:43Z",
+    "raw_artifact_committed": false
+  },
+  "claims": {
+    "accepted_case_remained_replayable": true,
+    "selection_plan_ready_count": 5,
+    "selection_plan_blocked_count": 0,
+    "accepted_case_three_gate_reproduction_passed": true,
+    "rejected_cases_replayable": false,
+    "model_calls": 0
+  }
+}

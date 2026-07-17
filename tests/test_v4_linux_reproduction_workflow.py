@@ -37,3 +37,18 @@ def test_linux_reproduction_workflow_pins_external_action_and_three_gates():
     assert "code_intelligence_agent/evaluation/v4_reproduction_environment.py" in text
     assert "datasets/v4_agent_effectiveness/reproduction_profiles.json" in text
     assert "bootstrap_result.json" in text
+
+
+def test_linux_reproduction_workflow_uses_bounded_replayable_case_sets():
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "type: choice" in text
+    assert "CASE_SET: ${{ inputs.case_set || 'all-thefuck-selection' }}" in text
+    assert "eval " not in text
+    assert "outputs_v4/linux/case_ids.txt" in text
+    assert "collection_status=0" in text
+    assert "batch_summary.json" in text
+    assert "reproduction_evidence_fingerprint" in text
+    assert "grep -Fxq bugsinpy-thefuck-16" in text
+    for case_id in (16, 17, 8, 20, 1):
+        assert f"bugsinpy-thefuck-{case_id}" in text

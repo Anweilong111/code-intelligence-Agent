@@ -10,7 +10,9 @@ the same fixed SHAs and three acceptance gates on the required platform.
 The workflow is defined in
 `.github/workflows/v4-phase1-linux-reproduction.yml`. Automatic runs are limited
 to the V4 branch and the workflow, bootstrapper, fixed catalog, selection plan,
-and reproduction profile paths. It can also be started manually.
+and reproduction profile paths. Manual runs expose only three bounded choices:
+the accepted baseline, the four remaining Thefuck candidates, or the complete
+five-case frozen selection. Free-form commands and case IDs are not accepted.
 
 ## Runtime Construction
 
@@ -42,20 +44,27 @@ pinned to immutable commit
 
 The tested repository still runs on a hosted runner rather than the Phase 6
 container sandbox. Therefore this lane is restricted to the pre-audited fixed-SHA
-benchmark candidate and is not a general permission to execute arbitrary GitHub
+Thefuck selection and is not a general permission to execute arbitrary GitHub
 repositories.
 
 ## Acceptance Contract
 
-The job must satisfy all of the following:
+The evidence-collection job must satisfy all of the following:
 
 1. Miniconda reports exact Python `3.7.0` from a non-symlink executable.
 2. The isolated runtime bootstrap result is `pass`.
-3. All five Thefuck candidates are `ready` on Linux with zero planning blockers.
-4. The bug SHA fails the declared targeted tests.
-5. The fix SHA passes the same targeted tests.
-6. The fix SHA passes the full declared regression command.
-7. The reproduction CLI exits successfully under `--require-pass`.
+3. Every selected case is `ready` on Linux with zero planning blockers.
+4. Every selected case produces parseable evidence whose case identity and
+   canonical evidence fingerprint match.
+5. The accepted baseline passes all reproduction gates whenever it is selected.
+6. A batch summary preserves each selected case's `pass` or non-pass outcome.
+
+A candidate's non-pass result is benchmark evidence rather than an infrastructure
+failure, so it does not discard valid evidence from other cases in the same batch.
+Case acceptance remains stricter and independent: the bug SHA must fail the
+declared target, the fix SHA must pass that target, and the fix SHA must pass the
+full declared regression command. The `accept` command revalidates those gates
+from the artifact before changing the catalog.
 
 Until the workflow produces a passing hashed reproduction artifact, no new case is
 added to the accepted V4 benchmark denominator.
@@ -125,9 +134,21 @@ Machine-readable evidence is in
 `docs/v4/phase1_linux_reproduction_attempt_3.json` and
 `docs/v4/phase1_thefuck_16_acceptance_audit.json`.
 
+## Post-Acceptance Replay
+
+Run `29610144866` on commit
+`90448197dc066af1f31e2dde09107824250c5000` completed successfully after
+`bugsinpy-thefuck-16` had transitioned from `candidate` to `accepted`. This proves
+the frozen selection plan remains replayable across the catalog lifecycle change;
+accepted cases participate in reproduction planning, while rejected cases remain
+excluded. The machine-readable run and artifact record is
+`docs/v4/phase1_post_acceptance_replay.json`.
+
 ## Evidence
 
-The workflow uploads only the bootstrap plan/result, Linux reproduction plan, and
-case-level JSON/Markdown evidence. Repository checkouts, environments, caches, and
-raw dependency artifacts are excluded. The artifact name is
-`v4-phase1-linux-thefuck-16` and its retention period is 30 days.
+The workflow uploads only the case set, bootstrap plan/result, Linux reproduction
+plan, batch summary, and case-level JSON/Markdown evidence. Repository checkouts,
+environments, caches, and raw dependency artifacts are excluded. Generalized
+artifact names use `v4-phase1-linux-thefuck-<case-set>` and retain evidence for 30
+days. The accepted attempt-3 artifact keeps its original immutable name
+`v4-phase1-linux-thefuck-16`.
