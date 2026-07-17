@@ -16,6 +16,7 @@ env/
 outputs/
 outputs_v2/
 outputs_v3/
+outputs_v4/
 outputs_demo/
 outputs_smoke/
 outputs_live/

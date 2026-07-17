@@ -1,7 +1,7 @@
 {
   "status": "pass",
   "reason": "release_hygiene_clean",
-  "candidate_file_count": 540,
+  "candidate_file_count": 542,
   "candidate_source": "git",
   "check_count": 5,
   "passed_check_count": 5,

@@ -37,6 +37,7 @@ def test_repository_v4_protocol_is_frozen_and_valid():
         "test": 25,
     }
     assert len(audit["prompt_hashes"]) == 7
+    assert "outputs_v4/" in (ROOT / ".gitignore").read_text(encoding="utf-8")
 
 
 def test_protocol_detects_prompt_drift():
