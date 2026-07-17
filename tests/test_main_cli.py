@@ -9,6 +9,7 @@ from code_intelligence_agent.evaluation import v3_repair_evaluation
 from code_intelligence_agent.evaluation import v3_semantic_evaluation
 from code_intelligence_agent.evaluation import v4_experiment_protocol
 from code_intelligence_agent.evaluation import v4_real_bug_benchmark
+from code_intelligence_agent.evaluation import v4_real_bug_reproduction
 
 
 def test_top_level_cli_keeps_local_static_analysis(tmp_path, capsys):
@@ -210,4 +211,40 @@ def test_top_level_cli_routes_v4_real_bug_benchmark(monkeypatch):
         "datasets/v4_agent_effectiveness/real_bug_seed_catalog.json",
         "--format",
         "json",
+    ]
+
+
+def test_top_level_cli_routes_v4_real_bug_reproduction(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v4_real_bug_reproduction_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v4_real_bug_reproduction,
+        "main",
+        fake_v4_real_bug_reproduction_main,
+    )
+
+    cli_module.main(
+        [
+            "v4-reproduce",
+            "plan",
+            "catalog.json",
+            "selection.json",
+            "profiles.json",
+            "outputs_v4/plan.json",
+            "--runtime-root",
+            "outputs_v3/runtimes",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "plan",
+        "catalog.json",
+        "selection.json",
+        "profiles.json",
+        "outputs_v4/plan.json",
+        "--runtime-root",
+        "outputs_v3/runtimes",
     ]

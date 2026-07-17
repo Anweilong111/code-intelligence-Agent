@@ -1,0 +1,183 @@
+{
+  "schema_version": "4.0",
+  "profile_id": "v4-bugsinpy-safe-reproduction-profiles-v1",
+  "setup_script_policy": "never_execute",
+  "runtime_profiles": {
+    "3.6.9": {
+      "relative_executable": "cpython-3.6.9/python.exe"
+    },
+    "3.7.0": {
+      "relative_executable": "cpython-3.7.0/python.exe"
+    },
+    "3.7.3": {
+      "relative_executable": ""
+    },
+    "3.7.7": {
+      "relative_executable": ""
+    },
+    "3.8.1": {
+      "relative_executable": "cpython-3.8.1/python.exe"
+    },
+    "3.8.3": {
+      "relative_executable": "cpython-3.8.3/python.exe"
+    }
+  },
+  "project_profiles": {
+    "ansible": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "jinja2",
+        "pytest",
+        "yaml"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "cookiecutter": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "click",
+        "jinja2",
+        "pytest"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [
+        {
+          "from": "tox",
+          "to": "pytest",
+          "reason": "The BugsInPy command passes one pytest node directly; the adapter preserves that bounded node while avoiding tox environment fan-out."
+        }
+      ],
+      "preparation_files": []
+    },
+    "httpie": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "pytest",
+        "requests"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "keras": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": true,
+      "required_runtime_modules": [
+        "numpy",
+        "pytest",
+        "tensorflow"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "luigi": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "pytest",
+        "tornado"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "matplotlib": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": true,
+      "required_runtime_modules": [
+        "numpy",
+        "pytest"
+      ],
+      "pythonpath_entries": [
+        "lib"
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "sanic": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "aiohttp",
+        "pytest"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "scrapy": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "twisted",
+        "w3lib"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "spacy": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": true,
+      "required_runtime_modules": [
+        "cymem",
+        "preshed",
+        "pytest",
+        "thinc"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    },
+    "thefuck": {
+      "execute_benchmark_setup_script": false,
+      "dependency_install_requires_authorization": true,
+      "native_build_adapter_required": false,
+      "required_runtime_modules": [
+        "colorama",
+        "decorator",
+        "pexpect",
+        "psutil",
+        "pytest",
+        "pyte",
+        "six"
+      ],
+      "pythonpath_entries": [
+        "."
+      ],
+      "command_module_rewrites": [],
+      "preparation_files": []
+    }
+  }
+}

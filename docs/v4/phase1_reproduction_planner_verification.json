@@ -1,0 +1,41 @@
+{
+  "schema_version": "4.0",
+  "checkpoint": "phase1_reproduction_planner",
+  "status": "pass",
+  "claims_new_reproduced_cases": false,
+  "inputs": {
+    "catalog_manifest_sha256": "38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527",
+    "selection_plan_sha256": "b78dd398fcd1ead492ea4abd73a33951c70ed91c33696d762825d556863f524c",
+    "profiles_sha256": "881f038b36e1c4cb4b70727a5dac29d540a42967882ecb15e44f7c17a7f06248",
+    "reproduction_plan_sha256": "531f794a43c0e5ef73250eed72fbbd2eae33fd0c6315fa1945fc4c883f04b9a2"
+  },
+  "plan_summary": {
+    "case_count": 50,
+    "ready_count": 0,
+    "blocked_count": 50,
+    "split_counts": {
+      "development": 5,
+      "validation": 10,
+      "test": 35
+    },
+    "blocker_counts": {
+      "exact_runtime_not_mapped": 15,
+      "native_build_adapter_required": 16,
+      "runtime_modules_missing": 35
+    }
+  },
+  "safety": {
+    "benchmark_setup_scripts_executed": false,
+    "repository_tests_executed": false,
+    "dependency_installs_executed": false,
+    "model_calls": 0,
+    "gold_patch_visible": false,
+    "blocked_items_checkout_attempted": false
+  },
+  "verification": {
+    "command": "pytest -q tests/test_v4_real_bug_reproduction.py tests/test_v4_real_bug_benchmark.py tests/test_main_cli.py --basetemp outputs_v4/pytest_phase1_repro_20260718_001",
+    "passed": 28,
+    "failed": 0,
+    "top_level_route_status": "pass"
+  }
+}
