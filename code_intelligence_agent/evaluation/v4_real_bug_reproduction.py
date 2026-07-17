@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import re
 import subprocess
@@ -33,6 +34,9 @@ SCHEMA_VERSION = "4.0"
 SUPPORTED_EXECUTION_MODULES = {"nose", "pytest", "unittest"}
 ADAPTABLE_MODULES = {"nox", "py.test", "tox"}
 SAFE_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
+SAFE_PYTHON_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+REPOSITORY_RUNTIME_SUPPORT_ROOT = ".cia-runtime-support"
 RuntimeProbe = Callable[[Path, str, list[str]], dict[str, Any]]
 SUPPORTED_EXECUTION_PLATFORMS = {"any", "darwin", "linux", "windows"}
 
@@ -94,6 +98,83 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
                         f"profiles.required_module_is_invalid:"
                         f"{project}:{platform}:{module}"
                     )
+        for field in ("pythonpath_entries", "optional_pythonpath_entries"):
+            for index, entry_value in enumerate(_list(profile.get(field))):
+                entry = str(entry_value)
+                if not _safe_relative_path(entry):
+                    errors.append(
+                        f"profiles.pythonpath_entry_is_unsafe:"
+                        f"{project}:{field}:{index}"
+                    )
+        preparation_paths: set[str] = set()
+        for index, file_value in enumerate(_list(profile.get("preparation_files"))):
+            preparation_file = _dict(file_value)
+            path = str(preparation_file.get("path") or "")
+            content = preparation_file.get("content")
+            reason = str(preparation_file.get("reason") or "")
+            expected_sha256 = str(preparation_file.get("sha256") or "").lower()
+            if not _safe_relative_path(path):
+                errors.append(
+                    f"profiles.preparation_file_path_is_unsafe:{project}:{index}"
+                )
+            normalized_path = PurePosixPath(path.replace("\\", "/")).as_posix()
+            if normalized_path in preparation_paths:
+                errors.append(
+                    f"profiles.preparation_file_path_is_duplicate:{project}:{index}"
+                )
+            preparation_paths.add(normalized_path)
+            if not isinstance(content, str) or len(content.encode("utf-8")) > 4096:
+                errors.append(
+                    f"profiles.preparation_file_content_is_invalid:{project}:{index}"
+                )
+            elif (
+                not SHA256_PATTERN.fullmatch(expected_sha256)
+                or hashlib.sha256(content.encode("utf-8")).hexdigest()
+                != expected_sha256
+            ):
+                errors.append(
+                    f"profiles.preparation_file_sha256_is_invalid:{project}:{index}"
+                )
+            if not reason:
+                errors.append(
+                    f"profiles.preparation_file_reason_is_required:{project}:{index}"
+                )
+            source_path = str(preparation_file.get("source_path") or "")
+            source_text_sha256 = str(
+                preparation_file.get("source_text_sha256") or ""
+            ).lower()
+            if bool(source_path) != bool(source_text_sha256):
+                errors.append(
+                    f"profiles.preparation_source_assertion_is_incomplete:"
+                    f"{project}:{index}"
+                )
+            elif source_path and (
+                not _safe_relative_path(source_path)
+                or not SHA256_PATTERN.fullmatch(source_text_sha256)
+            ):
+                errors.append(
+                    f"profiles.preparation_source_assertion_is_invalid:"
+                    f"{project}:{index}"
+                )
+        seen_plugins: set[str] = set()
+        for index, plugin_value in enumerate(
+            _list(profile.get("repository_pytest_plugins"))
+        ):
+            plugin = str(plugin_value)
+            if (
+                not SAFE_PYTHON_MODULE_PATTERN.fullmatch(plugin)
+                or plugin in seen_plugins
+            ):
+                errors.append(
+                    f"profiles.repository_pytest_plugin_is_invalid:"
+                    f"{project}:{index}"
+                )
+            elif not _profile_materializes_python_module(profile, plugin):
+                errors.append(
+                    f"profiles.repository_pytest_plugin_is_not_materialized:"
+                    f"{project}:{index}"
+                )
+            seen_plugins.add(plugin)
         for index, rewrite_value in enumerate(
             _list(profile.get("command_module_rewrites"))
         ):
@@ -252,6 +333,25 @@ def build_reproduction_plan(
                         "regression_command": copy.deepcopy(
                             adapted.get("regression_command", [])
                         ),
+                        "preparation_files": [
+                            {
+                                key: copy.deepcopy(_dict(file_value).get(key))
+                                for key in (
+                                    "path",
+                                    "sha256",
+                                    "reason",
+                                    "source_path",
+                                    "source_text_sha256",
+                                )
+                                if _dict(file_value).get(key) not in (None, "")
+                            }
+                            for file_value in _list(
+                                adapted.get("preparation_files")
+                            )
+                        ],
+                        "test_environment": copy.deepcopy(
+                            _dict(adapted.get("test_environment"))
+                        ),
                     },
                 }
             )
@@ -337,6 +437,10 @@ def adapt_v4_case_for_reproduction(
         "required_tools": [
             str(value) for value in _list(project_profile.get("required_tools"))
         ],
+        "repository_pytest_plugins": [
+            str(value)
+            for value in _list(project_profile.get("repository_pytest_plugins"))
+        ],
     }
     adapted = {
         "case_id": str(case.get("case_id") or ""),
@@ -356,6 +460,12 @@ def adapt_v4_case_for_reproduction(
         "status": "pass" if not errors else "adapter_required",
         "errors": errors,
         "applied_command_rewrites": applied_rewrites,
+        "preparation_file_count": len(
+            _list(project_profile.get("preparation_files"))
+        ),
+        "repository_pytest_plugins": copy.deepcopy(
+            test_environment["repository_pytest_plugins"]
+        ),
         "benchmark_setup_script_executed": False,
         "test_overlay_mode": "copy_declared_tests_from_fix_to_bug",
     }
@@ -752,6 +862,32 @@ def _inventory_projection(catalog: dict[str, Any]) -> dict[str, Any]:
         "inventory_sha256": "catalog_projection",
         "cases": cases,
     }
+
+
+def _profile_materializes_python_module(
+    profile: dict[str, Any],
+    module: str,
+) -> bool:
+    preparation_paths = {
+        PurePosixPath(str(_dict(item).get("path") or "").replace("\\", "/")).as_posix()
+        for item in _list(profile.get("preparation_files"))
+        if str(_dict(item).get("path") or "")
+    }
+    module_path = PurePosixPath(*module.split("."))
+    for entry_value in _list(profile.get("pythonpath_entries")):
+        entry = str(entry_value)
+        if not _safe_relative_path(entry):
+            continue
+        root = PurePosixPath(entry.replace("\\", "/"))
+        if root.as_posix() != REPOSITORY_RUNTIME_SUPPORT_ROOT:
+            continue
+        candidates = {
+            (root / module_path).with_suffix(".py").as_posix(),
+            (root / module_path / "__init__.py").as_posix(),
+        }
+        if preparation_paths.intersection(candidates):
+            return True
+    return False
 
 
 def _safe_test_command(command: list[str]) -> bool:

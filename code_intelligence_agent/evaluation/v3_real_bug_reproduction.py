@@ -35,6 +35,9 @@ ENVIRONMENT_FAILURE_CATEGORIES = {
     "timeout",
     "execution_error",
 }
+SAFE_PYTHON_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+REPOSITORY_RUNTIME_SUPPORT_ROOT = ".cia-runtime-support"
 
 
 def prepare_real_bug_case(
@@ -168,6 +171,9 @@ def materialize_preparation_files(
         relative = str(item.get("path") or "")
         content = item.get("content")
         reason = str(item.get("reason") or "")
+        expected_sha256 = str(item.get("sha256") or "").lower()
+        source_path = str(item.get("source_path") or "")
+        source_text_sha256 = str(item.get("source_text_sha256") or "").lower()
         if not _safe_relative_path(relative):
             errors.append(f"unsafe_preparation_file_path:{relative}")
             continue
@@ -177,6 +183,52 @@ def materialize_preparation_files(
         if not reason:
             errors.append(f"missing_preparation_file_reason:{relative}")
             continue
+        content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        if expected_sha256 and (
+            not SHA256_PATTERN.fullmatch(expected_sha256)
+            or content_sha256 != expected_sha256
+        ):
+            errors.append(f"preparation_file_sha256_mismatch:{relative}")
+            continue
+        if bool(source_path) != bool(source_text_sha256):
+            errors.append(f"incomplete_preparation_source_assertion:{relative}")
+            continue
+        source_assertion: dict[str, Any] = {}
+        if source_path:
+            if (
+                not _safe_relative_path(source_path)
+                or not SHA256_PATTERN.fullmatch(source_text_sha256)
+            ):
+                errors.append(f"invalid_preparation_source_assertion:{relative}")
+                continue
+            source_candidate = root / Path(
+                *PurePosixPath(source_path.replace("\\", "/")).parts
+            )
+            if _path_or_existing_parent_is_symlink(source_candidate, root):
+                errors.append(f"unsafe_preparation_source_symlink:{relative}")
+                continue
+            source = source_candidate.resolve()
+            if not _within(source, root) or not source.is_file():
+                errors.append(f"preparation_source_missing:{relative}")
+                continue
+            try:
+                source_text = source.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                errors.append(f"preparation_source_is_not_utf8_text:{relative}")
+                continue
+            observed_source_sha256 = hashlib.sha256(
+                _normalize_lf(source_text).encode("utf-8")
+            ).hexdigest()
+            if observed_source_sha256 != source_text_sha256:
+                errors.append(f"preparation_source_sha256_mismatch:{relative}")
+                continue
+            source_assertion = {
+                "path": PurePosixPath(
+                    source_path.replace("\\", "/")
+                ).as_posix(),
+                "text_sha256": observed_source_sha256,
+                "status": "pass",
+            }
         candidate = root / Path(*PurePosixPath(relative.replace("\\", "/")).parts)
         if _path_or_existing_parent_is_symlink(candidate, root):
             errors.append(f"unsafe_preparation_file_symlink:{relative}")
@@ -189,15 +241,16 @@ def materialize_preparation_files(
             errors.append(f"unsafe_preparation_file_target:{relative}")
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
-        written.append(
-            {
-                "path": PurePosixPath(relative.replace("\\", "/")).as_posix(),
-                "sha256": _sha256_file(target),
-                "size_bytes": target.stat().st_size,
-                "reason": reason,
-            }
-        )
+        target.write_bytes(content.encode("utf-8"))
+        record: dict[str, Any] = {
+            "path": PurePosixPath(relative.replace("\\", "/")).as_posix(),
+            "sha256": _sha256_file(target),
+            "size_bytes": target.stat().st_size,
+            "reason": reason,
+        }
+        if source_assertion:
+            record["source_assertion"] = source_assertion
+        written.append(record)
     return {
         "status": "pass" if not errors else "fail",
         "requested_count": len(files),
@@ -483,6 +536,9 @@ def execute_test_commands(
                 "optional_pythonpath_entries_missing"
             ],
             "required_tools": environment_result["required_tools"],
+            "repository_pytest_plugins": environment_result[
+                "repository_pytest_plugins"
+            ],
         },
         "results": results,
     }
@@ -585,6 +641,7 @@ def _build_test_environment(
     resolved_entries: list[str] = []
     optional_missing: list[str] = []
     required_tools: list[str] = []
+    repository_pytest_plugins: list[str] = []
     tool_directories: list[str] = []
     configured_entries = [
         (str(item), False) for item in _list(config.get("pythonpath_entries"))
@@ -640,6 +697,37 @@ def _build_test_environment(
             }
         entries.append(PurePosixPath(entry.replace("\\", "/")).as_posix())
         resolved_entries.append(str(resolved))
+    resolved_entry_paths = [Path(value) for value in resolved_entries]
+    for raw_plugin in _list(config.get("repository_pytest_plugins")):
+        plugin = str(raw_plugin)
+        if (
+            not SAFE_PYTHON_MODULE_PATTERN.fullmatch(plugin)
+            or plugin in repository_pytest_plugins
+        ):
+            return {
+                "status": "fail",
+                "reason": "invalid_repository_pytest_plugin",
+                "pythonpath_entries": entries,
+                "optional_pythonpath_entries_missing": optional_missing,
+                "required_tools": required_tools,
+                "repository_pytest_plugins": repository_pytest_plugins,
+                "overrides": {},
+            }
+        if _resolve_repository_python_module(
+            plugin,
+            repository_root=repository_root,
+            pythonpath_entries=resolved_entry_paths,
+        ) is None:
+            return {
+                "status": "fail",
+                "reason": f"repository_pytest_plugin_missing:{plugin}",
+                "pythonpath_entries": entries,
+                "optional_pythonpath_entries_missing": optional_missing,
+                "required_tools": required_tools,
+                "repository_pytest_plugins": repository_pytest_plugins,
+                "overrides": {},
+            }
+        repository_pytest_plugins.append(plugin)
     for raw_tool in _list(config.get("required_tools")):
         tool = str(raw_tool)
         executable = _resolve_required_tool(tool)
@@ -659,6 +747,8 @@ def _build_test_environment(
     overrides = {}
     if resolved_entries:
         overrides["PYTHONPATH"] = os.pathsep.join(resolved_entries)
+    if repository_pytest_plugins:
+        overrides["PYTEST_PLUGINS"] = ",".join(repository_pytest_plugins)
     if tool_directories:
         existing_path = str(os.environ.get("PATH") or "")
         overrides["PATH"] = os.pathsep.join(
@@ -670,8 +760,39 @@ def _build_test_environment(
         "pythonpath_entries": entries,
         "optional_pythonpath_entries_missing": optional_missing,
         "required_tools": required_tools,
+        "repository_pytest_plugins": repository_pytest_plugins,
         "overrides": overrides,
     }
+
+
+def _resolve_repository_python_module(
+    module: str,
+    *,
+    repository_root: Path,
+    pythonpath_entries: list[Path],
+) -> Path | None:
+    module_path = Path(*module.split("."))
+    for entry in pythonpath_entries:
+        candidates = (
+            (entry / module_path).with_suffix(".py"),
+            entry / module_path / "__init__.py",
+        )
+        for candidate in candidates:
+            if _path_or_existing_parent_is_symlink(candidate, repository_root):
+                continue
+            resolved = candidate.resolve()
+            try:
+                relative = resolved.relative_to(repository_root)
+            except ValueError:
+                continue
+            if (
+                relative.parts
+                and relative.parts[0] == REPOSITORY_RUNTIME_SUPPORT_ROOT
+                and resolved.is_file()
+                and not resolved.is_symlink()
+            ):
+                return resolved
+    return None
 
 
 def _resolve_required_tool(tool: str) -> Path | None:
@@ -916,6 +1037,10 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _normalize_lf(value: str) -> str:
+    return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def _dict(value: Any) -> dict[str, Any]:

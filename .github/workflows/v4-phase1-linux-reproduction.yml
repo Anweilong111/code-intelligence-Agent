@@ -7,6 +7,7 @@ on:
       - codex/code-intelligence-agent-v4
     paths:
       - .github/workflows/v4-phase1-linux-reproduction.yml
+      - code_intelligence_agent/evaluation/v3_real_bug_reproduction.py
       - code_intelligence_agent/evaluation/v4_reproduction_environment.py
       - code_intelligence_agent/evaluation/v4_real_bug_reproduction.py
       - datasets/v4_agent_effectiveness/real_bug_seed_catalog.json

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -86,6 +87,42 @@ def test_materialize_preparation_files_writes_only_small_safe_files(tmp_path):
         'version = "benchmark"\n'
     )
     assert (tmp_path.parent / "escaped.py").exists() is False
+
+
+def test_materialize_preparation_files_verifies_content_and_source_hashes(tmp_path):
+    source = tmp_path / "setup.py"
+    source.write_bytes(b"version = '3.4'\r\n")
+    content = "Name: thefuck\nVersion: 3.4\n"
+    source_sha256 = hashlib.sha256(b"version = '3.4'\n").hexdigest()
+    content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    item = {
+        "path": ".cia-runtime-support/thefuck-3.4.dist-info/METADATA",
+        "content": content,
+        "sha256": content_sha256,
+        "reason": "Static metadata replacement.",
+        "source_path": "setup.py",
+        "source_text_sha256": source_sha256,
+    }
+
+    result = materialize_preparation_files(tmp_path, [item])
+
+    assert result["status"] == "pass"
+    assert result["files"][0]["sha256"] == content_sha256
+    assert result["files"][0]["source_assertion"] == {
+        "path": "setup.py",
+        "text_sha256": source_sha256,
+        "status": "pass",
+    }
+    target = tmp_path / ".cia-runtime-support" / "thefuck-3.4.dist-info" / "METADATA"
+    assert target.read_bytes() == content.encode("utf-8")
+
+    source.write_text("version = 'changed'\n", encoding="utf-8")
+    rejected = materialize_preparation_files(tmp_path, [item])
+    assert rejected["status"] == "fail"
+    assert rejected["errors"] == [
+        "preparation_source_sha256_mismatch:"
+        ".cia-runtime-support/thefuck-3.4.dist-info/METADATA"
+    ]
 
 
 def test_execute_commands_classifies_environment_blocker(tmp_path):
@@ -195,6 +232,73 @@ def test_execute_commands_injects_only_repository_pythonpath(tmp_path):
     assert unsupported_tool["status"] == "fail"
     assert unsupported_tool["reason"] == (
         "required_test_tool_missing:not-allowlisted"
+    )
+
+
+def test_execute_commands_loads_only_repository_pytest_plugins(tmp_path):
+    support = tmp_path / ".cia-runtime-support"
+    support.mkdir()
+    (support / "cia_legacy_pytest.py").write_text(
+        "def pytest_configure(config):\n    del config\n",
+        encoding="utf-8",
+    )
+    observed_env = {}
+
+    def fake_runner(command, **kwargs):
+        del command
+        observed_env.update(kwargs["env"])
+        return subprocess.CompletedProcess([], 0, stdout="1 passed", stderr="")
+
+    result = execute_test_commands(
+        [["{python}", "-m", "pytest", "-q", "tests"]],
+        repository_root=tmp_path,
+        python_executable=Path(__file__),
+        timeout=5,
+        runner=fake_runner,
+        test_environment={
+            "pythonpath_entries": [".cia-runtime-support"],
+            "repository_pytest_plugins": ["cia_legacy_pytest"],
+        },
+    )
+
+    assert result["status"] == "pass"
+    assert observed_env["PYTEST_PLUGINS"] == "cia_legacy_pytest"
+    assert result["environment"]["repository_pytest_plugins"] == [
+        "cia_legacy_pytest"
+    ]
+
+    missing = execute_test_commands(
+        [["{python}", "-m", "pytest", "-q", "tests"]],
+        repository_root=tmp_path,
+        python_executable=Path(__file__),
+        timeout=5,
+        runner=fake_runner,
+        test_environment={
+            "pythonpath_entries": [".cia-runtime-support"],
+            "repository_pytest_plugins": ["missing_plugin"],
+        },
+    )
+    assert missing["status"] == "fail"
+    assert missing["reason"] == "repository_pytest_plugin_missing:missing_plugin"
+
+    (tmp_path / "outside_plugin.py").write_text(
+        "def pytest_configure(config):\n    del config\n",
+        encoding="utf-8",
+    )
+    outside_support_root = execute_test_commands(
+        [["{python}", "-m", "pytest", "-q", "tests"]],
+        repository_root=tmp_path,
+        python_executable=Path(__file__),
+        timeout=5,
+        runner=fake_runner,
+        test_environment={
+            "pythonpath_entries": ["."],
+            "repository_pytest_plugins": ["outside_plugin"],
+        },
+    )
+    assert outside_support_root["status"] == "fail"
+    assert outside_support_root["reason"] == (
+        "repository_pytest_plugin_missing:outside_plugin"
     )
 
 

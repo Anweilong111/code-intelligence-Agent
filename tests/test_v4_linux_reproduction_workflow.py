@@ -33,6 +33,7 @@ def test_linux_reproduction_workflow_pins_external_action_and_three_gates():
     assert "--targeted-timeout 180" in text
     assert "--regression-timeout 900" in text
     assert text.count("--require-pass") == 2
+    assert "code_intelligence_agent/evaluation/v3_real_bug_reproduction.py" in text
     assert "code_intelligence_agent/evaluation/v4_reproduction_environment.py" in text
     assert "datasets/v4_agent_effectiveness/reproduction_profiles.json" in text
     assert "bootstrap_result.json" in text

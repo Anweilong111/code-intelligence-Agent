@@ -1,0 +1,80 @@
+{
+  "schema_version": "4.0",
+  "evidence_id": "v4-phase1-linux-thefuck-16-attempt-2",
+  "observed_date": "2026-07-18",
+  "repository": "Anweilong111/code-intelligence-Agent",
+  "workflow_run": {
+    "run_id": 29605898564,
+    "job_id": 87968930232,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29605898564",
+    "commit_sha": "6cce0399e9dc9888f014f8f20a99a5129baae9b1",
+    "conclusion": "failure",
+    "failed_step": "Reproduce fixed bug and regression gates"
+  },
+  "artifact": {
+    "artifact_id": 8416882612,
+    "name": "v4-phase1-linux-thefuck-16",
+    "size": 11891,
+    "sha256": "6f60628122351d19f045107ce3e1e5ad3535420f46bdf60dff4b7ca6d566afba"
+  },
+  "bootstrap": {
+    "project": "thefuck",
+    "python_version": "3.7.0",
+    "plan_sha256": "6e90719b62e24c7499becb44323298bc346fae29eb573a00b1779cca199758d1",
+    "result_sha256": "ef26f4d8c49cf4d3be8229382efd36e711b084b7d7a8d6a10e8ca2d26168d6a4",
+    "status": "pass",
+    "reason": "isolated_runtime_ready",
+    "required_module_count": 7,
+    "frozen_requirement_count": 20,
+    "frozen_requirement_match_count": 20,
+    "pip_check": "pass",
+    "psutil_conda_binary_install": "pass"
+  },
+  "readiness": {
+    "status": "pass",
+    "ready_count": 5,
+    "blocked_count": 0
+  },
+  "reproduction": {
+    "case_id": "bugsinpy-thefuck-16",
+    "evidence_sha256": "2945fd83051eb9fd1f2dafc683e3091273f4a712580cd2a9cdfe21a9b7dec897",
+    "status": "fail",
+    "reason": "bug_fix_behavior_not_reproduced",
+    "acceptance": {
+      "bug_targeted_failed": true,
+      "fix_targeted_passed": true,
+      "fix_full_regression_passed": false,
+      "reproducible": false
+    },
+    "fix_full_regression": {
+      "passed": 1153,
+      "failed": 2,
+      "skipped": 61,
+      "test_count": 1216
+    },
+    "failures": [
+      {
+        "node": "tests/test_types.py::TestCommand::test_from_script_calls",
+        "classification": "legacy_pytest_environment_compatibility",
+        "signal": "pytest 3.10.1 inserted PYTEST_CURRENT_TEST into an os.environ object that the 2016 test expected to remain empty"
+      },
+      {
+        "node": "tests/test_utils.py::test_get_all_executables",
+        "classification": "static_distribution_metadata_missing",
+        "signal": "pkg_resources.require('thefuck') could not resolve metadata because the benchmark editable VCS requirement was intentionally not installed"
+      }
+    ]
+  },
+  "safety": {
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "source_build_executed": false,
+    "shared_base_runtime_mutated": false,
+    "model_calls": 0
+  },
+  "benchmark_claim": {
+    "case_accepted": false,
+    "accepted_case_count_delta": 0,
+    "next_gate": "Run the same Linux acceptance contract with the hash-bound legacy harness adapter and require a complete fix regression pass."
+  }
+}

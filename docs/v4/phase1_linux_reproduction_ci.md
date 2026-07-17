@@ -70,6 +70,40 @@ failure is classified as `dependency_install_failed`, not as a benchmark test or
 repair failure, and contributes zero accepted cases. The machine-readable record
 is `docs/v4/phase1_linux_reproduction_attempt_1.json`.
 
+## Second Attempt
+
+Run `29605898564` on commit
+`6cce0399e9dc9888f014f8f20a99a5129baae9b1` passed exact runtime construction,
+all 20 frozen requirement checks, `pip check`, all seven module probes, and the
+five-case Linux readiness plan. The target bug failed and the fixed revision
+passed both declared target nodes. The full fixed regression then reported
+`1153 passed`, `61 skipped`, and two failures, so the case remained unaccepted.
+
+The first failure came from pytest `3.10.1` writing `PYTEST_CURRENT_TEST` into an
+`os.environ` object that a 2016 test had replaced with an empty dict. The second
+came from `pkg_resources.require('thefuck')`: BugsInPy's frozen requirements
+normally create the distribution metadata through an editable VCS install, while
+the V4 safety policy intentionally does not install or execute the repository.
+Neither failure is excluded or silently accepted. The machine-readable record is
+`docs/v4/phase1_linux_reproduction_attempt_2.json`.
+
+## Legacy Harness Adapter
+
+The project profile now materializes a hash-bound support directory in both fixed
+SHA checkouts. A pytest `3.10.1`-guarded plugin removes only the later
+`PYTEST_CURRENT_TEST` instrumentation. Minimal `thefuck 3.4` metadata and the
+three console entry points are reproduced from static `setup.py` declarations,
+without executing `setup.py` or installing the project. Every generated file has
+an exact content hash and a canonical source-text hash; plugin loading is limited
+to modules that resolve inside an approved repository-relative `PYTHONPATH` and
+does not follow symlinks.
+
+The two historical failure nodes pass locally under exact Python `3.7.0` and
+pytest `3.10.1`. This is compatibility evidence only. A third Linux run must still
+pass the complete acceptance contract before the candidate can enter the
+benchmark. Details are recorded in
+`docs/v4/phase1_legacy_harness_adapter_verification.json`.
+
 ## Evidence
 
 The workflow uploads only the bootstrap plan/result, Linux reproduction plan, and

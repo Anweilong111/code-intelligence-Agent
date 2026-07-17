@@ -41,6 +41,53 @@ def test_repository_reproduction_profiles_never_execute_setup_scripts():
     )
 
 
+def test_thefuck_profile_binds_hashed_legacy_adapter_to_repository_paths():
+    profiles = load_json_object(PROFILES_PATH)
+    profile = profiles["project_profiles"]["thefuck"]
+
+    assert validate_reproduction_profiles(profiles) == []
+    assert profile["pythonpath_entries"][:2] == [
+        ".cia-runtime-support",
+        ".",
+    ]
+    assert profile["repository_pytest_plugins"] == ["cia_legacy_pytest"]
+    assert all(len(item["sha256"]) == 64 for item in profile["preparation_files"])
+    assert all(item["source_path"] for item in profile["preparation_files"])
+
+    adapted, audit = adapt_v4_case_for_reproduction(
+        _catalog()["cases"][0],
+        project_profile=profile,
+    )
+    assert audit["status"] == "pass"
+    assert audit["preparation_file_count"] == 3
+    assert audit["repository_pytest_plugins"] == ["cia_legacy_pytest"]
+    assert adapted["test_environment"]["repository_pytest_plugins"] == [
+        "cia_legacy_pytest"
+    ]
+
+
+def test_profile_validation_rejects_unmaterialized_plugin_and_tampered_file():
+    profiles = _profiles()
+    profiles["project_profiles"]["demo"]["repository_pytest_plugins"] = [
+        "missing_plugin"
+    ]
+
+    errors = validate_reproduction_profiles(profiles)
+
+    assert errors == [
+        "profiles.repository_pytest_plugin_is_not_materialized:demo:0"
+    ]
+
+    repository_profiles = load_json_object(PROFILES_PATH)
+    repository_profiles["project_profiles"]["thefuck"]["preparation_files"][0][
+        "content"
+    ] += "# changed\n"
+    assert (
+        "profiles.preparation_file_sha256_is_invalid:thefuck:0"
+        in validate_reproduction_profiles(repository_profiles)
+    )
+
+
 def test_plan_preserves_frozen_candidate_order_and_reports_ready_runtime(tmp_path):
     catalog = _catalog()
     selection = _selection_plan()

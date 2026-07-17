@@ -1,0 +1,93 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-thefuck-legacy-harness-adapter",
+  "verified_date": "2026-07-18",
+  "status": "pass_local_linux_ci_pending",
+  "case_id": "bugsinpy-thefuck-16",
+  "source_contract": {
+    "bugsinpy_commit": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "bug_commit_sha": "d92765d5df6607cb2f2fb67cee7b63f64ac7aa6b",
+    "fix_commit_sha": "bb5f6bb705a3b217eb682f3357ec6bbb709555c1",
+    "python_version": "3.7.0",
+    "pytest_version": "3.10.1",
+    "benchmark_requirement": "-e git+https://github.com/nvbn/thefuck@d92765d5df6607cb2f2fb67cee7b63f64ac7aa6b#egg=thefuck",
+    "benchmark_setup_script_present": false
+  },
+  "root_cause": {
+    "project_test_vintage": "2016-03-09T21:58:18-03:00",
+    "pytest_environment_conflict": "The test replaces the shared os.environ object with an empty dict; pytest 3.10.1 then writes PYTEST_CURRENT_TEST into that dict before the call phase.",
+    "metadata_conflict": "The frozen benchmark normally obtains thefuck distribution metadata from an editable VCS install, which is excluded by the no-repository-install safety policy."
+  },
+  "adapter_files": [
+    {
+      "path": ".cia-runtime-support/cia_legacy_pytest.py",
+      "sha256": "6676f3717bfd738abfae0c2ff49b837546b16fb26f65b57138dc91b2ebe6915b",
+      "source_path": "tests/test_types.py",
+      "source_text_sha256": "1470a42043a04e7769503350a5d5327c1fcc6b716a24d9bf5077f0fc355077c4"
+    },
+    {
+      "path": ".cia-runtime-support/thefuck-3.4.dist-info/METADATA",
+      "sha256": "55e5b37552d0f211f5489bfcdb24edefc4c82a848226f903c713d25e012e5b60",
+      "source_path": "setup.py",
+      "source_text_sha256": "07e9035d664c9b1eb833442b5df1676b28d4848cdc58a71794dce7a96e92485c"
+    },
+    {
+      "path": ".cia-runtime-support/thefuck-3.4.dist-info/entry_points.txt",
+      "sha256": "81ec2428fe6293e8d3f784c3713def1c1eb575955b3e58be6d33680cdbc297e2",
+      "source_path": "setup.py",
+      "source_text_sha256": "07e9035d664c9b1eb833442b5df1676b28d4848cdc58a71794dce7a96e92485c"
+    }
+  ],
+  "safety_contract": {
+    "content_hash_required": true,
+    "source_text_hash_required": true,
+    "repository_relative_paths_only": true,
+    "symlinks_allowed": false,
+    "plugin_must_resolve_from_declared_repository_pythonpath": true,
+    "plugin_pytest_version_guard": "3.10.1",
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "tests_modified_or_excluded": false,
+    "model_calls": 0
+  },
+  "verification": {
+    "focused_unit_tests": {
+      "command": "pytest -q tests/test_v3_real_bug_reproduction.py tests/test_v4_real_bug_reproduction.py",
+      "status": "pass",
+      "passed": 22
+    },
+    "v3_v4_cli_release_tests": {
+      "status": "pass",
+      "passed": 85,
+      "failed": 0
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "candidate_file_count": 569,
+      "passed_checks": 5,
+      "check_count": 5
+    },
+    "historical_failure_nodes": {
+      "execution_api": "execute_test_commands",
+      "runtime": "outputs_v4/runtimes/thefuck-py3.7.0/Scripts/python.exe",
+      "checkout": "fixed SHA bb5f6bb705a3b217eb682f3357ec6bbb709555c1",
+      "nodes": [
+        "tests/test_types.py::TestCommand::test_from_script_calls",
+        "tests/test_utils.py::test_get_all_executables"
+      ],
+      "status": "pass",
+      "passed": 2,
+      "failed": 0,
+      "environment_blocker": false,
+      "repository_pytest_plugins": [
+        "cia_legacy_pytest"
+      ],
+      "observed_test_duration_seconds": 0.08
+    }
+  },
+  "benchmark_claim": {
+    "case_accepted": false,
+    "accepted_case_count_delta": 0,
+    "reason": "Local verification covers the two prior failures only; the Linux full regression gate remains mandatory."
+  }
+}
