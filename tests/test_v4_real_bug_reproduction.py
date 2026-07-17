@@ -103,6 +103,31 @@ def test_plan_blocks_missing_exact_runtime_without_checkout(tmp_path):
     assert reproduction_evidence_fingerprint(evidence) == evidence["evidence_sha256"]
 
 
+def test_plan_blocks_platform_specific_regression_on_wrong_host(tmp_path):
+    profiles = _profiles()
+    profiles["project_profiles"]["demo"]["required_execution_platform"] = "linux"
+    executable = tmp_path / "cpython-3.11.9" / "python.exe"
+    executable.parent.mkdir()
+    executable.write_text("fixture", encoding="utf-8")
+
+    plan = build_reproduction_plan(
+        catalog=_catalog(),
+        selection_plan=_selection_plan(),
+        profiles=profiles,
+        runtime_root=tmp_path,
+        runtime_probe=lambda *_: {"status": "pass", "reason": "fixture"},
+        execution_platform="windows",
+    )
+
+    item = plan["items"][0]
+    assert item["readiness"] == "blocked"
+    assert item["blockers"] == [
+        "execution_platform_mismatch:required_linux:observed_windows"
+    ]
+    assert item["execution_contract"]["required_execution_platform"] == "linux"
+    assert item["execution_contract"]["observed_execution_platform"] == "windows"
+
+
 def test_tox_node_is_rewritten_to_bounded_pytest_command():
     case = _catalog()["cases"][0]
     case["targeted_tests"][0][2] = "tox"

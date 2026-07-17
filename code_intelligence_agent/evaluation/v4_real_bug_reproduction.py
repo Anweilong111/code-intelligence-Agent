@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import re
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
@@ -33,6 +35,7 @@ SUPPORTED_EXECUTION_MODULES = {"nose", "pytest", "unittest"}
 ADAPTABLE_MODULES = {"nox", "py.test", "tox"}
 SAFE_MODULE_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 RuntimeProbe = Callable[[Path, str, list[str]], dict[str, Any]]
+SUPPORTED_EXECUTION_PLATFORMS = {"any", "darwin", "linux", "windows"}
 
 
 def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
@@ -55,6 +58,13 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
         if profile.get("dependency_install_requires_authorization") is not True:
             errors.append(
                 f"profiles.dependency_install_authorization_must_be_true:{project}"
+            )
+        required_platform = str(
+            profile.get("required_execution_platform") or "any"
+        )
+        if required_platform not in SUPPORTED_EXECUTION_PLATFORMS:
+            errors.append(
+                f"profiles.required_execution_platform_is_invalid:{project}"
             )
         for module in _list(profile.get("required_runtime_modules")):
             if not SAFE_MODULE_PATTERN.fullmatch(str(module)):
@@ -83,6 +93,7 @@ def build_reproduction_plan(
     case_ids: set[str] | None = None,
     limit: int | None = None,
     runtime_probe: RuntimeProbe | None = None,
+    execution_platform: str | None = None,
 ) -> dict[str, Any]:
     catalog_audit = validate_v4_catalog(catalog)
     if catalog_audit["status"] != "pass":
@@ -115,6 +126,7 @@ def build_reproduction_plan(
     items: list[dict[str, Any]] = []
     sequence = 0
     probe = runtime_probe or probe_runtime
+    observed_platform = execution_platform or _current_execution_platform()
     project_profiles = _dict(profiles.get("project_profiles"))
     runtime_profiles = _dict(profiles.get("runtime_profiles"))
     probe_cache: dict[tuple[str, str, tuple[str, ...]], dict[str, Any]] = {}
@@ -142,7 +154,11 @@ def build_reproduction_plan(
                 project_profile=project_profile,
             )
             version = str(_dict(case.get("environment")).get("python_version") or "")
-            runtime_config = _dict(runtime_profiles.get(version))
+            runtime_config = _project_runtime_config(
+                project_profile,
+                version=version,
+                fallback=_dict(runtime_profiles.get(version)),
+            )
             runtime = _resolve_runtime(root, version, runtime_config)
             modules = sorted(
                 {
@@ -174,6 +190,7 @@ def build_reproduction_plan(
                 adaptation=adaptation,
                 runtime=runtime,
                 project_profile=project_profile,
+                execution_platform=observed_platform,
             )
             items.append(
                 {
@@ -195,6 +212,11 @@ def build_reproduction_plan(
                     "execution_contract": {
                         "setup_script_executed": False,
                         "gold_patch_visible": False,
+                        "required_execution_platform": str(
+                            project_profile.get("required_execution_platform")
+                            or "any"
+                        ),
+                        "observed_execution_platform": observed_platform,
                         "test_overlay_paths": copy.deepcopy(
                             adapted.get("test_overlay_paths", [])
                         ),
@@ -220,6 +242,7 @@ def build_reproduction_plan(
         "profiles_sha256": canonical_json_sha256(profiles),
         "runtime_root_committed": False,
         "repository_setup_scripts_executed": False,
+        "execution_platform": observed_platform,
         "filters": {
             "splits": sorted(splits or set()),
             "projects": sorted(projects or set()),
@@ -530,11 +553,30 @@ def _resolve_runtime(
     }
 
 
+def _project_runtime_config(
+    project_profile: dict[str, Any],
+    *,
+    version: str,
+    fallback: dict[str, Any],
+) -> dict[str, Any]:
+    template = str(project_profile.get("isolated_environment_template") or "")
+    if not template:
+        return copy.deepcopy(fallback)
+    environment_path = template.format(version=version)
+    executable = (
+        PurePosixPath(environment_path) / "Scripts" / "python.exe"
+        if os.name == "nt"
+        else PurePosixPath(environment_path) / "bin" / "python"
+    )
+    return {"relative_executable": executable.as_posix()}
+
+
 def _reproduction_readiness(
     *,
     adaptation: dict[str, Any],
     runtime: dict[str, Any],
     project_profile: dict[str, Any],
+    execution_platform: str,
 ) -> tuple[str, list[str]]:
     blockers: list[str] = []
     if adaptation.get("status") != "pass":
@@ -546,7 +588,25 @@ def _reproduction_readiness(
         blockers.append(str(probe.get("reason") or "runtime_probe_failed"))
     if project_profile.get("native_build_adapter_required") is True:
         blockers.append("native_build_adapter_required")
+    required_platform = str(
+        project_profile.get("required_execution_platform") or "any"
+    )
+    if required_platform != "any" and required_platform != execution_platform:
+        blockers.append(
+            "execution_platform_mismatch:"
+            f"required_{required_platform}:observed_{execution_platform}"
+        )
     return ("ready", []) if not blockers else ("blocked", sorted(set(blockers)))
+
+
+def _current_execution_platform() -> str:
+    if sys.platform.startswith("win"):
+        return "windows"
+    if sys.platform.startswith("linux"):
+        return "linux"
+    if sys.platform == "darwin":
+        return "darwin"
+    return sys.platform
 
 
 def _summarize_plan(items: list[dict[str, Any]]) -> dict[str, Any]:

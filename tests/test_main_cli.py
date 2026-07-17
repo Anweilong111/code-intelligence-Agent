@@ -10,6 +10,7 @@ from code_intelligence_agent.evaluation import v3_semantic_evaluation
 from code_intelligence_agent.evaluation import v4_experiment_protocol
 from code_intelligence_agent.evaluation import v4_real_bug_benchmark
 from code_intelligence_agent.evaluation import v4_real_bug_reproduction
+from code_intelligence_agent.evaluation import v4_reproduction_environment
 
 
 def test_top_level_cli_keeps_local_static_analysis(tmp_path, capsys):
@@ -247,4 +248,44 @@ def test_top_level_cli_routes_v4_real_bug_reproduction(monkeypatch):
         "outputs_v4/plan.json",
         "--runtime-root",
         "outputs_v3/runtimes",
+    ]
+
+
+def test_top_level_cli_routes_v4_reproduction_environment(monkeypatch):
+    captured: dict[str, list[str]] = {}
+
+    def fake_v4_reproduction_environment_main(argv):
+        captured["argv"] = list(argv)
+
+    monkeypatch.setattr(
+        v4_reproduction_environment,
+        "main",
+        fake_v4_reproduction_environment_main,
+    )
+
+    cli_module.main(
+        [
+            "v4-bootstrap-runtime",
+            "plan",
+            "profiles.json",
+            "thefuck",
+            "3.7.0",
+            "outputs_v4/bootstrap.json",
+            "--base-runtime-root",
+            "outputs_v3/runtimes",
+            "--isolated-runtime-root",
+            "outputs_v4/runtimes",
+        ]
+    )
+
+    assert captured["argv"] == [
+        "plan",
+        "profiles.json",
+        "thefuck",
+        "3.7.0",
+        "outputs_v4/bootstrap.json",
+        "--base-runtime-root",
+        "outputs_v3/runtimes",
+        "--isolated-runtime-root",
+        "outputs_v4/runtimes",
     ]

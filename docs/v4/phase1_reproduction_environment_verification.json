@@ -1,0 +1,68 @@
+{
+  "schema_version": "4.0",
+  "checkpoint": "phase1_reproduction_environment",
+  "status": "pass_with_platform_blocker",
+  "claims_new_reproduced_cases": false,
+  "inputs": {
+    "profiles_sha256": "946f07a46593b90a5e3805513139b4f7cf67fad446ace024e3ad07e77fa42860",
+    "bootstrap_plan_sha256": "ec3871390d57984ce6b837175ef54b2271b1e3521a5d0122c97b01182d83f92a",
+    "bootstrap_result_sha256": "636d60a7cda0262e42f840400b0e686e0e4a3a33c9e9bd593e58d865b5b0987c",
+    "windows_reproduction_evidence_sha256": "a4b01b665576494e1a16ac423b98e6a5a72b8b12c9a814648aa99bebf4c52473",
+    "windows_reproduction_plan_sha256": "6b148be6c882adfeb15fa822397bf3cfa439303e83648c14edd3286f28ded6b7"
+  },
+  "runtime": {
+    "project": "thefuck",
+    "python_version": "3.7.0",
+    "status": "pass",
+    "required_modules": 8,
+    "missing_modules": 0,
+    "binary_wheel_requirements": 20,
+    "frozen_distribution_audit": "pass",
+    "dependency_consistency_check": "pass",
+    "manual_archive_count": 1,
+    "manual_archive_installed_files": 12
+  },
+  "reproduction": {
+    "case_id": "bugsinpy-thefuck-16",
+    "bug_targeted_failed": true,
+    "fix_targeted_passed": true,
+    "fix_full_regression_passed": false,
+    "accepted": false,
+    "fix_regression": {
+      "collected": 1216,
+      "passed": 1146,
+      "skipped": 61,
+      "failed": 9
+    },
+    "observed_platform": "windows",
+    "required_platform": "linux",
+    "current_project_ready_cases": 0,
+    "current_project_blocked_cases": 5
+  },
+  "safety": {
+    "repository_setup_scripts_executed": false,
+    "repository_project_installed": false,
+    "manual_archive_setup_scripts_executed": false,
+    "shared_base_runtime_mutated": false,
+    "archive_hash_and_size_verified": true,
+    "archive_member_allowlist_enforced": true,
+    "model_calls": 0,
+    "gold_patch_visible_to_model": false
+  },
+  "verification": {
+    "command": "pytest -q tests/test_v4_reproduction_environment.py tests/test_v4_real_bug_reproduction.py tests/test_main_cli.py --basetemp outputs_v4/pytest_phase1_runtime_final2_20260718",
+    "passed": 28,
+    "failed": 0,
+    "top_level_route_status": "pass",
+    "v4_checkpoint_tests": {
+      "passed": 59,
+      "failed": 0
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "failed_checks": 0,
+      "candidate_files": 562
+    }
+  }
+}

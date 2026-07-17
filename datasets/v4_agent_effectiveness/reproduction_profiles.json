@@ -164,6 +164,46 @@
       "execute_benchmark_setup_script": false,
       "dependency_install_requires_authorization": true,
       "native_build_adapter_required": false,
+      "required_execution_platform": "linux",
+      "isolated_environment_template": "thefuck-py{version}",
+      "bootstrap_requirements": [
+        "atomicwrites==1.4.0",
+        "attrs==19.3.0",
+        "colorama==0.4.3",
+        "decorator==4.4.2",
+        "importlib-metadata==1.6.0",
+        "mock==4.0.2",
+        "more-itertools==8.3.0",
+        "packaging==20.4",
+        "pexpect==4.8.0",
+        "pluggy==0.13.1",
+        "psutil==5.7.0",
+        "ptyprocess==0.6.0",
+        "py==1.8.1",
+        "pyparsing==2.4.7",
+        "pytest==3.10.1",
+        "pytest-mock==3.1.0",
+        "pyte==0.8.0",
+        "six==1.15.0",
+        "wcwidth==0.1.9",
+        "zipp==3.1.0"
+      ],
+      "manual_python_archives": [
+        {
+          "archive_id": "win-unicode-console-0.5",
+          "package": "win-unicode-console",
+          "version": "0.5",
+          "url": "https://files.pythonhosted.org/packages/89/8d/7aad74930380c8972ab282304a2ff45f3d4927108bb6693cabcc9fc6a099/win_unicode_console-0.5.zip",
+          "sha256": "d4142d4d56d46f449d6f00536a73625a871cba040f0bc1a2e305a04578f07d1e",
+          "size": 31420,
+          "archive_type": "zip",
+          "source_root": "win_unicode_console-0.5",
+          "install_members": [
+            "win_unicode_console",
+            "run.py"
+          ]
+        }
+      ],
       "required_runtime_modules": [
         "colorama",
         "decorator",
@@ -171,7 +211,8 @@
         "psutil",
         "pytest",
         "pyte",
-        "six"
+        "six",
+        "win_unicode_console"
       ],
       "pythonpath_entries": [
         "."

@@ -88,3 +88,8 @@ create project-isolated environments from exact base interpreters and install on
 pre-registered dependencies after explicit authorization. Development cases are
 bootstrapped first. Validation and blind-test repositories remain unavailable for
 prompt, threshold, and policy tuning even after their environments are prepared.
+
+The first project-isolated bootstrap and its Windows-to-Linux platform blocker are
+documented in `docs/v4/phase1_reproduction_environment.md`. The initial 50-case
+summary above remains the frozen pre-bootstrap baseline rather than being rewritten
+with later environment results.

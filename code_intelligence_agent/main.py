@@ -40,6 +40,13 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_v4_reproduction_environment(raw_argv):
+        from code_intelligence_agent.evaluation.v4_reproduction_environment import (
+            main as v4_reproduction_environment_main,
+        )
+
+        v4_reproduction_environment_main(raw_argv[1:])
+        return
     if _should_route_to_v4_real_bug_reproduction(raw_argv):
         from code_intelligence_agent.evaluation.v4_real_bug_reproduction import (
             main as v4_real_bug_reproduction_main,
@@ -181,6 +188,17 @@ def _should_route_to_v4_real_bug_reproduction(argv: list[str]) -> bool:
         in {
             "v4-reproduce",
             "v4-reproduction",
+        }
+    )
+
+
+def _should_route_to_v4_reproduction_environment(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {
+            "v4-bootstrap-runtime",
+            "v4-reproduction-environment",
         }
     )
 
