@@ -40,6 +40,13 @@ def analyze_path(path: str | Path, patch_mode: str = "rule") -> dict:
 
 def main(argv: list[str] | None = None) -> None:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _should_route_to_v4_real_bug_benchmark(raw_argv):
+        from code_intelligence_agent.evaluation.v4_real_bug_benchmark import (
+            main as v4_real_bug_benchmark_main,
+        )
+
+        v4_real_bug_benchmark_main(raw_argv[1:])
+        return
     if _should_route_to_v4_protocol_audit(raw_argv):
         from code_intelligence_agent.evaluation.v4_experiment_protocol import (
             main as v4_protocol_audit_main,
@@ -146,6 +153,17 @@ def _should_route_to_v4_protocol_audit(argv: list[str]) -> bool:
         argv
         and argv[0]
         in {"v4-protocol-audit", "v4-experiment-protocol-audit"}
+    )
+
+
+def _should_route_to_v4_real_bug_benchmark(argv: list[str]) -> bool:
+    return bool(
+        argv
+        and argv[0]
+        in {
+            "v4-benchmark-catalog",
+            "v4-real-bug-benchmark",
+        }
     )
 
 

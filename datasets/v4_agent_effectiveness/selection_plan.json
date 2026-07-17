@@ -1,0 +1,389 @@
+{
+  "schema_version": "4.0",
+  "plan_id": "v4-bugsinpy-repository-disjoint-seed-v1",
+  "catalog_id": "v4-real-python-bugs-seed",
+  "inventory_sha256": "5537380e978ce9560a64558c0389b47309bc464e406d4e377e74b626803eaaf1",
+  "selection_policy": {
+    "repository_disjoint": true,
+    "candidate_order_is_frozen": true,
+    "stop_after_project_target_is_met": true,
+    "unused_backfill_disposition": "rejected_not_required_after_frozen_target_met",
+    "gold_patch_visible_to_model": false,
+    "rationale": "Pre-register project targets and backfill order before reproduction so environment failures cannot be hidden through post-hoc case selection."
+  },
+  "target_contract": {
+    "enforce": true,
+    "baseline_accepted_split_counts": {
+      "development": 7,
+      "validation": 8,
+      "test": 5
+    },
+    "planned_accepted_additions": {
+      "development": 3,
+      "validation": 7,
+      "test": 20
+    },
+    "final_accepted_split_counts": {
+      "development": 10,
+      "validation": 15,
+      "test": 25
+    },
+    "minimum_final_accepted_repository_count": 15,
+    "new_candidate_case_count": 50,
+    "new_target_accepted_case_count": 30
+  },
+  "projects": [
+    {
+      "name": "thefuck",
+      "owner_repo": "nvbn/thefuck",
+      "benchmark_split": "development",
+      "target_accepted_count": 3,
+      "candidate_bug_ids": [
+        16,
+        17,
+        8,
+        20,
+        1
+      ],
+      "selection_rationale": "Development-only repository with multi-file, cross-function, and simpler fallbacks for environment calibration.",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE.md",
+        "url_template": "https://github.com/nvbn/thefuck/blob/{bug_commit_sha}/LICENSE.md",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 16,
+          "commit_sha": "d92765d5df6607cb2f2fb67cee7b63f64ac7aa6b",
+          "detected_spdx": "MIT",
+          "evidence_url": "https://github.com/nvbn/thefuck/blob/d92765d5df6607cb2f2fb67cee7b63f64ac7aa6b/LICENSE.md",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "name": "httpie",
+      "owner_repo": "jakubroztocil/httpie",
+      "benchmark_split": "validation",
+      "target_accepted_count": 4,
+      "candidate_bug_ids": [
+        2,
+        1,
+        3,
+        4,
+        5
+      ],
+      "selection_rationale": "Validation repository with one multi-file case and four single-file backfills; excluded from all development tuning.",
+      "license": {
+        "spdx": "BSD-3-Clause",
+        "path": "LICENSE",
+        "url_template": "https://github.com/httpie/cli/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 2,
+          "commit_sha": "356e0436510fee70b4071fac58be81c0a0a7db59",
+          "detected_spdx": "BSD-3-Clause",
+          "evidence_url": "https://github.com/httpie/cli/blob/356e0436510fee70b4071fac58be81c0a0a7db59/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q"
+      ]
+    },
+    {
+      "name": "sanic",
+      "owner_repo": "huge-success/sanic",
+      "benchmark_split": "validation",
+      "target_accepted_count": 3,
+      "candidate_bug_ids": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "selection_rationale": "Validation-only asynchronous framework cases that require a safe replacement for the benchmark setup script.",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE",
+        "url_template": "https://github.com/sanic-org/sanic/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 1,
+          "commit_sha": "e7001b00747b659f7042b0534802b936ee8a53e0",
+          "detected_spdx": "MIT",
+          "evidence_url": "https://github.com/sanic-org/sanic/blob/e7001b00747b659f7042b0534802b936ee8a53e0/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "name": "ansible",
+      "owner_repo": "ansible/ansible",
+      "benchmark_split": "test",
+      "target_accepted_count": 2,
+      "candidate_bug_ids": [
+        13,
+        5,
+        2,
+        1
+      ],
+      "selection_rationale": "Blind-test repository with multi-file and cross-function cases plus safe-setup replacement requirements.",
+      "license": {
+        "spdx": "GPL-3.0-only",
+        "path": "COPYING",
+        "url_template": "https://github.com/ansible/ansible/blob/{bug_commit_sha}/COPYING",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 13,
+          "commit_sha": "41472ee3878be215af8b933b2b04b4a72b9165ca",
+          "detected_spdx": "GPL-3.0",
+          "evidence_url": "https://github.com/ansible/ansible/blob/41472ee3878be215af8b933b2b04b4a72b9165ca/COPYING",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "test/units"
+      ]
+    },
+    {
+      "name": "cookiecutter",
+      "owner_repo": "cookiecutter/cookiecutter",
+      "benchmark_split": "test",
+      "target_accepted_count": 1,
+      "candidate_bug_ids": [
+        4,
+        2,
+        1,
+        3
+      ],
+      "selection_rationale": "Blind-test tox project with a multi-file primary case and three pre-registered fallbacks.",
+      "license": {
+        "spdx": "BSD-3-Clause",
+        "path": "LICENSE",
+        "url_template": "https://github.com/cookiecutter/cookiecutter/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 4,
+          "commit_sha": "9568ab6ecd2d6836646006c59473c4a4ac0dee04",
+          "detected_spdx": "BSD-3-Clause",
+          "evidence_url": "https://github.com/cookiecutter/cookiecutter/blob/9568ab6ecd2d6836646006c59473c4a4ac0dee04/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "name": "keras",
+      "owner_repo": "keras-team/keras",
+      "benchmark_split": "test",
+      "target_accepted_count": 4,
+      "candidate_bug_ids": [
+        20,
+        1,
+        11,
+        19,
+        34,
+        37
+      ],
+      "selection_rationale": "Blind-test numerical library cases emphasize multi-file and multi-symbol repairs under native dependency pressure.",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE",
+        "url_template": "https://github.com/keras-team/keras/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 20,
+          "commit_sha": "76da5f0a21ca98e4bf6706e182fb825243e76204",
+          "detected_spdx": "NOASSERTION",
+          "normalization_basis": "The exact historical license contains the standard MIT grant and warranty clauses.",
+          "evidence_url": "https://github.com/keras-team/keras/blob/76da5f0a21ca98e4bf6706e182fb825243e76204/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "tests"
+      ]
+    },
+    {
+      "name": "luigi",
+      "owner_repo": "spotify/luigi",
+      "benchmark_split": "test",
+      "target_accepted_count": 4,
+      "candidate_bug_ids": [
+        23,
+        9,
+        6,
+        14,
+        29,
+        5
+      ],
+      "selection_rationale": "Blind-test workflow-system cases include multi-file and multi-symbol roots while retaining deterministic pytest entry points.",
+      "license": {
+        "spdx": "Apache-2.0",
+        "path": "LICENSE",
+        "url_template": "https://github.com/spotify/luigi/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 23,
+          "commit_sha": "c707253572deb795a900c3e07d21eee591a55fca",
+          "detected_spdx": "Apache-2.0",
+          "evidence_url": "https://github.com/spotify/luigi/blob/c707253572deb795a900c3e07d21eee591a55fca/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "test"
+      ]
+    },
+    {
+      "name": "matplotlib",
+      "owner_repo": "matplotlib/matplotlib",
+      "benchmark_split": "test",
+      "target_accepted_count": 3,
+      "candidate_bug_ids": [
+        15,
+        4,
+        20,
+        29,
+        3
+      ],
+      "selection_rationale": "Blind-test scientific-library cases include multi-file and cross-function patches with a locally available Python 3.8.1 runtime.",
+      "license": {
+        "spdx": "LicenseRef-Matplotlib-1.3",
+        "path": "LICENSE/LICENSE",
+        "url_template": "https://github.com/matplotlib/matplotlib/blob/{bug_commit_sha}/LICENSE/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_contents_api",
+          "representative_bug_id": 15,
+          "commit_sha": "6a8e39f4eba28e99d7b1dd454b001b987dd0bbca",
+          "detected_spdx": "NOASSERTION",
+          "normalization_basis": "The exact historical repository stores the project-specific Matplotlib license in LICENSE/LICENSE.",
+          "evidence_url": "https://github.com/matplotlib/matplotlib/blob/6a8e39f4eba28e99d7b1dd454b001b987dd0bbca/LICENSE/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "lib/matplotlib/tests"
+      ]
+    },
+    {
+      "name": "scrapy",
+      "owner_repo": "scrapy/scrapy",
+      "benchmark_split": "test",
+      "target_accepted_count": 3,
+      "candidate_bug_ids": [
+        33,
+        30,
+        8,
+        16,
+        1
+      ],
+      "selection_rationale": "Blind-test crawler cases use unittest-style execution and include a high-complexity eight-file primary case.",
+      "license": {
+        "spdx": "BSD-3-Clause",
+        "path": "LICENSE",
+        "url_template": "https://github.com/scrapy/scrapy/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 33,
+          "commit_sha": "2d216771976cd7aedfb88ae97418c2d4dcc84917",
+          "detected_spdx": "BSD-3-Clause",
+          "evidence_url": "https://github.com/scrapy/scrapy/blob/2d216771976cd7aedfb88ae97418c2d4dcc84917/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ]
+    },
+    {
+      "name": "spacy",
+      "owner_repo": "explosion/spaCy",
+      "benchmark_split": "test",
+      "target_accepted_count": 3,
+      "candidate_bug_ids": [
+        7,
+        4,
+        1,
+        2,
+        3
+      ],
+      "selection_rationale": "Blind-test NLP cases cover native extensions, runtime provisioning, and safe replacement of high-risk setup scripts.",
+      "license": {
+        "spdx": "MIT",
+        "path": "LICENSE",
+        "url_template": "https://github.com/explosion/spaCy/blob/{bug_commit_sha}/LICENSE",
+        "verification": {
+          "status": "verified_at_representative_bug_commit",
+          "method": "github_rest_license_endpoint",
+          "representative_bug_id": 7,
+          "commit_sha": "da6e0de34f4947fdebc839df3969c641014cfa97",
+          "detected_spdx": "MIT",
+          "evidence_url": "https://github.com/explosion/spaCy/blob/da6e0de34f4947fdebc839df3969c641014cfa97/LICENSE",
+          "checked_on": "2026-07-18"
+        }
+      },
+      "regression_command": [
+        "{python}",
+        "-m",
+        "pytest",
+        "-q",
+        "spacy/tests"
+      ]
+    }
+  ]
+}

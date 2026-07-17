@@ -1,0 +1,70 @@
+{
+  "schema_version": "4.0",
+  "checkpoint": "phase1_seed_benchmark",
+  "status": "pass",
+  "scope": "candidate_inventory_and_preregistered_selection_only",
+  "claims_final_50_case_reproduction": false,
+  "inputs": {
+    "bugsinpy_commit": "11c5f1eea954a42132cfd06bf257766a7963e0fd",
+    "inventory_path": "datasets/v4_agent_effectiveness/bugsinpy_candidate_inventory.json",
+    "inventory_sha256": "5537380e978ce9560a64558c0389b47309bc464e406d4e377e74b626803eaaf1",
+    "v3_catalog_path": "docs/v3/phase1_real_bug_catalog.json",
+    "selection_plan_path": "datasets/v4_agent_effectiveness/selection_plan.json",
+    "selection_plan_sha256": "b78dd398fcd1ead492ea4abd73a33951c70ed91c33696d762825d556863f524c"
+  },
+  "inventory": {
+    "case_count": 501,
+    "project_count": 17,
+    "parse_error_count": 0,
+    "eligible_count": 280,
+    "needs_adapter_count": 51,
+    "blocked_count": 170,
+    "short_commit_blocked_count": 168,
+    "repository_scripts_executed": false
+  },
+  "selection": {
+    "new_candidate_count": 50,
+    "new_target_accepted_count": 30,
+    "planned_additions": {
+      "development": 3,
+      "validation": 7,
+      "test": 20
+    },
+    "candidate_split_counts": {
+      "development": 5,
+      "validation": 10,
+      "test": 35
+    },
+    "new_target_repository_count": 10,
+    "candidate_order_frozen": true,
+    "repository_disjoint": true
+  },
+  "candidate_characteristics": {
+    "multi_file_count": 18,
+    "cross_function_metadata_count": 30,
+    "needs_adapter_count": 18,
+    "runtime_provisioning_count": 15
+  },
+  "seed_catalog": {
+    "path": "datasets/v4_agent_effectiveness/real_bug_seed_catalog.json",
+    "manifest_sha256": "38c03f7ea1f73e2f3c0f3498b8b2c45457829e1d2ef6e24833768eed8f76c527",
+    "audit_path": "datasets/v4_agent_effectiveness/real_bug_seed_catalog_audit.json",
+    "audit_status": "pass",
+    "audit_error_count": 0,
+    "audit_warning_count": 0,
+    "case_count": 75,
+    "accepted_case_count": 20,
+    "candidate_case_count": 50,
+    "rejected_case_count": 5,
+    "repository_count": 16,
+    "accepted_repository_count": 5,
+    "locked": false
+  },
+  "verification": {
+    "command": "pytest -q tests/test_v4_real_bug_benchmark.py tests/test_main_cli.py",
+    "passed": 21,
+    "failed": 0,
+    "model_calls": 0,
+    "external_source_disclosure": false
+  }
+}
