@@ -1,0 +1,139 @@
+name: V4 Phase 1 Linux Reproduction
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/code-intelligence-agent-v4
+    paths:
+      - .github/workflows/v4-phase1-linux-reproduction.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4-phase1-linux-reproduction
+  cancel-in-progress: false
+
+jobs:
+  reproduce-thefuck-16:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Public detached checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote remove origin
+
+      - name: Create host orchestrator environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv outputs_v4/ci-host
+          outputs_v4/ci-host/bin/python -m pip install \
+            --disable-pip-version-check \
+            --only-binary=:all: \
+            --no-deps \
+            packaging==24.2
+
+      - name: Provision exact Python 3.7.0 base runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CONDA_PKGS_DIRS="${RUNNER_TEMP}/conda-pkgs"
+          /usr/share/miniconda/bin/conda create \
+            --yes \
+            --copy \
+            --solver classic \
+            --override-channels \
+            --channel conda-forge \
+            --repodata-fn repodata.json \
+            --prefix "${GITHUB_WORKSPACE}/outputs_v3/runtimes/cpython-3.7.0" \
+            python=3.7.0
+          base_python="${GITHUB_WORKSPACE}/outputs_v3/runtimes/cpython-3.7.0/bin/python3.7"
+          test -f "${base_python}"
+          test ! -L "${base_python}"
+          "${base_python}" -c \
+            'import sys; assert sys.version_info[:3] == (3, 7, 0), sys.version'
+
+      - name: Build and execute isolated runtime plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          host_python="outputs_v4/ci-host/bin/python"
+          "${host_python}" -m code_intelligence_agent v4-bootstrap-runtime plan \
+            datasets/v4_agent_effectiveness/reproduction_profiles.json \
+            thefuck \
+            3.7.0 \
+            outputs_v4/linux/bootstrap_plan.json \
+            --base-runtime-root outputs_v3/runtimes \
+            --isolated-runtime-root outputs_v4/runtimes
+          "${host_python}" -m code_intelligence_agent v4-bootstrap-runtime run \
+            outputs_v4/linux/bootstrap_plan.json \
+            outputs_v4/linux/bootstrap_result.json \
+            --authorize-dependency-install \
+            --require-pass
+
+      - name: Verify Linux readiness plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          host_python="outputs_v4/ci-host/bin/python"
+          "${host_python}" -m code_intelligence_agent v4-reproduce plan \
+            datasets/v4_agent_effectiveness/real_bug_seed_catalog.json \
+            datasets/v4_agent_effectiveness/selection_plan.json \
+            datasets/v4_agent_effectiveness/reproduction_profiles.json \
+            outputs_v4/linux/thefuck_reproduction_plan.json \
+            --runtime-root outputs_v4/runtimes \
+            --project thefuck
+          "${host_python}" -c \
+            "import json; p=json.load(open('outputs_v4/linux/thefuck_reproduction_plan.json')); assert p['summary']['ready_count'] == 5 and p['summary']['blocked_count'] == 0, p['summary']"
+
+      - name: Reproduce fixed bug and regression gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          outputs_v4/ci-host/bin/python -m code_intelligence_agent v4-reproduce run \
+            datasets/v4_agent_effectiveness/real_bug_seed_catalog.json \
+            datasets/v4_agent_effectiveness/selection_plan.json \
+            datasets/v4_agent_effectiveness/reproduction_profiles.json \
+            outputs_v4/linux/reproduction/bugsinpy-thefuck-16 \
+            --runtime-root outputs_v4/runtimes \
+            --case-id bugsinpy-thefuck-16 \
+            --targeted-timeout 180 \
+            --regression-timeout 900 \
+            --require-pass
+
+      - name: Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## V4 Phase 1 Linux reproduction"
+            for report in \
+              outputs_v4/linux/reproduction/bugsinpy-thefuck-16/v4_reproduction.md; do
+              if [ -f "${report}" ]; then
+                cat "${report}"
+              fi
+            done
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload auditable evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v4-phase1-linux-thefuck-16
+          path: |
+            outputs_v4/linux/bootstrap_plan.json
+            outputs_v4/linux/bootstrap_result.json
+            outputs_v4/linux/thefuck_reproduction_plan.json
+            outputs_v4/linux/reproduction/bugsinpy-thefuck-16/v4_reproduction.json
+            outputs_v4/linux/reproduction/bugsinpy-thefuck-16/v4_reproduction.md
+          if-no-files-found: warn
+          retention-days: 30

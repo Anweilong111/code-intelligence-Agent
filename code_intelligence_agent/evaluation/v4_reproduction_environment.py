@@ -5,10 +5,10 @@ import copy
 import hashlib
 import io
 import json
-import os
 import re
 import stat
 import subprocess
+import sys
 import urllib.request
 import zipfile
 from datetime import datetime, timezone
@@ -91,6 +91,7 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         expected_size = archive.get("size")
         source_root = str(archive.get("source_root") or "")
         members = [str(value) for value in _list(archive.get("install_members"))]
+        platforms = [str(value) for value in _list(archive.get("platforms"))]
         prefix = f"manual_archive:{index}"
         if (
             not PACKAGE_NAME_PATTERN.fullmatch(archive_id)
@@ -136,6 +137,11 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         for member in members:
             if not _safe_relative_path(member):
                 errors.append(f"{prefix}:install_member_is_unsafe")
+        if platforms and (
+            len(set(platforms)) != len(platforms)
+            or any(value not in {"darwin", "linux", "windows"} for value in platforms)
+        ):
+            errors.append(f"{prefix}:platforms_are_invalid")
     return errors
 
 
@@ -146,6 +152,7 @@ def build_environment_bootstrap_plan(
     python_version: str,
     base_runtime_root: str | Path,
     isolated_runtime_root: str | Path,
+    execution_platform: str | None = None,
 ) -> dict[str, Any]:
     profile_errors = validate_reproduction_profiles(profiles)
     if profile_errors:
@@ -153,18 +160,25 @@ def build_environment_bootstrap_plan(
     project_profile = _dict(_dict(profiles.get("project_profiles")).get(project))
     if not project_profile:
         raise ValueError(f"Unknown project profile: {project}")
+    observed_platform = execution_platform or _host_execution_platform()
     requirements = [
         str(value) for value in _list(project_profile.get("bootstrap_requirements"))
     ]
     requirement_errors = validate_bootstrap_requirements(requirements)
     if requirement_errors:
         raise ValueError("Unsafe bootstrap requirements: " + ";".join(requirement_errors))
-    manual_archives = copy.deepcopy(
+    configured_manual_archives = copy.deepcopy(
         _list(project_profile.get("manual_python_archives"))
     )
-    archive_errors = validate_manual_python_archives(manual_archives)
+    archive_errors = validate_manual_python_archives(configured_manual_archives)
     if archive_errors:
         raise ValueError("Unsafe manual Python archives: " + ";".join(archive_errors))
+    manual_archives = [
+        archive
+        for archive in configured_manual_archives
+        if not _list(_dict(archive).get("platforms"))
+        or observed_platform in _list(_dict(archive).get("platforms"))
+    ]
     requirement_names = {
         str(canonicalize_name(Requirement(value).name)) for value in requirements
     }
@@ -181,7 +195,13 @@ def build_environment_bootstrap_plan(
     runtime_profile = _dict(
         _dict(profiles.get("runtime_profiles")).get(python_version)
     )
-    base_relative = str(runtime_profile.get("relative_executable") or "")
+    base_relative = str(
+        _dict(runtime_profile.get("relative_executables")).get(
+            observed_platform
+        )
+        or runtime_profile.get("relative_executable")
+        or ""
+    )
     if not _safe_relative_path(base_relative):
         raise ValueError(f"Exact base runtime is not safely mapped: {python_version}")
     base_root = Path(base_runtime_root).resolve()
@@ -201,21 +221,23 @@ def build_environment_bootstrap_plan(
     environment_path = _resolve_within(isolated_root, environment_relative)
     target_python = (
         environment_path / "Scripts" / "python.exe"
-        if os.name == "nt"
+        if observed_platform == "windows"
         else environment_path / "bin" / "python"
     )
     major_minor = ".".join(python_version.split(".")[:2])
     site_packages_path = (
         environment_path / "Lib" / "site-packages"
-        if os.name == "nt"
+        if observed_platform == "windows"
         else environment_path / "lib" / f"python{major_minor}" / "site-packages"
     )
     create_command = [
         str(base_python),
         "-m",
         "venv",
-        str(environment_path),
     ]
+    if observed_platform != "windows":
+        create_command.append("--copies")
+    create_command.append(str(environment_path))
     install_command = [
         str(target_python),
         "-m",
@@ -234,6 +256,7 @@ def build_environment_bootstrap_plan(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "project": project,
         "python_version": python_version,
+        "execution_platform": observed_platform,
         "profiles_sha256": canonical_json_sha256(profiles),
         "base_runtime_root": str(base_root),
         "base_python": str(base_python),
@@ -247,8 +270,20 @@ def build_environment_bootstrap_plan(
         "requirements": requirements,
         "manual_python_archives": manual_archives,
         "required_runtime_modules": sorted(
-            str(value)
-            for value in _list(project_profile.get("required_runtime_modules"))
+            {
+                str(value)
+                for value in [
+                    *_list(project_profile.get("required_runtime_modules")),
+                    *_list(
+                        _dict(
+                            project_profile.get(
+                                "required_runtime_modules_by_platform"
+                            )
+                        ).get(observed_platform)
+                    ),
+                ]
+                if str(value)
+            }
         ),
         "commands": {
             "create_environment": create_command,
@@ -456,6 +491,11 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if str(plan.get("schema_version") or "") != SCHEMA_VERSION:
         errors.append("schema_version_must_be_4.0")
+    execution_platform = str(plan.get("execution_platform") or "")
+    if execution_platform not in {"darwin", "linux", "windows"}:
+        errors.append("execution_platform_is_invalid")
+    elif execution_platform != _host_execution_platform():
+        errors.append("execution_platform_does_not_match_host")
     if str(plan.get("plan_sha256") or "") != environment_bootstrap_plan_fingerprint(
         plan
     ):
@@ -517,7 +557,7 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         errors.append("site_packages_path_outside_environment")
     expected_target_python = (
         environment_path / "Scripts" / "python.exe"
-        if os.name == "nt"
+        if execution_platform == "windows"
         else environment_path / "bin" / "python"
     ).resolve()
     if target_python != expected_target_python:
@@ -526,7 +566,7 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
     major_minor = ".".join(python_version.split(".")[:2])
     expected_site_packages = (
         environment_path / "Lib" / "site-packages"
-        if os.name == "nt"
+        if execution_platform == "windows"
         else environment_path / "lib" / f"python{major_minor}" / "site-packages"
     ).resolve()
     if site_packages_path != expected_site_packages:
@@ -536,8 +576,10 @@ def validate_environment_bootstrap_plan(plan: dict[str, Any]) -> list[str]:
         str(plan.get("base_python") or ""),
         "-m",
         "venv",
-        str(environment_path),
     ]
+    if execution_platform != "windows":
+        expected_create.append("--copies")
+    expected_create.append(str(environment_path))
     expected_install = [
         str(target_python),
         "-m",
@@ -1027,6 +1069,16 @@ def _validated_proxy_overrides(proxy_url: str) -> dict[str, str]:
     ):
         raise ValueError("Only an unauthenticated loopback HTTP(S) proxy is allowed.")
     return {"HTTP_PROXY": proxy_url, "HTTPS_PROXY": proxy_url}
+
+
+def _host_execution_platform() -> str:
+    if sys.platform.startswith("win"):
+        return "windows"
+    if sys.platform.startswith("linux"):
+        return "linux"
+    if sys.platform == "darwin":
+        return "darwin"
+    return sys.platform
 
 
 def _resolve_within(root: Path, relative: str) -> Path:

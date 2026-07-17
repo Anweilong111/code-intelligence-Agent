@@ -128,6 +128,35 @@ def test_plan_blocks_platform_specific_regression_on_wrong_host(tmp_path):
     assert item["execution_contract"]["observed_execution_platform"] == "windows"
 
 
+def test_plan_uses_platform_specific_base_runtime_mapping(tmp_path):
+    profiles = _profiles()
+    profiles["project_profiles"]["demo"].pop(
+        "isolated_environment_template",
+        None,
+    )
+    profiles["runtime_profiles"]["3.11.9"]["relative_executables"] = {
+        "windows": "cpython-3.11.9/python.exe",
+        "linux": "cpython-3.11.9/bin/python",
+    }
+    executable = tmp_path / "cpython-3.11.9" / "bin" / "python"
+    executable.parent.mkdir(parents=True)
+    executable.write_text("fixture", encoding="utf-8")
+
+    plan = build_reproduction_plan(
+        catalog=_catalog(),
+        selection_plan=_selection_plan(),
+        profiles=profiles,
+        runtime_root=tmp_path,
+        runtime_probe=lambda *_: {"status": "pass", "reason": "fixture"},
+        execution_platform="linux",
+    )
+
+    assert plan["items"][0]["readiness"] == "ready"
+    assert plan["items"][0]["runtime"]["python_executable"] == str(
+        executable.resolve()
+    )
+
+
 def test_tox_node_is_rewritten_to_bounded_pytest_command():
     case = _catalog()["cases"][0]
     case["targeted_tests"][0][2] = "tox"

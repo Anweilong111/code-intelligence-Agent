@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import copy
 import json
-import os
 import re
 import subprocess
 import sys
@@ -50,6 +49,18 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
         relative = str(runtime.get("relative_executable") or "")
         if relative and not _safe_relative_path(relative):
             errors.append(f"profiles.runtime_path_is_unsafe:{version}")
+        for platform, platform_relative_value in _dict(
+            runtime.get("relative_executables")
+        ).items():
+            platform_relative = str(platform_relative_value or "")
+            if platform not in SUPPORTED_EXECUTION_PLATFORMS - {"any"}:
+                errors.append(
+                    f"profiles.runtime_platform_is_invalid:{version}:{platform}"
+                )
+            if platform_relative and not _safe_relative_path(platform_relative):
+                errors.append(
+                    f"profiles.runtime_path_is_unsafe:{version}:{platform}"
+                )
     project_profiles = _dict(profiles.get("project_profiles"))
     for project, profile_value in project_profiles.items():
         profile = _dict(profile_value)
@@ -69,6 +80,20 @@ def validate_reproduction_profiles(profiles: dict[str, Any]) -> list[str]:
         for module in _list(profile.get("required_runtime_modules")):
             if not SAFE_MODULE_PATTERN.fullmatch(str(module)):
                 errors.append(f"profiles.required_module_is_invalid:{project}:{module}")
+        for platform, modules_value in _dict(
+            profile.get("required_runtime_modules_by_platform")
+        ).items():
+            if platform not in SUPPORTED_EXECUTION_PLATFORMS - {"any"}:
+                errors.append(
+                    f"profiles.required_module_platform_is_invalid:"
+                    f"{project}:{platform}"
+                )
+            for module in _list(modules_value):
+                if not SAFE_MODULE_PATTERN.fullmatch(str(module)):
+                    errors.append(
+                        f"profiles.required_module_is_invalid:"
+                        f"{project}:{platform}:{module}"
+                    )
         for index, rewrite_value in enumerate(
             _list(profile.get("command_module_rewrites"))
         ):
@@ -157,15 +182,16 @@ def build_reproduction_plan(
             runtime_config = _project_runtime_config(
                 project_profile,
                 version=version,
-                fallback=_dict(runtime_profiles.get(version)),
+                fallback=_runtime_config_for_platform(
+                    _dict(runtime_profiles.get(version)),
+                    observed_platform,
+                ),
+                execution_platform=observed_platform,
             )
             runtime = _resolve_runtime(root, version, runtime_config)
-            modules = sorted(
-                {
-                    str(module)
-                    for module in _list(project_profile.get("required_runtime_modules"))
-                    if str(module)
-                }
+            modules = _required_runtime_modules(
+                project_profile,
+                observed_platform,
             )
             if runtime["status"] == "available":
                 probe_key = (
@@ -558,6 +584,7 @@ def _project_runtime_config(
     *,
     version: str,
     fallback: dict[str, Any],
+    execution_platform: str,
 ) -> dict[str, Any]:
     template = str(project_profile.get("isolated_environment_template") or "")
     if not template:
@@ -565,10 +592,44 @@ def _project_runtime_config(
     environment_path = template.format(version=version)
     executable = (
         PurePosixPath(environment_path) / "Scripts" / "python.exe"
-        if os.name == "nt"
+        if execution_platform == "windows"
         else PurePosixPath(environment_path) / "bin" / "python"
     )
     return {"relative_executable": executable.as_posix()}
+
+
+def _runtime_config_for_platform(
+    runtime_profile: dict[str, Any],
+    execution_platform: str,
+) -> dict[str, Any]:
+    platform_relative = str(
+        _dict(runtime_profile.get("relative_executables")).get(
+            execution_platform
+        )
+        or ""
+    )
+    if platform_relative:
+        return {"relative_executable": platform_relative}
+    return {
+        "relative_executable": str(
+            runtime_profile.get("relative_executable") or ""
+        )
+    }
+
+
+def _required_runtime_modules(
+    project_profile: dict[str, Any],
+    execution_platform: str,
+) -> list[str]:
+    values = [
+        *_list(project_profile.get("required_runtime_modules")),
+        *_list(
+            _dict(project_profile.get("required_runtime_modules_by_platform")).get(
+                execution_platform
+            )
+        ),
+    ]
+    return sorted({str(value) for value in values if str(value)})
 
 
 def _reproduction_readiness(

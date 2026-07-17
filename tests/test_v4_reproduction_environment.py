@@ -72,6 +72,53 @@ def test_bootstrap_plan_uses_exact_base_runtime_and_isolated_target(tmp_path):
     assert environment_bootstrap_plan_fingerprint(plan) == plan["plan_sha256"]
 
 
+def test_bootstrap_plan_uses_linux_runtime_mapping(tmp_path):
+    profiles = _profiles()
+    profiles["runtime_profiles"]["3.11.9"]["relative_executables"] = {
+        "windows": "cpython-3.11.9/python.exe",
+        "linux": "cpython-3.11.9/bin/python",
+    }
+    profiles["project_profiles"]["demo"]["manual_python_archives"] = [
+        {
+            "archive_id": "windows-only-1.0",
+            "package": "windows-only",
+            "version": "1.0",
+            "url": "https://files.pythonhosted.org/packages/windows-only.zip",
+            "sha256": "a" * 64,
+            "size": 100,
+            "archive_type": "zip",
+            "platforms": ["windows"],
+            "source_root": "windows_only-1.0",
+            "install_members": ["windows_only"],
+        }
+    ]
+    profiles["project_profiles"]["demo"][
+        "required_runtime_modules_by_platform"
+    ] = {"windows": ["windows_only"]}
+    base = tmp_path / "base"
+    python = base / "cpython-3.11.9" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.write_text("fixture", encoding="utf-8")
+
+    plan = build_environment_bootstrap_plan(
+        profiles=profiles,
+        project="demo",
+        python_version="3.11.9",
+        base_runtime_root=base,
+        isolated_runtime_root=tmp_path / "isolated",
+        execution_platform="linux",
+    )
+
+    assert plan["execution_platform"] == "linux"
+    assert plan["base_python"] == str(python.resolve())
+    assert plan["target_python"].replace("\\", "/").endswith("/bin/python")
+    assert plan["site_packages_path"].replace("\\", "/").endswith(
+        "/lib/python3.11/site-packages"
+    )
+    assert plan["manual_python_archives"] == []
+    assert "windows_only" not in plan["required_runtime_modules"]
+
+
 def test_bootstrap_without_authorization_executes_nothing(tmp_path):
     plan = _plan(tmp_path)
     calls = 0
