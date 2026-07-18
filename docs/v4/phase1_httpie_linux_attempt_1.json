@@ -1,0 +1,105 @@
+{
+  "schema_version": "4.0",
+  "evidence_id": "v4-phase1-linux-httpie-selection-attempt-1",
+  "observed_date": "2026-07-18",
+  "repository": "Anweilong111/code-intelligence-Agent",
+  "workflow_run": {
+    "run_id": 29613751271,
+    "job_id": 87994134211,
+    "url": "https://github.com/Anweilong111/code-intelligence-Agent/actions/runs/29613751271",
+    "head_sha": "8e42f2634dc0b70fd47193d2f71b4fd381d20dac",
+    "status": "completed",
+    "conclusion": "failure",
+    "started_at": "2026-07-17T21:09:31Z",
+    "completed_at": "2026-07-17T21:12:13Z"
+  },
+  "artifact": {
+    "artifact_id": 8419752504,
+    "name": "v4-phase1-linux-httpie-all-httpie-selection",
+    "size_bytes": 2871,
+    "sha256": "9d131dd7edf074571994d779d5b88f8aeeccacca46684814965747d43839a0da",
+    "members": [
+      "bootstrap_plan_1.json",
+      "bootstrap_result_1.json",
+      "case_ids.txt"
+    ],
+    "expired": false,
+    "committed": false
+  },
+  "selection": {
+    "requested_case_ids": [
+      "bugsinpy-httpie-2",
+      "bugsinpy-httpie-1",
+      "bugsinpy-httpie-3",
+      "bugsinpy-httpie-4",
+      "bugsinpy-httpie-5"
+    ],
+    "first_bootstrap_case_id": "bugsinpy-httpie-1",
+    "first_runtime_variant": "pytest32-requests200"
+  },
+  "base_runtime": {
+    "python_version": "3.7.3",
+    "provision_status": "pass",
+    "exact_version_probe": "pass",
+    "execution_platform": "linux"
+  },
+  "bootstrap": {
+    "plan_sha256": "0ee7e9de7b08ecb76745d27a9451ba1112f1903cfc54dee325f12f71691f9a5b",
+    "result_sha256": "d4771d290bc6542da3fdcc3f85b94dd7c9084b56085fba3e912e1e687d9823aa",
+    "profiles_sha256": "59702336b4e3c4e4f4d423139bea5d81b00bf0cfecf5cb3fc341d4fac79e7b08",
+    "environment_creation": "pass",
+    "dependency_install": "fail",
+    "status": "fail",
+    "reason": "dependency_install_failed",
+    "failed_requirement": "blinker==1.4",
+    "pip_policy": [
+      "--only-binary=:all:",
+      "--no-deps"
+    ],
+    "pip_error": "No matching binary distribution found for blinker==1.4"
+  },
+  "reproduction": {
+    "targeted_tests_started": false,
+    "regression_tests_started": false,
+    "evidence_files_created": 0,
+    "reproducible_cases": 0
+  },
+  "diagnosis": {
+    "blocker_class": "environment_blocker",
+    "blocker_stage": "dependency_bootstrap",
+    "source_code_failure": false,
+    "test_failure": false,
+    "root_cause": "PyPI publishes blinker 1.4 as a source tar.gz but not as a wheel, while the bootstrap policy forbids source builds and setup script execution."
+  },
+  "remediation": {
+    "status": "implemented_pending_linux_verification",
+    "strategy": "hash_pinned_pure_python_tar_gz_adapter",
+    "official_artifact": {
+      "url": "https://files.pythonhosted.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/blinker-1.4.tar.gz",
+      "size_bytes": 111476,
+      "sha256": "471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6",
+      "package": "blinker",
+      "version": "1.4",
+      "selected_file_count": 8,
+      "setup_script_selected": false,
+      "setup_script_executed": false
+    },
+    "current_profiles_sha256": "c68390089c88b1d09cfb0f9476ac36329560dfc90293dd0a5249b3d1d6da7869"
+  },
+  "safety": {
+    "repository_setup_script_executed": false,
+    "repository_project_installed": false,
+    "source_build_executed": false,
+    "shared_base_runtime_mutated": false,
+    "tests_modified_or_excluded": false,
+    "model_calls": 0,
+    "raw_artifact_committed": false
+  },
+  "benchmark_claim": {
+    "acceptance_eligible": false,
+    "catalog_update_status": "unchanged",
+    "accepted_case_count_before": 23,
+    "accepted_case_count_after": 23,
+    "accepted_case_count_delta": 0
+  }
+}

@@ -114,6 +114,30 @@ def test_acceptance_rejects_plan_that_substitutes_catalog_target(tmp_path):
     assert result["cases"][0]["status"] == "candidate"
 
 
+def test_acceptance_rejects_runtime_variant_not_bound_to_catalog_requirements(
+    tmp_path,
+):
+    catalog = _catalog()
+
+    def mutate(plan):
+        plan["items"][0]["runtime_variant"] = {
+            "status": "pass",
+            "variant_id": "legacy-a",
+            "case_id": "bugsinpy-demo-1",
+            "requirements_sha256": "f" * 64,
+            "requirements_line_ending": "lf",
+            "errors": [],
+        }
+
+    archive, attestation = _artifact(tmp_path, catalog, mutate_plan=mutate)
+
+    result, audit = accept_v4_reproduction_artifact(catalog, archive, attestation)
+
+    assert audit["status"] == "fail"
+    assert "plan_runtime_variant_requirements_sha256_mismatch" in audit["errors"]
+    assert result == catalog
+
+
 def test_accept_cli_writes_validated_catalog_and_audit(tmp_path):
     catalog = _catalog()
     archive, attestation = _artifact(tmp_path, catalog)
@@ -309,6 +333,7 @@ def _catalog() -> dict:
         "environment": {
             "python_version": "3.11.9",
             "declared_test_paths": ["tests/test_core.py"],
+            "requirements": {"sha256": "7" * 64},
         },
         "reproduction": {
             "status": "pending",
@@ -391,6 +416,35 @@ def _batch_artifact(
                 "fix_commit_sha": case["fix_commit_sha"],
                 "readiness": "ready",
                 "blockers": [],
+                "runtime": {
+                    "status": "available",
+                    "reason": "exact_runtime_executable_present",
+                    "expected_version": "3.11.9",
+                    "python_executable": "/runtime/python",
+                    "relative_executable": "demo-py3.11.9/bin/python",
+                    "probe": {
+                        "status": "pass",
+                        "reason": "runtime_ready",
+                        "version": {
+                            "status": "pass",
+                            "reason": "exact_python_version",
+                            "python_executable": "/runtime/python",
+                            "expected_version": "3.11.9",
+                            "observed_version": "3.11.9",
+                            "exact_match": True,
+                            "returncode": 0,
+                        },
+                        "available_modules": ["fixture"],
+                        "missing_modules": [],
+                    },
+                },
+                "runtime_variant": {
+                    "status": "pass",
+                    "variant_id": "project_default",
+                    "case_id": case["case_id"],
+                    "requirements_sha256": "",
+                    "requirements_line_ending": "",
+                },
                 "execution_contract": {
                     "setup_script_executed": False,
                     "gold_patch_visible": False,
@@ -560,6 +614,35 @@ def _artifact(
                 "fix_commit_sha": case["fix_commit_sha"],
                 "readiness": "ready",
                 "blockers": [],
+                "runtime": {
+                    "status": "available",
+                    "reason": "exact_runtime_executable_present",
+                    "expected_version": "3.11.9",
+                    "python_executable": "/runtime/python",
+                    "relative_executable": "demo-py3.11.9/bin/python",
+                    "probe": {
+                        "status": "pass",
+                        "reason": "runtime_ready",
+                        "version": {
+                            "status": "pass",
+                            "reason": "exact_python_version",
+                            "python_executable": "/runtime/python",
+                            "expected_version": "3.11.9",
+                            "observed_version": "3.11.9",
+                            "exact_match": True,
+                            "returncode": 0,
+                        },
+                        "available_modules": ["fixture"],
+                        "missing_modules": [],
+                    },
+                },
+                "runtime_variant": {
+                    "status": "pass",
+                    "variant_id": "project_default",
+                    "case_id": case["case_id"],
+                    "requirements_sha256": "",
+                    "requirements_line_ending": "",
+                },
                 "execution_contract": {
                     "setup_script_executed": False,
                     "gold_patch_visible": False,
@@ -669,6 +752,7 @@ def _evidence(case: dict, plan: dict, preparation_file: dict) -> dict:
         "completed_at": "2026-07-18T00:01:00+00:00",
         "runtime": {
             "status": "pass",
+            "python_executable": "/runtime/python",
             "expected_version": "3.11.9",
             "observed_version": "3.11.9",
             "exact_match": True,

@@ -1,0 +1,71 @@
+{
+  "schema_version": "4.0",
+  "verification_id": "v4-phase1-blinker-pure-python-source-adapter",
+  "verified_date": "2026-07-18",
+  "status": "pass_local_pending_linux_ci",
+  "scope": "Hash-pinned pure-Python tar.gz extraction for blinker 1.4 without source build execution",
+  "source_artifact": {
+    "url": "https://files.pythonhosted.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/blinker-1.4.tar.gz",
+    "size": 111476,
+    "sha256": "471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6",
+    "local_size_match": true,
+    "local_sha256_match": true,
+    "archive_validation_errors": []
+  },
+  "metadata_contract": {
+    "package": "blinker",
+    "version": "1.4",
+    "source_root": "blinker-1.4",
+    "selected_member_roots": [
+      "blinker",
+      "blinker.egg-info"
+    ],
+    "selected_file_count": 8,
+    "selected_python_file_count": 4,
+    "selected_metadata_file_count": 4,
+    "setup_script_selected": false
+  },
+  "safety_contract": {
+    "allowed_registry": "files.pythonhosted.org",
+    "archive_hash_and_size_required": true,
+    "streaming_member_limit_enforced": true,
+    "expanded_size_limit_enforced": true,
+    "compression_ratio_limit_enforced": true,
+    "duplicate_and_escaping_paths_allowed": false,
+    "path_normalization_collisions_allowed": false,
+    "symbolic_and_hard_links_allowed": false,
+    "special_members_allowed": false,
+    "metadata_name_or_version_drift_allowed": false,
+    "repository_setup_script_executed": false,
+    "source_build_executed": false,
+    "shared_base_runtime_mutated": false,
+    "model_calls": 0
+  },
+  "verification": {
+    "focused_tests": {
+      "command": "pytest -q --basetemp outputs_v4/pytest_httpie_sdist_4 tests/test_v4_reproduction_environment.py tests/test_v4_real_bug_evidence.py tests/test_v4_real_bug_reproduction.py",
+      "status": "pass",
+      "passed": 50
+    },
+    "v4_cli_workflow_release_tests": {
+      "command": "pytest -q --basetemp outputs_v4/pytest_httpie_sdist_v4_cli_release_final2_20260718 tests/test_v4_experiment_protocol.py tests/test_v4_real_bug_benchmark.py tests/test_v4_real_bug_reproduction.py tests/test_v4_real_bug_evidence.py tests/test_v4_reproduction_environment.py tests/test_v4_linux_reproduction_workflow.py tests/test_v4_linux_httpie_reproduction_workflow.py tests/test_main_cli.py tests/test_release_hygiene_audit.py",
+      "status": "pass",
+      "passed": 97
+    },
+    "release_hygiene": {
+      "status": "pass",
+      "passed_checks": 5,
+      "check_count": 5,
+      "candidate_files": 583
+    },
+    "linux_ci": {
+      "status": "pending",
+      "reason": "Adapter implementation is not itself a successful reproduction result."
+    }
+  },
+  "benchmark_claim": {
+    "acceptance_eligible": false,
+    "accepted_case_count_delta": 0,
+    "accepted_case_count_after": 23
+  }
+}

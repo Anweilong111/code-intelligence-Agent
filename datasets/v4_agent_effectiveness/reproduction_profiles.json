@@ -127,7 +127,25 @@
             "zipp==3.1.0"
           ],
           "requirements_line_ending": "crlf",
-          "requirements_sha256": "b709611f4749c06b107c06a97724177898dbf95904833ea2d00e92ed3e65f704"
+          "requirements_sha256": "b709611f4749c06b107c06a97724177898dbf95904833ea2d00e92ed3e65f704",
+          "manual_python_archives": [
+            {
+              "archive_id": "blinker-1.4-pypi-sdist",
+              "package": "blinker",
+              "version": "1.4",
+              "url": "https://files.pythonhosted.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/blinker-1.4.tar.gz",
+              "sha256": "471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6",
+              "size": 111476,
+              "archive_type": "tar.gz",
+              "artifact_kind": "pure_python",
+              "source_root": "blinker-1.4",
+              "install_members": [
+                "blinker",
+                "blinker.egg-info"
+              ],
+              "replaces_pip_requirement": true
+            }
+          ]
         },
         "pytest54-requests223": {
           "case_ids": [
@@ -172,7 +190,25 @@
             "zipp==3.1.0"
           ],
           "requirements_line_ending": "crlf",
-          "requirements_sha256": "77de192562ac39d2d6a0ad4cbb1000e08c2da9d4ea6b26bd66f5adbd2805740c"
+          "requirements_sha256": "77de192562ac39d2d6a0ad4cbb1000e08c2da9d4ea6b26bd66f5adbd2805740c",
+          "manual_python_archives": [
+            {
+              "archive_id": "blinker-1.4-pypi-sdist",
+              "package": "blinker",
+              "version": "1.4",
+              "url": "https://files.pythonhosted.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/blinker-1.4.tar.gz",
+              "sha256": "471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6",
+              "size": 111476,
+              "archive_type": "tar.gz",
+              "artifact_kind": "pure_python",
+              "source_root": "blinker-1.4",
+              "install_members": [
+                "blinker",
+                "blinker.egg-info"
+              ],
+              "replaces_pip_requirement": true
+            }
+          ]
         },
         "pytest54-requests200": {
           "case_ids": [
@@ -217,7 +253,25 @@
             "zipp==3.1.0"
           ],
           "requirements_line_ending": "crlf",
-          "requirements_sha256": "f504fd7019795d6e32651a492581cef11a48cec8f879f388738dfdc0f747688b"
+          "requirements_sha256": "f504fd7019795d6e32651a492581cef11a48cec8f879f388738dfdc0f747688b",
+          "manual_python_archives": [
+            {
+              "archive_id": "blinker-1.4-pypi-sdist",
+              "package": "blinker",
+              "version": "1.4",
+              "url": "https://files.pythonhosted.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/blinker-1.4.tar.gz",
+              "sha256": "471aee25f3992bd325afa3772f1063dbdbbca947a041b8b89466dc00d606f8b6",
+              "size": 111476,
+              "archive_type": "tar.gz",
+              "artifact_kind": "pure_python",
+              "source_root": "blinker-1.4",
+              "install_members": [
+                "blinker",
+                "blinker.egg-info"
+              ],
+              "replaces_pip_requirement": true
+            }
+          ]
         }
       },
       "required_runtime_modules": [

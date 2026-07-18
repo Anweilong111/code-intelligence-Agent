@@ -298,6 +298,7 @@ def validate_v4_reproduction_evidence(
         if str(item.get(field) or "") != str(case.get(field) or ""):
             errors.append(f"plan_{field}_mismatch")
     errors.extend(_validate_plan_case_contract(case, plan=plan, item=item))
+    errors.extend(_validate_plan_runtime_contract(case, item=item, evidence=evidence))
 
     if str(evidence.get("schema_version") or "") != SCHEMA_VERSION:
         errors.append("evidence_schema_version_mismatch")
@@ -701,6 +702,58 @@ def _validate_plan_case_contract(
                 remaining_rewrites.pop(rewrite_index)
     if remaining_rewrites:
         errors.append("plan_command_rewrite_audit_mismatch")
+    return errors
+
+
+def _validate_plan_runtime_contract(
+    case: dict[str, Any],
+    *,
+    item: dict[str, Any],
+    evidence: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    case_id = str(case.get("case_id") or "")
+    environment = _dict(case.get("environment"))
+    expected_version = str(environment.get("python_version") or "")
+    expected_requirements_sha256 = str(
+        _dict(environment.get("requirements")).get("sha256") or ""
+    )
+    runtime = _dict(item.get("runtime"))
+    probe = _dict(runtime.get("probe"))
+    version = _dict(probe.get("version"))
+    if runtime.get("status") != "available":
+        errors.append("plan_runtime_must_be_available")
+    if str(runtime.get("expected_version") or "") != expected_version:
+        errors.append("plan_runtime_expected_version_mismatch")
+    if probe.get("status") != "pass" or _list(probe.get("missing_modules")):
+        errors.append("plan_runtime_probe_must_pass")
+    if (
+        version.get("status") != "pass"
+        or version.get("exact_match") is not True
+        or str(version.get("expected_version") or "") != expected_version
+        or str(version.get("observed_version") or "") != expected_version
+    ):
+        errors.append("plan_runtime_probe_version_mismatch")
+    planned_python = str(runtime.get("python_executable") or "")
+    evidence_python = str(_dict(evidence.get("runtime")).get("python_executable") or "")
+    if not planned_python or planned_python != evidence_python:
+        errors.append("plan_runtime_python_mismatch")
+
+    variant = _dict(item.get("runtime_variant"))
+    if variant.get("status") != "pass":
+        errors.append("plan_runtime_variant_must_pass")
+    if str(variant.get("case_id") or "") != case_id:
+        errors.append("plan_runtime_variant_case_id_mismatch")
+    variant_id = str(variant.get("variant_id") or "")
+    if not variant_id:
+        errors.append("plan_runtime_variant_id_is_required")
+    if variant_id != "project_default":
+        if str(variant.get("requirements_sha256") or "") != (
+            expected_requirements_sha256
+        ):
+            errors.append("plan_runtime_variant_requirements_sha256_mismatch")
+        if variant.get("requirements_line_ending") not in {"crlf", "lf"}:
+            errors.append("plan_runtime_variant_line_ending_is_invalid")
     return errors
 
 

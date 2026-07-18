@@ -444,6 +444,71 @@ def test_hash_pinned_pure_python_archive_is_installed_without_setup(tmp_path):
     assert not (site_packages / "setup.py").exists()
 
 
+def test_hash_pinned_tar_gz_replaces_requirement_without_running_setup(tmp_path):
+    archive_bytes = _pure_python_tar_gz_archive_bytes()
+    profiles = _profiles()
+    project = profiles["project_profiles"]["demo"]
+    project["bootstrap_requirements"].append("blinker==1.4")
+    project["required_runtime_modules"].append("blinker")
+    project["manual_python_archives"] = [
+        _pure_python_tar_gz_archive_profile(archive_bytes)
+    ]
+    base = tmp_path / "base"
+    python = base / "cpython-3.11.9" / "python.exe"
+    python.parent.mkdir(parents=True)
+    python.write_text("fixture", encoding="utf-8")
+    plan = build_environment_bootstrap_plan(
+        profiles=profiles,
+        project="demo",
+        python_version="3.11.9",
+        base_runtime_root=base,
+        isolated_runtime_root=tmp_path / "isolated",
+    )
+
+    def fake_runner(command, **kwargs):
+        del kwargs
+        if command[1:3] == ["-m", "venv"]:
+            target = Path(command[3]) / "Scripts" / "python.exe"
+            target.parent.mkdir(parents=True)
+            target.write_text("fixture", encoding="utf-8")
+        if command[-2:] == ["freeze", "--all"]:
+            output = "\n".join(plan["requirements"]) + "\n"
+        else:
+            output = "3.11.9\n" if "-c" in command else "ok\n"
+        return subprocess.CompletedProcess(command, 0, stdout=output, stderr="")
+
+    result = execute_environment_bootstrap(
+        plan,
+        authorize_dependency_install=True,
+        runner=fake_runner,
+        runtime_probe=lambda python, version, modules: {
+            "status": "pass",
+            "reason": "fixture",
+            "python": str(python),
+            "version": version,
+            "available_modules": modules,
+            "missing_modules": [],
+        },
+        archive_fetcher=lambda url, proxy, size: archive_bytes,
+    )
+
+    site_packages = Path(plan["site_packages_path"])
+    archive_stage = next(
+        stage
+        for stage in result["commands"]
+        if stage["stage"] == "install_manual_archive:blinker-1.4-pypi-sdist"
+    )
+    assert "blinker==1.4" in plan["requirements"]
+    assert "blinker==1.4" not in plan["pip_requirements"]
+    assert "blinker==1.4" not in plan["commands"]["install_dependencies"]
+    assert result["status"] == "pass"
+    assert archive_stage["reason"] == "hash_pinned_pure_python_archive_installed"
+    assert archive_stage["setup_script_executed"] is False
+    assert (site_packages / "blinker" / "__init__.py").is_file()
+    assert (site_packages / "blinker.egg-info" / "PKG-INFO").is_file()
+    assert not (site_packages / "setup.py").exists()
+
+
 def test_hash_pinned_conda_binary_replaces_missing_linux_wheel(
     tmp_path,
     monkeypatch,
@@ -549,6 +614,18 @@ def test_manual_archive_profile_rejects_remote_host_and_unsafe_member():
     assert "manual_archive:0:install_member_is_unsafe" in errors
 
 
+def test_replacing_source_archive_requires_one_egg_info_member():
+    profile = _pure_python_tar_gz_archive_profile(b"fixture")
+    profile["install_members"] = ["blinker"]
+
+    errors = validate_manual_python_archives([profile])
+
+    assert (
+        "manual_archive:0:replacement_source_requires_one_egg_info_member"
+        in errors
+    )
+
+
 def test_conda_archive_profile_rejects_wrong_registry():
     profile = _conda_archive_profile(b"fixture")
     assert validate_manual_python_archives([profile]) == []
@@ -578,6 +655,70 @@ def test_conda_binary_archive_rejects_metadata_drift_and_links():
 
     assert "conda_index_version_mismatch" in drift_errors
     assert "archive_link_member_is_forbidden" in link_errors
+
+
+def test_tar_gz_source_archive_rejects_metadata_drift_and_links():
+    drifted = _pure_python_tar_gz_archive_bytes(metadata_version="1.5")
+    _, drift_errors = v4_reproduction_environment._validated_tar_gz_archive_writes(
+        drifted,
+        archive=_pure_python_tar_gz_archive_profile(drifted),
+    )
+    renamed = _pure_python_tar_gz_archive_bytes(metadata_name="other")
+    _, name_errors = v4_reproduction_environment._validated_tar_gz_archive_writes(
+        renamed,
+        archive=_pure_python_tar_gz_archive_profile(renamed),
+    )
+    symbolic = _pure_python_tar_gz_archive_bytes(link_type=tarfile.SYMTYPE)
+    _, symbolic_errors = (
+        v4_reproduction_environment._validated_tar_gz_archive_writes(
+            symbolic,
+            archive=_pure_python_tar_gz_archive_profile(symbolic),
+        )
+    )
+    hard = _pure_python_tar_gz_archive_bytes(link_type=tarfile.LNKTYPE)
+    _, hard_errors = v4_reproduction_environment._validated_tar_gz_archive_writes(
+        hard,
+        archive=_pure_python_tar_gz_archive_profile(hard),
+    )
+    unexpected_metadata = _pure_python_tar_gz_archive_bytes(
+        include_unexpected_egg_info_python=True
+    )
+    _, unexpected_metadata_errors = (
+        v4_reproduction_environment._validated_tar_gz_archive_writes(
+            unexpected_metadata,
+            archive=_pure_python_tar_gz_archive_profile(unexpected_metadata),
+        )
+    )
+    duplicated_metadata = _pure_python_tar_gz_archive_bytes(
+        duplicate_metadata_headers=True
+    )
+    _, duplicated_metadata_errors = (
+        v4_reproduction_environment._validated_tar_gz_archive_writes(
+            duplicated_metadata,
+            archive=_pure_python_tar_gz_archive_profile(duplicated_metadata),
+        )
+    )
+    aliased_path = _pure_python_tar_gz_archive_bytes(include_path_alias=True)
+    _, aliased_path_errors = (
+        v4_reproduction_environment._validated_tar_gz_archive_writes(
+            aliased_path,
+            archive=_pure_python_tar_gz_archive_profile(aliased_path),
+        )
+    )
+
+    assert "archive_metadata_version_mismatch" in drift_errors
+    assert "archive_metadata_name_mismatch" in name_errors
+    assert "archive_link_member_is_forbidden" in symbolic_errors
+    assert "archive_link_member_is_forbidden" in hard_errors
+    assert (
+        "archive_selected_member_is_not_pure_python"
+        in unexpected_metadata_errors
+    )
+    assert (
+        "archive_metadata_name_is_missing_or_duplicated"
+        in duplicated_metadata_errors
+    )
+    assert "archive_member_path_is_unsafe_or_duplicated" in aliased_path_errors
 
 
 def _plan(tmp_path: Path) -> dict:
@@ -627,6 +768,63 @@ def _manual_archive_bytes() -> bytes:
         archive.writestr("demo_console-0.5/demo_console/__init__.py", "VALUE = 1\n")
         archive.writestr("demo_console-0.5/run.py", "VALUE = 2\n")
         archive.writestr("demo_console-0.5/setup.py", "raise RuntimeError()\n")
+    return payload.getvalue()
+
+
+def _pure_python_tar_gz_archive_profile(archive_bytes: bytes) -> dict:
+    return {
+        "archive_id": "blinker-1.4-pypi-sdist",
+        "package": "blinker",
+        "version": "1.4",
+        "url": "https://files.pythonhosted.org/packages/blinker-1.4.tar.gz",
+        "sha256": hashlib.sha256(archive_bytes).hexdigest(),
+        "size": len(archive_bytes),
+        "archive_type": "tar.gz",
+        "artifact_kind": "pure_python",
+        "source_root": "blinker-1.4",
+        "install_members": ["blinker", "blinker.egg-info"],
+        "replaces_pip_requirement": True,
+    }
+
+
+def _pure_python_tar_gz_archive_bytes(
+    *,
+    duplicate_metadata_headers: bool = False,
+    include_path_alias: bool = False,
+    include_unexpected_egg_info_python: bool = False,
+    metadata_name: str = "blinker",
+    metadata_version: str = "1.4",
+    link_type: bytes | None = None,
+) -> bytes:
+    payload = io.BytesIO()
+    metadata_name_lines = f"Name: {metadata_name}\n" * (
+        2 if duplicate_metadata_headers else 1
+    )
+    files = {
+        "blinker-1.4/blinker/__init__.py": b"VALUE = 1\n",
+        "blinker-1.4/blinker.egg-info/PKG-INFO": (
+            "Metadata-Version: 1.1\n"
+            + metadata_name_lines
+            + f"Version: {metadata_version}\n"
+        ).encode("utf-8"),
+        "blinker-1.4/blinker.egg-info/top_level.txt": b"blinker\n",
+        "blinker-1.4/setup.py": b"raise RuntimeError()\n",
+    }
+    if include_unexpected_egg_info_python:
+        files["blinker-1.4/blinker.egg-info/execute.py"] = b"VALUE = 2\n"
+    if include_path_alias:
+        files["blinker-1.4/blinker//alias.py"] = b"VALUE = 3\n"
+    with tarfile.open(fileobj=payload, mode="w:gz") as archive:
+        for name, content in files.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(content)
+            info.mode = 0o644
+            archive.addfile(info, io.BytesIO(content))
+        if link_type is not None:
+            link = tarfile.TarInfo("blinker-1.4/blinker/unsafe-link")
+            link.type = link_type
+            link.linkname = "../../../../escape"
+            archive.addfile(link)
     return payload.getvalue()
 
 

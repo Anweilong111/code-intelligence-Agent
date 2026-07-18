@@ -56,6 +56,16 @@ CONDA_DIST_INFO_FILES = {
     "namespace_packages.txt",
     "top_level.txt",
 }
+PURE_PYTHON_EGG_INFO_FILES = {
+    "PKG-INFO",
+    "dependency_links.txt",
+    "entry_points.txt",
+    "namespace_packages.txt",
+    "not-zip-safe",
+    "requires.txt",
+    "SOURCES.txt",
+    "top_level.txt",
+}
 
 
 def validate_bootstrap_requirements(requirements: list[str]) -> list[str]:
@@ -130,7 +140,7 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
         parsed = urlparse(url)
         allowed_hosts = (
             PURE_PYTHON_ARCHIVE_HOSTS
-            if archive_type == "zip"
+            if archive_type in {"tar.gz", "zip"}
             else CONDA_BINARY_ARCHIVE_HOSTS
             if archive_type == "conda-tar-bz2"
             else set()
@@ -153,10 +163,28 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
             or expected_size > MAX_MANUAL_ARCHIVE_SIZE
         ):
             errors.append(f"{prefix}:size_is_invalid")
-        if archive_type not in {"zip", "conda-tar-bz2"}:
+        if archive_type not in {"tar.gz", "zip", "conda-tar-bz2"}:
             errors.append(f"{prefix}:archive_type_is_invalid")
-        if archive_type == "zip" and artifact_kind != "pure_python":
-            errors.append(f"{prefix}:zip_artifact_kind_must_be_pure_python")
+        if (
+            archive_type in {"tar.gz", "zip"}
+            and artifact_kind != "pure_python"
+        ):
+            errors.append(f"{prefix}:source_artifact_kind_must_be_pure_python")
+        if (
+            archive_type in {"tar.gz", "zip"}
+            and archive.get("replaces_pip_requirement") is True
+            and len(
+                [
+                    value
+                    for value in members
+                    if value.rstrip("/").endswith(".egg-info")
+                ]
+            )
+            != 1
+        ):
+            errors.append(
+                f"{prefix}:replacement_source_requires_one_egg_info_member"
+            )
         if archive_type == "conda-tar-bz2":
             if artifact_kind != "conda_python_binary":
                 errors.append(f"{prefix}:conda_artifact_kind_is_invalid")
@@ -226,19 +254,19 @@ def validate_manual_python_archives(archives: list[Any]) -> list[str]:
                 )
             ):
                 errors.append(f"{prefix}:allowed_native_suffixes_are_invalid")
-        if not _safe_relative_path(source_root):
+        if not _canonical_archive_profile_path(source_root):
             errors.append(f"{prefix}:source_root_is_unsafe")
         if not members:
             errors.append(f"{prefix}:install_members_are_required")
         elif len(set(members)) != len(members):
             errors.append(f"{prefix}:install_members_are_duplicated")
         for member in members:
-            if not _safe_relative_path(member):
+            if not _canonical_archive_profile_path(member):
                 errors.append(f"{prefix}:install_member_is_unsafe")
         if len(set(excluded_members)) != len(excluded_members):
             errors.append(f"{prefix}:exclude_members_are_duplicated")
         for member in excluded_members:
-            if not _safe_relative_path(member):
+            if not _canonical_archive_profile_path(member):
                 errors.append(f"{prefix}:exclude_member_is_unsafe")
         if platforms and (
             len(set(platforms)) != len(platforms)
@@ -1182,6 +1210,8 @@ def _validated_archive_writes(
 ) -> tuple[list[tuple[str, bytes]], list[str]]:
     if archive.get("archive_type") == "conda-tar-bz2":
         return _validated_conda_archive_writes(archive_bytes, archive=archive)
+    if archive.get("archive_type") == "tar.gz":
+        return _validated_tar_gz_archive_writes(archive_bytes, archive=archive)
     return _validated_zip_archive_writes(archive_bytes, archive=archive)
 
 
@@ -1204,8 +1234,11 @@ def _validated_zip_archive_writes(
         if len(archive_file.infolist()) > MAX_MANUAL_ARCHIVE_MEMBERS:
             return [], ["archive_member_count_limit_exceeded"]
         for info in archive_file.infolist():
-            name = info.filename.replace("\\", "/")
-            if not _safe_relative_path(name) or name in seen_names:
+            name = _canonical_archive_member_path(
+                info.filename,
+                is_directory=info.is_dir(),
+            )
+            if not name or name in seen_names:
                 errors.append("archive_member_path_is_unsafe_or_duplicated")
                 continue
             seen_names.add(name)
@@ -1232,8 +1265,8 @@ def _validated_zip_archive_writes(
                     matched = True
             if not matched:
                 continue
-            if not _safe_relative_path(relative) or not relative.endswith(
-                (".py", ".pyi")
+            if not _safe_relative_path(relative) or not (
+                _pure_python_install_file_is_allowed(relative)
             ):
                 errors.append("archive_selected_member_is_not_pure_python")
                 continue
@@ -1246,7 +1279,130 @@ def _validated_zip_archive_writes(
             errors.append(f"archive_install_member_not_found:{member}")
     if not selected:
         errors.append("archive_contains_no_selected_python_files")
+    errors.extend(_validate_pure_python_metadata(selected, archive=archive))
     return sorted(selected.items()), sorted(set(errors))
+
+
+def _validated_tar_gz_archive_writes(
+    archive_bytes: bytes,
+    *,
+    archive: dict[str, Any],
+) -> tuple[list[tuple[str, bytes]], list[str]]:
+    errors: list[str] = []
+    selected: dict[str, bytes] = {}
+    source_root = str(archive.get("source_root") or "")
+    source_prefix = source_root.rstrip("/") + "/"
+    install_members = [
+        str(value) for value in _list(archive.get("install_members"))
+    ]
+    matched_members = {member: False for member in install_members}
+    seen_names: set[str] = set()
+    expanded_size = 0
+    with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r|gz") as archive_file:
+        member_count = 0
+        for info in archive_file:
+            member_count += 1
+            if member_count > MAX_MANUAL_ARCHIVE_MEMBERS:
+                return [], ["archive_member_count_limit_exceeded"]
+            name = _canonical_archive_member_path(
+                info.name,
+                is_directory=info.isdir(),
+            )
+            if not name or name in seen_names:
+                errors.append("archive_member_path_is_unsafe_or_duplicated")
+                continue
+            seen_names.add(name)
+            if info.issym() or info.islnk():
+                errors.append("archive_link_member_is_forbidden")
+                continue
+            if not (info.isfile() or info.isdir()):
+                errors.append("archive_special_member_is_forbidden")
+                continue
+            expanded_size += max(0, int(info.size))
+            if expanded_size > MAX_MANUAL_ARCHIVE_EXPANDED_SIZE:
+                return [], ["archive_expanded_size_limit_exceeded"]
+            if expanded_size > max(1, len(archive_bytes)) * 1000:
+                return [], ["archive_compression_ratio_limit_exceeded"]
+            if info.isdir() or not name.startswith(source_prefix):
+                continue
+            relative = name[len(source_prefix) :]
+            matched = False
+            for member in install_members:
+                normalized_member = member.rstrip("/")
+                if relative == normalized_member or relative.startswith(
+                    normalized_member + "/"
+                ):
+                    matched_members[member] = True
+                    matched = True
+            if not matched:
+                continue
+            if not _safe_relative_path(relative) or not (
+                _pure_python_install_file_is_allowed(relative)
+            ):
+                errors.append("archive_selected_member_is_not_pure_python")
+                continue
+            if relative in selected:
+                errors.append("archive_install_destination_is_duplicated")
+                continue
+            stream = archive_file.extractfile(info)
+            if stream is None:
+                errors.append("archive_selected_member_is_unreadable")
+                continue
+            with stream:
+                selected[relative] = stream.read()
+    for member, matched in matched_members.items():
+        if not matched:
+            errors.append(f"archive_install_member_not_found:{member}")
+    if not selected:
+        errors.append("archive_contains_no_selected_python_files")
+    errors.extend(_validate_pure_python_metadata(selected, archive=archive))
+    return sorted(selected.items()), sorted(set(errors))
+
+
+def _pure_python_install_file_is_allowed(relative: str) -> bool:
+    parts = PurePosixPath(relative).parts
+    egg_info_indexes = [
+        index for index, value in enumerate(parts) if value.endswith(".egg-info")
+    ]
+    if egg_info_indexes:
+        return bool(
+            len(egg_info_indexes) == 1
+            and egg_info_indexes[0] == len(parts) - 2
+            and parts[-1] in PURE_PYTHON_EGG_INFO_FILES
+        )
+    return relative.endswith((".py", ".pyi"))
+
+
+def _validate_pure_python_metadata(
+    selected: dict[str, bytes],
+    *,
+    archive: dict[str, Any],
+) -> list[str]:
+    if archive.get("replaces_pip_requirement") is not True:
+        return []
+    metadata = [
+        payload
+        for relative, payload in selected.items()
+        if relative.endswith(".egg-info/PKG-INFO")
+    ]
+    if len(metadata) != 1:
+        return ["archive_replacement_metadata_is_missing_or_duplicated"]
+    parsed = BytesParser().parsebytes(metadata[0])
+    names = [str(value) for value in parsed.get_all("Name", [])]
+    versions = [str(value) for value in parsed.get_all("Version", [])]
+    if len(names) != 1:
+        return ["archive_metadata_name_is_missing_or_duplicated"]
+    if len(versions) != 1:
+        return ["archive_metadata_version_is_missing_or_duplicated"]
+    observed_name = str(canonicalize_name(names[0]))
+    expected_name = str(
+        canonicalize_name(str(archive.get("package") or ""))
+    )
+    if observed_name != expected_name:
+        return ["archive_metadata_name_mismatch"]
+    if versions[0] != str(archive.get("version") or ""):
+        return ["archive_metadata_version_mismatch"]
+    return []
 
 
 def _validated_conda_archive_writes(
@@ -1274,8 +1430,11 @@ def _validated_conda_archive_writes(
         if len(members) > MAX_MANUAL_ARCHIVE_MEMBERS:
             return [], ["archive_member_count_limit_exceeded"]
         for info in members:
-            name = info.name.replace("\\", "/")
-            if not _safe_relative_path(name) or name in seen_names:
+            name = _canonical_archive_member_path(
+                info.name,
+                is_directory=info.isdir(),
+            )
+            if not name or name in seen_names:
                 errors.append("archive_member_path_is_unsafe_or_duplicated")
                 continue
             seen_names.add(name)
@@ -1559,6 +1718,33 @@ def _safe_relative_path(value: str) -> bool:
         return False
     pure = PurePosixPath(normalized)
     return not pure.is_absolute() and ".." not in pure.parts
+
+
+def _canonical_archive_profile_path(value: str) -> bool:
+    return bool(
+        value
+        and "\\" not in value
+        and not value.endswith("/")
+        and _safe_relative_path(value)
+        and PurePosixPath(value).as_posix() == value
+    )
+
+
+def _canonical_archive_member_path(
+    value: str,
+    *,
+    is_directory: bool,
+) -> str:
+    if not value or "\\" in value:
+        return ""
+    normalized = value.rstrip("/") if is_directory else value
+    if (
+        not normalized
+        or not _safe_relative_path(normalized)
+        or PurePosixPath(normalized).as_posix() != normalized
+    ):
+        return ""
+    return normalized
 
 
 def _within(path: Path, root: Path) -> bool:
